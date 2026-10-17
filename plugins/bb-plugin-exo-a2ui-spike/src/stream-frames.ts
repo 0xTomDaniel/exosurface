@@ -44,3 +44,26 @@ export class StreamFrames {
   return {baseRevision:Number(header[1]),messages};
  }
 }
+
+// update_exosurface streams `{"baseRevision":N,"snapshot":"- region …\n  - …"}`. Decode the JSON
+// string as it arrives (complete escapes only) and hand back the complete lines so far; the caller
+// translates them to A2UI and previews only results that validate.
+export class SnapshotStream {
+ text=''; lines=0;
+ append(delta:string){
+  this.text+=delta;if(this.text.length>MAX_BYTES*2)throw Error('Stream preview exceeds bound');
+  const header=/^\s*\{\s*"baseRevision"\s*:\s*(\d+)\s*,\s*"snapshot"\s*:\s*"/.exec(this.text);if(!header)return null;
+  let out='',done=false;
+  for(let i=header[0].length;i<this.text.length;i++){
+   const c=this.text[i];
+   if(c==='"'){done=true;break;}
+   if(c!=='\\'){out+=c;continue;}
+   const n=this.text[i+1];if(n===undefined)break;
+   if(n==='u'){const hex=this.text.slice(i+2,i+6);if(hex.length<4)break;out+=String.fromCharCode(parseInt(hex,16));i+=5;continue;}
+   out+=({n:'\n',t:'\t',r:'\r',b:'\b',f:'\f'} as Record<string,string>)[n]??n;i++;
+  }
+  const complete=done?out:out.slice(0,out.lastIndexOf('\n')+1),count=complete.split('\n').filter(l=>l.trim()).length;
+  if(count<=this.lines)return null;this.lines=count;
+  return {baseRevision:Number(header[1]),snapshot:complete};
+ }
+}

@@ -17,7 +17,7 @@ for(const e of entries){const m=e.message;if(!m)continue;
  if(m.role==='user'){const t=typeof m.content==='string'?m.content:m.content.filter(c=>c.type==='text').map(c=>c.text).join(' ');cur={at:e.timestamp,user:t.slice(0,80).replace(/\s+/g,' '),canvas:'',reply:''};turns.push(cur);}
  else if(m.role==='assistant'&&cur)for(const c of m.content){if(c.type==='toolCall'&&c.name==='apply_workspace'&&!c.arguments?.messages?.[0]?.omitted)cur.canvas+=' '+canvasText(c.arguments);if(c.type==='text')cur.reply+=c.text+'\n';}
  // Canvas calls are logged by meaning since 2026-10-15; the full update lives in the tool result's details.
- else if(m.role==='toolResult'&&m.toolName==='apply_workspace'&&!m.isError&&cur&&m.details?.delta)cur.canvas+=' '+canvasText(m.details.delta);}
+ else if(m.role==='toolResult'&&(m.toolName==='apply_workspace'||m.toolName==='update_exosurface')&&!m.isError&&cur&&m.details?.delta)cur.canvas+=' '+canvasText(m.details.delta);}
 const rows=turns.map(t=>{const rw=words(t.reply),cw=new Set(words(t.canvas)),long=rw.filter(w=>w.length>4);
  return{at:t.at,user:t.user,canvasChanged:!!t.canvas.trim(),replyWords:rw.length,canvasWords:words(t.canvas).length,overlap:long.length?+(long.filter(w=>cw.has(w)).length/long.length).toFixed(2):0,metaMentions:META.map(r=>(t.reply.match(new RegExp(r,'gi'))??[]).length).reduce((a,b)=>a+b,0)};});
 const withCanvas=rows.filter(r=>r.canvasChanged),median=a=>{const s=[...a].sort((x,y)=>x-y);return s.length?s[Math.floor((s.length-1)/2)]:null;};

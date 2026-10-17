@@ -4,6 +4,7 @@
 // ("what the person did"). The A2UI JSON stays in native canvas entries only.
 import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
+import {surfaceSnapshot} from './snapshot-format.ts';
 const plain=(s:unknown)=>String(s??'').replace(/[*_`#>]/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
 const cut=(s:string,n:number)=>s.length>n?s.slice(0,n-1)+'…':s;
 const literal=(v:unknown)=>typeof v==='string'?v:typeof v==='number'?String(v):'';
@@ -67,5 +68,29 @@ export function describePress(s:Snapshot,action:{surfaceId:string;sourceComponen
 export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponentId:string;context:Record<string,unknown>}){
  const button=moduleNodes(s,action.surfaceId).find(n=>n.id===action.sourceComponentId),bindings=inputBindings(s,action.surfaceId),out:{path:string;value:unknown}[]=[];
  for(const[key,v]of Object.entries(button?.action?.event?.context??{})){const path=(v as any)?.path;if(path&&bindings.has(path)&&JSON.stringify(atPath(moduleData(s,action.surfaceId),path))!==JSON.stringify(action.context[key]))out.push({path,value:action.context[key]});}
+ return out;
+}
+
+/** Per-request current canvas in the snapshot format the agent writes: stage and beside surfaces
+ *  in full (refs, current values), shelf surfaces by title. Current state, never history. */
+export function snapshotOutline(s:Snapshot,limit=12000):string{
+ const ids=moduleIds(s),focus=s.layout?.focus&&ids.includes(s.layout.focus)?s.layout.focus:ids.at(-1),beside=(s.layout?.beside??[]).filter(id=>ids.includes(id)&&id!==focus);
+ const head=`EXOSURFACE revision ${s.revision}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
+ const full=[...(focus?[focus]:[]),...beside].map(id=>surfaceSnapshot(s,id));
+ const shelf=ids.filter(id=>id!==focus&&!beside.includes(id)).map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (shelf)`);
+ let body=[...full,...(shelf.length?['Shelf (read_exosurface for a surface in full):',...shelf]:[])].join('\n');
+ if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[])].join('\n');
+ return `${head}\n${cut(body,limit)}`;
+}
+/** The person's canvas edits since the agent's last turn, as snapshot-style lines. */
+export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
+ const last=new Map<string,{surfaceId:string;path:string}>();
+ for(const d of deltas)for(const m of d.messages){const u=m.updateDataModel;if(u?.path&&u.path!=='/')last.set(`${u.surfaceId} ${u.path}`,{surfaceId:u.surfaceId,path:u.path});}
+ const out:string[]=[];
+ for(const {surfaceId,path} of last.values()){
+  if(!moduleIds(s).includes(surfaceId))continue;const input=inputBindings(s,surfaceId).get(path);if(!input)continue;const v=atPath(moduleData(s,surfaceId),path);
+  const shown=input.component==='ChoicePicker'?(Array.isArray(v)?v:[v]).map((x:any)=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'(none)':input.component==='CheckBox'?(v?'checked':'unchecked'):String(v??'')||'(empty)';
+  out.push(`- ${surfaceId} · ${plain(literal(input.label))||input.id} [ref=${input.id}]: ${cut(shown,400)}`);
+ }
  return out;
 }

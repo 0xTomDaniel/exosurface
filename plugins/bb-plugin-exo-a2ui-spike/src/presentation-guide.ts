@@ -19,3 +19,11 @@ CHOOSE THE VISUAL BY THE RELATIONSHIP. Time or order → Timeline. Options again
 
 CATALOGS. Create NEW surfaces with catalogId '${EXO_CATALOG}' (basic components plus Callout, Metric, Timeline, Table, Chart, Flow, Disclosure). Existing surfaces on '${CATALOG}' accept only basic components; to restyle one with Exo components, delete it and create it again (preserve relevant values in its data).`;
 export const EXO_VOCABULARY=`Exo components (only in '${EXO_CATALOG}' surfaces; literal values, no bindings except Callout.text): Callout:{tone?:note/decision/caution/good,title?,text(markdown)}; Metric:{label,value:STRING,detail?,tone?,progress?:0..1}; Timeline:{items:[{label,when?,detail?,state?:done/now/next/later/blocked}] ≤12}; Table:{caption?,columns:[≤6 strings],rows:[{cells:[same count],tone?}] ≤14,highlightColumn?:index}; Chart:{kind:bar/line,caption?,unit?,max?,points:[{label,value:NUMBER,note?,tone?}] ≤16}; Flow:{caption?,direction?:right/down,nodes:[{id,label,detail?,tone?}] ≤12,edges:[{from,to,label?}] ≤20}; Disclosure:{title,summary?,open?:boolean,child:ID}. tone ∈ neutral/accent/good/caution/risk.`;
+
+// The same guide for the snapshot-format tools: component names map to snapshot roles,
+// the stage is derived (no layout JSON), and there are no catalogs to choose.
+export const PRESENTATION_GUIDE_SNAPSHOT=PRESENTATION_GUIDE
+ .replace(/\nCATALOGS\.[\s\S]*$/,'')
+ .replace('layout.focus names the stage surface; by default it becomes','The stage is')
+ .replace(/ Optional layout\.beside:[^.]*\./,' Optional beside: at most 2 small surfaces of supporting context next to the stage.')
+ +`\n\nCOMPONENT NAMES above map to snapshot roles: Callout → note; Metric → meter; Timeline → list [timeline]; Table → table; Chart → figure [chart=…]; Flow → list [flow]; Disclosure → group [collapsible]; Tabs → tablist; Card → article; Row → group [layout=row]; ChoicePicker → radiogroup / listbox; TextField → textbox.`;
