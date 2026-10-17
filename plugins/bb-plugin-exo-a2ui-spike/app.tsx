@@ -51,7 +51,10 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
   // Only the latest card of the surface on stage just loads it. Any other card opens a historical surface being worked on:
   // a pill appears in the input and the next message brings it to the stage; ✕ or removing the pill cancels.
   // Always ask fresh: what is current or on stage changes as the conversation moves.
-  const m=await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);if(m&&!m.onStage)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
+  const m=await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);
+  // Going back to the current stage ends any bring-back in progress (its pill and edits go with it).
+  if(m?.onStage){setRewind(null);await rpc.call('pending',{threadId:message.threadId,op:'clear'}).catch(()=>{});return;}
+  if(m&&!m.onStage)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
   className={`my-1 flex w-full max-w-md items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent ${on?'border-primary':'border-border'}`}>
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 opacity-70"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes.action==='edited'?'Edited on the canvas':'On the canvas'}{meta?` · ${when(meta.at)}`:''}</span></span>
