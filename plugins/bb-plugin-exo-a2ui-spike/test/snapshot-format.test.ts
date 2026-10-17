@@ -113,3 +113,9 @@ test('The person\'s canvas edits become labelled snapshot-style lines with curre
  const b=applyDelta(applyDelta(a,{baseRevision:1,revision:2,...d1}),{baseRevision:2,revision:3,...d2});
  assert.deepEqual(describeEdits(b,[d1,d2]),['- trip · Notes [ref=note]: Arriving 9pm','- trip · Cabin [ref=pick]: Forest lodge']);
 });
+
+test('A full canvas gets a clear error naming the limit and the surfaces to retire',()=>{
+ let s=draw(SAMPLE);for(let i=2;i<=8;i++){const {messages}=changeMessages(s,{snapshot:`- region "S${i}" [ref=s${i}]:\n  - text: x`});s=applyDelta(s,{baseRevision:s.revision,revision:s.revision+1,messages});}
+ assert.throws(()=>changeMessages(s,{snapshot:'- region "Nine" [ref=nine]:\n  - text: x'}),/at most 8 surfaces and this call would leave 9\. Nothing is wrong with your surface: retire 1 stale one\(s\).*trip \("Weekend trip: three cabins"\)/);
+ const ok=changeMessages(s,{snapshot:'- region "Nine" [ref=nine]:\n  - text: x',delete:['s2']});assert.ok(applyDelta(s,{baseRevision:s.revision,revision:s.revision+1,messages:ok.messages}));
+});

@@ -5,7 +5,7 @@
 // from standard A2UI for the renderer. Parsed line by line, not as YAML, so text
 // after `: ` needs no quoting (use \n for a line break, \| for a literal pipe in rows).
 import {EXO_CATALOG} from './exo-catalog.ts';
-import {moduleIds,moduleNodes,moduleData,atPath,type Snapshot} from './workspace.ts';
+import {moduleIds,moduleNodes,moduleData,atPath,MAX_SURFACES,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 
 export const SNAPSHOT_FORMAT=`Exosurface snapshot format — one line per component, modelled on Playwright aria snapshots:
@@ -239,5 +239,9 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
  }
  for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No surface ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
  if(!messages.length)throw Error('Nothing to change: give snapshot, edits or delete');
+ if(existing.size>MAX_SURFACES){
+  const keep=new Set([...drawn,...edited]),stale=[...existing].filter(id=>!keep.has(id)&&current&&moduleIds(current).includes(id));
+  throw Error(`The canvas holds at most ${MAX_SURFACES} surfaces and this call would leave ${existing.size}. Nothing is wrong with your surface: retire ${existing.size-MAX_SURFACES} stale one(s) in the same call with delete: [...], then draw. Current surfaces: ${stale.map(id=>`${id} (${JSON.stringify(surfaceTitle(moduleNodes(current!,id),id))})`).join(', ')}.`);
+ }
  return {messages,drawn,edited,deleted:args.delete??[]};
 }

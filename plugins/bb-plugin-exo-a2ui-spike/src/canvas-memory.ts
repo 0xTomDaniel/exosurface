@@ -2,7 +2,7 @@
 // Deterministic text forms of (1) a canvas update ("what Exo showed"), (2) the
 // current canvas for each request (outline + ids + values) and (3) a button press
 // ("what the person did"). The A2UI JSON stays in native canvas entries only.
-import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,type Snapshot} from './workspace.ts';
+import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,MAX_SURFACES,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 import {surfaceSnapshot} from './snapshot-format.ts';
 const plain=(s:unknown)=>String(s??'').replace(/[*_`#>]/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
@@ -75,7 +75,7 @@ export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponent
  *  in full (refs, current values), shelf surfaces by title. Current state, never history. */
 export function snapshotOutline(s:Snapshot,limit=12000):string{
  const ids=moduleIds(s),focus=s.layout?.focus&&ids.includes(s.layout.focus)?s.layout.focus:ids.at(-1),beside=(s.layout?.beside??[]).filter(id=>ids.includes(id)&&id!==focus);
- const head=`EXOSURFACE revision ${s.revision}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
+ const head=`EXOSURFACE revision ${s.revision}. Surfaces: ${ids.length} of ${MAX_SURFACES}${ids.length>=MAX_SURFACES?' (full: delete a stale surface in the same call before drawing a new one)':''}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
  const full=[...(focus?[focus]:[]),...beside].map(id=>surfaceSnapshot(s,id));
  const shelf=ids.filter(id=>id!==focus&&!beside.includes(id)).map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (shelf)`);
  let body=[...full,...(shelf.length?['Shelf (read_exosurface for a surface in full):',...shelf]:[])].join('\n');
