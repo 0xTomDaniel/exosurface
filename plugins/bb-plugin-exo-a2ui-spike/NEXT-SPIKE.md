@@ -36,6 +36,16 @@ Supersedes the three-arm comparison below. The owner rejected any after-the-fact
 
 **Deferred until use earns them:** historical revision reads, the screenshot tool and render facts. Mobile stays a separate, urgent priority.
 
+## Surfaces as conversation history (owner design, 2026-10-17)
+
+Surfaces work like messages: no limit, every version kept, the past managed by the system.
+
+- **No surface limit; the system manages the past.** The 8-surface cap and the guidance to delete stale surfaces go. The live canvas is only what is in view (stage, beside, a few recent shelf items); the system moves older surfaces out of view automatically, deleting nothing. The agent never does housekeeping and never sees a housekeeping error. It can still reopen or redesign any earlier surface by ref, and `read_exosurface` reads any surface, past or present. `delete` remains only for withdrawing a surface that was wrong. The outline shows stage and beside in full, recent shelf titles, and how many more are in history.
+- **Surface cards in the chat.** Each draw or edit appears in the conversation, where it happened, as a card with the surface title, injected by the plugin into the displayed assistant message (a BB `messageDirective`; display-only, never in the agent's context). The plain tool row is suppressed. **Clicking the card opens that surface on the canvas as it was at that moment** (no expansion), marked as an earlier version, with "Back to now".
+- **Editing an earlier version prepares a bring-back.** Edits to a past version are held as pending, and a card appears with the composer ("Bringing back: <title> (<time>) ✕", via BB's composer banner slot; BB offers banners above the input, not attachment chips inside it). When the person sends a message or presses a button on that surface, code first restores the surface with their edits as the current version on stage; the agent's turn then carries a labelled line ("Tom brought back <surface> (<time> version) and changed: …"). ✕ cancels.
+- **Context unchanged:** cards and rewinding are UI only; the agent's history already holds its calls verbatim.
+- **Risk:** the BB slots used (`messageDirective`, composer banners, tool presentation) are experimental; if they change, the chat falls back to BB's plain display with nothing lost. Main gets this when the two plugins merge at graduation.
+
 ## Earlier minimum spike (superseded)
 
 Kept for the record: a three-arm comparison of summaries, verbatim A2UI with a receipt, and summaries with minimal edits. Superseded because the owner ruled out rewriting the agent's messages and the snapshot format above replaces verbatim A2UI.
