@@ -38,9 +38,9 @@ export const SURFACE_SNIPPET='Draw, edit or retire surfaces on the Exosurface ca
 export const SURFACE_DESCRIPTION=`Change the Exosurface canvas. JSON order: baseRevision FIRST (the revision in the canvas outline, 0 if empty), then any of:
 - snapshot: complete surfaces in the snapshot format below, to draw a new surface or redesign one (same region ref replaces it; the person's input values are kept where your line leaves them empty). The person watches it fill in line by line, so write top-down in reading order.
 - edits: [{surface, ref, op, lines}] small changes by ref, without redrawing: op "replace" (the line with that ref and its children → lines), "insertAfter" (lines become following siblings), "insertInto" (lines become last children), "remove" (no lines). lines use the same format, indented from zero.
-- delete: [surface refs] to retire surfaces.
+- delete: [surface refs] only to withdraw a surface that was wrong. Never needed for tidying: the system moves older surfaces into history automatically, and editing or redrawing a ref from history brings it back.
 - focus: a surface ref to put on stage (default: the surface you last drew; edits and deletes leave the stage alone); beside: ≤2 supporting surface refs.
-Up to ${MAX_SURFACES} surfaces. The successful result commits revision+1.
+The successful result commits revision+1.
 
 ${SNAPSHOT_FORMAT}`;
 export const SURFACE_GUIDELINES=[

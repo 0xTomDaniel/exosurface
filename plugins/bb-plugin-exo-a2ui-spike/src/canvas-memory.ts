@@ -2,7 +2,7 @@
 // Deterministic text forms of (1) a canvas update ("what Exo showed"), (2) the
 // current canvas for each request (outline + ids + values) and (3) a button press
 // ("what the person did"). The A2UI JSON stays in native canvas entries only.
-import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,MAX_SURFACES,type Snapshot} from './workspace.ts';
+import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 import {surfaceSnapshot} from './snapshot-format.ts';
 const plain=(s:unknown)=>String(s??'').replace(/[*_`#>]/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
@@ -73,13 +73,16 @@ export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponent
 
 /** Per-request current canvas in the snapshot format the agent writes: stage and beside surfaces
  *  in full (refs, current values), shelf surfaces by title. Current state, never history. */
-export function snapshotOutline(s:Snapshot,limit=12000):string{
+export type Earlier={count:number;recent:{surface:string;title:string}[]};
+export function snapshotOutline(s:Snapshot,earlier:Earlier={count:0,recent:[]},limit=12000):string{
  const ids=moduleIds(s),focus=s.layout?.focus&&ids.includes(s.layout.focus)?s.layout.focus:ids.at(-1),beside=(s.layout?.beside??[]).filter(id=>ids.includes(id)&&id!==focus);
- const head=`EXOSURFACE revision ${s.revision}. Surfaces: ${ids.length} of ${MAX_SURFACES}${ids.length>=MAX_SURFACES?' (full: delete a stale surface in the same call before drawing a new one)':''}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
+ const head=`EXOSURFACE revision ${s.revision}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
  const full=[...(focus?[focus]:[]),...beside].map(id=>surfaceSnapshot(s,id));
  const shelf=ids.filter(id=>id!==focus&&!beside.includes(id)).map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (shelf)`);
- let body=[...full,...(shelf.length?['Shelf (read_exosurface for a surface in full):',...shelf]:[])].join('\n');
- if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[])].join('\n');
+ const past=earlier.recent.map(e=>`- region ${JSON.stringify(e.title)} [ref=${e.surface}]   (history)`);
+ const history=earlier.count?[`Earlier in this conversation (${earlier.count}; kept by the system, nothing to manage; read_exosurface shows one, and editing or redrawing its ref brings it back):`,...past,...(earlier.count>past.length?[`…and ${earlier.count-past.length} more`]:[])]:[];
+ let body=[...full,...(shelf.length?['Shelf (read_exosurface for a surface in full):',...shelf]:[]),...history].join('\n');
+ if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[]),...history].join('\n');
  return `${head}\n${cut(body,limit)}`;
 }
 /** The person's canvas edits since the agent's last turn, as snapshot-style lines. */

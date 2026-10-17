@@ -53,7 +53,14 @@ function event(s: Session, e: any) {
   if (e.type === 'tool_execution_start') {
     open(s); emit(s, [{ kind: 'item.open', key: { providerItemId: e.toolCallId }, item: { type: 'tool', tool: e.toolName, args: e.args } }]);
   }
-  if (e.type === 'tool_execution_end') emit(s, [{ kind: 'item.close', key: { providerItemId: e.toolCallId }, status: e.isError ? 'failed' : 'completed', item: { type: 'tool', tool: e.toolName, result: text(e.result?.content) } }]);
+  if (e.type === 'tool_execution_end' && e.toolName === 'update_exosurface') {
+    // Surfaces are conversation history: a successful draw or edit shows as a clickable surface card where it
+    // happened (display-only; never in Exo's context) and the plain tool row is hidden. Failures stay visible.
+    const ok = !e.isError, cards = ok && Array.isArray(e.result?.details?.cards) ? e.result.details.cards : [];
+    emit(s, [{ kind: 'item.close', key: { providerItemId: e.toolCallId }, status: ok ? 'completed' : 'failed', item: { type: 'tool', tool: e.toolName, result: text(e.result?.content) },
+      presentation: { icon: { glyph: 'PanelsTopLeft' }, label: { pending: 'Updating the canvas', completed: ok ? 'Updated the canvas' : 'Canvas update failed' }, suppress: ok && cards.length > 0 } }]);
+    for (const c of cards) if (/^[a-zA-Z0-9_-]{1,80}$/.test(c.surface) && Number.isInteger(c.revision)) message(s, `::exo-surface{surface="${c.surface}" revision="${c.revision}" action="${c.action === 'edited' ? 'edited' : 'drew'}"}`);
+  } else if (e.type === 'tool_execution_end') emit(s, [{ kind: 'item.close', key: { providerItemId: e.toolCallId }, status: e.isError ? 'failed' : 'completed', item: { type: 'tool', tool: e.toolName, result: text(e.result?.content) } }]);
   if (e.type === 'message_end' && e.message.role === 'custom' && e.message.display) message(s, `[OptChat report]\n${text(e.message.content)}`);
   if (e.type === 'agent_settled') { audit(s, 'bb-settle'); settle(s, e.aborted ? 'interrupted' : s.failed ? 'failed' : 'completed'); }
   // agent_end intentionally does NOT settle BB: Pi 1.1 may continue.
