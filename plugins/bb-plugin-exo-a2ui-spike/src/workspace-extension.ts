@@ -9,6 +9,8 @@ import {CATALOG,PUBLICATION,UPDATE,RESET,COMPONENTS,moduleIds,latestSnapshot,val
 import {StreamFrames,SnapshotStream} from './stream-frames.ts';
 import {changeMessages,surfaceSnapshot,type Edit} from './snapshot-format.ts';
 import {describeEdits} from './canvas-memory.ts';
+import {versionsOf,replayHistory,archived,versionAt,versionSnapshot,retirement,type Version,type Action} from './canvas-history.ts';
+import {writeFileSync,renameSync} from 'node:fs';
 import {PRESENTATION_GUIDE_SNAPSHOT} from './presentation-guide.ts';
 import {describeDelta} from './canvas-memory.ts';
 import {reduceCanvas,foldCanvas} from './canvas-doc.ts';
@@ -24,7 +26,13 @@ import {DocumentObserverTurn as ObserverTurn} from '../observer/document-turn.ts
 export const OMITTED='Canvas JSON kept out of conversation history; this call was applied. Always send complete A2UI messages in new calls.';
 export default function workspace(pi:ExtensionAPI){
  if(process.env.EXO_A2UI_SPIKE!=='1'||process.env.OPTCHAT_HOME!==CANONICAL_HOME||!existsSync(join(HOME,'clone.json')))throw Error('Workspace extension requires explicitly cloned home; never main');
- let current:Snapshot|null=null,epoch=randomUUID(),updates:Delta[]=[];
+ let current:Snapshot|null=null,epoch=randomUUID(),updates:Delta[]=[],versions:Version[]=[];
+ // Every surface version, derived from the native session; read by the BB server for chat cards and rewinds.
+ const historyFile=join(HOME,'workspace','history.jsonl');
+ const writeHistory=()=>{mkdirSync(join(HOME,'workspace'),{recursive:true,mode:0o700});writeFileSync(historyFile+'.tmp',versions.map(v=>JSON.stringify(v)).join('\n')+(versions.length?'\n':''),{mode:0o600});renameSync(historyFile+'.tmp',historyFile);};
+ const remember=(vs:Version[])=>{if(!vs.length)return;versions.push(...vs);appendFileSync(historyFile,vs.map(v=>JSON.stringify(v)).join('\n')+'\n',{mode:0o600});};
+ const live=()=>current?moduleIds(current):[];
+ const fromHistory=(sid:string)=>{const v=archived(versions,live()).find(x=>x.surface===sid);return v?versionSnapshot(v):null;};
  let offer:Offer|null=null,controller:AbortController|null=null,lastRun:any=null;
  let observerArm:{id:string;route:Route;surfaceId:string}|null=null,observerTurn:ObserverTurn|null=null,observerStatus:ObserverStatus|null=null,observerId:string|null=null;
  const cancelObserver=()=>{observerId=null;observerArm=null;observerTurn?.cancel();observerTurn=null;};
@@ -32,8 +40,8 @@ export default function workspace(pi:ExtensionAPI){
  const previewFile=join(HOME,'workspace','preview.json'),streams=new Map<string,StreamFrames|SnapshotStream>();
  const requireReadPreview=()=>readFileSync(previewFile,'utf8');
  const clearPreview=()=>{rmSync(previewFile,{force:true});streams.clear();};
- const materialize=(ctx:ExtensionContext)=>save(join(HOME,'workspace','latest.json'),{sessionId:ctx.sessionManager.getSessionId(),epoch,workspace:current,updates,presentation:{mode:'direct',activeTools:pi.getActiveTools()},observer:observerStatus?{...observerStatus,armed:!!observerArm,running:!!observerTurn}:null,composition:{configured:!!offer,surfaceId:offer?.surfaceId??null,candidateCount:offer?.candidates.length??0,running:!!controller,lastRun}});
- const restore=(ctx:ExtensionContext)=>{cancelObserver();observerStatus=null;cancelComposition();current=foldCanvas(ctx.sessionManager.getBranch());offer=null;lastRun=null;for(const e of ctx.sessionManager.getBranch()){const m=(e as any).message;if(m?.role==='toolResult'&&m.toolName===OFFER&&!m.isError)offer=validateOffer(m.details.offer);if(e.type==='custom'&&e.customType===OFFER_ENTRY)offer=validateOffer((e.data as any).offer);if(e.type==='custom'&&e.customType===RUN)lastRun=(e.data as any).summary;if(e.type==='custom'&&e.customType===OBS_MODE)observerArm=restoredObserverMode((e.data as any).mode);if(e.type==='custom'&&e.customType===OBS_RUN){observerStatus=(e.data as any).status??null;if(observerStatus&&!['Complete','Disarmed','Live UI enabled — chat normally'].includes(observerStatus.phase)&&!observerStatus.phase.startsWith('Failed'))observerStatus={...observerStatus,phase:'Interrupted — explicitly rearm to continue'};}}epoch=randomUUID();updates=[];clearPreview();materialize(ctx);};
+ const materialize=(ctx:ExtensionContext)=>save(join(HOME,'workspace','latest.json'),{sessionId:ctx.sessionManager.getSessionId(),epoch,workspace:current,earlier:(()=>{const a=archived(versions,live());return {count:a.length,recent:a.slice(0,8).map(v=>({surface:v.surface,title:v.title}))};})(),updates,presentation:{mode:'direct',activeTools:pi.getActiveTools()},observer:observerStatus?{...observerStatus,armed:!!observerArm,running:!!observerTurn}:null,composition:{configured:!!offer,surfaceId:offer?.surfaceId??null,candidateCount:offer?.candidates.length??0,running:!!controller,lastRun}});
+ const restore=(ctx:ExtensionContext)=>{cancelObserver();observerStatus=null;cancelComposition();{const h=replayHistory(ctx.sessionManager.getBranch());current=h.current;versions=h.versions;writeHistory();}offer=null;lastRun=null;for(const e of ctx.sessionManager.getBranch()){const m=(e as any).message;if(m?.role==='toolResult'&&m.toolName===OFFER&&!m.isError)offer=validateOffer(m.details.offer);if(e.type==='custom'&&e.customType===OFFER_ENTRY)offer=validateOffer((e.data as any).offer);if(e.type==='custom'&&e.customType===RUN)lastRun=(e.data as any).summary;if(e.type==='custom'&&e.customType===OBS_MODE)observerArm=restoredObserverMode((e.data as any).mode);if(e.type==='custom'&&e.customType===OBS_RUN){observerStatus=(e.data as any).status??null;if(observerStatus&&!['Complete','Disarmed','Live UI enabled — chat normally'].includes(observerStatus.phase)&&!observerStatus.phase.startsWith('Failed'))observerStatus={...observerStatus,phase:'Interrupted — explicitly rearm to continue'};}}epoch=randomUUID();updates=[];clearPreview();materialize(ctx);};
  const allowed=()=>cloneTools(pi.getAllTools().map(t=>t.name));
  const tools=()=>pi.setActiveTools(allowed());
  pi.on('session_start',(_e,ctx)=>{restore(ctx);tools();materialize(ctx);});
@@ -119,8 +127,10 @@ export default function workspace(pi:ExtensionAPI){
   // The person's canvas edits since Exo's last turn travel with this turn as one labelled message,
   // persisted like anything else said in the conversation (OptChat shows it as "[canvas-edits] …").
   const branch=ctx.sessionManager.getBranch();let since=branch.length-1;while(since>=0&&(branch[since] as any).message?.role!=='assistant')since--;
-  const edits=branch.slice(since+1).filter((x:any)=>x.type==='custom'&&x.customType===COMMIT&&x.data?.source==='canvas-edit').map((x:any)=>x.data.delta);
-  const lines=current&&edits.length?describeEdits(current,edits):[];
+  const recent=branch.slice(since+1).filter((x:any)=>x.type==='custom'&&x.customType===COMMIT);
+  const edits=recent.filter((x:any)=>x.data?.source==='canvas-edit').map((x:any)=>x.data.delta);
+  const backs=recent.filter((x:any)=>x.data?.source==='canvas-restore').flatMap((x:any)=>[`- Brought back ${x.data.surfaceId} ${JSON.stringify(x.data.title)} (the version from ${new Date(x.data.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}); it is on stage now.`,...(x.data.changes??[]).map((c:string)=>'  '+c)]);
+  const lines=[...backs,...(current&&edits.length?describeEdits(current,edits):[])];
   if(lines.length)return {message:{customType:'canvas-edits',display:false,content:`Tom changed the canvas since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
  });
  pi.on('tool_call',e=>!(observerTurn?(observerTurn.status.route==='sidecar'?[]:[UPDATE]):allowed()).includes(e.toolName)?{block:true,reason:'Unrelated/legacy tool outside incremental clone trial'}:undefined);
@@ -157,14 +167,17 @@ export default function workspace(pi:ExtensionAPI){
   execute:async(id,args)=>{
    try{
     if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the canvas is at revision ${current?.revision??0} (see the outline)`);
-    const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits as Edit[]|undefined,delete:args.delete});
+    const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits as Edit[]|undefined,delete:args.delete},fromHistory);
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
     // Drawing moves the stage by default; edits and deletes leave it where it is.
     const layout=args.focus||args.beside?{...(args.focus?{focus:args.focus}:{}),...(args.beside?{beside:args.beside}:{})}:!change.drawn.length&&current?.layout?{...(keep(current.layout.focus?[current.layout.focus]:undefined)?.length?{focus:current.layout.focus}:{}),...(current.layout.beside?{beside:keep(current.layout.beside)}:{})}:undefined;
-    const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages:change.messages,...(layout?{layout}:{})};
+    // The system keeps the live canvas small: older surfaces retire into history (never deleted, never the agent's job).
+    const {messages,retired}=retirement(current,change.messages,layout,[...change.drawn,...change.edited,...(args.focus?[args.focus]:[]),...(args.beside??[])]);
+    const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages,...(layout?{layout}:{})};
     const next=applyDelta(current,delta),focus=next.layout?.focus??moduleIds(next).at(-1);
+    const cards=[...change.drawn.map(surface=>({surface,action:'drew' as Action,revision:next.revision})),...change.edited.map(surface=>({surface,action:'edited' as Action,revision:next.revision}))];
     const said=[change.drawn.length&&`drew ${change.drawn.join(', ')}`,change.edited.length&&`edited ${change.edited.join(', ')}`,change.deleted.length&&`deleted ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
-    return {content:[{type:'text',text:`Canvas revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta}};
+    return {content:[{type:'text',text:`Canvas revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired}};
    }catch(error){
     // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
     const issues=(error as any)?.issues as {path:(string|number)[];message:string}[]|undefined;
@@ -174,7 +187,9 @@ export default function workspace(pi:ExtensionAPI){
  }});
  pi.registerTool({name:SURFACE_READ,label:'Read the Exosurface canvas',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a canvas surface in full (snapshot format).',parameters:Type.Object({surface:Type.Optional(Type.String())}),execute:async(_id,args)=>{
   if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`Empty canvas (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
-  const ids=args.surface?[args.surface]:moduleIds(current);if(args.surface&&!moduleIds(current).includes(args.surface))throw Error(`No surface ${args.surface}; surfaces: ${moduleIds(current).join(', ')}`);
+  if(args.surface&&!moduleIds(current).includes(args.surface)){const old=fromHistory(args.surface);if(!old)throw Error(`No surface ${args.surface} on the canvas or in its history`);
+   return {content:[{type:'text',text:`From history (not on the canvas now; editing or redrawing it brings it back):\n`+surfaceSnapshot(old,args.surface)}],details:{revision:current.revision}};}
+  const ids=args.surface?[args.surface]:moduleIds(current);
   return {content:[{type:'text',text:`Revision ${current.revision}.\n`+ids.map(i=>surfaceSnapshot(current!,i)).join('\n')}],details:{revision:current.revision}};
  }});
  pi.registerTool({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Read the exact committed Exosurface canvas.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
@@ -189,12 +204,30 @@ export default function workspace(pi:ExtensionAPI){
   if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||!r.updates.length||r.updates.length>16)throw Error('Invalid canvas edit');
   const bindings=inputBindings(current,r.surfaceId),messages=r.updates.map((u:any)=>{const n=bindings.get(u.path);if(!n)throw Error('Only offered inputs can be edited');return {version:'v0.9.1',updateDataModel:{surfaceId:r.surfaceId,path:u.path,value:validateInput(n,u.value)}};});
   const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages};const next=reduceCanvas(current,{source:r.source==='press'?'press':'edit',delta,mutationId:r.mutationId});
-  pi.appendEntry(COMMIT,{source:r.source==='press'?'canvas-press':'canvas-edit',mutationId:r.mutationId,delta});current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
+  pi.appendEntry(COMMIT,{source:r.source==='press'?'canvas-press':'canvas-edit',mutationId:r.mutationId,delta});remember(versionsOf(current,next,delta,r.source==='press'?'press':'edit',new Date().toISOString()));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
+ }});
+ // Bring back an earlier surface version (the person edited it or pressed one of its buttons): code commits
+ // it as the current version on stage, with their edits; Exo hears about it with the next turn.
+ pi.registerCommand('workspace-restore',{description:'Bring back an earlier surface version as current (shared state); no model call',handler:async(args,ctx)=>{
+  if(!ctx.isIdle())throw Error('Idle clone required');const r=JSON.parse(args);
+  if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||typeof r.surfaceId!=='string'||!Number.isInteger(r.revision)||!Array.isArray(r.updates)||r.updates.length>16)throw Error('Invalid bring-back');
+  const v=versionAt(versions,r.surfaceId,r.revision);if(!v)throw Error(`No version of ${r.surfaceId} at revision ${r.revision}`);
+  const old=versionSnapshot(v),bindings=inputBindings(old,r.surfaceId);
+  const data=structuredClone(old.messages.find(m=>m.updateDataModel)?.updateDataModel.value??{});
+  for(const u of r.updates){const n=bindings.get(u.path);if(!n)throw Error('Only offered inputs can be edited');const keys=String(u.path).split('/').slice(1);let o:any=data;keys.slice(0,-1).forEach(k=>{o[k]??={};o=o[k];});o[keys.at(-1)!]=validateInput(n,u.value);}
+  const body=old.messages.filter(m=>m.createSurface||m.updateComponents);
+  const msgs=[...(live().includes(r.surfaceId)?[{version:'v0.9.1',deleteSurface:{surfaceId:r.surfaceId}}]:[]),...body,{version:'v0.9.1',updateDataModel:{surfaceId:r.surfaceId,path:'/',value:data}}];
+  const layout={focus:r.surfaceId,...(current?.layout?.beside?{beside:current.layout.beside.filter(b=>b!==r.surfaceId)}:{})};
+  const {messages,retired}=retirement(current,msgs,layout,[r.surfaceId]);
+  const delta:Delta={baseRevision:current?.revision??0,revision:(current?.revision??0)+1,messages,layout};const next=applyDelta(current,delta);
+  const changes=describeEdits(next,r.updates.length?[{messages:r.updates.map((u:any)=>({updateDataModel:{surfaceId:r.surfaceId,path:u.path,value:u.value}}))}]:[]);
+  pi.appendEntry(COMMIT,{source:'canvas-restore',mutationId:r.mutationId,surfaceId:r.surfaceId,fromRevision:v.revision,at:v.at,title:v.title,changes,retired,delta});
+  remember(versionsOf(current,next,delta,'restore',new Date().toISOString(),undefined,retired));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
  }});
  pi.on('message_end',(e,ctx)=>{
   const m=e.message;if(m.role==='assistant'&&m.stopReason==='stop')observerTurn?.sourceComplete();if(m.role!=='toolResult')return;
   if(m.toolName===OFFER&&!m.isError){cancelComposition();offer=validateOffer((m.details as any).offer);materialize(ctx);}
-  else if((m.toolName===UPDATE||m.toolName===SURFACE_UPDATE)&&!m.isError){cancelComposition();const d=(m.details as {delta:Delta}).delta;current=reduceCanvas(current,{source:'agent',delta:d,toolCallId:m.toolCallId});updates.push(d);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);clearPreview();}
+  else if((m.toolName===UPDATE||m.toolName===SURFACE_UPDATE)&&!m.isError){cancelComposition();const d=(m.details as {delta:Delta}).delta,prev=current;current=reduceCanvas(current,{source:'agent',delta:d,toolCallId:m.toolCallId});remember(versionsOf(prev,current,d,'agent',new Date().toISOString(),(m.details as any).cards,(m.details as any).retired??[]));updates.push(d);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);clearPreview();}
   else if(m.toolName===PUBLICATION&&!m.isError){current=validateSnapshot((m.details as {workspace:Snapshot}).workspace);epoch=randomUUID();updates=[];clearPreview();materialize(ctx);}
   else if(m.toolName===UPDATE||m.toolName===SURFACE_UPDATE)clearPreview();
  });

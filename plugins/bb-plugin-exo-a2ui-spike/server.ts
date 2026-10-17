@@ -1,11 +1,12 @@
 import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { existsSync, watch } from 'node:fs';
+import { existsSync, watch, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, load, CANONICAL_MODEL, binding } from './src/state.ts';
 import { CATALOG, actionSchema, validateAction, validateSnapshot, deltaSchema } from './src/workspace.ts';
 import { describePress, boundUpdates } from './src/canvas-memory.ts';
-import { canvasDataViaOwner } from './src/canvas-client.ts';
+import { canvasDataViaOwner, restoreViaOwner } from './src/canvas-client.ts';
+import { versionAt, versionSnapshot, type Version } from './src/canvas-history.ts';
 import { randomUUID } from 'node:crypto';
 import {cursorSchema,previewSchema,deliverySchema,delivery,type Delivery} from './src/delivery.ts';
 import {composeViaOwner} from './composition/client.ts';
@@ -14,12 +15,21 @@ const observerSchema=z.object({id:z.string(),route:z.enum(['sidecar','direct']),
 const compositionSchema=z.object({configured:z.boolean(),surfaceId:z.string().nullable(),candidateCount:z.number(),running:z.boolean(),lastRun:z.object({id:z.string(),mode:z.string(),status:z.string(),elapsedMs:z.number().optional(),calls:z.number().optional(),costUsd:z.number().nullable().optional()}).nullable()});
 const statusSchema=z.object({threadId:z.string().nullable(),ready:z.boolean(),streaming:z.boolean(),revision:z.number(),delivery:deliverySchema,composition:compositionSchema,observer:observerSchema.nullable()});
 const eventSchema=z.object({version:z.literal('v0.9.1'),action:actionSchema}).strict();
+const versionRef=z.object({surface:z.string().max(80),revision:z.number().int().nonnegative()}).strict();
+const pendingSchema=z.object({threadId:z.string(),surface:z.string(),revision:z.number().int(),title:z.string(),at:z.string(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16)}).strict();
+// Surface versions, written by the clone extension from the native session (derived, rebuildable).
+const history=():Version[]=>{const f=join(HOME,'workspace/history.jsonl');return existsSync(f)?readFileSync(f,'utf8').split('\n').filter(Boolean).map(l=>JSON.parse(l)):[];};
+// A pending bring-back: the person edited an earlier surface version; committed with their next message or press.
+const pendingFile=join(HOME,'workspace/pending-restore.json');
+const readPending=():z.infer<typeof pendingSchema>|null=>{try{return existsSync(pendingFile)?pendingSchema.parse(JSON.parse(readFileSync(pendingFile,'utf8'))):null;}catch{return null;}};
 export const rpcContract=defineRpcContract({
   workspace:{input:cursorSchema.nullable(),output:statusSchema},
   compose:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),mode:z.enum(['jev','haiku','haiku-both']),prompt:z.string().min(1).max(1600),resumeRunId:z.string().uuid().optional()}).strict(),output:z.object({completed:z.boolean()})},
   observerArm:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),route:z.enum(['sidecar','direct','off'])}).strict(),output:z.object({armed:z.boolean()})},
   edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(80),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).min(1).max(16),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
-  action:{input:z.object({threadId:z.string(),revision:z.number().int(),event:eventSchema,actionId:z.string().uuid(),metadata:z.object({a2uiClientCapabilities:z.object({'v0.9.1':z.object({supportedCatalogIds:z.array(z.string())})})})}),output:z.object({accepted:z.boolean()})},
+  surfaceAt:{input:z.object({threadId:z.string()}).merge(versionRef).strict(),output:z.object({surface:z.string(),revision:z.number(),title:z.string(),at:z.string(),action:z.string(),current:z.boolean(),snapshot:z.any()})},
+  pending:{input:z.object({threadId:z.string(),op:z.enum(['get','set','clear']),version:versionRef.optional(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16).optional()}).strict(),output:pendingSchema.nullable()},
+  action:{input:z.object({threadId:z.string(),revision:z.number().int(),rewind:versionRef.optional(),event:eventSchema,actionId:z.string().uuid(),metadata:z.object({a2uiClientCapabilities:z.object({'v0.9.1':z.object({supportedCatalogIds:z.array(z.string())})})})}),output:z.object({accepted:z.boolean()})},
 });
 export default function plugin(bb:BbPluginApi){
   bb.providers.register({id:'exo-a2ui-spike',displayName:'Exosurface — cloned Exo',icon:'PanelsTopLeft',family:'exo-a2ui',
@@ -53,11 +63,31 @@ export default function plugin(bb:BbPluginApi){
     try{await new Promise<void>((resolve,reject)=>{abort=resolve;w.on('error',reject);o.on('error',reject);signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});}
     finally{clearTimeout(timer);signal.removeEventListener('abort',abort);w.close();o.close();}
   }});
+  // The person's next message carries a pending bring-back: code commits it before Exo's turn starts.
+  bb.experimental_hooks.on('message.dispatch',async ctx=>{
+    const p=readPending();if(!p||ctx.thread.id!==p.threadId||ctx.attempt!=='start-turn')return {action:'proceed'};
+    try{await restoreViaOwner(p.threadId,{surfaceId:p.surface,revision:p.revision,updates:p.updates,mutationId:randomUUID()});rmSync(pendingFile,{force:true});bb.realtime.publish('pending-restore',null);}
+    catch(e){bb.log?.warn?.(`bring-back before dispatch failed: ${String(e)}`);}
+    return {action:'proceed'};
+  });
   // Process-local admission/deduplication only, not durable exactly-once effects.
   const admitted=new Map<string,Promise<{accepted:boolean}>>();
   let claimedRevision:number|null=null;
   bb.rpc.register(rpcContract,{
     workspace:async cursor=>envelope(status(),cursor),
+    surfaceAt:async({threadId,surface,revision})=>{
+      const st=status();if(threadId!==st.threadId)throw Error('Wrong clone thread');const all=history(),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${revision}`);
+      // Current = this is the surface's latest version and it is on the live canvas (no rewind needed, just focus it).
+      const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((m:any)=>m.createSurface?.surfaceId===surface);
+      return {surface,revision:v.revision,title:v.title,at:v.at,action:v.action,current:live&&!later,snapshot:versionSnapshot(v)};
+    },
+    pending:async({threadId,op,version,updates})=>{
+      if(threadId!==status().threadId)throw Error('Wrong clone thread');
+      if(op==='clear'){rmSync(pendingFile,{force:true});bb.realtime.publish('pending-restore',null);return null;}
+      if(op==='set'){if(!version)throw Error('version required');const v=versionAt(history(),version.surface,version.revision);if(!v)throw Error('Unknown version');
+        const next={threadId,surface:version.surface,revision:v.revision,title:v.title,at:v.at,updates:updates??[]};writeFileSync(pendingFile,JSON.stringify(next),{mode:0o600});bb.realtime.publish('pending-restore',next);return next;}
+      return readPending();
+    },
     observerArm:async({threadId,...request})=>{const s=status();if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||request.baseRevision!==s.revision)throw Error('Idle clone and current revision required');await armViaOwner(threadId,request);return{armed:status().observer?.armed??false};},
     compose:async({threadId,...request})=>{
       const s=status();if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.composition.configured||request.baseRevision!==s.revision)throw Error('Idle configured clone and current revision required');
@@ -67,12 +97,16 @@ export default function plugin(bb:BbPluginApi){
       const s=status();if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.workspace)throw Error('busy');
       await canvasDataViaOwner(threadId,{...request,source:'edit'});return {revision:status().revision};
     },
-    action:async({threadId,revision,event,actionId,metadata})=>{
+    action:async({threadId,revision:asked,rewind,event,actionId,metadata})=>{let revision=asked;
       const pending=admitted.get(actionId);if(pending)return pending;
       const work=(async()=>{
-        const s=status();if(threadId!==s.threadId || !s.ready || s.streaming || !s.workspace)throw new Error('Clone idle workspace required');
+        let s=status();if(threadId!==s.threadId || !s.ready || s.streaming || !s.workspace)throw new Error('Clone idle workspace required');
         const thread=await bb.sdk.threads.get({threadId});if(thread.providerId!=='exo-a2ui-spike'||binding(threadId)?.runtimeKind!=='canonical')throw new Error('Wrong clone thread');
         if(s.preview)throw Error('Provisional UI cannot submit actions');
+        // A press on an earlier surface version brings it back first (with any pending edits), then counts as a normal press.
+        if(rewind){const p=readPending(),same=p&&p.surface===rewind.surface&&p.revision===rewind.revision;
+          await restoreViaOwner(threadId,{surfaceId:rewind.surface,revision:rewind.revision,updates:same?p!.updates:[],mutationId:randomUUID()});
+          rmSync(pendingFile,{force:true});bb.realtime.publish('pending-restore',null);s=status();revision=s.revision;if(!s.workspace)throw Error('Bring-back failed');}
         if(!metadata.a2uiClientCapabilities['v0.9.1'].supportedCatalogIds.includes(CATALOG))throw Error('Catalog capability mismatch');
         const a=validateAction(s.workspace,revision,event.action);
         const fresh=status();if(fresh.revision!==revision||fresh.streaming||claimedRevision===revision)throw new Error('Workspace action already pending or stale');

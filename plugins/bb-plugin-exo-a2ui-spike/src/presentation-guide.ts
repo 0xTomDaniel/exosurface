@@ -23,6 +23,7 @@ export const EXO_VOCABULARY=`Exo components (only in '${EXO_CATALOG}' surfaces; 
 // The same guide for the snapshot-format tools: component names map to snapshot roles,
 // the stage is derived (no layout JSON), and there are no catalogs to choose.
 export const PRESENTATION_GUIDE_SNAPSHOT=PRESENTATION_GUIDE
+ .replace('Delete surfaces that are stale or superseded; do not let the canvas accumulate.','The system keeps the canvas tidy: earlier surfaces move into the conversation\'s history on their own (nothing is lost, and you never manage them); you can bring any of them back by its ref.')
  .replace(/\nCATALOGS\.[\s\S]*$/,'')
  .replace('layout.focus names the stage surface; by default it becomes','The stage is')
  .replace(/ Optional layout\.beside:[^.]*\./,' Optional beside: at most 2 small surfaces of supporting context next to the stage.')

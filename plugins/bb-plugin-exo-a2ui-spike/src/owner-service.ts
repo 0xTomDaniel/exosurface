@@ -96,6 +96,13 @@ const server = createServer(socket => {
             if(m.threadId!==primary||streaming||composing||JSON.stringify(m.request).length>500)throw Error('Idle exact-source clone replay required');
             composing=true;state();try{await pi.send('prompt',{message:'/workspace-observer-replay '+JSON.stringify(m.request)});write(socket,{kind:'response',id:m.id,ok:true,data:{}});}finally{composing=false;state();}return;
           }
+          if(m.type==='canvas-restore'){
+            // Bring back an earlier surface version: idle-only commit by code; no model call, no attachment.
+            const rev=()=>load(join(HOME,'workspace/latest.json')).workspace?.revision??0;
+            if(m.threadId!==primary||streaming||composing||JSON.stringify(m.request).length>12000)throw Error('Idle clone bring-back required');
+            const before=rev();await pi.send('prompt',{message:'/workspace-restore '+JSON.stringify(m.request)});
+            const after=rev();write(socket,after===before+1?{kind:'response',id:m.id,ok:true,data:{revision:after}}:{kind:'response',id:m.id,ok:false,error:`not_applied ${after}`});return;
+          }
           if(m.type==='canvas-data'){
             // Shared canvas state: idle-only, revision-checked commit by code; no model call, no attachment.
             const rev=()=>load(join(HOME,'workspace/latest.json')).workspace?.revision;

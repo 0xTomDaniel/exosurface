@@ -5,7 +5,7 @@
 // from standard A2UI for the renderer. Parsed line by line, not as YAML, so text
 // after `: ` needs no quoting (use \n for a line break, \| for a literal pipe in rows).
 import {EXO_CATALOG} from './exo-catalog.ts';
-import {moduleIds,moduleNodes,moduleData,atPath,MAX_SURFACES,type Snapshot} from './workspace.ts';
+import {moduleIds,moduleNodes,moduleData,atPath,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 
 export const SNAPSHOT_FORMAT=`Exosurface snapshot format — one line per component, modelled on Playwright aria snapshots:
@@ -220,7 +220,7 @@ export function applyEdits(region:Line,edits:Edit[]):Line{
 const isDefault=(v:unknown)=>v===''||v===false||(Array.isArray(v)&&!v.length)||v===undefined;
 /** Messages that (re)draw surfaces, apply edits and delete surfaces against the committed canvas.
  *  A redrawn surface keeps the person's input values by component id when the new line leaves them at default. */
-export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edits?:Edit[];delete?:string[]}){
+export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edits?:Edit[];delete?:string[]},history?:(surface:string)=>Snapshot|null){
  const existing=new Set(current?moduleIds(current):[]),messages:any[]=[],drawn:string[]=[],edited:string[]=[];
  const replace=(b:Built)=>{
   let data=b.data;
@@ -234,14 +234,12 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
  for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw Error(`Surface ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
  const bySurface=new Map<string,Edit[]>();for(const e of args.edits??[])bySurface.set(e.surface,[...(bySurface.get(e.surface)??[]),e]);
  for(const [sid,edits] of bySurface){
-  if(!current||!moduleIds(current).includes(sid))throw Error(`No surface ${sid} to edit`);if(drawn.includes(sid))throw Error(`Surface ${sid} is both redrawn and edited; do one`);
-  const region=applyEdits(surfaceLines(current,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a surface ref');replace(buildSurface(region));edited.push(sid);
+  // A surface from history is reopened by editing it: it comes back as the current version.
+  const source=current&&moduleIds(current).includes(sid)?current:history?.(sid)??null;
+  if(!source)throw Error(`No surface ${sid} on the canvas or in its history`);if(drawn.includes(sid))throw Error(`Surface ${sid} is both redrawn and edited; do one`);
+  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a surface ref');replace(buildSurface(region));edited.push(sid);
  }
  for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No surface ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
  if(!messages.length)throw Error('Nothing to change: give snapshot, edits or delete');
- if(existing.size>MAX_SURFACES){
-  const keep=new Set([...drawn,...edited]),stale=[...existing].filter(id=>!keep.has(id)&&current&&moduleIds(current).includes(id));
-  throw Error(`The canvas holds at most ${MAX_SURFACES} surfaces and this call would leave ${existing.size}. Nothing is wrong with your surface: retire ${existing.size-MAX_SURFACES} stale one(s) in the same call with delete: [...], then draw. Current surfaces: ${stale.map(id=>`${id} (${JSON.stringify(surfaceTitle(moduleNodes(current!,id),id))})`).join(', ')}.`);
- }
  return {messages,drawn,edited,deleted:args.delete??[]};
 }
