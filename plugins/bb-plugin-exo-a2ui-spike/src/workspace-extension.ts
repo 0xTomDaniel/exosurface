@@ -165,7 +165,12 @@ export default function workspace(pi:ExtensionAPI){
     const next=applyDelta(current,delta),focus=next.layout?.focus??moduleIds(next).at(-1);
     const said=[change.drawn.length&&`drew ${change.drawn.join(', ')}`,change.edited.length&&`edited ${change.edited.join(', ')}`,change.deleted.length&&`deleted ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
     return {content:[{type:'text',text:`Canvas revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta}};
-   }catch(error){pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:String(error)});throw error;}
+   }catch(error){
+    // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
+    const issues=(error as any)?.issues as {path:(string|number)[];message:string}[]|undefined;
+    const said=issues?`Canvas rejected: ${issues.slice(0,3).map(i=>`${i.path.join('.')||'canvas'}: ${i.message}`).join('; ')}`:String((error as Error)?.message??error);
+    pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:said});throw Error(said);
+   }
  }});
  pi.registerTool({name:SURFACE_READ,label:'Read the Exosurface canvas',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a canvas surface in full (snapshot format).',parameters:Type.Object({surface:Type.Optional(Type.String())}),execute:async(_id,args)=>{
   if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`Empty canvas (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
