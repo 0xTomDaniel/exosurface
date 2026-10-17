@@ -35,5 +35,11 @@ const gates={
  rereads:{pass:rereads===0,count:rereads,note:'target zero: edits by ref work from the outline'},
  concise:{pass:replies.canvasTurns>=10&&replies.medianReplyWordsWithCanvas<=80&&replies.medianOverlapWithCanvas<=0.25&&replies.metaMentions===0,canvasTurns:replies.canvasTurns,medianWords:replies.medianReplyWordsWithCanvas,medianOverlap:replies.medianOverlapWithCanvas,metaMentions:replies.metaMentions,needsTurns:Math.max(0,10-replies.canvasTurns)},
 };
+// Append-only: every byte already in the native session must stay identical. Compared with the prefix recorded last run.
+import('node:crypto');const {createHash}=await import('node:crypto');
+const journalBytes=readFileSync(owner.sessionFile),mark=`evidence/presentation/journal-prefix.json`,prev=existsSync(mark)?JSON.parse(readFileSync(mark,'utf8')):null;
+const prefixSha=n=>createHash('sha256').update(journalBytes.subarray(0,n)).digest('hex');
+gates.appendOnlyHistory={pass:!prev||(journalBytes.length>=prev.size&&prefixSha(prev.size)===prev.sha),checkedBytes:prev?.size??0,nowBytes:journalBytes.length};
+if(gates.appendOnlyHistory.pass)writeFileSync(mark,JSON.stringify({size:journalBytes.length,sha:prefixSha(journalBytes.length),at:new Date().toISOString()}));
 const out={since,label,checkedAt:new Date().toISOString(),allPass:Object.values(gates).every(g=>g.pass),gates,ownerHappy:'Tom decides; not measurable here'};
 writeFileSync(`evidence/presentation/gates-${label}.json`,JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));

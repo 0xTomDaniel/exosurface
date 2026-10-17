@@ -27,7 +27,7 @@ export const rpcContract=defineRpcContract({
   compose:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),mode:z.enum(['jev','haiku','haiku-both']),prompt:z.string().min(1).max(1600),resumeRunId:z.string().uuid().optional()}).strict(),output:z.object({completed:z.boolean()})},
   observerArm:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),route:z.enum(['sidecar','direct','off'])}).strict(),output:z.object({armed:z.boolean()})},
   edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(80),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).min(1).max(16),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
-  surfaceAt:{input:z.object({threadId:z.string()}).merge(versionRef).strict(),output:z.object({surface:z.string(),revision:z.number(),title:z.string(),at:z.string(),action:z.string(),current:z.boolean(),snapshot:z.any()})},
+  surfaceAt:{input:z.object({threadId:z.string()}).merge(versionRef).strict(),output:z.object({surface:z.string(),revision:z.number(),title:z.string(),at:z.string(),action:z.string(),current:z.boolean(),onStage:z.boolean(),snapshot:z.any()})},
   pending:{input:z.object({threadId:z.string(),op:z.enum(['get','set','clear']),version:versionRef.optional(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16).optional()}).strict(),output:pendingSchema.nullable()},
   action:{input:z.object({threadId:z.string(),revision:z.number().int(),rewind:versionRef.optional(),event:eventSchema,actionId:z.string().uuid(),metadata:z.object({a2uiClientCapabilities:z.object({'v0.9.1':z.object({supportedCatalogIds:z.array(z.string())})})})}),output:z.object({accepted:z.boolean()})},
 });
@@ -75,7 +75,8 @@ export default function plugin(bb:BbPluginApi){
       const m=SURFACE_ITEM.exec(itemId);if(!m)return {context:''};const surface=m[1],revision=Number(m[2]),st=status(),all=history(),v=versionAt(all,surface,revision);if(!v||!st.threadId)return {context:''};
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((x:any)=>x.createSurface?.surfaceId===surface),p=readPending(),same=!!p&&p.surface===surface&&p.revision===v.revision;
       const stamp=new Date(v.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      if(live&&!later&&!same)return {context:`[canvas] Tom is pointing at the surface ${surface} ${JSON.stringify(v.title)} (current version, revision ${v.revision}).`};
+      const ids=(st.workspace?.messages??[]).flatMap((x:any)=>x.createSurface?[x.createSurface.surfaceId]:[]),stage=st.workspace?.layout?.focus&&ids.includes(st.workspace.layout.focus)?st.workspace.layout.focus:ids.at(-1);
+      if(live&&!later&&stage===surface&&!same)return {context:`[canvas] Tom is pointing at the surface ${surface} ${JSON.stringify(v.title)} (on stage, current version).`};
       try{await restoreViaOwner(st.threadId,{surfaceId:surface,revision:v.revision,updates:same?p!.updates:[],mutationId:randomUUID(),announced:true});rmSync(pendingFile,{force:true});bb.realtime.publish('pending-restore',null);}
       catch(e){bb.log?.warn?.(`bring-back at send failed, retrying at turn start: ${String(e)}`);if(!same){writeFileSync(pendingFile,JSON.stringify({threadId:st.threadId,surface,revision:v.revision,title:v.title,at:v.at,updates:[]}),{mode:0o600});}
         return {context:`[canvas] Tom is bringing back the surface ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}); it will be on stage as the current version when your turn starts.`};}
@@ -99,7 +100,9 @@ export default function plugin(bb:BbPluginApi){
       const st=status();if(threadId!==st.threadId)throw Error('Wrong clone thread');const all=history(),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${revision}`);
       // Current = this is the surface's latest version and it is on the live canvas (no rewind needed, just focus it).
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((m:any)=>m.createSurface?.surfaceId===surface);
-      return {surface,revision:v.revision,title:v.title,at:v.at,action:v.action,current:live&&!later,snapshot:versionSnapshot(v)};
+      // On stage = the surface the conversation is on now (layout focus, else the last drawn): only its latest card just loads it.
+      const ids=(st.workspace?.messages??[]).flatMap((m:any)=>m.createSurface?[m.createSurface.surfaceId]:[]),stage=st.workspace?.layout?.focus&&ids.includes(st.workspace.layout.focus)?st.workspace.layout.focus:ids.at(-1);
+      return {surface,revision:v.revision,title:v.title,at:v.at,action:v.action,current:live&&!later,onStage:live&&!later&&stage===surface,snapshot:versionSnapshot(v)};
     },
     pending:async({threadId,op,version,updates})=>{
       if(threadId!==status().threadId)throw Error('Wrong clone thread');
