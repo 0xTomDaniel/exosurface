@@ -31,12 +31,12 @@ test('A press reads as the person speaking, with labels; only changed bound valu
  assert.deepEqual(boundUpdates(s,{...action,context:{tf:[],run:false,fixed:'',kind:'literal'}}),[],'unchanged values are not re-committed');
 });
 test('Canvas document: one reducer for every change, fold equals replay, section equals outline (pi-durable shape)',async()=>{
- const{CANVAS_DOC,reduceCanvas,foldCanvas,canvasSection}=await import('../src/canvas-doc.ts');const{outlineCanvas}=await import('../src/canvas-memory.ts');
+ const{CANVAS_DOC,reduceCanvas,foldCanvas,canvasSection}=await import('../src/canvas-doc.ts');const{snapshotOutline}=await import('../src/canvas-memory.ts');
  assert.deepEqual({kind:CANVAS_DOC.kind,version:CANVAS_DOC.version,scope:CANVAS_DOC.scope,fork:CANVAS_DOC.fork},{kind:'exosurface.canvas',version:1,scope:'conversation',fork:'current'});
  assert.equal(CANVAS_DOC.initial(),null);assert.equal(canvasSection(null),null);
  const d1={baseRevision:0,revision:1,messages:s.messages,layout:{focus:'tomorrow'}},d2={baseRevision:1,revision:2,messages:[{version:V,updateDataModel:{surfaceId:'tomorrow',path:'/run',value:true}}]};
  const a=reduceCanvas(null,{source:'agent',delta:d1}),b=reduceCanvas(a,{source:'edit',delta:d2,mutationId:'m'});
  const branch=[{type:'message',message:{role:'toolResult',toolName:'apply_workspace',isError:false,details:{delta:d1}}},{type:'custom',customType:'exosurface-composition-commit',data:{source:'canvas-edit',delta:d2}}];
  assert.deepEqual(foldCanvas(branch),b,'reading the document = replaying its commits');
- assert.equal(canvasSection(b),outlineCanvas(b));assert.throws(()=>reduceCanvas(b,{source:'edit',delta:d2,mutationId:'m'}),/Stale/);
+ assert.equal(canvasSection(b),snapshotOutline(b));assert.throws(()=>reduceCanvas(b,{source:'edit',delta:d2,mutationId:'m'}),/Stale/);
 });

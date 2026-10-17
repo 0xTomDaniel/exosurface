@@ -16,10 +16,10 @@
 //
 // Keep this module free of Pi APIs so the reducer, fold and section move unchanged.
 import {applyDelta,latestSnapshot,type Snapshot,type Delta} from './workspace.ts';
-import {outlineCanvas} from './canvas-memory.ts';
+import {snapshotOutline} from './canvas-memory.ts';
 export const CANVAS_DOC={kind:'exosurface.canvas',version:1,scope:'conversation',history:'latest',fork:'current',initial:():CanvasValue=>null} as const;
 export type CanvasValue=Snapshot|null;
-/** Who changed the canvas and how. `agent` = an apply_workspace call; `edit` = the person typing (no turn);
+/** Who changed the canvas and how. `agent` = an update_exosurface (or legacy apply_workspace) call; `edit` = the person typing (no turn);
  *  `press` = values a button submitted, committed by code before Exo's turn; `reset` = cleared. */
 export type CanvasChange=
  |{source:'agent';delta:Delta;toolCallId?:string}
@@ -34,4 +34,4 @@ export function reduceCanvas(value:CanvasValue,change:CanvasChange):Snapshot{
  *  every historical encoding (legacy checkpoints, tool deltas, commit entries, resets). */
 export const foldCanvas=(branch:readonly any[]):CanvasValue=>latestSnapshot(branch);
 /** What the model sees of the canvas each request (pi-durable: a prompt section reading the doc). */
-export const canvasSection=(value:CanvasValue)=>value?outlineCanvas(value):null;
+export const canvasSection=(value:CanvasValue)=>value?snapshotOutline(value):null;

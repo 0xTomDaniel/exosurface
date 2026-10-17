@@ -5,7 +5,7 @@ import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 import {z} from 'zod';
 import {EXO_CATALOG,EXO_COMPONENTS,exoApiCatalog,checkExoComponent} from './exo-catalog.ts';
 import {nextLayout} from './stage.ts';
-export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='apply_workspace', RESET='exosurface-workspace-reset';
+export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='apply_workspace', SURFACE_UPDATE_TOOL='update_exosurface', RESET='exosurface-workspace-reset';
 // Basic catalog remains valid for existing surfaces; new surfaces use the Exo superset.
 export const CATALOGS=[CATALOG,EXO_CATALOG];
 export const MAX_BYTES=40*1024, MAX_SURFACES=8;
@@ -129,7 +129,7 @@ export function latestSnapshot(branch:readonly any[]):Snapshot|null{
   if(e.type==='custom'&&e.customType===RESET){current=validateSnapshot(e.data.workspace);start=i+1;break;}
   if(m?.role==='toolResult'&&m.toolName===PUBLICATION&&!m.isError&&m.details?.workspace){current=validateSnapshot(m.details.workspace);start=i+1;break;}
  }
- for(const e of branch.slice(start)){const m=e.message;if(m?.role==='toolResult'&&m.toolName===UPDATE&&!m.isError)current=applyDelta(current,m.details?.delta);else if(e.type==='custom'&&e.customType==='exosurface-composition-commit')current=applyDelta(current,e.data?.delta);}
+ for(const e of branch.slice(start)){const m=e.message;if(m?.role==='toolResult'&&(m.toolName===UPDATE||m.toolName===SURFACE_UPDATE_TOOL)&&!m.isError)current=applyDelta(current,m.details?.delta);else if(e.type==='custom'&&e.customType==='exosurface-composition-commit')current=applyDelta(current,e.data?.delta);}
  return current;
 }
 export function validateAction(snapshot:Snapshot,revision:number,raw:unknown){

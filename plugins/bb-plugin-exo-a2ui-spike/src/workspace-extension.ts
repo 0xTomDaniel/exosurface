@@ -6,12 +6,14 @@ import {Type} from 'typebox';
 import {HOME,CANONICAL_HOME,save} from './state.ts';
 import {DIRECT_TOOLS,cloneTools,requirePresentationExperiment,restoredObserverMode} from './generation-policy.ts';
 import {CATALOG,PUBLICATION,UPDATE,RESET,COMPONENTS,moduleIds,latestSnapshot,validateSnapshot,applyDelta,type Snapshot,type Delta} from './workspace.ts';
-import {StreamFrames} from './stream-frames.ts';
-import {PRESENTATION_GUIDE} from './presentation-guide.ts';
+import {StreamFrames,SnapshotStream} from './stream-frames.ts';
+import {changeMessages,surfaceSnapshot,type Edit} from './snapshot-format.ts';
+import {describeEdits} from './canvas-memory.ts';
+import {PRESENTATION_GUIDE_SNAPSHOT} from './presentation-guide.ts';
 import {describeDelta} from './canvas-memory.ts';
 import {reduceCanvas,foldCanvas} from './canvas-doc.ts';
 import {inputBindings,validateInput} from './workspace.ts';
-import {PROMPT_SECTION,REMINDER_SECTION,REMINDER,PRESENTATION_HEADER,UPDATE_DESCRIPTION,UPDATE_SNIPPET,UPDATE_GUIDELINES,READ_DESCRIPTION} from './tool-contract.ts';
+import {PROMPT_SECTION,REMINDER_SECTION,REMINDER,PRESENTATION_HEADER,UPDATE_DESCRIPTION,UPDATE_SNIPPET,UPDATE_GUIDELINES,READ_DESCRIPTION,SURFACE_UPDATE,SURFACE_READ,SURFACE_SNIPPET,SURFACE_DESCRIPTION,SURFACE_GUIDELINES,SURFACE_READ_DESCRIPTION} from './tool-contract.ts';
 import {EXO_CATALOG} from './exo-catalog.ts';
 import {OFFER,OFFER_ENTRY,COMMIT,RUN,validateOffer,recoverOffer,type Offer} from '../composition/contract.ts';
 import {offerParameters} from '../composition/tool-schema.ts';
@@ -27,7 +29,7 @@ export default function workspace(pi:ExtensionAPI){
  let observerArm:{id:string;route:Route;surfaceId:string}|null=null,observerTurn:ObserverTurn|null=null,observerStatus:ObserverStatus|null=null,observerId:string|null=null;
  const cancelObserver=()=>{observerId=null;observerArm=null;observerTurn?.cancel();observerTurn=null;};
  const cancelComposition=()=>{controller?.abort();};
- const previewFile=join(HOME,'workspace','preview.json'),streams=new Map<string,StreamFrames>();
+ const previewFile=join(HOME,'workspace','preview.json'),streams=new Map<string,StreamFrames|SnapshotStream>();
  const requireReadPreview=()=>readFileSync(previewFile,'utf8');
  const clearPreview=()=>{rmSync(previewFile,{force:true});streams.clear();};
  const materialize=(ctx:ExtensionContext)=>save(join(HOME,'workspace','latest.json'),{sessionId:ctx.sessionManager.getSessionId(),epoch,workspace:current,updates,presentation:{mode:'direct',activeTools:pi.getActiveTools()},observer:observerStatus?{...observerStatus,armed:!!observerArm,running:!!observerTurn}:null,composition:{configured:!!offer,surfaceId:offer?.surfaceId??null,candidateCount:offer?.candidates.length??0,running:!!controller,lastRun}});
@@ -111,36 +113,35 @@ export default function workspace(pi:ExtensionAPI){
   }
   // Stable system-prompt section (recorded once, changed only if the guide changes);
   // never a per-turn transcript message. Tool contract travels with the tool.
-  if(!observerTurn)tools();e.systemPromptOptions.sections[PROMPT_SECTION]=`${PRESENTATION_HEADER}\n${PRESENTATION_GUIDE}`;
+  if(!observerTurn)tools();e.systemPromptOptions.sections[PROMPT_SECTION]=`${PRESENTATION_HEADER}\n${PRESENTATION_GUIDE_SNAPSHOT}`;
   // Re-inserted last so the reminder sits at the end of the prompt (identical text: no new delta).
   delete e.systemPromptOptions.sections[REMINDER_SECTION];e.systemPromptOptions.sections[REMINDER_SECTION]=REMINDER;
+  // The person's canvas edits since Exo's last turn travel with this turn as one labelled message,
+  // persisted like anything else said in the conversation (OptChat shows it as "[canvas-edits] …").
+  const branch=ctx.sessionManager.getBranch();let since=branch.length-1;while(since>=0&&(branch[since] as any).message?.role!=='assistant')since--;
+  const edits=branch.slice(since+1).filter((x:any)=>x.type==='custom'&&x.customType===COMMIT&&x.data?.source==='canvas-edit').map((x:any)=>x.data.delta);
+  const lines=current&&edits.length?describeEdits(current,edits):[];
+  if(lines.length)return {message:{customType:'canvas-edits',display:false,content:`Tom changed the canvas since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
  });
  pi.on('tool_call',e=>!(observerTurn?(observerTurn.status.route==='sidecar'?[]:[UPDATE]):allowed()).includes(e.toolName)?{block:true,reason:'Unrelated/legacy tool outside incremental clone trial'}:undefined);
  // Provider token stream is not tool execution. Preview only delimiter-complete,
  // validated message prefixes. No native write/action authority until tool result.
  pi.on('message_update',(e,ctx)=>{
   const event=e.assistantMessageEvent;if(event.type==='text_delta')observerTurn?.append(event.delta);if(event.type!=='toolcall_delta')return;
-  const call=(event.partial.content as any[])[event.contentIndex];if(call?.type!=='toolCall'||call.name!==UPDATE)return;
-  let parser=streams.get(call.id);if(!parser){if(streams.size>=4)return;parser=new StreamFrames();streams.set(call.id,parser);}
-  try{const prefix=parser.append(event.delta);if(!prefix||prefix.baseRevision!==(current?.revision??0))return;
+  const call=(event.partial.content as any[])[event.contentIndex];if(call?.type!=='toolCall'||(call.name!==UPDATE&&call.name!==SURFACE_UPDATE))return;
+  let parser=streams.get(call.id);if(!parser){if(streams.size>=4)return;parser=call.name===SURFACE_UPDATE?new SnapshotStream():new StreamFrames();streams.set(call.id,parser);}
+  if(parser instanceof SnapshotStream){try{const part=parser.append(event.delta);if(!part||part.baseRevision!==(current?.revision??0))return;
+   const {messages}=changeMessages(current,{snapshot:part.snapshot});applyDelta(current,{baseRevision:part.baseRevision,revision:part.baseRevision+1,messages});
+   save(previewFile,{sessionId:ctx.sessionManager.getSessionId(),epoch,toolCallId:call.id,baseRevision:part.baseRevision,messages});
+  }catch{/* keep the last valid preview */}return;}
+  try{const prefix=(parser as StreamFrames).append(event.delta);if(!prefix||prefix.baseRevision!==(current?.revision??0))return;
    applyDelta(current,{...prefix,revision:prefix.baseRevision+1});
    observerTurn?.notePreview();
    save(previewFile,{sessionId:ctx.sessionManager.getSessionId(),epoch,toolCallId:call.id,...prefix});
   }catch{/* keep the last valid preview; an invalid/incomplete stream is never committed and the final tool validates */}
  });
- // Canvas layout never enters conversation history or OptChat memory. This extension loads before
- // OptChat, so OptChat logs (and later turns see) the replaced call: what was shown, not the JSON.
- // The full arguments run the tool from this stash and persist only in the tool result's details.
- const stash=new Map<string,any>();
- pi.on('message_end',e=>{
-  const m:any=e.message;if(m.role!=='assistant'||!m.content?.some((c:any)=>c.type==='toolCall'&&c.name===UPDATE))return;
-  const content=m.content.map((c:any)=>{if(c.type!=='toolCall'||c.name!==UPDATE||!Array.isArray(c.arguments?.messages)||c.arguments.messages[0]?.omitted)return c;stash.set(c.id,c.arguments);while(stash.size>16)stash.delete(stash.keys().next().value!);
-   let after:Snapshot|null=null;try{after=applyDelta(current,{baseRevision:c.arguments.baseRevision,revision:c.arguments.baseRevision+1,messages:c.arguments.messages,...(c.arguments.layout?{layout:c.arguments.layout}:{})});}catch{}
-   return {...c,arguments:{baseRevision:c.arguments.baseRevision,messages:[{omitted:OMITTED,shown:describeDelta(after,c.arguments.messages,c.arguments.layout)}]}};});
-  return {message:{...m,content}};
- });
- pi.registerTool({name:UPDATE,label:'Apply incremental A2UI messages',executionMode:'sequential',description:UPDATE_DESCRIPTION,promptSnippet:UPDATE_SNIPPET,promptGuidelines:UPDATE_GUIDELINES,parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),messages:Type.Array(Type.Any(),{minItems:1,maxItems:32}),layout:Type.Optional(Type.Object({focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2})),columns:Type.Optional(Type.Integer({minimum:1,maximum:3})),wide:Type.Optional(Type.Array(Type.String(),{maxItems:8}))}))}),execute:async(id,compact)=>{
-  const args=stash.get(id)??compact;stash.delete(id);
+ // Legacy A2UI tools stay registered (inactive) so earlier history replays; nothing in history is rewritten.
+ pi.registerTool({name:UPDATE,label:'Apply incremental A2UI messages',executionMode:'sequential',description:UPDATE_DESCRIPTION,promptSnippet:UPDATE_SNIPPET,promptGuidelines:UPDATE_GUIDELINES,parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),messages:Type.Array(Type.Any(),{minItems:1,maxItems:32}),layout:Type.Optional(Type.Object({focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2})),columns:Type.Optional(Type.Integer({minimum:1,maximum:3})),wide:Type.Optional(Type.Array(Type.String(),{maxItems:8}))}))}),execute:async(id,args)=>{
   if(args.messages?.[0]?.omitted)throw Error('This call only repeats a history summary. Send the complete A2UI messages (createSurface/updateComponents/updateDataModel/deleteSurface).');
   if(observerTurn?.status.route==='direct'&&(args.layout||args.messages.some((m:any)=>(m.createSurface??m.updateComponents??m.updateDataModel??m.deleteSurface)?.surfaceId!==observerTurn!.status.surfaceId)))throw Error('Direct observer baseline may alter only its reserved synthetic surface; preserve outer layout');
   const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages:args.messages,...(args.layout?{layout:args.layout}:{})};
@@ -149,6 +150,28 @@ export default function workspace(pi:ExtensionAPI){
  }});
  // Registered for branch history/reversal compatibility, never active in this trial.
  pi.registerTool({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
+ pi.registerTool({name:SURFACE_UPDATE,label:'Update the Exosurface canvas',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
+  parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String({maxLength:40000})),
+   edits:Type.Optional(Type.Array(Type.Object({surface:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
+   delete:Type.Optional(Type.Array(Type.String(),{maxItems:8})),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2}))}),
+  execute:async(id,args)=>{
+   try{
+    if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the canvas is at revision ${current?.revision??0} (see the outline)`);
+    const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits as Edit[]|undefined,delete:args.delete});
+    const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
+    // Drawing moves the stage by default; edits and deletes leave it where it is.
+    const layout=args.focus||args.beside?{...(args.focus?{focus:args.focus}:{}),...(args.beside?{beside:args.beside}:{})}:!change.drawn.length&&current?.layout?{...(keep(current.layout.focus?[current.layout.focus]:undefined)?.length?{focus:current.layout.focus}:{}),...(current.layout.beside?{beside:keep(current.layout.beside)}:{})}:undefined;
+    const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages:change.messages,...(layout?{layout}:{})};
+    const next=applyDelta(current,delta),focus=next.layout?.focus??moduleIds(next).at(-1);
+    const said=[change.drawn.length&&`drew ${change.drawn.join(', ')}`,change.edited.length&&`edited ${change.edited.join(', ')}`,change.deleted.length&&`deleted ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
+    return {content:[{type:'text',text:`Canvas revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta}};
+   }catch(error){pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:String(error)});throw error;}
+ }});
+ pi.registerTool({name:SURFACE_READ,label:'Read the Exosurface canvas',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a canvas surface in full (snapshot format).',parameters:Type.Object({surface:Type.Optional(Type.String())}),execute:async(_id,args)=>{
+  if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`Empty canvas (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
+  const ids=args.surface?[args.surface]:moduleIds(current);if(args.surface&&!moduleIds(current).includes(args.surface))throw Error(`No surface ${args.surface}; surfaces: ${moduleIds(current).join(', ')}`);
+  return {content:[{type:'text',text:`Revision ${current.revision}.\n`+ids.map(i=>surfaceSnapshot(current!,i)).join('\n')}],details:{revision:current.revision}};
+ }});
  pi.registerTool({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Read the exact committed Exosurface canvas.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
   if(!current)return {content:[{type:'text',text:'No canvas yet (revision 0).'}],details:{revision:0}};
   const pick=args.surfaceId?{revision:current.revision,layout:current.layout,messages:current.messages.filter(m=>(m.createSurface??m.updateComponents??m.updateDataModel)?.surfaceId===args.surfaceId)}:current;
@@ -166,9 +189,9 @@ export default function workspace(pi:ExtensionAPI){
  pi.on('message_end',(e,ctx)=>{
   const m=e.message;if(m.role==='assistant'&&m.stopReason==='stop')observerTurn?.sourceComplete();if(m.role!=='toolResult')return;
   if(m.toolName===OFFER&&!m.isError){cancelComposition();offer=validateOffer((m.details as any).offer);materialize(ctx);}
-  else if(m.toolName===UPDATE&&!m.isError){cancelComposition();const d=(m.details as {delta:Delta}).delta;current=reduceCanvas(current,{source:'agent',delta:d,toolCallId:m.toolCallId});updates.push(d);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);clearPreview();}
+  else if((m.toolName===UPDATE||m.toolName===SURFACE_UPDATE)&&!m.isError){cancelComposition();const d=(m.details as {delta:Delta}).delta;current=reduceCanvas(current,{source:'agent',delta:d,toolCallId:m.toolCallId});updates.push(d);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);clearPreview();}
   else if(m.toolName===PUBLICATION&&!m.isError){current=validateSnapshot((m.details as {workspace:Snapshot}).workspace);epoch=randomUUID();updates=[];clearPreview();materialize(ctx);}
-  else if(m.toolName===UPDATE)clearPreview();
+  else if(m.toolName===UPDATE||m.toolName===SURFACE_UPDATE)clearPreview();
  });
  // Per-request canvas outline and its receipt live in workspace-frame.ts, loaded AFTER OptChat,
  // because OptChat builds the final request in context_with_system.

@@ -24,7 +24,7 @@ try{
  await until(()=>{const o=load(`${H}/owner/state.json`),w=load(`${H}/workspace/latest.json`);return o.ready&&o.piPid!==before.piPid&&w.workspace?.layout?.focus;},'upgraded clone materialized stage');
  const info=()=>load(`${H}/runtime-info/${before.threadId}.json`);await until(()=>info().sessionFile===before.sessionFile&&statSync(`${H}/runtime-info/${before.threadId}.json`).mtimeMs>startedAt,'fresh runtime info');proof.runtimeTools=info().tools;proof.exosurfaceSkill=info().skills.some(s=>s.name==='skill:exosurface');
  const after=load(`${H}/owner/state.json`),restored=load(`${H}/workspace/latest.json`);
- assert.equal(after.sessionFile,before.sessionFile);assert.deepEqual(restored.workspace,expected);assert.deepEqual(restored.presentation?.activeTools?.slice(0,2),['apply_workspace','read_workspace']);assert.ok(restored.presentation.activeTools.includes('zoom'),'OptChat zoom available');
+ assert.equal(after.sessionFile,before.sessionFile);assert.deepEqual(restored.workspace,expected);assert.deepEqual(restored.presentation?.activeTools?.slice(0,2),['update_exosurface','read_exosurface']);assert.ok(restored.presentation.activeTools.includes('zoom'),'OptChat zoom available');
  assert.ok(journal().subarray(0,prefix.length).equals(prefix),'native prefix unchanged');assert.equal(assistants(),beforeCount);
  assert.equal(load(`${process.env.HOME}/.exo-bb-spike/owner/state.json`).piPid,main.piPid);
  browser=await chromium.launch({headless:true});const p=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));

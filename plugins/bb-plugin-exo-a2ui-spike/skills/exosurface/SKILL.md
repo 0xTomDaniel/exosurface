@@ -1,53 +1,75 @@
 ---
 name: exosurface
-description: Reference for composing Exosurface canvas surfaces with apply_workspace — component examples, encoding choices and how to morph the stage across turns. Read when composing something unusual (diagrams, charts, dense comparisons, multi-surface context) or after a canvas validation error. The always-on presentation guide and tool contract are already in your system prompt; this is optional depth.
+description: Reference for composing Exosurface canvas surfaces with update_exosurface in the snapshot format — encoding choices, worked line shapes, edits by ref and how to morph the stage across turns. Read when composing something unusual (diagrams, charts, dense comparisons, multi-surface context) or after a canvas error. The always-on presentation guide and tool contract are already in your system prompt; this is optional depth.
 ---
 
 # Exosurface composition reference
 
-The presentation guide (system prompt) says *what* good presentation is; the `apply_workspace` description says *what is valid*. This file shows *how* the Exo components look in practice. Examples are shapes to adapt, not templates to reuse: compose for the conversation in front of you.
+The presentation guide (system prompt) says *what* good presentation is; the `update_exosurface` description says *what is valid*. This file shows *how* the pieces look in practice. Examples are shapes to adapt, not templates to reuse: compose for the conversation in front of you.
 
 ## Choosing an encoding
 
 | The content is… | Use | Notes |
 |---|---|---|
-| The one thing to notice, decide or watch | `Callout` | `tone` decision/caution/good/note. One per view is usually enough. |
-| Ordered in time or sequence | `Timeline` | `state` now/next/done/later/blocked; exactly one `now` when there is a present moment. |
-| Options against the same criteria | `Table` | Options as columns, criteria as rows; `highlightColumn` for your recommendation; `tone` on a row (e.g. risk). |
-| Amounts to compare | `Chart` `bar` | Sorted when order carries no meaning. Write the unit. |
-| Change over time | `Chart` `line` | ≥3 points; say in words if the axis does not start at zero. |
-| A few headline numbers or progress | `Metric` in a `Row` | `value` is a string so you can write "2 of 3", "≈ 40 h". Mark estimates. |
-| How things connect or flow | `Flow` | ≤12 nodes; label only the edges that need it; loops are fine. |
-| Depth the person may want later | `Disclosure` | Title says what is inside; `summary` previews it. |
-| A real question for the person | `ChoicePicker`/`TextField` + one primary `Button` | Only when their answer changes what happens next. |
+| The one thing to notice, decide or watch | `note` | `tone` decision/caution/good/note. One per view is usually enough. |
+| Ordered in time or sequence | `list [timeline]` | `state` now/next/done/later/blocked; exactly one `now` when there is a present moment. |
+| Options against the same criteria | `table` | Options as columns, criteria as rows; `[highlight=n]` for your recommendation; `[tone=…]` on a row. |
+| Amounts to compare | `figure [chart=bar]` | Sorted when order carries no meaning. Write the unit. |
+| Change over time | `figure [chart=line]` | ≥3 points; say in words if the axis does not start at zero. |
+| A few headline numbers or progress | `meter` lines in a `group [layout=row]` | The value is text, so "2 of 3" or "≈ 40 h" works. Mark estimates. |
+| How things connect or flow | `list [flow]` | ≤12 nodes; `[to=…]` names the next nodes; loops are fine. |
+| Depth the person may want later | `group "Title" [collapsible]` | Title says what is inside; `/summary` previews it. |
+| A real question for the person | `radiogroup`/`listbox`/`textbox` + one primary `button` | Only when their answer changes what happens next. |
 
-## Component shapes
+## Line shapes
 
-```json
-{"id":"lean","component":"Callout","tone":"decision","title":"My lean: weekly","text":"Fast and slow readers stay **in sync** when the chunks are small."}
-{"id":"when","component":"Timeline","items":[{"label":"Draft agenda","when":"Mon","state":"done"},{"label":"First meetup","when":"Thu 7pm","state":"now"},{"label":"Review format","when":"Week 4","state":"later","detail":"Switch to monthly if attendance drops"}]}
-{"id":"cmp","component":"Table","columns":["","Weekly","Monthly"],"highlightColumn":1,"rows":[{"cells":["Pace","Small chunks","Whole book"]},{"cells":["Risk","Fatigue","Drop-off"],"tone":"caution"}]}
-{"id":"hours","component":"Chart","kind":"bar","unit":"h","caption":"Estimated hours this week","points":[{"label":"Errands","value":12,"tone":"caution"},{"label":"Build","value":6}]}
-{"id":"m1","component":"Metric","label":"Readers","value":"6","detail":"3 fast, 3 slow"}
-{"id":"loop","component":"Flow","nodes":[{"id":"a","label":"You click"},{"id":"b","label":"Exo replies","tone":"accent"}],"edges":[{"from":"a","to":"b","label":"event"}]}
-{"id":"more","component":"Disclosure","title":"Why weekly","summary":"Three reasons","child":"moreCol"}
+```
+- region "Book club format" [ref=club]:
+  - note "My lean: weekly" [ref=lean] [tone=decision]: Fast and slow readers stay **in sync** when the chunks are small.
+  - group [ref=numbers] [layout=row]:
+    - meter "Readers" [ref=readers]: 6
+      - /detail: 3 fast, 3 slow
+    - meter "Book length" [ref=length]: ≈ 400 pages
+  - table "Two formats" [ref=cmp] [highlight=1]:
+    - row [header]:  | Weekly | Monthly
+    - row: Pace | Small chunks | Whole book
+    - row [tone=caution]: Risk | Fatigue | Drop-off
+  - list [ref=when] [timeline]:
+    - listitem "Draft agenda" [when=Mon] [state=done]
+    - listitem "First meetup" [when=Thu 7pm] [state=now]
+    - listitem "Review format" [when=Week 4] [state=later]: Switch to monthly if attendance drops
+  - figure "Estimated hours this week" [ref=hours] [chart=bar] [unit=h]:
+    - row [tone=caution]: Errands | 12
+    - row: Reading | 6
+  - list "How a meetup runs" [ref=loop] [flow] [direction=right]:
+    - listitem "Read" [ref=read] [to=talk]
+    - listitem "Talk" [ref=talk] [to=pick] [tone=accent]
+    - listitem "Pick next book" [ref=pick]
+  - group "Why weekly" [ref=why] [collapsible]:
+    - /summary: Three reasons
+    - text [ref=why1]: Smaller chunks, steadier attendance, easier catch-up.
+  - radiogroup "Format" [ref=format] [chips]:
+    - radio "Weekly" [checked] [value=weekly]
+    - radio "Monthly" [value=monthly]
+  - button "Use this format" [ref=go] [primary] [sends=format]
 ```
 
-Exo components need a surface created with catalog `urn:exosurface:catalog:exo-visual:v1`. Table rows must have as many cells as there are columns; Flow edges must join two different declared nodes; Chart values must not exceed `max`.
+Table rows need as many cells as the header; flow `[to=…]` must name declared nodes; chart values are numbers (units go in `[unit=…]`).
 
 ## Morphing across turns
 
-- **Topic continues:** update the stage surface in place — replace changed components by ID, keep IDs that persist, collapse settled parts into a `Disclosure` or remove them.
-- **Topic shifts:** create a new surface (it takes the stage). Delete the previous one if it is finished; otherwise let it recede.
-- **Supporting context:** a small surface named in `layout.beside` (≤2), e.g. a timeline of the week while discussing one day.
-- **Button press:** apply the submitted values at the revision given in the event, then show what changes because of them. Don't redraw the whole surface to acknowledge a click.
+- **Topic continues:** edit the stage surface by ref instead of redrawing it: `replace` a line that changed, `insertAfter`/`insertInto` new lines, `remove` what is settled, or collapse settled parts into a `group [collapsible]`. Keep refs for things that persist.
+- **Topic shifts:** draw a new region (it takes the stage). Delete the previous surface if it is finished; otherwise let it recede to the shelf.
+- **Supporting context:** a small surface named in `beside` (≤2), e.g. a timeline of the week while discussing one day.
+- **Button press or canvas edits:** the values are already saved and appear in the outline (and a `[canvas-edits]` message lists what the person changed). Show what changes because of them; don't redraw the whole surface to acknowledge a click.
 
-## Common validation errors
+## Common errors
 
 | Error | Fix |
 |---|---|
-| `requires a surface created with catalogId` | Exo component in a basic-catalog surface: delete and recreate it with the Exo catalog. |
-| `Stale/nonsequential delta` | Use the exact current revision from the machine-state frame. |
-| `Workspace exceeds 40KB bound` | Delete stale surfaces or retire unused component definitions. |
-| `Cycle/shared child/depth violation` | Each component has one parent; depth ≤ 8. |
-| `layout.focus/beside must name existing surfaces` | Create the surface in the same patch before naming it, or drop the layout. |
+| `region needs [ref=surface_id]` | Every top-level region line needs a ref. |
+| `stale baseRevision` | Use the revision in the current canvas outline. |
+| `No ref … in surface …` | Edit refs come from the outline; read_exosurface shows a shelf surface in full. |
+| `duplicate ref` | Refs are unique within a surface. |
+| `line N: unknown role` / `expected "- role …"` | Use the roles in the tool description; each line starts with `- `. |
+| `Table rows must match columns` | Same number of cells as the header row. |
