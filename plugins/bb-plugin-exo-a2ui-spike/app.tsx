@@ -49,7 +49,8 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
  if(!valid)return null;const on=active?.surface===surface&&active.revision===revision;
  return <button type="button" aria-pressed={on} aria-label={`Show ${meta?.title??surface} on the canvas`} onClick={async()=>{setRewind({surface,revision});nav.toPluginPanel('workspace');
   // An earlier version opens as a bring-back in progress: a pill appears in the input; ✕ or removing the pill cancels.
-  const m=meta??await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);if(m&&!m.current)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
+  // Always ask fresh: a card that was the latest when it appeared may have been superseded since.
+  const m=await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);if(m)setMeta({title:m.title,at:m.at,current:m.current,revision:m.revision});if(m&&!m.current)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
   className={`my-1 flex w-full max-w-md items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent ${on?'border-primary':'border-border'}`}>
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 opacity-70"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes.action==='edited'?'Edited on the canvas':'On the canvas'}{meta?` · ${when(meta.at)}`:''}</span></span>
