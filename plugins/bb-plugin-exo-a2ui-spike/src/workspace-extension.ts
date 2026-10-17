@@ -129,7 +129,7 @@ export default function workspace(pi:ExtensionAPI){
   const branch=ctx.sessionManager.getBranch();let since=branch.length-1;while(since>=0&&(branch[since] as any).message?.role!=='assistant')since--;
   const recent=branch.slice(since+1).filter((x:any)=>x.type==='custom'&&x.customType===COMMIT);
   const edits=recent.filter((x:any)=>x.data?.source==='canvas-edit').map((x:any)=>x.data.delta);
-  const backs=recent.filter((x:any)=>x.data?.source==='canvas-restore').flatMap((x:any)=>[`- Brought back ${x.data.surfaceId} ${JSON.stringify(x.data.title)} (the version from ${new Date(x.data.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}); it is on stage now.`,...(x.data.changes??[]).map((c:string)=>'  '+c)]);
+  const backs=recent.filter((x:any)=>x.data?.source==='canvas-restore'&&!x.data.announced).flatMap((x:any)=>[`- Brought back ${x.data.surfaceId} ${JSON.stringify(x.data.title)} (the version from ${new Date(x.data.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}); it is on stage now.`,...(x.data.changes??[]).map((c:string)=>'  '+c)]);
   const lines=[...backs,...(current&&edits.length?describeEdits(current,edits):[])];
   if(lines.length)return {message:{customType:'canvas-edits',display:false,content:`Tom changed the canvas since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
  });
@@ -221,7 +221,7 @@ export default function workspace(pi:ExtensionAPI){
   const {messages,retired}=retirement(current,msgs,layout,[r.surfaceId]);
   const delta:Delta={baseRevision:current?.revision??0,revision:(current?.revision??0)+1,messages,layout};const next=applyDelta(current,delta);
   const changes=describeEdits(next,r.updates.length?[{messages:r.updates.map((u:any)=>({updateDataModel:{surfaceId:r.surfaceId,path:u.path,value:u.value}}))}]:[]);
-  pi.appendEntry(COMMIT,{source:'canvas-restore',mutationId:r.mutationId,surfaceId:r.surfaceId,fromRevision:v.revision,at:v.at,title:v.title,changes,retired,delta});
+  pi.appendEntry(COMMIT,{source:'canvas-restore',mutationId:r.mutationId,surfaceId:r.surfaceId,fromRevision:v.revision,at:v.at,title:v.title,changes,retired,announced:r.announced===true,delta});
   remember(versionsOf(current,next,delta,'restore',new Date().toISOString(),undefined,retired));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
  }});
  pi.on('message_end',(e,ctx)=>{

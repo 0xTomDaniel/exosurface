@@ -147,7 +147,8 @@ async function close(s: Session) {
 }
 async function prompt(s: Session, input: any[], requestId?: string) {
   if (input.some(p => p.type !== 'text')) throw new Error('Attachments are outside this spike');
-  const value = input.map(p => p.text).join('');
+  // Text the person typed (pills included as their labels), then any agent-only context (e.g. a brought-back surface) on its own paragraph.
+  const value = [input.filter(p => p.visibility !== 'agent-only').map(p => p.text).join(''), ...input.filter(p => p.visibility === 'agent-only').map(p => p.text)].filter(Boolean).join('\n\n');
   if (s.childId) {
     if (value !== '/refresh' && !value.startsWith('/attach ')) throw new Error('Child projection is read-only in this spike; use native tell from its owner');
     if (requestId) emit(s, [{ kind: 'input.accepted', clientRequestId: requestId }]);

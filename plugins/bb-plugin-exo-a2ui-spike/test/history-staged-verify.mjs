@@ -12,9 +12,9 @@ try{
  const at=await rpc('surfaceAt',{threadId:thread,surface:old.surface,revision:old.revision});out.surfaceAt={status:at.status,title:at.body.result?.title,current:at.body.result?.current,revision:at.body.result?.revision};
  assert.equal(at.status,200);assert.equal(at.body.result.current,false);assert.equal(at.body.result.title,old.title);
  const set=await rpc('pending',{threadId:thread,op:'set',version:{surface:old.surface,revision:old.revision},updates:[]});assert.equal(set.body.result.surface,old.surface);
- await p.waitForTimeout(1200);out.bannerVisible=await p.getByText(/Bringing back/).count();
- await p.screenshot({path:'evidence/streaming/bring-back-banner.png'});
- const clear=await rpc('pending',{threadId:thread,op:'clear'});await p.waitForTimeout(800);out.bannerAfterClear=await p.getByText(/Bringing back/).count();assert.equal(clear.body.result,null);
+ await p.waitForTimeout(1200);out.pillInInput=await p.locator('[contenteditable="true"]').filter({hasText:'↺'}).count();out.fallbackBanner=await p.getByText(/Bringing back/).count();
+ await p.screenshot({path:'evidence/streaming/bring-back-pill.png'});
+ const clear=await rpc('pending',{threadId:thread,op:'clear'});await p.waitForTimeout(800);out.pillAfterClear=await p.locator('[contenteditable="true"]').filter({hasText:'↺'}).count();assert.equal(clear.body.result,null);
 }finally{await b.close();}
 out.pendingFileGone=!existsSync(`${H}/workspace/pending-restore.json`);out.revisionUnchanged=JSON.parse(readFileSync(`${H}/workspace/latest.json`,'utf8')).workspace.revision===before;
 console.log(JSON.stringify(out));assert.ok(out.pendingFileGone&&out.revisionUnchanged);

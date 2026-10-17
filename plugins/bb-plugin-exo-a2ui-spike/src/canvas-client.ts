@@ -2,7 +2,7 @@
 import{createConnection}from'node:net';import{join}from'node:path';import{HOME}from'./state.ts';
 export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press'};
 export function canvasDataViaOwner(threadId:string,request:CanvasData):Promise<void>{return ownerCommand(threadId,'canvas-data',request);}
-export type CanvasRestore={surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string};
+export type CanvasRestore={surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string;announced?:boolean};
 export function restoreViaOwner(threadId:string,request:CanvasRestore):Promise<void>{return ownerCommand(threadId,'canvas-restore',request);}
 function ownerCommand(threadId:string,type:string,request:{mutationId:string}):Promise<void>{return new Promise((resolve,reject)=>{
  const s=createConnection(join(HOME,'owner/rpc.sock'));let buffer='',done=false;const end=(e?:Error)=>{if(done)return;done=true;s.destroy();e?reject(e):resolve();};

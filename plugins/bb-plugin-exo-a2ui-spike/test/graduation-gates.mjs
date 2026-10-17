@@ -24,7 +24,8 @@ const replies=JSON.parse(readFileSync(`evidence/presentation/reply-metrics-${lab
 const median=a=>{const s=[...a].sort((x,y)=>x-y);return s.length?s[Math.floor((s.length-1)/2)]:null;};
 const gates={
  guideDelivered:{pass:receipts.length>0&&receipts.every(r=>r.guidePresent&&r.reminderPresent&&r.exactFramePresent),requests:receipts.length},
- compactCanvasState:{pass:receipts.every(r=>r.frameBytes<=8000),maxFrameBytes:Math.max(0,...receipts.map(r=>r.frameBytes))},
+ // Owner-approved 2026-10-17: 12 KB (stage and beside in full; beside collapses to titles beyond it).
+ compactCanvasState:{pass:receipts.every(r=>r.frameBytes<=12000),maxFrameBytes:Math.max(0,...receipts.map(r=>r.frameBytes))},
  // Informational: 5 pre-cutover canvas JSON entries stay in protected paid OptChat memory and surface in the
  // memory view until it folds them. They must not grow; new memory is gated below.
  jsonInRequests:{pass:true,informational:true,leaks:receipts.map(r=>r.canvasJsonLeaks),note:'1 = legacy pre-cutover memory; higher = an explicit read_workspace result in the current turn or replayed previous exchange'},
