@@ -1,0 +1,30 @@
+{
+  "activeStreams": 0,
+  "openedStreams": 1,
+  "closedStreams": 1,
+  "maxStreams": 1,
+  "slowDrops": 0,
+  "maxFrameBytes": 6303,
+  "maxWritableBytes": 6527,
+  "publications": 2,
+  "sourceErrors": 0,
+  "maxDrainMs": 0,
+  "buses": 1,
+  "busListeners": 3,
+  "taskRecords": 4,
+  "observerRecords": 2,
+  "taskSaveCalls": 11,
+  "taskWrites": 3,
+  "taskWriteBytes": 2837,
+  "threadWrites": 3,
+  "threadWriteBytes": 13907,
+  "revisions": 6,
+  "checkpointBytes": 6236,
+  "memory": {
+    "rss": 443924480,
+    "heapTotal": 164429824,
+    "heapUsed": 119961824,
+    "external": 6889620,
+    "arrayBuffers": 2897040
+  }
+}

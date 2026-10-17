@@ -1,0 +1,1109 @@
+{
+  "status": "PASS",
+  "model": "openai-codex/gpt-6-astra",
+  "proofs": [
+    {
+      "projection": {
+        "threadId": "thread-sunday",
+        "contribution": {
+          "id": "ddd00422-f04b-4622-a98e-76365284a8c5",
+          "at": "2026-09-13T19:58:12.647Z",
+          "author": "person",
+          "kind": "ask",
+          "revision": 3,
+          "reference": {
+            "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+            "revision": 1,
+            "objectId": "research-review",
+            "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+          }
+        },
+        "historicalReference": {
+          "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+          "revision": 1,
+          "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd",
+          "tasks": [
+            {
+              "id": "research-brief",
+              "title": "Research brief",
+              "time": "09:00",
+              "minutes": 90,
+              "area": "Work"
+            },
+            {
+              "id": "research-review",
+              "title": "Research review",
+              "time": "11:00",
+              "minutes": 45,
+              "area": "Work"
+            },
+            {
+              "id": "garden",
+              "title": "Visit the garden",
+              "time": "16:00",
+              "minutes": 30,
+              "area": "Personal"
+            }
+          ],
+          "proposals": [],
+          "a2ui": [
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "components": [
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "heading",
+                      "row-research-brief",
+                      "row-research-review",
+                      "row-garden"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "heading",
+                    "text": "Your day, in focus",
+                    "variant": "h2"
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-research-brief",
+                    "children": [
+                      "time-research-brief",
+                      "label-research-brief",
+                      "select-research-brief",
+                      "move-research-brief"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-research-brief",
+                    "text": {
+                      "path": "/times/research-brief"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-research-brief",
+                    "weight": 1,
+                    "text": "Research brief · 90 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-research-brief",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-research-brief",
+                    "child": "select-label-research-brief",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "research-brief",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-research-brief",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-research-brief",
+                    "child": "move-label-research-brief",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "research-brief",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-research-review",
+                    "children": [
+                      "time-research-review",
+                      "label-research-review",
+                      "select-research-review",
+                      "move-research-review"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-research-review",
+                    "text": {
+                      "path": "/times/research-review"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-research-review",
+                    "weight": 1,
+                    "text": "Research review · 45 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-research-review",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-research-review",
+                    "child": "select-label-research-review",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "research-review",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-research-review",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-research-review",
+                    "child": "move-label-research-review",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "research-review",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-garden",
+                    "children": [
+                      "time-garden",
+                      "label-garden",
+                      "select-garden",
+                      "move-garden"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-garden",
+                    "text": {
+                      "path": "/times/garden"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-garden",
+                    "weight": 1,
+                    "text": "Visit the garden · 30 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-garden",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-garden",
+                    "child": "select-label-garden",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "garden",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-garden",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-garden",
+                    "child": "move-label-garden",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "garden",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "path": "/",
+                "value": {
+                  "times": {
+                    "research-brief": "09:00",
+                    "research-review": "11:00",
+                    "garden": "16:00"
+                  }
+                }
+              }
+            },
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "studio-lights",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "studio-lights",
+                "components": [
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "light-title",
+                      "light-state",
+                      "light-toggle"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-title",
+                    "text": "Studio light",
+                    "variant": "h3"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-state",
+                    "text": {
+                      "path": "/status"
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-label",
+                    "text": "Turn on"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "light-toggle",
+                    "child": "light-label",
+                    "action": {
+                      "event": {
+                        "name": "light",
+                        "context": {
+                          "revision": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "studio-lights",
+                "path": "/",
+                "value": {
+                  "status": "Off · simulated"
+                }
+              }
+            }
+          ],
+          "selectedObjectId": "research-review"
+        },
+        "current": {
+          "revision": 4,
+          "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd",
+          "tasks": [
+            {
+              "id": "research-brief",
+              "title": "Research brief",
+              "time": "09:00",
+              "minutes": 90,
+              "area": "Work"
+            },
+            {
+              "id": "research-review",
+              "title": "Research review",
+              "time": "11:00",
+              "minutes": 45,
+              "area": "Work"
+            },
+            {
+              "id": "garden",
+              "title": "Visit the garden",
+              "time": "16:00",
+              "minutes": 30,
+              "area": "Personal"
+            }
+          ],
+          "proposals": [],
+          "lights": {
+            "studio": false
+          }
+        },
+        "authoredTurns": [
+          {
+            "id": "dc5cc439-d522-40cd-9d78-2294f28cdfce",
+            "at": "2026-09-13T19:58:11.135Z",
+            "author": "exo",
+            "kind": "agenda-presented",
+            "revision": 1
+          },
+          {
+            "id": "33d9ad3d-fff5-43e4-853c-058fd79017a3",
+            "at": "2026-09-13T19:58:12.642Z",
+            "author": "person",
+            "kind": "select",
+            "revision": 2,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "ddd00422-f04b-4622-a98e-76365284a8c5",
+            "at": "2026-09-13T19:58:12.647Z",
+            "author": "person",
+            "kind": "ask",
+            "revision": 3,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "f3e4de1c-13a5-475c-9709-2fcb367ad6f7",
+            "at": "2026-09-13T19:58:12.648Z",
+            "author": "exo",
+            "kind": "work-started",
+            "revision": 4
+          }
+        ]
+      },
+      "response": {
+        "operations": [
+          {
+            "version": "v0.9",
+            "createSurface": {
+              "surfaceId": "exo-reflection",
+              "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+            }
+          },
+          {
+            "version": "v0.9",
+            "updateComponents": {
+              "surfaceId": "exo-reflection",
+              "components": [
+                {
+                  "component": "Column",
+                  "id": "root",
+                  "children": [
+                    "title",
+                    "selection",
+                    "times",
+                    "distinction",
+                    "status"
+                  ]
+                },
+                {
+                  "component": "Text",
+                  "id": "title",
+                  "text": "Research review selected",
+                  "variant": "h2"
+                },
+                {
+                  "component": "Text",
+                  "id": "selection",
+                  "text": "Research review · research-review · 45 minutes"
+                },
+                {
+                  "component": "Text",
+                  "id": "times",
+                  "text": "Then: 11:00 AM\nNow: 11:00 AM"
+                },
+                {
+                  "component": "Text",
+                  "id": "distinction",
+                  "text": "You selected research-review, not Research brief (research-brief), which remains at 9:00 AM for 90 minutes."
+                },
+                {
+                  "component": "Text",
+                  "id": "status",
+                  "text": "The plan is unchanged. Your selection identified the review; no proposal, acceptance, or later source edit changed its scheduled time."
+                }
+              ]
+            }
+          }
+        ],
+        "model": "openai-codex/gpt-6-astra",
+        "promptBytes": 6166,
+        "toolCalls": 1,
+        "sessionId": "01a09c59-4ac0-73f4-86f9-ce953e6d2e7b"
+      }
+    },
+    {
+      "projection": {
+        "threadId": "thread-sunday",
+        "contribution": {
+          "id": "0bd5fa73-2f40-409d-9a5c-28c398dab071",
+          "at": "2026-09-13T19:58:26.053Z",
+          "author": "person",
+          "kind": "ask",
+          "revision": 13,
+          "reference": {
+            "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+            "revision": 1,
+            "objectId": "research-review",
+            "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+          },
+          "utterance": "Explain why this selected task changed. What were its original visual time, accepted time, and current source time?",
+          "utteranceId": "0bd5fa73-2f40-409d-9a5c-28c398dab071:utterance"
+        },
+        "historicalReference": {
+          "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+          "revision": 1,
+          "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd",
+          "tasks": [
+            {
+              "id": "research-brief",
+              "title": "Research brief",
+              "time": "09:00",
+              "minutes": 90,
+              "area": "Work"
+            },
+            {
+              "id": "research-review",
+              "title": "Research review",
+              "time": "11:00",
+              "minutes": 45,
+              "area": "Work"
+            },
+            {
+              "id": "garden",
+              "title": "Visit the garden",
+              "time": "16:00",
+              "minutes": 30,
+              "area": "Personal"
+            }
+          ],
+          "proposals": [],
+          "a2ui": [
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "components": [
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "heading",
+                      "row-research-brief",
+                      "row-research-review",
+                      "row-garden"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "heading",
+                    "text": "Your day, in focus",
+                    "variant": "h2"
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-research-brief",
+                    "children": [
+                      "time-research-brief",
+                      "label-research-brief",
+                      "select-research-brief",
+                      "move-research-brief"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-research-brief",
+                    "text": {
+                      "path": "/times/research-brief"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-research-brief",
+                    "weight": 1,
+                    "text": "Research brief · 90 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-research-brief",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-research-brief",
+                    "child": "select-label-research-brief",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "research-brief",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-research-brief",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-research-brief",
+                    "child": "move-label-research-brief",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "research-brief",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-research-review",
+                    "children": [
+                      "time-research-review",
+                      "label-research-review",
+                      "select-research-review",
+                      "move-research-review"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-research-review",
+                    "text": {
+                      "path": "/times/research-review"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-research-review",
+                    "weight": 1,
+                    "text": "Research review · 45 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-research-review",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-research-review",
+                    "child": "select-label-research-review",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "research-review",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-research-review",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-research-review",
+                    "child": "move-label-research-review",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "research-review",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Row",
+                    "id": "row-garden",
+                    "children": [
+                      "time-garden",
+                      "label-garden",
+                      "select-garden",
+                      "move-garden"
+                    ],
+                    "align": "center"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "time-garden",
+                    "text": {
+                      "path": "/times/garden"
+                    },
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "label-garden",
+                    "weight": 1,
+                    "text": "Visit the garden · 30 min"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "select-label-garden",
+                    "text": "Select"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "select-garden",
+                    "child": "select-label-garden",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "objectId": "garden",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "move-label-garden",
+                    "text": "After lunch"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "move-garden",
+                    "child": "move-label-garden",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "objectId": "garden",
+                          "revision": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+                "path": "/",
+                "value": {
+                  "times": {
+                    "research-brief": "09:00",
+                    "research-review": "11:00",
+                    "garden": "16:00"
+                  }
+                }
+              }
+            },
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "studio-lights",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "studio-lights",
+                "components": [
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "light-title",
+                      "light-state",
+                      "light-toggle"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-title",
+                    "text": "Studio light",
+                    "variant": "h3"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-state",
+                    "text": {
+                      "path": "/status"
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-label",
+                    "text": "Turn on"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "light-toggle",
+                    "child": "light-label",
+                    "action": {
+                      "event": {
+                        "name": "light",
+                        "context": {
+                          "revision": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "studio-lights",
+                "path": "/",
+                "value": {
+                  "status": "Off · simulated"
+                }
+              }
+            }
+          ],
+          "selectedObjectId": "research-review"
+        },
+        "current": {
+          "revision": 14,
+          "sourceRevision": "eaddcad43386631a102dc3747bfa704e2abd0f46c28e58c8c8780f8e01e0e298",
+          "tasks": [
+            {
+              "id": "research-brief",
+              "title": "Research brief",
+              "time": "09:00",
+              "minutes": 90,
+              "area": "Work"
+            },
+            {
+              "id": "research-review",
+              "title": "Research review",
+              "time": "14:15",
+              "minutes": 45,
+              "area": "Work"
+            },
+            {
+              "id": "garden",
+              "title": "Visit the garden",
+              "time": "16:00",
+              "minutes": 30,
+              "area": "Personal"
+            }
+          ],
+          "proposals": [
+            {
+              "id": "79c152f8-01a2-4dfe-bd4d-cf9a6923fd92",
+              "objectId": "research-review",
+              "time": "13:00",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd",
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "basedOnRevision": 7,
+              "status": "accepted",
+              "receipt": "d5fe8864-f6e7-456d-b09d-83f8658bc4f2"
+            }
+          ],
+          "lights": {
+            "studio": false
+          }
+        },
+        "authoredTurns": [
+          {
+            "id": "dc5cc439-d522-40cd-9d78-2294f28cdfce",
+            "author": "exo",
+            "at": "2026-09-13T19:58:11.135Z",
+            "kind": "agenda-presented",
+            "revision": 1
+          },
+          {
+            "id": "33d9ad3d-fff5-43e4-853c-058fd79017a3",
+            "author": "person",
+            "at": "2026-09-13T19:58:12.642Z",
+            "kind": "select",
+            "revision": 2,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "ddd00422-f04b-4622-a98e-76365284a8c5",
+            "author": "person",
+            "at": "2026-09-13T19:58:12.647Z",
+            "kind": "ask",
+            "revision": 3,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "f3e4de1c-13a5-475c-9709-2fcb367ad6f7",
+            "author": "exo",
+            "at": "2026-09-13T19:58:12.648Z",
+            "kind": "work-started",
+            "revision": 4
+          },
+          {
+            "id": "1ffe7ee4-0e03-40d0-a0a4-b8df8c1d0cbe",
+            "author": "exo",
+            "at": "2026-09-13T19:58:25.791Z",
+            "kind": "pi-visual-response",
+            "revision": 5,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            },
+            "respondsTo": "ddd00422-f04b-4622-a98e-76365284a8c5"
+          },
+          {
+            "id": "9bbf9feb-32a0-458e-b435-b289cbcaab91",
+            "author": "exo",
+            "at": "2026-09-13T19:58:25.792Z",
+            "kind": "work-completed",
+            "revision": 6
+          },
+          {
+            "id": "39f98687-78ca-4693-b943-8ba68589f71a",
+            "at": "2026-09-13T19:58:25.898Z",
+            "author": "exo",
+            "kind": "host-restarted",
+            "revision": 7
+          },
+          {
+            "id": "8cb3308a-fe45-4aef-8a24-ff16195686ba",
+            "at": "2026-09-13T19:58:26.008Z",
+            "author": "person",
+            "kind": "move",
+            "revision": 8,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            },
+            "utterance": "Move this after lunch",
+            "utteranceId": "8cb3308a-fe45-4aef-8a24-ff16195686ba:utterance"
+          },
+          {
+            "id": "eb4be74d-4975-4c21-8859-f0655b1922f7",
+            "at": "2026-09-13T19:58:26.009Z",
+            "author": "exo",
+            "kind": "agenda-proposed",
+            "revision": 9,
+            "respondsTo": "8cb3308a-fe45-4aef-8a24-ff16195686ba",
+            "utterance": "The selected research-review is proposed for 13:00; the other task stays in place.",
+            "utteranceId": "eb4be74d-4975-4c21-8859-f0655b1922f7:utterance"
+          },
+          {
+            "id": "d5fe8864-f6e7-456d-b09d-83f8658bc4f2",
+            "at": "2026-09-13T19:58:26.013Z",
+            "author": "person",
+            "kind": "accept",
+            "revision": 10,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 9,
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "05898af4-3184-4fe2-a47c-3e51e0b8a0e6",
+            "at": "2026-09-13T19:58:26.018Z",
+            "author": "exo",
+            "kind": "acceptance-applied",
+            "revision": 11,
+            "respondsTo": "d5fe8864-f6e7-456d-b09d-83f8658bc4f2",
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 9,
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            }
+          },
+          {
+            "id": "f203a108-a068-42fc-a65c-523382d120de",
+            "at": "2026-09-13T19:58:26.022Z",
+            "author": "source",
+            "kind": "vault-edited",
+            "revision": 12
+          },
+          {
+            "id": "0bd5fa73-2f40-409d-9a5c-28c398dab071",
+            "at": "2026-09-13T19:58:26.053Z",
+            "author": "person",
+            "kind": "ask",
+            "revision": 13,
+            "reference": {
+              "surfaceId": "agenda-72171e7f-f1cd-4436-8ee7-74b66cb8776e",
+              "revision": 1,
+              "objectId": "research-review",
+              "sourceRevision": "fb41b2e7b4d65a9bb26141577a1d0de9f901df361700f7f3bc1c352c1a37a2bd"
+            },
+            "utterance": "Explain why this selected task changed. What were its original visual time, accepted time, and current source time?",
+            "utteranceId": "0bd5fa73-2f40-409d-9a5c-28c398dab071:utterance"
+          },
+          {
+            "id": "6e2c4720-644c-430b-9c81-8d350903c1a8",
+            "at": "2026-09-13T19:58:26.054Z",
+            "author": "exo",
+            "kind": "work-started",
+            "revision": 14
+          }
+        ]
+      },
+      "response": {
+        "operations": [
+          {
+            "version": "v0.9",
+            "createSurface": {
+              "surfaceId": "exo-reflection",
+              "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+            }
+          },
+          {
+            "version": "v0.9",
+            "updateComponents": {
+              "surfaceId": "exo-reflection",
+              "components": [
+                {
+                  "component": "Column",
+                  "id": "root",
+                  "children": [
+                    "title",
+                    "selected",
+                    "original",
+                    "accepted",
+                    "current",
+                    "divider",
+                    "reason",
+                    "other"
+                  ]
+                },
+                {
+                  "component": "Text",
+                  "id": "title",
+                  "text": "Why your selected task changed",
+                  "variant": "h2"
+                },
+                {
+                  "component": "Text",
+                  "id": "selected",
+                  "text": "Research review · research-review · 45 minutes",
+                  "variant": "h3"
+                },
+                {
+                  "component": "Text",
+                  "id": "original",
+                  "text": "Original visual time: 11:00 AM"
+                },
+                {
+                  "component": "Text",
+                  "id": "accepted",
+                  "text": "Accepted time: 1:00 PM"
+                },
+                {
+                  "component": "Text",
+                  "id": "current",
+                  "text": "Current source time: 2:15 PM"
+                },
+                {
+                  "component": "Divider",
+                  "id": "divider"
+                },
+                {
+                  "component": "Text",
+                  "id": "reason",
+                  "text": "You selected research-review and asked to move it after lunch. The proposal was 1:00 PM, which you accepted. A later source edit changed it to 2:15 PM, so that is the current schedule—not the earlier accepted time. No reason for the external edit is recorded."
+                },
+                {
+                  "component": "Text",
+                  "id": "other",
+                  "text": "Research brief (research-brief) is a different task and remains at 9:00 AM."
+                }
+              ]
+            }
+          }
+        ],
+        "model": "openai-codex/gpt-6-astra",
+        "promptBytes": 9514,
+        "toolCalls": 1,
+        "sessionId": "01a09c59-7f11-73f4-86f9-ce96aee35808"
+      }
+    }
+  ],
+  "artifactNote": "Temporary local state directory omitted. Fixture-only projection and validated real model tool output retained."
+}

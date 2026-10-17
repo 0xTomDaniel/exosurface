@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "churnCycles": 20,
+  "mainThreadStallMs": 1000,
+  "publicationsDuringStall": 6,
+  "before": {
+    "usedSize": 6722896,
+    "totalSize": 7798784,
+    "embedderHeapUsedSize": 1099784,
+    "backingStorageSize": 2262117
+  },
+  "after": {
+    "usedSize": 8203236,
+    "totalSize": 8585216,
+    "embedderHeapUsedSize": 1379072,
+    "backingStorageSize": 2407908
+  },
+  "client": {
+    "sequence": 14,
+    "revision": 12,
+    "renewals": 0,
+    "applied": 7,
+    "dropped": 20,
+    "messages": 6
+  },
+  "host": {
+    "transport": {
+      "active": 0,
+      "total": 29,
+      "dropped": 0,
+      "maxWriterBytes": 15136,
+      "wireBytes": 508543,
+      "maxPublicationBytes": 15158,
+      "published": 45
+    },
+    "host": {
+      "writes": 16,
+      "bytesWritten": 471358,
+      "observers": 0,
+      "maxObservers": 2,
+      "sourceErrors": 0
+    },
+    "checkpointBytes": 64057,
+    "memory": {
+      "rss": 327696384,
+      "heapTotal": 179142656,
+      "heapUsed": 123777264,
+      "external": 13491773,
+      "arrayBuffers": 6634642
+    }
+  },
+  "pageErrors": []
+}

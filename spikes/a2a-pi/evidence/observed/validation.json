@@ -1,0 +1,49 @@
+{
+  "recordedAt": "2026-09-13T19:59:08.828Z",
+  "platform": {
+    "node": "v26.0.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "npm": "12.0.1"
+  },
+  "package": "spikes/a2a-pi",
+  "commands": [
+    {
+      "command": "npm ci && npm run validate",
+      "status": "PASS",
+      "nodeTests": 11,
+      "browserTests": 3,
+      "typecheck": true,
+      "build": true
+    },
+    {
+      "command": "npm run test:model",
+      "status": "PASS",
+      "actualModel": "openai-codex/gpt-6-astra",
+      "sessions": 2
+    },
+    {
+      "command": "npm run check",
+      "status": "PASS"
+    },
+    {
+      "command": "npm audit --json",
+      "status": "PASS",
+      "vulnerabilities": 0
+    }
+  ],
+  "browserStats": {
+    "startTime": "2026-09-13T19:49:24.951Z",
+    "duration": 16399.962,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "limitations": [
+    "Finite scenarios only; no retention-saturation or long-duration soak proof.",
+    "Model harness recovered a stale local HTTP keep-alive connection after host restart with read-only retries.",
+    "Exploratory gpt-5.4-mini and gpt-5.4 attempts were rejected by the existing account. Final configured model passed.",
+    "One exploratory model assertion required 24-hour formatting although the model returned the correct equivalent 12-hour times; the final assertion accepts either exact representation."
+  ]
+}

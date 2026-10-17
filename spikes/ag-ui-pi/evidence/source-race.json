@@ -1,0 +1,39 @@
+{
+  "status": "FAIL",
+  "requirement": "Concurrent external source edit is not overwritten by acceptance",
+  "externalEditObserved": true,
+  "externalTime": "14:30",
+  "acceptanceResult": {
+    "status": "applied",
+    "receiptId": "race-accept"
+  },
+  "resultingSource": {
+    "date": "2026-09-13",
+    "revision": 2,
+    "tasks": [
+      {
+        "id": "focus",
+        "title": "Finish the field notes",
+        "time": "09:00",
+        "duration": 90,
+        "locked": true
+      },
+      {
+        "id": "sketch",
+        "title": "Sketch the garden plan",
+        "time": "13:00",
+        "duration": 60,
+        "locked": false
+      },
+      {
+        "id": "walk",
+        "title": "Walk by the river",
+        "time": "16:00",
+        "duration": 30,
+        "locked": false
+      }
+    ],
+    "lastAcceptance": "race-accept"
+  },
+  "consequence": "The ordinary final revision check plus rename has a race against a non-cooperating external writer. No protocol SDK repairs can supply source compare-and-swap. This spike must not be certified for arbitrary concurrent vault writers."
+}

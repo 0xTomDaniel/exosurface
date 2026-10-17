@@ -1,0 +1,89 @@
+{
+  "recordedAt": "2026-09-13T19:46:34.191Z",
+  "package": "spikes/ag-ui-pi",
+  "branch": "spike/a2ui-agui-pi",
+  "base": "ad4013d853a6b77fd94fc4c575143ba9e8002bb1",
+  "node": "v26.0.0",
+  "npm": "12.0.1",
+  "conclusion": "A runnable independent AG-UI + actual Pi + Lit/A2UI spike. G4 fails arbitrary external-writer authority; G2 remains unknown beyond recorded limits. No protocol winner or production readiness conclusion.",
+  "commands": [
+    {
+      "command": "npm run setup",
+      "status": "PASS",
+      "exitCode": 0,
+      "note": "Repeated on final lockfile; independent npm ci and local Chromium installation succeeded; npm audit summary zero vulnerabilities. Host machine blocked seven dependency install scripts; build and tests succeeded with that policy."
+    },
+    {
+      "command": "npm run build",
+      "status": "PASS",
+      "exitCode": 0,
+      "tool": "vite 7.3.6 / TypeScript 5.9.3",
+      "note": "Strict type check and production build; 525.57 kB browser chunk, 135.30 kB gzip; normal chunk-size warning."
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "exitCode": 0,
+      "tool": "vitest 4.1.11",
+      "files": 6,
+      "passed": 18,
+      "failed": 0,
+      "durationSeconds": 9.42
+    },
+    {
+      "command": "EXO_LIVE_PI=1 npm run test:browser",
+      "status": "PASS",
+      "exitCode": 0,
+      "tool": "Playwright 1.58.2 / local Chromium",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "durationSeconds": 29.7,
+      "actualModel": "openrouter/anthropic/claude-sonnet-4.6",
+      "evidence": [
+        "browser-agenda.png",
+        "browser-mobile.png",
+        "browser-pi-history.png",
+        "browser-restart.png",
+        "browser-resources.json"
+      ]
+    },
+    {
+      "command": "npm run test:pi",
+      "status": "PASS",
+      "exitCode": 0,
+      "actualModelExecutions": 2,
+      "actualModel": "openrouter/anthropic/claude-sonnet-4.6",
+      "evidence": "pi-proof.json",
+      "note": "Actual Pi SDK/model execution, including visual-only proposal tool use and exact historical reference restoration; no fixture fallback."
+    },
+    {
+      "command": "npm run probe:source-race",
+      "status": "FAIL",
+      "exitCode": 1,
+      "evidence": "source-race.json",
+      "note": "Independent filesystem writer changes sketch to 14:30 before host rename; host overwrites with 13:00 and acknowledges applied. This failing essential gate is not counted among positive tests."
+    },
+    {
+      "command": "npm audit --json",
+      "status": "PASS",
+      "exitCode": 0,
+      "vulnerabilities": 0,
+      "evidence": "npm-audit.json"
+    },
+    {
+      "command": "npm run format:check",
+      "status": "PASS",
+      "exitCode": 0
+    }
+  ],
+  "gates": {
+    "G1": "PASS within fixture scope",
+    "G2": "UNKNOWN beyond recorded bounds",
+    "G3": "PASS for the thin exchange",
+    "G4": "FAIL for arbitrary concurrent external source writers",
+    "G5": "PASS unchanged SDKs",
+    "G6": "PASS within fixture scope subject to G4"
+  },
+  "source": "REPORT.md contains the full requirement mapping and ownership inventory."
+}

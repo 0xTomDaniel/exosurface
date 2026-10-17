@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "streams": 2,
+  "watchdogMs": 1600,
+  "retryMs": 200,
+  "activeStreamsAfterDetach": 0
+}

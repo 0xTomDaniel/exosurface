@@ -1,0 +1,8 @@
+# Dependencies and builds are reproducible from package-lock.json.
+node_modules/
+dist/
+# Evidence holds real conversations, paid model outputs, screenshots and receipts:
+# kept on the owner's machine only, never committed.
+evidence/
+*.log
+.DS_Store

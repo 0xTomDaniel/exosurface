@@ -1,0 +1,12 @@
+filters:
+  and:
+    - 'file.inFolder("Plans")'
+views:
+  - type: table
+    name: Accepted plans
+    order:
+      - file.name
+      - proposalId
+      - taskId
+      - time
+      - sourceRevision

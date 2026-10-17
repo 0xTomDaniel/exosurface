@@ -1,0 +1,29 @@
+import assert from'node:assert/strict';import{readFileSync,writeFileSync}from'node:fs';import { chromium } from './playwright.mjs';
+const H=`${process.env.HOME}/.exo-a2ui-spike`,load=p=>JSON.parse(readFileSync(p,'utf8')),latest=()=>load(`${H}/workspace/latest.json`).workspace,clone=load(`${H}/clone.json`),baseProof=load('evidence/incremental/live.json');
+const resume=process.argv.includes('--resume'),proof=resume?load('evidence/incremental/interaction.json'):{passed:false,pageErrors:[],token:baseProof.token,checks:[],domPreviews:[]};delete proof.error;let b,p,observing=false;
+const save=()=>writeFileSync('evidence/incremental/interaction.json',JSON.stringify(proof,null,2));
+const until=async(fn,label,ms=240000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,50));}throw Error(label);};
+const entries=bytes=>readFileSync(clone.sessionFile).subarray(bytes).toString('utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
+try{
+ assert.ok(!load(`${H}/owner/state.json`).streaming);b=await chromium.launch({headless:true});p=await b.newPage({viewport:{width:1600,height:1100}});p.on('pageerror',e=>proof.pageErrors.push(e.stack));
+ await p.goto('http://127.0.0.1:38886/plugins/exo-a2ui-spike/workspace');await until(async()=>(await p.getByLabel('Workspace revision').innerText())===`Revision ${latest().revision}`,'restored UI');
+ if(!proof.submitted){
+  const s=latest(),id=s.messages.filter(m=>m.createSurface).at(-1).createSurface.surfaceId,nodes=s.messages.find(m=>m.updateComponents?.surfaceId===id).updateComponents.components;
+  const input=nodes.find(n=>n.component==='TextField'),button=nodes.find(n=>n.component==='Button'&&n.action.event.name==='test_assumption');assert.ok(input&&button);
+  proof.before=s;proof.startBytes=readFileSync(clone.sessionFile).length;proof.submittedValue=`${proof.token}_SUBMITTED — Everyone can see the screen before we start; test this assumption, not a real commitment.`;save();
+  const mod=p.getByLabel(`Module ${id}`);await mod.locator('a2ui-basic-textfield').filter({hasText:input.label}).getByRole('textbox').fill(proof.submittedValue);assert.ok(!JSON.stringify(latest()).includes(proof.submittedValue));await p.getByText(/local edit.*not sent/).waitFor();
+  const label=nodes.find(n=>n.id===button.child).text;assert.equal(typeof label,'string');let lastText=await mod.innerText();observing=true;
+  const observer=(async()=>{while(observing){try{const text=await mod.innerText(),canvas=await p.getByLabel('Exosurface canvas').innerText();if(text!==lastText&&canvas.includes('Provisional streaming preview')){proof.domPreviews.push({at:Date.now(),committedRevision:latest().revision,displayedRevision:await p.getByLabel('Workspace revision').innerText(),textChanged:true});lastText=text;save();}}catch{}await new Promise(r=>setTimeout(r,50));}})();
+  await mod.getByRole('button',{name:label,exact:true}).click();await until(()=>latest().revision>s.revision,'declared Button → real data delta');await until(()=>!load(`${H}/owner/state.json`).streaming,'action settlement');observing=false;await observer;proof.submitted=latest();save();
+ }
+ assert.ok(JSON.stringify(proof.submitted).includes(proof.submittedValue));const rows=entries(proof.startBytes),updates=rows.filter(e=>e.message?.toolName==='apply_workspace'&&!e.message.isError);assert.ok(updates.some(e=>e.message.details.delta.messages.some(m=>m.updateDataModel)));
+ proof.actions=updates.map(e=>e.message.details.delta);proof.checks.push('Real generated Button sends versioned v0.9.1 action/capability metadata; submitted local field becomes native committed data through incremental messages');
+ if(!proof.recall){
+  proof.recallStartBytes=readFileSync(clone.sessionFile).length;save();const chat=p.getByLabel('Clone conversation').locator('[contenteditable="true"]');await chat.fill('No-tool state awareness check: use ONLY the exact current committed UI frame. Reply INCREMENTAL_STATE: followed by the last submitted free-text assumption verbatim and the current surface IDs. Do not call tools or alter the UI.');await chat.press('Enter');
+  await until(()=>entries(proof.recallStartBytes).some(e=>e.message?.role==='assistant'&&e.message.stopReason==='stop'&&e.message.content.some(c=>c.type==='text'&&c.text.includes('INCREMENTAL_STATE:'))),'exact state recall');await until(()=>!load(`${H}/owner/state.json`).streaming,'recall settled');
+  proof.recall=entries(proof.recallStartBytes).find(e=>e.message?.role==='assistant'&&e.message.stopReason==='stop'&&e.message.content.some(c=>c.type==='text'&&c.text.includes('INCREMENTAL_STATE:'))).message.content.filter(c=>c.type==='text').map(c=>c.text).join('\n');save();
+ }
+ assert.ok(proof.recall.includes(proof.submittedValue));for(const m of latest().messages.filter(m=>m.createSurface))assert.ok(proof.recall.includes(m.createSurface.surfaceId));assert.ok(!entries(proof.recallStartBytes).some(e=>e.message?.role==='toolResult'));assert.equal(latest().revision,proof.submitted.revision);
+ const receipts=readFileSync(`${H}/workspace/context-receipts.jsonl`,'utf8').trim().split('\n').map(JSON.parse);assert.ok(receipts.some(r=>r.revision===latest().revision&&r.exactFramePresent));proof.checks.push('Actual no-tool recall reads exact materialized UI after OptChat reconstruction; actual provider receipt verified, revision unchanged');
+ assert.equal(proof.pageErrors.length,0);proof.mainAssistantEstimate=entries(proof.startBytes).filter(e=>e.message?.role==='assistant').reduce((n,e)=>n+(e.message.usage?.cost?.total??0),0);proof.passed=true;await p.screenshot({path:'evidence/incremental/interaction.png'});
+}catch(e){proof.error=e.stack;process.exitCode=1;}finally{observing=false;await b?.close();save();console.log(JSON.stringify({...proof,before:undefined,submitted:undefined,actions:undefined},null,2));}

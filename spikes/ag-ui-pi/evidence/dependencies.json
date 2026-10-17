@@ -1,0 +1,98 @@
+{
+  "node": "v26.0.0",
+  "packages": [
+    {
+      "name": "@ag-ui/client",
+      "version": "0.0.59",
+      "resolved": "https://registry.npmjs.org/@ag-ui/client/-/client-0.0.59.tgz",
+      "integrity": "sha512-d7++r8sBAq6z9G/D/WKrMznQ1Mdvew14pCqOVATReFIvl06mCi1BPqTwmos3zCDGAIiSgcvxc/8m472rYQgFFQ=="
+    },
+    {
+      "name": "@ag-ui/core",
+      "version": "0.0.59",
+      "resolved": "https://registry.npmjs.org/@ag-ui/core/-/core-0.0.59.tgz",
+      "integrity": "sha512-hDgy4ipTqXieT8YG8Mr917Y+FD/f11VK1GefZ5CwTDCuNqS/oTwjJ5l/DZkicThgS8hQW/Y7wPylPBMBJ8BkUg=="
+    },
+    {
+      "name": "@ag-ui/encoder",
+      "version": "0.0.59",
+      "resolved": "https://registry.npmjs.org/@ag-ui/encoder/-/encoder-0.0.59.tgz",
+      "integrity": "sha512-wQCzBsStyZMm8nzhTdTx1G0B1C8yv5rbzZLnz1ka/l5LcJEsK3KTounU8CR9l+7QtcpOUUDJKd0xAbyI6gNcSw=="
+    },
+    {
+      "name": "@a2ui/lit",
+      "version": "0.11.0",
+      "resolved": "https://registry.npmjs.org/@a2ui/lit/-/lit-0.11.0.tgz",
+      "integrity": "sha512-HIJbubc9wKr/3zG1k1tGmZuI4XaAQrBVj7z6BY1fswLL7Q+q/8lwkiR4Pif2mMX88WCPcV2HoriPUk+X0PHnCA=="
+    },
+    {
+      "name": "@a2ui/web_core",
+      "version": "0.11.0",
+      "resolved": "https://registry.npmjs.org/@a2ui/web_core/-/web_core-0.11.0.tgz",
+      "integrity": "sha512-HIrisBO5yAsNb1NFQRRSVLLNWaPlDu7LShwZ/j1qRUWT/W/J7g8dJFEKbq0/nUofI7ZiieDlDXQtrJmwo24Nzw=="
+    },
+    {
+      "name": "@earendil-works/pi-coding-agent",
+      "version": "0.85.1",
+      "resolved": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-0.85.1.tgz",
+      "integrity": "sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ=="
+    },
+    {
+      "name": "@earendil-works/pi-ai",
+      "version": "0.85.1",
+      "resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.85.1.tgz",
+      "integrity": "sha512-+VgVIJDkDO2efYJKEEqvPTH4zmnIaXdAppGbO+vKFA9qy5PdhFiAenuFAkU+oiCSfOC4dMHDyrjdQeL4ZoC5CQ=="
+    },
+    {
+      "name": "lit",
+      "version": "3.3.3",
+      "resolved": "https://registry.npmjs.org/lit/-/lit-3.3.3.tgz",
+      "integrity": "sha512-fycuvZg/hkpozL00lm1pEJH5nN/lr9ZXd6mJI2HSN4+Bzc+LDNdEApJ6HFbPkdFNHLvOplIIuJvxkS4XUxqirw=="
+    },
+    {
+      "name": "rxjs",
+      "version": "7.8.1",
+      "resolved": "https://registry.npmjs.org/rxjs/-/rxjs-7.8.1.tgz",
+      "integrity": "sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg=="
+    },
+    {
+      "name": "eventsource-parser",
+      "version": "3.0.6",
+      "resolved": "https://registry.npmjs.org/eventsource-parser/-/eventsource-parser-3.0.6.tgz",
+      "integrity": "sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg=="
+    },
+    {
+      "name": "yaml",
+      "version": "2.9.1",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.9.1.tgz",
+      "integrity": "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw=="
+    },
+    {
+      "name": "vite",
+      "version": "7.3.6",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-7.3.6.tgz",
+      "integrity": "sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg=="
+    },
+    {
+      "name": "vitest",
+      "version": "4.1.11",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.1.11.tgz",
+      "integrity": "sha512-fhACrNXUidIbGSBr5FlbuBkO7VWC1ZyLl0DO4CU2DrQoAPxX84Ysxs+HeGQpii5lZWV1Q4gBZTTu49mF+A6Edw=="
+    },
+    {
+      "name": "tsx",
+      "version": "4.23.13",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.13.tgz",
+      "integrity": "sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw=="
+    },
+    {
+      "name": "esbuild",
+      "version": "0.28.2",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz",
+      "integrity": "sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA=="
+    }
+  ],
+  "clientSha256": "3d42ef9a0c41fe680a04eff14f0ff23c98d2828a79328272c6fc640f2d557be2",
+  "noPatches": true,
+  "noOverrides": true
+}

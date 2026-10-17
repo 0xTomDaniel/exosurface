@@ -1,0 +1,85 @@
+{
+  "status": "PASS",
+  "scope": {
+    "churnCycles": 100,
+    "surfacePublications": 40,
+    "slowSubscriberDelayMs": 15,
+    "stalledReaders": 1
+  },
+  "limits": {
+    "server": {
+      "observers": 16,
+      "leaseMs": 3000,
+      "publications": 16,
+      "writerBytes": 524288,
+      "frameBytes": 262144,
+      "requestBytes": 65536
+    },
+    "client": {
+      "connectionBytes": 4194304,
+      "eventBytes": 262144,
+      "events": 256,
+      "stallMs": 6000
+    }
+  },
+  "maxMessages": 1,
+  "maxPendingEvents": 73,
+  "transport": {
+    "active": 0,
+    "total": 103,
+    "dropped": 0,
+    "maxWriterBytes": 18706,
+    "wireBytes": 742855,
+    "maxPublicationBytes": 18703,
+    "published": 133
+  },
+  "host": {
+    "writes": 41,
+    "bytesWritten": 3925984,
+    "observers": 0,
+    "maxObservers": 2,
+    "sourceErrors": 0
+  },
+  "checkpointBytes": 186887,
+  "baseline": {
+    "rss": 225230848,
+    "heapTotal": 104333312,
+    "heapUsed": 39859192,
+    "external": 4740206,
+    "arrayBuffers": 840856
+  },
+  "after": {
+    "rss": 248840192,
+    "heapTotal": 120340480,
+    "heapUsed": 76833640,
+    "external": 5969843,
+    "arrayBuffers": 2076203
+  },
+  "churn": [
+    {
+      "cycle": 0,
+      "observers": 0,
+      "heapUsed": 42814480
+    },
+    {
+      "cycle": 20,
+      "observers": 0,
+      "heapUsed": 44271064
+    },
+    {
+      "cycle": 40,
+      "observers": 0,
+      "heapUsed": 45590664
+    },
+    {
+      "cycle": 60,
+      "observers": 0,
+      "heapUsed": 43874056
+    },
+    {
+      "cycle": 80,
+      "observers": 0,
+      "heapUsed": 60957120
+    }
+  ]
+}

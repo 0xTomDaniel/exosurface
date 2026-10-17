@@ -1,0 +1,42 @@
+// Paid clone proof; resume saved generations after a browser assertion failure.
+import assert from'node:assert/strict';import{readFileSync,writeFileSync}from'node:fs';import { chromium } from './playwright.mjs';
+const H=`${process.env.HOME}/.exo-a2ui-spike`,load=p=>JSON.parse(readFileSync(p,'utf8')),latest=()=>load(`${H}/workspace/latest.json`).workspace,clone=load(`${H}/clone.json`),baseline=load('evidence/incremental/baseline.json');
+const resume=process.argv.includes('--resume'),proof=resume?load('evidence/incremental/live.json'):{passed:false,token:baseline.token,checks:[],pageErrors:[],signals:[]};delete proof.error;let b,p;
+const save=()=>writeFileSync('evidence/incremental/live.json',JSON.stringify(proof,null,2));
+const until=async(fn,label,ms=240000)=>{const end=Date.now()+ms;while(Date.now()<end){const v=await fn();if(v)return v;await new Promise(r=>setTimeout(r,50));}throw Error(label);};
+const idle=()=>until(()=>!load(`${H}/owner/state.json`).streaming,'native settlement');
+const send=async text=>{const chat=p.getByLabel('Clone conversation').locator('[contenteditable="true"]');await chat.fill(text);await chat.press('Enter');};
+const entries=bytes=>readFileSync(clone.sessionFile).subarray(bytes).toString('utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
+const eventRows=()=>entries(proof.startBytes).filter(e=>e.message?.toolName==='apply_workspace'&&!e.message.isError);
+try{
+ const owner=load(`${H}/owner/state.json`),main=load(`${process.env.HOME}/.exo-bb-spike/owner/state.json`);assert.ok(owner.ready&&!owner.streaming);
+ if(!resume){proof.before=latest();proof.startBytes=readFileSync(clone.sessionFile).length;proof.clonePiPid=owner.piPid;proof.mainPiPid=main.piPid;save();}
+ b=await chromium.launch({headless:true});p=await b.newPage({viewport:{width:1600,height:1100}});p.on('pageerror',e=>{proof.pageErrors.push(e.stack);save();});
+ p.on('websocket',ws=>ws.on('framereceived',event=>{try{const m=JSON.parse(String(event.payload));if(m.pluginId==='exo-a2ui-spike'&&m.channel==='workspace'){const d=m.payload.delivery;proof.signals.push({at:Date.now(),revision:m.payload.revision,preview:d.preview?{toolCallId:d.preview.toolCallId,count:d.preview.messages.length}:null,updates:d.updates.map(x=>({baseRevision:x.baseRevision,revision:x.revision,messages:x.messages.length})),checkpoint:Object.hasOwn(d,'checkpoint'),bytes:String(event.payload).length});}}catch{}}));
+ await p.goto('http://127.0.0.1:38886/plugins/exo-a2ui-spike/workspace');await until(async()=>(await p.getByLabel('Workspace revision').innerText())===`Revision ${latest().revision}`,'initial restored revision');
+ const id=baseline.surfaceId,mod=()=>p.getByLabel(`Module ${id}`),field=()=>mod().locator('a2ui-basic-textfield').filter({hasText:'Venue'}).getByRole('textbox');
+ if(!resume){
+  await field().fill(`${proof.token}_UNSENT`);await p.getByText(/local edit.*not sent/).waitFor();assert.ok(!JSON.stringify(latest()).includes(`${proof.token}_UNSENT`));
+  await p.evaluate(()=>{window.__incSection=document.querySelector('[aria-label="Module brief"]');window.__incTextField=window.__incSection.querySelector('a2ui-basic-textfield');});
+  proof.startedAt=Date.now();save();await send(`Synthetic controlled incremental latency test, same operation as the previous full-snapshot baseline. Change ONLY Text component ${baseline.componentId} in surface ${id} to exact literal ${proof.token}_DELTA. Use apply_workspace once with baseRevision ${proof.before.revision}, only one updateComponents message containing that one COMPLETE Text definition. No read_workspace. Preserve every other node/data/surface/layout. One brief acknowledgement.`);
+  await until(async()=>(await p.getByLabel('Exosurface canvas').innerText()).includes(`${proof.token}_DELTA`),'incremental first visible');proof.visibleAt=Date.now();proof.visibleBeforeCommit=latest().revision===proof.before.revision;save();
+  await until(()=>latest().revision>proof.before.revision,'incremental commit');proof.committedAt=Date.now();proof.after=latest();await idle();proof.settledAt=Date.now();
+  assert.equal(await field().inputValue(),`${proof.token}_UNSENT`);assert.ok(!JSON.stringify(latest()).includes(`${proof.token}_UNSENT`));assert.ok(await p.evaluate(()=>window.__incSection===document.querySelector('[aria-label="Module brief"]')&&window.__incTextField===window.__incSection.querySelector('a2ui-basic-textfield')));
+  proof.checks.push('Actual local draft and existing surface/custom-input DOM survive a model-generated component delta; committed state never aliases local edit');
+ }
+ const changed=eventRows()[0];assert.ok(changed);proof.deltaResult=changed.message.details;proof.deltaResultBytes=JSON.stringify(changed.message.details).length;assert.equal(changed.message.details.delta.messages.length,1);
+ const other=s=>s.messages.filter(m=>(m.createSurface??m.updateComponents??m.updateDataModel)?.surfaceId!==id);assert.deepEqual(other(proof.after),other(proof.before));proof.checks.push('Actual Opus emits one current-stable component update; all other surfaces byte-identical');
+ if(!proof.latencyMs)proof.latencyMs={firstVisible:proof.visibleAt-proof.startedAt,committed:proof.committedAt-proof.startedAt,settled:proof.settledAt-proof.startedAt};save();
+ if(!proof.compositionStartBytes){
+  proof.compositionBase=latest();proof.compositionStartBytes=readFileSync(clone.sessionFile).length;proof.compositionStartedAt=Date.now();save();
+  const last=proof.compositionBase.messages.filter(m=>m.createSurface).at(-1).createSurface.surfaceId;
+  await send(`Synthetic progressive composition proof, not real planning. Replace ONLY the last surface (${last}) with a useful interactive decision corner for the SAME fictional community film-night situation already in this conversation. Preserve all other surfaces exactly. Choose the new surface ID, hierarchy, clear prose, and meaningful controls yourself; include a free-text assumption and a Button that submits it. Use one apply_workspace call, baseRevision ${proof.compositionBase.revision}, baseRevision FIRST then messages. Begin with deleteSurface for the old surface, createSurface for yours, then several small updateComponents batches so the root/heading appear before the later controls, then compatible updateDataModel. Use at least three component batches, not one giant batch. No supplied JSON or fixed module template. Ensure final controls usable. One brief acknowledgement.`);
+ }
+ await until(()=>latest().revision>proof.compositionBase.revision,'progressive composition committed');await idle();proof.compositionSettledAt??=Date.now();proof.composed=latest();
+ const composition=entries(proof.compositionStartBytes).find(e=>e.message?.toolName==='apply_workspace'&&!e.message.isError);assert.ok(composition);proof.compositionDelta=composition.message.details.delta;
+ const previews=proof.signals.filter(s=>s.at>=proof.compositionStartedAt&&s.preview&&s.revision===proof.compositionBase.revision);proof.compositionPreviews=previews;assert.ok(previews.length>1,'Multiple parsed prefixes must actually reach browser before commit');
+ proof.checks.push('Actual novel module arrives as multiple provisional v0.9.1 prefixes during paid generation, before native tool-result commit; not only a post-result animation');
+ await until(async()=>(await p.getByLabel('Workspace revision').innerText())===`Revision ${proof.composed.revision}`,'rendered composition revision');
+ const exact=JSON.stringify(latest()),afterBytes=readFileSync(clone.sessionFile).length;await p.reload();await until(async()=>(await p.getByLabel('Workspace revision').innerText())===`Revision ${proof.composed.revision}`,'refresh restores checkpoint');assert.equal(JSON.stringify(latest()),exact);assert.equal(readFileSync(clone.sessionFile).length,afterBytes);proof.checks.push('Refresh restores materialized checkpoint with no native message/action replay');
+ await p.screenshot({path:'evidence/incremental/live.png'});assert.equal(proof.pageErrors.length,0);assert.equal(load(`${process.env.HOME}/.exo-bb-spike/owner/state.json`).piPid,main.piPid);proof.mainAssistantEstimate=entries(proof.startBytes).filter(e=>e.message?.role==='assistant').reduce((n,e)=>n+(e.message.usage?.cost?.total??0),0);proof.passed=true;
+}catch(e){proof.error=e.stack;process.exitCode=1;}finally{await b?.close();save();console.log(JSON.stringify({...proof,before:undefined,after:undefined,compositionBase:undefined,composed:undefined,compositionDelta:undefined,signals:undefined},null,2));}

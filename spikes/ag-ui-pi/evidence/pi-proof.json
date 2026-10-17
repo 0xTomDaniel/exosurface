@@ -1,0 +1,1040 @@
+{
+  "status": "PASS",
+  "sdk": "@earendil-works/pi-coding-agent@0.85.1",
+  "transport": "AG-UI host executor (no Codex agent)",
+  "visualOnly": {
+    "id": "94c19fd1-c0b9-430d-8954-305ccf6499f6",
+    "kind": "move",
+    "status": "completed",
+    "turnId": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+    "mode": "pi",
+    "outcome": "Proposal created; source unchanged until acceptance."
+  },
+  "acceptance": {
+    "status": "applied",
+    "receiptId": "pi-accept"
+  },
+  "historical": {
+    "id": "681d2093-5932-4d50-b307-b725264a10ec",
+    "kind": "ask",
+    "status": "completed",
+    "turnId": "d5601b1e-7a01-4b6c-a964-c604f210fef7",
+    "mode": "pi",
+    "outcome": "Proposal created; source unchanged until acceptance."
+  },
+  "modelResults": [
+    {
+      "taskId": "sketch",
+      "time": "13:00",
+      "utterance": "Here's the proposal for task **`sketch`** (rev 1, \"Sketch the garden plan\"):\n\n| | Before | Proposed |\n|---|---|---|\n| **time** | 11:00 | **13:00** |\n| **status** | — | pending · not yet applied |\n\nThe source revision 1 is unchanged — `sketch` still reads `11:00` there. This is only a proposal; the move becomes effective if you accept it. `focus` (`09:00`, locked) and `walk` (`16:00`) are untouched.",
+      "model": "openrouter/anthropic/claude-sonnet-4.6",
+      "toolCalls": [
+        "propose_agenda"
+      ],
+      "input": {
+        "threadId": "thread:daily-agenda",
+        "current": {
+          "threadId": "thread:daily-agenda",
+          "surfaceId": "surface:daily-agenda",
+          "sequence": 0,
+          "revision": 1,
+          "source": {
+            "date": "2026-09-13",
+            "revision": 1,
+            "tasks": [
+              {
+                "id": "focus",
+                "title": "Finish the field notes",
+                "time": "09:00",
+                "duration": 90,
+                "locked": true
+              },
+              {
+                "id": "sketch",
+                "title": "Sketch the garden plan",
+                "time": "11:00",
+                "duration": 60,
+                "locked": false
+              },
+              {
+                "id": "walk",
+                "title": "Walk by the river",
+                "time": "16:00",
+                "duration": 30,
+                "locked": false
+              }
+            ]
+          },
+          "light": false,
+          "works": [
+            {
+              "id": "94c19fd1-c0b9-430d-8954-305ccf6499f6",
+              "kind": "move",
+              "status": "running",
+              "turnId": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+              "mode": "pi"
+            }
+          ],
+          "turns": [
+            {
+              "id": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+              "author": "exo",
+              "kind": "opening",
+              "at": "2026-09-13T19:18:37.621Z",
+              "sourceRevision": 1,
+              "surfaceRevision": 1
+            },
+            {
+              "id": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+              "author": "person",
+              "kind": "move",
+              "at": "2026-09-13T19:18:37.626Z",
+              "sourceRevision": 1,
+              "reference": {
+                "surfaceId": "surface:daily-agenda",
+                "revision": 1,
+                "objectId": "sketch"
+              }
+            }
+          ]
+        },
+        "exactReference": {
+          "revision": 1,
+          "source": {
+            "date": "2026-09-13",
+            "revision": 1,
+            "tasks": [
+              {
+                "id": "focus",
+                "title": "Finish the field notes",
+                "time": "09:00",
+                "duration": 90,
+                "locked": true
+              },
+              {
+                "id": "sketch",
+                "title": "Sketch the garden plan",
+                "time": "11:00",
+                "duration": 60,
+                "locked": false
+              },
+              {
+                "id": "walk",
+                "title": "Walk by the river",
+                "time": "16:00",
+                "duration": 30,
+                "locked": false
+              }
+            ]
+          },
+          "turnId": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+          "light": false,
+          "operations": [
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "surface:daily-agenda",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "surface:daily-agenda",
+                "components": [
+                  {
+                    "component": "Text",
+                    "id": "title",
+                    "text": "A day with room to think",
+                    "variant": "h2"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "date",
+                    "text": "2026-09-13 · source revision 1",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:time",
+                    "text": "09:00 · 90 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:title",
+                    "text": "Finish the field notes",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:lock",
+                    "text": "Morning focus · locked",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "focus:select",
+                    "child": "focus:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "focus",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "focus:row",
+                    "children": [
+                      "focus:time",
+                      "focus:title",
+                      "focus:lock",
+                      "focus:select"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:time",
+                    "text": "11:00 · 60 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:title",
+                    "text": "Sketch the garden plan",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:lock",
+                    "text": "Flexible",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "sketch:select",
+                    "child": "sketch:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "sketch",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:move:label",
+                    "text": "After lunch",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "sketch:move",
+                    "child": "sketch:move:label",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "sketch",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "sketch:row",
+                    "children": [
+                      "sketch:time",
+                      "sketch:title",
+                      "sketch:lock",
+                      "sketch:select",
+                      "sketch:move"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:time",
+                    "text": "16:00 · 30 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:title",
+                    "text": "Walk by the river",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:lock",
+                    "text": "Flexible",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "walk:select",
+                    "child": "walk:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "walk",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:move:label",
+                    "text": "After lunch",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "walk:move",
+                    "child": "walk:move:label",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "walk",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "walk:row",
+                    "children": [
+                      "walk:time",
+                      "walk:title",
+                      "walk:lock",
+                      "walk:select",
+                      "walk:move"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "plan:label",
+                    "text": "Assemble an agenda",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "plan",
+                    "child": "plan:label",
+                    "action": {
+                      "event": {
+                        "name": "plan",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "room-title",
+                    "text": "The reading room",
+                    "variant": "h3"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-state",
+                    "text": "The lamp is off.",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light:label",
+                    "text": "Turn lamp on",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "light",
+                    "child": "light:label",
+                    "action": {
+                      "event": {
+                        "name": "light",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "title",
+                      "date",
+                      "focus:row",
+                      "sketch:row",
+                      "walk:row",
+                      "plan",
+                      "room-title",
+                      "light-state",
+                      "light"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "surface:daily-agenda",
+                "path": "/",
+                "value": {
+                  "revision": 1,
+                  "sourceRevision": 1
+                }
+              }
+            }
+          ]
+        },
+        "recentTurns": [
+          {
+            "id": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+            "author": "exo",
+            "kind": "opening",
+            "at": "2026-09-13T19:18:37.621Z",
+            "sourceRevision": 1,
+            "surfaceRevision": 1
+          },
+          {
+            "id": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+            "author": "person",
+            "kind": "move",
+            "at": "2026-09-13T19:18:37.626Z",
+            "sourceRevision": 1,
+            "reference": {
+              "surfaceId": "surface:daily-agenda",
+              "revision": 1,
+              "objectId": "sketch"
+            }
+          }
+        ],
+        "instructions": "Treat visual turns as conversation. The reference preserves the exact source, component tree, grouping, times and lock emphasis originally seen. Current source is authoritative. A proposal is not an applied change. Do not rewrite a historical referent to the current task."
+      }
+    },
+    {
+      "utterance": "Here is the precise account, tracing each object ID and revision:\n\n---\n\n**Object you selected**\n`sketch` — *\"Sketch the garden plan\"* — at surface revision 1 / source revision 1 (turn `7787f88b`).\n\n**The three times**\n\n| Moment | Time | Where it lives |\n|---|---|---|\n| **Originally seen** (surface rev 1, source rev 1) | **11:00** | `sketch:time` component text `\"11:00 · 60 min\"` in `exactReference` |\n| **Accepted proposal** (proposal `1fd3d673`, surface rev 2) | **13:00** | My proposal turn `29646da2`, applied at source rev 2 / surface rev 3 |\n| **External source now shows** (source rev 3, surface rev 4) | **14:30** | Current `source.tasks[id=\"sketch\"].time` after the external edit turn `935cf1ab` |\n\n---\n\n**What happened, step by step**\n\n1. **Rev 1 → you saw 11:00.** The surface was built from source revision 1, where `sketch.time = \"11:00\"`.\n2. **You triggered a move** (turn `7787f88b`); I proposed `13:00` (turn `29646da2`). Source was still `11:00` — a proposal is not an applied change.\n3. **You accepted** (turn `7249ef29`); the move was applied at source revision 2, advancing `sketch` to `13:00` (turn `98a15374`, surface rev 3).\n4. **An external edit arrived** (turn `935cf1ab`, source rev 3, surface rev 4), independently setting `sketch.time = \"14:30\"` — the value now authoritative in the current source.\n\nSo: original title **\"Sketch the garden plan\"**, originally seen at **11:00**, you accepted a move to **13:00**, and the external source now shows **14:30**.",
+      "model": "openrouter/anthropic/claude-sonnet-4.6",
+      "toolCalls": [],
+      "input": {
+        "threadId": "thread:daily-agenda",
+        "current": {
+          "threadId": "thread:daily-agenda",
+          "surfaceId": "surface:daily-agenda",
+          "sequence": 4,
+          "revision": 4,
+          "source": {
+            "date": "2026-09-13",
+            "revision": 3,
+            "tasks": [
+              {
+                "id": "focus",
+                "title": "Finish the field notes",
+                "time": "09:00",
+                "duration": 90,
+                "locked": true
+              },
+              {
+                "id": "sketch",
+                "title": "Sketch the garden plan",
+                "time": "14:30",
+                "duration": 60,
+                "locked": false
+              },
+              {
+                "id": "walk",
+                "title": "Walk by the river",
+                "time": "16:00",
+                "duration": 30,
+                "locked": false
+              }
+            ],
+            "lastAcceptance": "pi-accept"
+          },
+          "light": false,
+          "works": [
+            {
+              "id": "94c19fd1-c0b9-430d-8954-305ccf6499f6",
+              "kind": "move",
+              "status": "completed",
+              "turnId": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+              "mode": "pi",
+              "outcome": "Proposal created; source unchanged until acceptance."
+            },
+            {
+              "id": "681d2093-5932-4d50-b307-b725264a10ec",
+              "kind": "ask",
+              "status": "running",
+              "turnId": "d5601b1e-7a01-4b6c-a964-c604f210fef7",
+              "mode": "pi"
+            }
+          ],
+          "turns": [
+            {
+              "id": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+              "author": "exo",
+              "kind": "opening",
+              "at": "2026-09-13T19:18:37.621Z",
+              "sourceRevision": 1,
+              "surfaceRevision": 1
+            },
+            {
+              "id": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+              "author": "person",
+              "kind": "move",
+              "at": "2026-09-13T19:18:37.626Z",
+              "sourceRevision": 1,
+              "reference": {
+                "surfaceId": "surface:daily-agenda",
+                "revision": 1,
+                "objectId": "sketch"
+              }
+            },
+            {
+              "id": "29646da2-3ac4-49a8-819c-0da8d437c79a",
+              "author": "exo",
+              "kind": "proposal",
+              "at": "2026-09-13T19:18:43.539Z",
+              "sourceRevision": 1,
+              "reference": {
+                "surfaceId": "surface:daily-agenda",
+                "revision": 1,
+                "objectId": "sketch"
+              },
+              "respondsTo": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+              "utterance": "Here's the proposal for task **`sketch`** (rev 1, \"Sketch the garden plan\"):\n\n| | Before | Proposed |\n|---|---|---|\n| **time** | 11:00 | **13:00** |\n| **status** | — | pending · not yet applied |\n\nThe source revision 1 is unchanged — `sketch` still reads `11:00` there. This is only a proposal; the move becomes effective if you accept it. `focus` (`09:00`, locked) and `walk` (`16:00`) are untouched.",
+              "surfaceRevision": 2
+            },
+            {
+              "id": "7249ef29-f7c2-4114-98d9-fb3d2b8cc67d",
+              "author": "person",
+              "kind": "acceptance",
+              "at": "2026-09-13T19:18:43.641Z",
+              "sourceRevision": 1,
+              "respondsTo": "7787f88b-4be6-446d-bac0-5df89fc57ee4"
+            },
+            {
+              "id": "98a15374-0c03-4c41-9e00-ab6dfcc8df91",
+              "author": "exo",
+              "kind": "applied",
+              "at": "2026-09-13T19:18:43.650Z",
+              "sourceRevision": 2,
+              "respondsTo": "7249ef29-f7c2-4114-98d9-fb3d2b8cc67d",
+              "surfaceRevision": 3
+            },
+            {
+              "id": "935cf1ab-0bd5-4019-af0b-b319864940f6",
+              "author": "source",
+              "kind": "external-edit",
+              "at": "2026-09-13T19:18:43.657Z",
+              "sourceRevision": 3,
+              "surfaceRevision": 4
+            },
+            {
+              "id": "d5601b1e-7a01-4b6c-a964-c604f210fef7",
+              "author": "person",
+              "kind": "ask",
+              "at": "2026-09-13T19:18:43.659Z",
+              "sourceRevision": 3,
+              "reference": {
+                "surfaceId": "surface:daily-agenda",
+                "revision": 1,
+                "objectId": "sketch"
+              },
+              "utterance": "I selected this in visual revision 1 and accepted your move. Which exact object was that, what time did I originally see, what did I accept, and what time does the external source now show? Mention the original title and all three times."
+            }
+          ],
+          "proposal": {
+            "id": "1fd3d673-25e9-44d9-b526-334421ca05c7",
+            "taskId": "sketch",
+            "time": "13:00",
+            "sourceRevision": 1,
+            "surfaceRevision": 2,
+            "status": "accepted",
+            "turnId": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+            "receiptId": "pi-accept"
+          }
+        },
+        "exactReference": {
+          "revision": 1,
+          "source": {
+            "date": "2026-09-13",
+            "revision": 1,
+            "tasks": [
+              {
+                "id": "focus",
+                "title": "Finish the field notes",
+                "time": "09:00",
+                "duration": 90,
+                "locked": true
+              },
+              {
+                "id": "sketch",
+                "title": "Sketch the garden plan",
+                "time": "11:00",
+                "duration": 60,
+                "locked": false
+              },
+              {
+                "id": "walk",
+                "title": "Walk by the river",
+                "time": "16:00",
+                "duration": 30,
+                "locked": false
+              }
+            ]
+          },
+          "turnId": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+          "light": false,
+          "operations": [
+            {
+              "version": "v0.9",
+              "createSurface": {
+                "surfaceId": "surface:daily-agenda",
+                "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateComponents": {
+                "surfaceId": "surface:daily-agenda",
+                "components": [
+                  {
+                    "component": "Text",
+                    "id": "title",
+                    "text": "A day with room to think",
+                    "variant": "h2"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "date",
+                    "text": "2026-09-13 · source revision 1",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:time",
+                    "text": "09:00 · 90 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:title",
+                    "text": "Finish the field notes",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:lock",
+                    "text": "Morning focus · locked",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "focus:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "focus:select",
+                    "child": "focus:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "focus",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "focus:row",
+                    "children": [
+                      "focus:time",
+                      "focus:title",
+                      "focus:lock",
+                      "focus:select"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:time",
+                    "text": "11:00 · 60 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:title",
+                    "text": "Sketch the garden plan",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:lock",
+                    "text": "Flexible",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "sketch:select",
+                    "child": "sketch:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "sketch",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "sketch:move:label",
+                    "text": "After lunch",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "sketch:move",
+                    "child": "sketch:move:label",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "sketch",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "sketch:row",
+                    "children": [
+                      "sketch:time",
+                      "sketch:title",
+                      "sketch:lock",
+                      "sketch:select",
+                      "sketch:move"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:time",
+                    "text": "16:00 · 30 min",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:title",
+                    "text": "Walk by the river",
+                    "variant": "h4"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:lock",
+                    "text": "Flexible",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:select:label",
+                    "text": "Select",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "walk:select",
+                    "child": "walk:select:label",
+                    "action": {
+                      "event": {
+                        "name": "select",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "walk",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "walk:move:label",
+                    "text": "After lunch",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "walk:move",
+                    "child": "walk:move:label",
+                    "action": {
+                      "event": {
+                        "name": "move",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "walk",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "walk:row",
+                    "children": [
+                      "walk:time",
+                      "walk:title",
+                      "walk:lock",
+                      "walk:select",
+                      "walk:move"
+                    ]
+                  },
+                  {
+                    "component": "Text",
+                    "id": "plan:label",
+                    "text": "Assemble an agenda",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "plan",
+                    "child": "plan:label",
+                    "action": {
+                      "event": {
+                        "name": "plan",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Text",
+                    "id": "room-title",
+                    "text": "The reading room",
+                    "variant": "h3"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light-state",
+                    "text": "The lamp is off.",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Text",
+                    "id": "light:label",
+                    "text": "Turn lamp on",
+                    "variant": "body"
+                  },
+                  {
+                    "component": "Button",
+                    "id": "light",
+                    "child": "light:label",
+                    "action": {
+                      "event": {
+                        "name": "light",
+                        "context": {
+                          "revision": 1,
+                          "objectId": "",
+                          "proposalId": ""
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "component": "Column",
+                    "id": "root",
+                    "children": [
+                      "title",
+                      "date",
+                      "focus:row",
+                      "sketch:row",
+                      "walk:row",
+                      "plan",
+                      "room-title",
+                      "light-state",
+                      "light"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9",
+              "updateDataModel": {
+                "surfaceId": "surface:daily-agenda",
+                "path": "/",
+                "value": {
+                  "revision": 1,
+                  "sourceRevision": 1
+                }
+              }
+            }
+          ]
+        },
+        "recentTurns": [
+          {
+            "id": "3b867ac7-2611-438f-8c0c-dc0a4c19c062",
+            "author": "exo",
+            "kind": "opening",
+            "at": "2026-09-13T19:18:37.621Z",
+            "sourceRevision": 1,
+            "surfaceRevision": 1
+          },
+          {
+            "id": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+            "author": "person",
+            "kind": "move",
+            "at": "2026-09-13T19:18:37.626Z",
+            "sourceRevision": 1,
+            "reference": {
+              "surfaceId": "surface:daily-agenda",
+              "revision": 1,
+              "objectId": "sketch"
+            }
+          },
+          {
+            "id": "29646da2-3ac4-49a8-819c-0da8d437c79a",
+            "author": "exo",
+            "kind": "proposal",
+            "at": "2026-09-13T19:18:43.539Z",
+            "sourceRevision": 1,
+            "reference": {
+              "surfaceId": "surface:daily-agenda",
+              "revision": 1,
+              "objectId": "sketch"
+            },
+            "respondsTo": "7787f88b-4be6-446d-bac0-5df89fc57ee4",
+            "utterance": "Here's the proposal for task **`sketch`** (rev 1, \"Sketch the garden plan\"):\n\n| | Before | Proposed |\n|---|---|---|\n| **time** | 11:00 | **13:00** |\n| **status** | — | pending · not yet applied |\n\nThe source revision 1 is unchanged — `sketch` still reads `11:00` there. This is only a proposal; the move becomes effective if you accept it. `focus` (`09:00`, locked) and `walk` (`16:00`) are untouched.",
+            "surfaceRevision": 2
+          },
+          {
+            "id": "7249ef29-f7c2-4114-98d9-fb3d2b8cc67d",
+            "author": "person",
+            "kind": "acceptance",
+            "at": "2026-09-13T19:18:43.641Z",
+            "sourceRevision": 1,
+            "respondsTo": "7787f88b-4be6-446d-bac0-5df89fc57ee4"
+          },
+          {
+            "id": "98a15374-0c03-4c41-9e00-ab6dfcc8df91",
+            "author": "exo",
+            "kind": "applied",
+            "at": "2026-09-13T19:18:43.650Z",
+            "sourceRevision": 2,
+            "respondsTo": "7249ef29-f7c2-4114-98d9-fb3d2b8cc67d",
+            "surfaceRevision": 3
+          },
+          {
+            "id": "935cf1ab-0bd5-4019-af0b-b319864940f6",
+            "author": "source",
+            "kind": "external-edit",
+            "at": "2026-09-13T19:18:43.657Z",
+            "sourceRevision": 3,
+            "surfaceRevision": 4
+          },
+          {
+            "id": "d5601b1e-7a01-4b6c-a964-c604f210fef7",
+            "author": "person",
+            "kind": "ask",
+            "at": "2026-09-13T19:18:43.659Z",
+            "sourceRevision": 3,
+            "reference": {
+              "surfaceId": "surface:daily-agenda",
+              "revision": 1,
+              "objectId": "sketch"
+            },
+            "utterance": "I selected this in visual revision 1 and accepted your move. Which exact object was that, what time did I originally see, what did I accept, and what time does the external source now show? Mention the original title and all three times."
+          }
+        ],
+        "instructions": "Treat visual turns as conversation. The reference preserves the exact source, component tree, grouping, times and lock emphasis originally seen. Current source is authoritative. A proposal is not an applied change. Do not rewrite a historical referent to the current task."
+      }
+    }
+  ],
+  "source": {
+    "date": "2026-09-13",
+    "revision": 3,
+    "tasks": [
+      {
+        "id": "focus",
+        "title": "Finish the field notes",
+        "time": "09:00",
+        "duration": 90,
+        "locked": true
+      },
+      {
+        "id": "sketch",
+        "title": "Sketch the garden plan",
+        "time": "14:30",
+        "duration": 60,
+        "locked": false
+      },
+      {
+        "id": "walk",
+        "title": "Walk by the river",
+        "time": "16:00",
+        "duration": 30,
+        "locked": false
+      }
+    ],
+    "lastAcceptance": "pi-accept"
+  }
+}

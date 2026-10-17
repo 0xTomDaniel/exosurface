@@ -1,0 +1,10 @@
+filters:
+  and:
+    - file.ext == "md"
+    - date == "2026-09-13"
+views:
+  - type: table
+    name: Today
+    order:
+      - date
+      - tasks
