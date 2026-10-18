@@ -8,7 +8,7 @@ import {nextLayout} from './stage.ts';
 export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='apply_workspace', SURFACE_UPDATE_TOOL='update_exosurface', RESET='exosurface-workspace-reset';
 // Basic catalog remains valid for existing surfaces; new surfaces use the Exo superset.
 export const CATALOGS=[CATALOG,EXO_CATALOG];
-export const MAX_BYTES=40*1024, MAX_SURFACES=8;
+export const MAX_BYTES=40*1024, MAX_SURFACES=8, MAX_SENDS=24;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
 const identifier=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
@@ -80,7 +80,7 @@ export function validateSnapshot(value:unknown):Snapshot{
     if(EXO_COMPONENTS.includes(c.component)){if(create.catalogId!==EXO_CATALOG)throw Error(`${c.component} requires a surface created with catalogId ${EXO_CATALOG}`);checkExoComponent(c);}
     if(c.action){
      const e=c.action.event;if(c.component!=='Button'||!e||Object.keys(c.action).join()!=='event')throw Error('Only declared Button event actions');
-     identifier.parse(e.name);if(!e.context||typeof e.context!=='object'||Object.keys(e.context).length>8)throw Error('Bounded action context required');
+     identifier.parse(e.name);if(!e.context||typeof e.context!=='object'||Object.keys(e.context).length>MAX_SENDS)throw Error(`A button can send at most ${MAX_SENDS} inputs (inputs are already saved as the person edits them)`);
      for(const[k,v]of Object.entries(e.context)){identifier.parse(k);if(v&&typeof v==='object'&&!Array.isArray(v)){if(Object.keys(v).join()!=='path')throw Error('Only literal or bound action values');checkPath((v as any).path);}else atom.parse(v);}
     }
     nodes.set(c.id,c);
@@ -135,7 +135,7 @@ export function latestSnapshot(branch:readonly any[]):Snapshot|null{
 export function validateAction(snapshot:Snapshot,revision:number,raw:unknown){
  if(snapshot.incomplete)throw Error('Workspace is still being composed');
  if(snapshot.revision!==revision)throw Error('Stale workspace action; refresh before trying again');
- if(JSON.stringify(raw).length>4096)throw Error('Action exceeds bound');
+ if(JSON.stringify(raw).length>16384)throw Error('Action exceeds bound');
  const a=actionSchema.parse(raw),c=moduleNodes(snapshot,a.surfaceId).find(n=>n.id===a.sourceComponentId);
  if(c?.action?.event?.name!==a.name)throw Error('Action not offered by this component');
  const offered=c.action.event.context,bindings=inputBindings(snapshot,a.surfaceId);

@@ -5,7 +5,7 @@
 // from standard A2UI for the renderer. Parsed line by line, not as YAML, so text
 // after `: ` needs no quoting (use \n for a line break, \| for a literal pipe in rows).
 import {EXO_CATALOG} from './exo-catalog.ts';
-import {moduleIds,moduleNodes,moduleData,atPath,type Snapshot} from './workspace.ts';
+import {moduleIds,moduleNodes,moduleData,atPath,MAX_SENDS,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 
 export const SNAPSHOT_FORMAT=`Exosurface snapshot format — one line per component, modelled on Playwright aria snapshots:
@@ -31,7 +31,7 @@ Roles:
   slider "Label" [ref=id] [min=0] [max=10]: current number
   radiogroup "Label" [ref=id] [chips]:  - radio "Option" [checked] [value=opt]   (pick one)
   listbox "Label" [ref=id] [chips]:  - option "Option" [selected] [value=opt]   (pick several)
-  button "Label" [ref=id] [action=event_name] [primary|borderless] [sends=input_ref,…]   (sends the named inputs' current values)
+  button "Label" [ref=id] [action=event_name] [primary|borderless] [sends=input_ref,…]   (sends the named inputs' current values, ≤24; inputs are saved as the person edits them, so sends is optional)
 tone ∈ neutral|accent|good|caution|risk. Bounds: 64 components per surface, depth 8.`;
 
 export type Line={depth:number;role:string;name?:string;attrs:Record<string,string|true>;text?:string;children:Line[];at:number};
@@ -127,6 +127,7 @@ export function buildSurface(region:Line):Built{
     components.push({id:i,component:'ChoicePicker',label:n.name??'',options,value:{path:`/${i}`},variant:n.role==='radiogroup'?'mutuallyExclusive':'multipleSelection',displayStyle:a.chips?'chips':'checkbox'});return i;}
    case 'button':{const i=id(n,'b'),label=claim(`${i}__label`,n.at);components.push({id:label,component:'Text',text:n.name??n.text??'OK'});
     const sends=typeof a.sends==='string'?a.sends.split(',').map(s=>s.trim()).filter(Boolean):[];
+    if(sends.length>MAX_SENDS)throw Error(`line ${n.at}: button "${n.name??i}" sends ${sends.length} inputs; at most ${MAX_SENDS}. Inputs are saved as the person edits them, so send only the ones the button is about, or none.`);
     components.push({id:i,component:'Button',child:label,variant:a.primary?'primary':a.borderless?'borderless':'default',action:{event:{name:typeof a.action==='string'?a.action:i,context:Object.fromEntries(sends.map(s=>[s,{path:`/${s}`}]))}}});return i;}
    default:throw Error(`line ${n.at}: unknown role "${n.role}"`);
   }
