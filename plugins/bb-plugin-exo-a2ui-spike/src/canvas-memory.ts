@@ -40,7 +40,7 @@ export function describeDelta(after:Snapshot|null,messages:any[],layout?:any,lim
  }
  const parts=order.map(id=>{const nodes=after&&moduleIds(after).includes(id)?moduleNodes(after,id):[];const title=surfaceTitle(nodes,id);return `${title}${title!==id?` [${id}]`:''}: ${bySurface.get(id)!.join('; ')}`;});
  if(layout?.focus)parts.push(`stage → ${layout.focus}`);if(layout?.beside?.length)parts.push(`beside: ${layout.beside.join(', ')}`);
- return cut('Showed on canvas — '+parts.join(' || '),limit);
+ return cut('Showed on the surface — '+parts.join(' || '),limit);
 }
 /** Per-request current canvas: outline for the stage and context surfaces, titles for the rest. */
 export function outlineCanvas(s:Snapshot,limit=7000):string{
@@ -76,16 +76,16 @@ export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponent
 export type Earlier={count:number;recent:{surface:string;title:string}[]};
 export function snapshotOutline(s:Snapshot,earlier:Earlier={count:0,recent:[]},limit=12000):string{
  const ids=moduleIds(s),focus=s.layout?.focus&&ids.includes(s.layout.focus)?s.layout.focus:ids.at(-1),beside=(s.layout?.beside??[]).filter(id=>ids.includes(id)&&id!==focus);
- const head=`EXOSURFACE revision ${s.revision}.${focus?` Stage: ${focus}.`:' Empty canvas.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
+ const head=`EXOSURFACE revision ${s.revision}.${focus?` Stage: ${focus}.`:' No pages yet.'}${beside.length?` Beside: ${beside.join(', ')}.`:''}`;
  const full=[...(focus?[focus]:[]),...beside].map(id=>surfaceSnapshot(s,id));
  const shelf=ids.filter(id=>id!==focus&&!beside.includes(id)).map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (shelf)`);
  const past=earlier.recent.map(e=>`- region ${JSON.stringify(e.title)} [ref=${e.surface}]   (history)`);
- const history=earlier.count?[`Earlier in this conversation (${earlier.count}; kept by the system, nothing to manage; read_exosurface shows one, and editing or redrawing its ref brings it back):`,...past,...(earlier.count>past.length?[`…and ${earlier.count-past.length} more`]:[])]:[];
- let body=[...full,...(shelf.length?['Shelf (read_exosurface for a surface in full):',...shelf]:[]),...history].join('\n');
+ const history=earlier.count?[`Earlier pages in this conversation (${earlier.count}; kept by the system, nothing to manage; read_exosurface shows one, and editing or redrawing its ref brings it back):`,...past,...(earlier.count>past.length?[`…and ${earlier.count-past.length} more`]:[])]:[];
+ let body=[...full,...(shelf.length?['Shelf (read_exosurface for a page in full):',...shelf]:[]),...history].join('\n');
  if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[]),...history].join('\n');
  return `${head}\n${cut(body,limit)}`;
 }
-/** The person's canvas edits since the agent's last turn, as snapshot-style lines. */
+/** Page edits by the person since the last agent turn, as snapshot-style lines. */
 export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
  const last=new Map<string,{surfaceId:string;path:string}>();
  for(const d of deltas)for(const m of d.messages){const u=m.updateDataModel;if(u?.path&&u.path!=='/')last.set(`${u.surfaceId} ${u.path}`,{surfaceId:u.surfaceId,path:u.path});}

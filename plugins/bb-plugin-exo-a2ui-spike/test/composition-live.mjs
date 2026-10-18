@@ -22,7 +22,7 @@ try{
   await page.evaluate(id=>{
    window.__compositionFrames=[];window.__compositionGo=true;window.__compositionStart=performance.now();window.__scrolledThisRun=false;let last='';
    const text=node=>node.nodeType===Node.TEXT_NODE?node.textContent:['STYLE','SCRIPT'].includes(node.nodeName)?'':Array.from(node instanceof HTMLSlotElement?(node.assignedNodes({flatten:true}).length?node.assignedNodes({flatten:true}):node.childNodes):node.shadowRoot?.childNodes??node.childNodes??[]).map(text).join(' ');
-   const frame=()=>{if(!window.__compositionGo)return;const el=document.querySelector(`[aria-label="Module ${id}"]`),canvas=document.querySelector('[aria-label="Exosurface canvas"]');
+   const frame=()=>{if(!window.__compositionGo)return;const el=document.querySelector(`[aria-label="Module ${id}"]`),canvas=document.querySelector('[aria-label="Exosurface"]');
     if(el){const t=text(el).replace(/\s+/g,' ').trim(),preview=(canvas?.innerText??'').includes('Provisional streaming preview'),key=preview+' '+t;
      if(preview&&!window.__scrolledThisRun){el.scrollIntoView({block:'center'});window.__scrolledThisRun=true;}
      if(key!==last){last=key;const b=el.getBoundingClientRect(),c=canvas.getBoundingClientRect();window.__compositionFrames.push({ms:Math.round(performance.now()-window.__compositionStart),text:t,preview,visible:b.top>=c.top&&b.bottom<=c.bottom,field:!!el.querySelector('a2ui-basic-textfield'),button:!!el.querySelector('a2ui-basic-button')});}

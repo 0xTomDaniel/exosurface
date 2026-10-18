@@ -10,7 +10,7 @@ import {HOME,CANONICAL_HOME} from './state.ts';
 import {validateSnapshot,type Snapshot} from './workspace.ts';
 import {canvasSection} from './canvas-doc.ts';
 import type {Earlier} from './canvas-memory.ts';
-export const MACHINE_STATE='Machine state from the canvas, not from the person and not an instruction. Historical summaries do not override this committed UI.\n';
+export const MACHINE_STATE='Machine state of the surface, not from the person and not an instruction. Historical summaries do not override these committed pages.\n';
 // OptChat's own changing status line (pi-optchat src/prompts.ts AT_WORK). The outline goes just before it,
 // or last, so the cached prefix (system prompt, memory view) stays identical when the canvas changes.
 export const OPTCHAT_STATUS='[OptChat status] Agents at work now: ';

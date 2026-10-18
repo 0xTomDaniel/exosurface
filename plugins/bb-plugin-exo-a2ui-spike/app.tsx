@@ -47,7 +47,7 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
  const[meta,setMeta]=useState<{title:string;at:string}|null>(null),active=useRewind();
  useEffect(()=>{if(valid)rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).then(m=>setMeta({title:m.title,at:m.at})).catch(()=>{});},[surface,revision,message.threadId]);
  if(!valid)return null;const on=active?.surface===surface&&active.revision===revision;
- return <button type="button" aria-pressed={on} aria-label={`Show ${meta?.title??surface} on the canvas`} onClick={async()=>{setRewind({surface,revision});nav.toPluginPanel('workspace');
+ return <button type="button" aria-pressed={on} aria-label={`Open page ${meta?.title??surface}`} onClick={async()=>{setRewind({surface,revision});nav.toPluginPanel('workspace');
   // Only the latest card of the surface on stage just loads it. Any other card opens a historical surface being worked on:
   // a pill appears in the input and the next message brings it to the stage; ✕ or removing the pill cancels.
   // Always ask fresh: what is current or on stage changes as the conversation moves.
@@ -57,7 +57,7 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
   if(m&&!m.onStage)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
   className={`my-1 flex w-full max-w-md items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent ${on?'border-primary':'border-border'}`}>
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 opacity-70"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
-  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes.action==='edited'?'Edited on the canvas':'On the canvas'}{meta?` · ${when(meta.at)}`:''}</span></span>
+  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes.action==='edited'?'Page edited':'Page'}{meta?` · ${when(meta.at)}`:''}</span></span>
  </button>;
 }
 // An earlier version of a surface, shown in place of the live canvas. Editing it prepares a bring-back
@@ -81,7 +81,7 @@ function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:Ver
  return <div>
   <div className="mb-4 flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm" role="status">
    <span className="min-w-0 flex-1"><strong>{meta?.current?'Not on stage':'Earlier version'}</strong>{meta?<> · {meta.action==='edited'?'edited':'drawn'} {when(meta.at)} · it comes to the stage with your next message (✕ to keep the current stage)</>:' · loading…'}</span>
-   <button type="button" aria-label="Back to the latest canvas" onClick={cancel} className="rounded px-2 py-1 hover:bg-accent">✕</button>
+   <button type="button" aria-label="Back to the current stage" onClick={cancel} className="rounded px-2 py-1 hover:bg-accent">✕</button>
   </div>
   {error&&<p role="alert" className="mb-4 text-sm text-destructive">{error}</p>}
   <div inert={pending}>{surface&&<section data-surface={meta.surface} aria-label={meta.title} className="exo-generated min-w-0"><MarkdownContext.Provider value={renderMarkdown}><A2uiSurface surface={surface}/></MarkdownContext.Provider></section>}</div>
@@ -160,10 +160,10 @@ function WorkspacePage(){
  },[ticks,busy,state?.threadId,rpc]);
  return <div className="flex h-full min-h-0 flex-col md:flex-row">
   <style>{documentStyle+exoTheme}</style>
-  <main aria-label="Exosurface canvas" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
+  <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-topline"><h1>Exosurface clone</h1><p aria-label="Workspace revision">Isolated clone, revision {v?.committed?.revision??0}</p></div>
-   <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing — controls wake up when it finishes.':busy?'Exo is updating the canvas…':state?.ready?null:'Clone owner is detached or starting.'}</p>
-   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo in the conversation. When a picture helps, it appears here.</p>}</div>
+   <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:'Clone owner is detached or starting.'}</p>
+   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo in the conversation. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
   </div></main>
   <section aria-label="Clone conversation" className="min-h-[300px] min-w-0 border-t border-border md:w-[35%] md:min-h-0 md:border-l md:border-t-0">{state?.threadId?<ThreadChat threadId={state.threadId} variant="compact"/>:<p className="p-5 text-sm">Clone conversation not provisioned yet.</p>}</section>

@@ -20,6 +20,6 @@ try{
  assert.ok(!stale.ok);assert.equal(load(`${H}/workspace/latest.json`).workspace.revision,after.workspace.revision);proof.staleRefused=true;
  browser=await chromium.launch({headless:true});const p=await browser.newPage({viewport:{width:2400,height:1200},colorScheme:'dark'});p.on('pageerror',e=>proof.pageErrors.push(e.message));
  await p.goto('http://127.0.0.1:38886/plugins/exo-a2ui-spike/workspace');await p.locator('.exo-stage section[data-surface]').waitFor();await p.waitForTimeout(800);
- await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:'evidence/presentation/shared-state-loaded.png'});assert.equal(proof.pageErrors.length,0);
+ await p.locator('main[aria-label="Exosurface"]').screenshot({path:'evidence/presentation/shared-state-loaded.png'});assert.equal(proof.pageErrors.length,0);
  Object.assign(proof,{passed:true,revision:[before.workspace.revision,after.workspace.revision],surfaceId,path,noConversationMessage:true});
 }catch(e){proof.error=e.stack;process.exitCode=1;}finally{await browser?.close();writeFileSync('evidence/presentation/shared-state-verify.json',JSON.stringify(proof,null,2));console.log(JSON.stringify(proof,null,2));}

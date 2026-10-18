@@ -6,12 +6,12 @@ Exosurface explores interfaces that materialize around your intent and context: 
 
 ## Current implementation — October 2026
 
-The working Exosurface lives in [`plugins/`](plugins/): stock [BB](https://getbb.app) plugins plus Pi extensions, no fork.
+Vocabulary: [GLOSSARY.md](GLOSSARY.md). The working Exosurface lives in [`plugins/`](plugins/): stock [BB](https://getbb.app) plugins plus Pi extensions, no fork.
 
 | Path | What it is |
 |---|---|
 | [`plugins/bb-plugin-exo-spike`](plugins/bb-plugin-exo-spike) | Exo's daily entry point in BB: one growing OptChat session, independent per-user owner (launchd), attach/detach, journal replay |
-| [`plugins/bb-plugin-exo-a2ui-spike`](plugins/bb-plugin-exo-a2ui-spike) | The canvas beside the chat, on an isolated clone of Exo: direct Exo → A2UI over a generic visual catalog, stage that follows the conversation, presentation guide, shared-state edits, context hygiene with upstream OptChat. Also a Pi package (`package.json` `pi` manifest). Start with its [README](plugins/bb-plugin-exo-a2ui-spike/README.md) and [PRESENTATION.md](plugins/bb-plugin-exo-a2ui-spike/PRESENTATION.md) |
+| [`plugins/bb-plugin-exo-a2ui-spike`](plugins/bb-plugin-exo-a2ui-spike) | The surface beside the chat, on an isolated clone of Exo: pages drawn in a readable snapshot format over a generic visual catalog, stage that follows the conversation, presentation guide, shared-state edits, context hygiene with upstream OptChat. Also a Pi package (`package.json` `pi` manifest). Start with its [README](plugins/bb-plugin-exo-a2ui-spike/README.md) and [PRESENTATION.md](plugins/bb-plugin-exo-a2ui-spike/PRESENTATION.md) |
 
 Repo boundaries: **Exosurface** is the interface (BB plugins, Pi extensions, presentation guide); **[exocortex](https://github.com/0xTomDaniel/exocortex)** is the owner's agent instance (identity, policy, skills, profile config) and enables Exosurface — never the reverse; **[Exomachina](https://github.com/0xTomDaniel/Exomachina)** is the factory product. The memory vault is not in git.
 

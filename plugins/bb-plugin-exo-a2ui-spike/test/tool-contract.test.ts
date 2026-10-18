@@ -27,9 +27,9 @@ test('Guide is a stable system-prompt section, never a per-turn transcript messa
 test('Canvas contract travels with the tool',async()=>{
  const{tools}=await load(),t=tools.get('update_exosurface');
  assert.equal(t.description,SURFACE_DESCRIPTION);assert.deepEqual(t.promptGuidelines,SURFACE_GUIDELINES);assert.ok(t.promptSnippet);
- for(const x of['baseRevision FIRST','snapshot:','edits:','insertAfter','delete:','- region "Surface title" [ref=surface_id]','figure "Caption" [chart=bar|line]'])assert.ok(t.description.includes(x),x);
- assert.ok(SURFACE_GUIDELINES.some(g=>g.includes(PRESS_PREFIX)&&g.includes('already saved')));assert.ok(SURFACE_GUIDELINES.some(g=>g.includes('[canvas-edits]')));
- assert.deepEqual(Object.keys(tools.get('read_exosurface').parameters.properties),['surface']);
+ for(const x of['baseRevision FIRST','snapshot:','edits:','insertAfter','delete:','- region "Page title" [ref=page_id]','figure "Caption" [chart=bar|line]'])assert.ok(t.description.includes(x),x);
+ assert.ok(SURFACE_GUIDELINES.some(g=>g.includes(PRESS_PREFIX)&&g.includes('already saved')));assert.ok(SURFACE_GUIDELINES.some(g=>g.includes('[page-edits]')));
+ assert.deepEqual(Object.keys(tools.get('read_exosurface').parameters.properties),['page']);
 });
 const snap='- region "Tomorrow" [ref=tomorrow]:\n  - list [ref=tl] [timeline]:\n    - listitem "Breakfast" [when=07:00] [state=now]\n  - note "Leave before 8" [ref=rec] [tone=decision]: Rain arrives at noon.';
 test('Nothing in history is rewritten: Exo\'s canvas call stays as written; the tool commits translated A2UI',async()=>{
@@ -37,14 +37,14 @@ test('Nothing in history is rewritten: Exo\'s canvas call stays as written; the 
  const message:any={role:'assistant',content:[{type:'toolCall',id:'c1',name:'update_exosurface',arguments:{baseRevision:0,snapshot:snap}}],stopReason:'toolUse'};
  assert.ok((handlers.get('message_end')??[]).every(h=>!h({type:'message_end',message},{sessionManager:{getSessionId:()=>'x',getBranch:()=>[]}})?.message),'no message_end replacement');
  const result=await tools.get('update_exosurface').execute('c1',{baseRevision:0,snapshot:snap});
- assert.match(result.content[0].text,/^Canvas revision 1: drew tomorrow\. On stage: tomorrow\./);
+ assert.match(result.content[0].text,/^Surface revision 1: drew page tomorrow\. On stage: tomorrow\./);
  assert.ok(result.details.delta.messages.some((m:any)=>m.updateComponents?.components.some((c:any)=>c.id==='rec'&&c.component==='Callout')));
  assert.ok(!result.content[0].text.includes('component'),'result is plain words');
 });
 test('Failed canvas calls are recorded and explained; the call itself stays in history as written',async()=>{
  const{tools,entries}=await load();
- await assert.rejects(()=>tools.get('update_exosurface').execute('c9',{baseRevision:0,snapshot:'- region "x":\n  - text: no ref'}),/ref=surface_id/);
- assert.equal(entries.at(-1).type,'exosurface-failed-call');assert.match(entries.at(-1).data.error,/ref=surface_id/);
+ await assert.rejects(()=>tools.get('update_exosurface').execute('c9',{baseRevision:0,snapshot:'- region "x":\n  - text: no ref'}),/ref=page_id/);
+ assert.equal(entries.at(-1).type,'exosurface-failed-call');assert.match(entries.at(-1).data.error,/ref=page_id/);
  await assert.rejects(()=>tools.get('update_exosurface').execute('c10',{baseRevision:3,snapshot:snap}),/stale baseRevision 3/);
 });
 test('Button presses reach the conversation as a readable line; values are committed by code first',()=>{
@@ -72,4 +72,15 @@ test('Outline is attached after OptChat rebuilds the request, to whatever head O
 test('What moves to the primary session says nothing about a clone or synthetic content',async()=>{
  const{MAIN_HEADER}=await import('../src/tool-contract.ts');const{PRESENTATION_GUIDE_SNAPSHOT}=await import('../src/presentation-guide.ts');const{SURFACE_DESCRIPTION,SURFACE_GUIDELINES}=await import('../src/tool-contract.ts');
  for(const text of [MAIN_HEADER,PRESENTATION_GUIDE_SNAPSHOT,SURFACE_DESCRIPTION,...SURFACE_GUIDELINES])assert.ok(!/clone|synthetic|isolated|not main/i.test(text),text.slice(0,80));
+});
+test('Vocabulary (GLOSSARY.md): nothing the agent reads or the person sees says "canvas"',async()=>{
+ const c=await import('../src/tool-contract.ts'),g=await import('../src/presentation-guide.ts'),f=await import('../src/snapshot-format.ts'),w=await import('../src/workspace-frame.ts');
+ const agent=[c.CLONE_HEADER,c.MAIN_HEADER,c.SURFACE_SNIPPET,c.SURFACE_DESCRIPTION,c.SURFACE_READ_DESCRIPTION,...c.SURFACE_GUIDELINES,g.PRESENTATION_GUIDE_SNAPSHOT,f.SNAPSHOT_FORMAT,w.MACHINE_STATE];
+ for(const t of agent)assert.ok(!/canvas/i.test(t),t.slice(0,90));
+ const skill=readFileSync(new URL('../skills/exosurface/SKILL.md',import.meta.url),'utf8');assert.ok(!/canvas/i.test(skill));
+ // UI strings and agent-facing messages in the plugin sources (identifiers and comments aside)
+ for(const file of ['../app.tsx','../host.ts','../server.ts','../src/workspace-extension.ts','../src/canvas-memory.ts']){
+  const strings=(readFileSync(new URL(file,import.meta.url),'utf8').match(/(['"`])(?:(?!\1)[^\\\n]|\\.)*\1/g)??[]).filter(x=>/\s/.test(x)&&!/^['"`][\w./-]*['"`]$/.test(x));
+  const bad=strings.filter(x=>/\bcanvas\b/i.test(x)&&!/exo-canvas|canvas-|className/.test(x));assert.deepEqual(bad,[],file);
+ }
 });
