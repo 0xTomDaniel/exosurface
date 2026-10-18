@@ -35,7 +35,7 @@ export default function workspaceFrame(pi:ExtensionAPI){
   const walk=(v:any)=>{if(typeof v==='string')found ||=v.includes(frame);else if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')Object.values(v).forEach(walk);};walk(e.payload);
   // Context hygiene receipt: is the guide actually sent, how big is the request, does any canvas JSON leak into it?
   const text=JSON.stringify(e.payload);
-  const dir=join(HOME,'workspace');mkdirSync(dir,{recursive:true,mode:0o700});appendFileSync(join(dir,'context-receipts.jsonl'),JSON.stringify({at:new Date().toISOString(),revision:current.revision,sha256:createHash('sha256').update(JSON.stringify(current)).digest('hex'),exactFramePresent:found,frameBytes:frame.length,payloadBytes:text.length,guidePresent:text.includes('CHAT COMPLEMENTS THE CANVAS'),reminderPresent:text.includes('<tone_preference>'),canvasJsonLeaks:(text.match(/\\*"component\\*":\\*"/g)??[]).length})+'\n',{mode:0o600});
+  const dir=join(HOME,'workspace');mkdirSync(dir,{recursive:true,mode:0o700});appendFileSync(join(dir,'context-receipts.jsonl'),JSON.stringify({at:new Date().toISOString(),revision:current.revision,sha256:createHash('sha256').update(JSON.stringify(current)).digest('hex'),exactFramePresent:found,frameBytes:frame.length,payloadBytes:text.length,guidePresent:text.includes('CHAT COMPLEMENTS THE SURFACE')||text.includes('CHAT COMPLEMENTS THE CANVAS'),reminderPresent:text.includes('<tone_preference>'),canvasJsonLeaks:(text.match(/\\*"component\\*":\\*"/g)??[]).length})+'\n',{mode:0o600});
   if(!found){ctx.abort();throw Error('Exact UI missing from actual provider payload');}
  });
 }

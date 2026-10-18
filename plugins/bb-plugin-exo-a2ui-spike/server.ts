@@ -121,6 +121,8 @@ export default function plugin(bb:BbPluginApi){
       return {surface,revision:v.revision,title:v.title,at:v.at,action:v.action,current:live&&!later,onStage:live&&!later&&stage===surface,panel:d.panel,snapshot:versionSnapshot(v)};
     },
     pending:async({threadId,op,version,updates})=>{
+      // The composer add-on asks in every thread; threads without a surface simply have nothing pending.
+      if(op==='get'&&!DEPLOYMENTS.some(x=>threadOf(x)===threadId))return null;
       const d=deploymentFor(threadId);
       if(op==='clear'){rmSync(pendingFile(d),{force:true});bb.realtime.publish('pending-restore',null);return null;}
       if(op==='set'){if(!version)throw Error('version required');const v=versionAt(history(d),version.surface,version.revision);if(!v)throw Error('Unknown version');
