@@ -1,6 +1,6 @@
 # Promoting Exosurface to the primary Exo session
 
-Status: **prepared, not started.** Every step below that touches the primary session needs the owner's explicit go at that time. The clone keeps running unchanged until the switch.
+Status: **step 2 done (2026-10-18): the primary session runs upstream OptChat 0.8.6.** Steps 3–6 prepared, not started. Every step below that touches the primary session needs the owner's explicit go at that time. The clone keeps running unchanged until the switch.
 
 ## Readiness evidence (clone, real use)
 
@@ -11,7 +11,7 @@ Status: **prepared, not started.** Every step below that touches the primary ses
 ## Steps
 
 1. **Back up the primary session.** Archive its OptChat home (profile, memories, sessions) and record checksums. Confirm the session file's byte prefix before and after every later step; history is append-only.
-2. **Move the primary session to upstream OptChat 0.8.6.** Point its OptChat path at a clean upstream checkout instead of the patched 0.7.0 one. Both local patches are covered: the cache mark is upstream (#187), and the extra memory origin type only affects a label in OptChat's memory browser (entries from that origin show "imported from undefined"; cosmetic). Restart the primary owner only when idle, under its own supervisor, and confirm memory loads with the same counts.
+2. **Move the primary session to upstream OptChat 0.8.6.** *Done 2026-10-18 together with step 1:* verified backup of profile and session taken with the owner stopped; separate clean 0.8.6 checkout for the primary session; same session, history prefix byte-identical, memory counts unchanged, all tools and skills kept (plus upstream's new `models` tool). Point its OptChat path at a clean upstream checkout instead of the patched 0.7.0 one. Both local patches are covered: the cache mark is upstream (#187), and the extra memory origin type only affects a label in OptChat's memory browser (entries from that origin show "imported from undefined"; cosmetic). Restart the primary owner only when idle, under its own supervisor, and confirm memory loads with the same counts.
 3. **Give the primary plugin the canvas.** The canvas plugin descends from the primary plugin; outside the canvas code they differ in about 110 lines (bridge card rows, owner canvas commands). Port the canvas into the primary plugin on a branch in a separate worktree (the live checkout serves the primary plugin):
    - launch order `-e workspace-extension.ts -e <optchat> -e workspace-frame.ts -e live.ts --skill skills/exosurface`, with `EXOSURFACE_MODE=main` (header without clone wording);
    - **tools added, never replaced:** Exo keeps all of its own tools and gains `update_exosurface` and `read_exosurface`; the clone-only tool guard and blocks on file/shell/subagent tools are not ported;
