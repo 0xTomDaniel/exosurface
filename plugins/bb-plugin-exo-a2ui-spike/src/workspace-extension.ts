@@ -3,7 +3,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {appendFileSync,existsSync,mkdirSync,rmSync,readFileSync} from 'node:fs';
 import type {ExtensionAPI,ExtensionContext} from '@earendil-works/pi-coding-agent';
 import {Type} from 'typebox';
-import {HOME,CANONICAL_HOME,save} from './state.ts';
+import {HOME,save,MAIN_MODE,assertDeployment} from './state.ts';
 import {DIRECT_TOOLS,cloneTools,requirePresentationExperiment,restoredObserverMode} from './generation-policy.ts';
 import {CATALOG,PUBLICATION,UPDATE,RESET,COMPONENTS,moduleIds,latestSnapshot,validateSnapshot,applyDelta,type Snapshot,type Delta} from './workspace.ts';
 import {StreamFrames,SnapshotStream} from './stream-frames.ts';
@@ -25,7 +25,9 @@ import {OBS_RUN,type Route,type ObserverStatus} from '../observer/stream.ts';
 import {DocumentObserverTurn as ObserverTurn} from '../observer/document-turn.ts';
 export const OMITTED='Legacy: layout JSON kept out of conversation history; this call was applied.';
 export default function workspace(pi:ExtensionAPI){
- if(process.env.EXO_A2UI_SPIKE!=='1'||process.env.OPTCHAT_HOME!==CANONICAL_HOME||!existsSync(join(HOME,'clone.json')))throw Error('Workspace extension requires explicitly cloned home; never main');
+ assertDeployment();
+ const LEGACY=[UPDATE,'read_workspace',PUBLICATION,OFFER];
+ const register:typeof pi.registerTool=(t:any)=>{if(MAIN_MODE&&LEGACY.includes(t.name))return;pi.registerTool(t);};
  let current:Snapshot|null=null,epoch=randomUUID(),updates:Delta[]=[],versions:Version[]=[];
  // Every surface version, derived from the native session; read by the BB server for chat cards and rewinds.
  const historyFile=join(HOME,'workspace','history.jsonl');
@@ -42,8 +44,11 @@ export default function workspace(pi:ExtensionAPI){
  const clearPreview=()=>{rmSync(previewFile,{force:true});streams.clear();};
  const materialize=(ctx:ExtensionContext)=>save(join(HOME,'workspace','latest.json'),{sessionId:ctx.sessionManager.getSessionId(),epoch,workspace:current,earlier:(()=>{const a=archived(versions,live());return {count:a.length,recent:a.slice(0,8).map(v=>({surface:v.surface,title:v.title}))};})(),updates,presentation:{mode:'direct',activeTools:pi.getActiveTools()},observer:observerStatus?{...observerStatus,armed:!!observerArm,running:!!observerTurn}:null,composition:{configured:!!offer,surfaceId:offer?.surfaceId??null,candidateCount:offer?.candidates.length??0,running:!!controller,lastRun}});
  const restore=(ctx:ExtensionContext)=>{cancelObserver();observerStatus=null;cancelComposition();{const h=replayHistory(ctx.sessionManager.getBranch());current=h.current;versions=h.versions;writeHistory();}offer=null;lastRun=null;for(const e of ctx.sessionManager.getBranch()){const m=(e as any).message;if(m?.role==='toolResult'&&m.toolName===OFFER&&!m.isError)offer=validateOffer(m.details.offer);if(e.type==='custom'&&e.customType===OFFER_ENTRY)offer=validateOffer((e.data as any).offer);if(e.type==='custom'&&e.customType===RUN)lastRun=(e.data as any).summary;if(e.type==='custom'&&e.customType===OBS_MODE)observerArm=restoredObserverMode((e.data as any).mode);if(e.type==='custom'&&e.customType===OBS_RUN){observerStatus=(e.data as any).status??null;if(observerStatus&&!['Complete','Disarmed','Live UI enabled — chat normally'].includes(observerStatus.phase)&&!observerStatus.phase.startsWith('Failed'))observerStatus={...observerStatus,phase:'Interrupted — explicitly rearm to continue'};}}epoch=randomUUID();updates=[];clearPreview();materialize(ctx);};
+ // Clone: only the page tools plus OptChat's read-only memory tools. Main: Exo keeps every tool exactly as it is; this
+ // extension only adds the page tools (registering a tool activates it) and never registers the legacy A2UI-era tools,
+ // which exist only to replay the clone's older history.
  const allowed=()=>cloneTools(pi.getAllTools().map(t=>t.name));
- const tools=()=>pi.setActiveTools(allowed());
+ const tools=()=>{if(!MAIN_MODE)pi.setActiveTools(allowed());};
  pi.on('session_start',(_e,ctx)=>{restore(ctx);tools();materialize(ctx);});
  pi.on('session_tree',(_e,ctx)=>restore(ctx));
  pi.on('session_shutdown',()=>{cancelObserver();cancelComposition();clearPreview();});
@@ -101,7 +106,7 @@ export default function workspace(pi:ExtensionAPI){
   }catch(e){token.abort();lastRun={id:request.runId,mode:request.mode,status:'failed'};pi.appendEntry(RUN,{runId:request.runId,summary:lastRun,error:e instanceof Error?e.message:'Composition failed',partial:(e as any)?.partial});ctx.ui.notify('Composition failed; previous committed UI retained. Native diagnostic preserved; no automatic retry.','error');}
   finally{if(controller===token)controller=null;if(existsSync(previewFile)&&JSON.parse(requireReadPreview()).toolCallId===request.runId)rmSync(previewFile,{force:true});materialize(ctx);}
  }});
- pi.registerTool({name:OFFER,label:'Offer atomic composition vocabulary',executionMode:'sequential',description:'Configure a synthetic, conversation-specific candidate vocabulary for the optional native Jev/Haiku composition lane. This is NOT a menu of prebuilt modules. Params: surfaceId,purpose,candidates:[{id,description,root:boolean,resource?:string,element:{type,props}}],slots:{slot:{brief,fallback}},data:{stringLeaf:string},required:[semantic keys]. Every props object has a unique stable key. Column/Row props:{key}; Text:{key,slot,variant:h1/h2/h3/body/caption}; TextField:{key,label,path:/knownStringLeaf}; Button:{key,label,event,context:{key:literal or {path:/knownStringLeaf}}}; Divider:{key}. Only Row/Column may root; competing roots share a resource. Atomic candidates only, no children/executable JS. Copy changes only declared Text slots. Required semantic keys enforce necessary information and controls. 3–16 candidates,12 slots,16KB. Do not alter existing agenda modules; choose a new synthetic surface if capacity permits.',parameters:offerParameters,execute:async(_id,args)=>{
+ register({name:OFFER,label:'Offer atomic composition vocabulary',executionMode:'sequential',description:'Configure a synthetic, conversation-specific candidate vocabulary for the optional native Jev/Haiku composition lane. This is NOT a menu of prebuilt modules. Params: surfaceId,purpose,candidates:[{id,description,root:boolean,resource?:string,element:{type,props}}],slots:{slot:{brief,fallback}},data:{stringLeaf:string},required:[semantic keys]. Every props object has a unique stable key. Column/Row props:{key}; Text:{key,slot,variant:h1/h2/h3/body/caption}; TextField:{key,label,path:/knownStringLeaf}; Button:{key,label,event,context:{key:literal or {path:/knownStringLeaf}}}; Divider:{key}. Only Row/Column may root; competing roots share a resource. Atomic candidates only, no children/executable JS. Copy changes only declared Text slots. Required semantic keys enforce necessary information and controls. 3–16 candidates,12 slots,16KB. Do not alter existing agenda modules; choose a new synthetic surface if capacity permits.',parameters:offerParameters,execute:async(_id,args)=>{
   const next=validateOffer(args);return {content:[{type:'text',text:`Configured ${next.candidates.length} atomic candidates for ${next.surfaceId}; no layout/commit yet. Native composition can reuse the relevant synthetic conversation directly.`}],details:{offer:next}};
  }});
  pi.on('agent_settled',()=>clearPreview());
@@ -133,7 +138,7 @@ export default function workspace(pi:ExtensionAPI){
   const lines=[...backs,...(current&&edits.length?describeEdits(current,edits):[])];
   if(lines.length)return {message:{customType:'page-edits',display:false,content:`Tom changed pages on the surface since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
  });
- pi.on('tool_call',e=>!(observerTurn?(observerTurn.status.route==='sidecar'?[]:[UPDATE]):allowed()).includes(e.toolName)?{block:true,reason:'Unrelated/legacy tool outside incremental clone trial'}:undefined);
+ pi.on('tool_call',e=>MAIN_MODE?(LEGACY.includes(e.toolName)?{block:true,reason:'Legacy page tool; use update_exosurface'}:undefined):!(observerTurn?(observerTurn.status.route==='sidecar'?[]:[UPDATE]):allowed()).includes(e.toolName)?{block:true,reason:'Unrelated/legacy tool outside incremental clone trial'}:undefined);
  // Provider token stream is not tool execution. Preview only delimiter-complete,
  // validated message prefixes. No native write/action authority until tool result.
  pi.on('message_update',(e,ctx)=>{
@@ -151,7 +156,7 @@ export default function workspace(pi:ExtensionAPI){
   }catch{/* keep the last valid preview; an invalid/incomplete stream is never committed and the final tool validates */}
  });
  // Legacy A2UI tools stay registered (inactive) so earlier history replays; nothing in history is rewritten.
- pi.registerTool({name:UPDATE,label:'Apply incremental A2UI messages',executionMode:'sequential',description:UPDATE_DESCRIPTION,promptSnippet:UPDATE_SNIPPET,promptGuidelines:UPDATE_GUIDELINES,parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),messages:Type.Array(Type.Any(),{minItems:1,maxItems:32}),layout:Type.Optional(Type.Object({focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2})),columns:Type.Optional(Type.Integer({minimum:1,maximum:3})),wide:Type.Optional(Type.Array(Type.String(),{maxItems:8}))}))}),execute:async(id,args)=>{
+ register({name:UPDATE,label:'Apply incremental A2UI messages',executionMode:'sequential',description:UPDATE_DESCRIPTION,promptSnippet:UPDATE_SNIPPET,promptGuidelines:UPDATE_GUIDELINES,parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),messages:Type.Array(Type.Any(),{minItems:1,maxItems:32}),layout:Type.Optional(Type.Object({focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2})),columns:Type.Optional(Type.Integer({minimum:1,maximum:3})),wide:Type.Optional(Type.Array(Type.String(),{maxItems:8}))}))}),execute:async(id,args)=>{
   if(args.messages?.[0]?.omitted)throw Error('This call only repeats a history summary. Send the complete A2UI messages (createSurface/updateComponents/updateDataModel/deleteSurface).');
   if(observerTurn?.status.route==='direct'&&(args.layout||args.messages.some((m:any)=>(m.createSurface??m.updateComponents??m.updateDataModel??m.deleteSurface)?.surfaceId!==observerTurn!.status.surfaceId)))throw Error('Direct observer baseline may alter only its reserved synthetic surface; preserve outer layout');
   const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages:args.messages,...(args.layout?{layout:args.layout}:{})};
@@ -159,8 +164,8 @@ export default function workspace(pi:ExtensionAPI){
   return {content:[{type:'text',text:`Surface updated: revision ${next.revision}${next.incomplete?', awaiting further definitions/data':''}.`}],details:{delta}};
  }});
  // Registered for branch history/reversal compatibility, never active in this trial.
- pi.registerTool({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
- pi.registerTool({name:SURFACE_UPDATE,label:'Update pages on the surface',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
+ register({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
+ register({name:SURFACE_UPDATE,label:'Update pages on the surface',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
   parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String({maxLength:40000})),
    edits:Type.Optional(Type.Array(Type.Object({page:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
    delete:Type.Optional(Type.Array(Type.String(),{maxItems:8})),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2}))}),
@@ -185,7 +190,7 @@ export default function workspace(pi:ExtensionAPI){
     pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:said});throw Error(said);
    }
  }});
- pi.registerTool({name:SURFACE_READ,label:'Read pages on the surface',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a page in full (snapshot format).',parameters:Type.Object({page:Type.Optional(Type.String())}),execute:async(_id,args)=>{
+ register({name:SURFACE_READ,label:'Read pages on the surface',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a page in full (snapshot format).',parameters:Type.Object({page:Type.Optional(Type.String())}),execute:async(_id,args)=>{
   const page=args.page;
   if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`No pages on the surface (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
   if(page&&!moduleIds(current).includes(page)){const old=fromHistory(page);if(!old)throw Error(`No page ${page} on the surface or in its history`);
@@ -193,7 +198,7 @@ export default function workspace(pi:ExtensionAPI){
   const ids=page?[page]:moduleIds(current);
   return {content:[{type:'text',text:`Revision ${current.revision}.\n`+ids.map(i=>surfaceSnapshot(current!,i)).join('\n')}],details:{revision:current.revision}};
  }});
- pi.registerTool({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Legacy: read committed page JSON.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
+ register({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Legacy: read committed page JSON.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
   if(!current)return {content:[{type:'text',text:'No pages yet (revision 0).'}],details:{revision:0}};
   const pick=args.surfaceId?{revision:current.revision,layout:current.layout,messages:current.messages.filter(m=>(m.createSurface??m.updateComponents??m.updateDataModel)?.surfaceId===args.surfaceId)}:current;
   if(args.surfaceId&&!pick.messages.length)throw Error(`No surface ${args.surfaceId}`);

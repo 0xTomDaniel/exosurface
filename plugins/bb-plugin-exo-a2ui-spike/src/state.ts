@@ -3,7 +3,11 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, statSync } from 'node:fs';
-export const HOME = join(homedir(), '.exo-a2ui-spike');
+// Deployment. The isolated clone is the default. The primary Exo session loads the same Pi extensions with
+// EXOSURFACE_MODE=main and names its own state folder and OptChat home (set by the primary plugin's launcher).
+export const CLONE_HOME = join(homedir(), '.exo-a2ui-spike'), CLONE_OPTCHAT_HOME = join(homedir(), '.optchat-exo-a2ui');
+export const MAIN_MODE = process.env.EXOSURFACE_MODE === 'main';
+export const HOME = MAIN_MODE ? (process.env.EXOSURFACE_HOME ?? '') : CLONE_HOME;
 // The plugin root, wherever it is checked out (symlinked install paths resolve to the real location).
 export const SOURCE = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 export const PI_CLI = local('piCli');
@@ -26,7 +30,7 @@ export const bindingFile = (thread: string) => {
 };
 export function binding(thread: string) { const file = bindingFile(thread); return existsSync(file) ? load(file) : undefined; }
 // 'canonical' is the reused adapter mode, but its entire home is the ISOLATED clone.
-export const CANONICAL_HOME = join(homedir(), '.optchat-exo-a2ui');
+export const CANONICAL_HOME = MAIN_MODE ? (process.env.EXOSURFACE_OPTCHAT_HOME ?? '') : CLONE_OPTCHAT_HOME;
 export const CANONICAL_PROFILE = 'exo-optchat';
 export function profileHome(profile: string, kind: RuntimeKind = 'offline') {
   if (kind === 'canonical' && profile !== CANONICAL_PROFILE) throw new Error('Canonical route is bound only to exo-optchat');
@@ -59,3 +63,13 @@ export const CANONICAL_MODEL = { id: 'a2ui-clone-opus', model: 'a2ui-clone-opus'
 export const LIVE_MODEL = { id: 'live-opus-5-5', model: 'live-opus-5-5', displayName: 'Opus 5.5 — isolated live OptChat trial', description: 'Real Anthropic model, normal Exocortex resources, separate test history; not exo-optchat', isDefault: false, supportedReasoningEfforts: [{ reasoningEffort: 'high' as const, description: 'Existing OptChat main-agent setting' }], defaultReasoningEffort: 'high' as const };
 export const VAULT = local('vault');
 export const MODEL = { id: 'offline-fixture', model: 'offline-fixture', displayName: 'Exo offline fixture (not an LLM)', description: 'Isolated lifecycle tests only', isDefault: true, supportedReasoningEfforts: [{ reasoningEffort: 'low' as const, description: 'Offline fixture; no reasoning budget' }], defaultReasoningEffort: 'low' as const };
+
+/** Accident guard for the Pi extensions: the clone runs only on the cloned home; main mode only on a primary home that is
+ *  explicitly named and is never the clone's. Same-user guard, not a security boundary. */
+export function assertDeployment(env: NodeJS.ProcessEnv = process.env) {
+  if (MAIN_MODE) {
+    if (!HOME || !CANONICAL_HOME || HOME === CLONE_HOME || CANONICAL_HOME === CLONE_OPTCHAT_HOME || env.OPTCHAT_HOME !== CANONICAL_HOME || !existsSync(join(HOME, 'owner', 'state.json')))
+      throw Error('Exosurface main mode requires the primary home and its OptChat home, never the clone');
+  } else if (env.EXO_A2UI_SPIKE !== '1' || env.OPTCHAT_HOME !== CANONICAL_HOME || !existsSync(join(HOME, 'clone.json')))
+    throw Error('Exosurface clone mode requires the explicitly cloned home; never main');
+}

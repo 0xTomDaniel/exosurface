@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {appendFileSync,existsSync,mkdirSync,readFileSync} from 'node:fs';
 import type {ExtensionAPI,ExtensionContext} from '@earendil-works/pi-coding-agent';
-import {HOME,CANONICAL_HOME} from './state.ts';
+import {HOME,assertDeployment} from './state.ts';
 import {validateSnapshot,type Snapshot} from './workspace.ts';
 import {canvasSection} from './canvas-doc.ts';
 import type {Earlier} from './canvas-memory.ts';
@@ -28,7 +28,7 @@ export function withOutline(messages:any[],current:Snapshot,earlier?:Earlier){
  return status?[...messages.slice(0,-1),outline,last]:[...messages,outline];
 }
 export default function workspaceFrame(pi:ExtensionAPI){
- if(process.env.EXO_A2UI_SPIKE!=='1'||process.env.OPTCHAT_HOME!==CANONICAL_HOME||!existsSync(join(HOME,'clone.json')))throw Error('Workspace frame requires explicitly cloned home; never main');
+ assertDeployment();
  pi.on('context_with_system',(e,ctx)=>{const {current,earlier}=committedView(ctx);if(!current)return;return {messages:withOutline(e.messages,current,earlier)};});
  pi.on('before_provider_request',(e,ctx)=>{
   const {current,earlier}=committedView(ctx);if(!current)return;const frame=canvasSection(current,earlier)!;let found=false;

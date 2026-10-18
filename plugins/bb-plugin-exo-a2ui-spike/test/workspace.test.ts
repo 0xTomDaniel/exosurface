@@ -23,5 +23,17 @@ test('Rebuild latest UI from successful native branch publications, not failed/o
 test('Clone routes cannot select main owner/home or whole-history startup',()=>{
  const state=readFileSync(new URL('../src/state.ts',import.meta.url),'utf8');assert.ok(state.includes("'.optchat-exo-a2ui'"));assert.ok(!state.includes("'.optchat-exocortex-test'"));
  const client=readFileSync(new URL('../src/owner-client.ts',import.meta.url),'utf8');assert.ok(client.includes('local.exocortex.a2ui-owner'));assert.ok(!client.includes('local.exocortex.exo-owner'));
- const extension=readFileSync(new URL('../src/workspace-extension.ts',import.meta.url),'utf8');assert.ok(extension.includes("process.env.OPTCHAT_HOME!==CANONICAL_HOME"));const frame=readFileSync(new URL('../src/workspace-frame.ts',import.meta.url),'utf8');assert.ok(frame.includes("pi.on('context_with_system'"));assert.ok(frame.includes('exactFramePresent:found'));assert.ok(frame.includes("process.env.OPTCHAT_HOME!==CANONICAL_HOME"));
+ const extension=readFileSync(new URL('../src/workspace-extension.ts',import.meta.url),'utf8'),frame=readFileSync(new URL('../src/workspace-frame.ts',import.meta.url),'utf8');
+ for(const src of [extension,frame])assert.ok(/\n assertDeployment\(\);/.test(src),'both extensions check the deployment first');
+ assert.ok(frame.includes("pi.on('context_with_system'"));assert.ok(frame.includes('exactFramePresent:found'));
+});
+test('Deployment guard: clone mode refuses a foreign OptChat home; main mode refuses the clone and unnamed homes',async()=>{
+ const {assertDeployment,CLONE_OPTCHAT_HOME}=await import('../src/state.ts');
+ assert.throws(()=>assertDeployment({EXO_A2UI_SPIKE:'1',OPTCHAT_HOME:'/elsewhere'}),/clone mode/);assert.throws(()=>assertDeployment({OPTCHAT_HOME:CLONE_OPTCHAT_HOME}),/clone mode/);
+ const {spawnSync}=await import('node:child_process'),{homedir}=await import('node:os');
+ const run=(env:Record<string,string>)=>spawnSync(process.execPath,['--experimental-transform-types','--input-type=module','-e',`import {assertDeployment} from ${JSON.stringify(new URL('../src/state.ts',import.meta.url).href)};try{assertDeployment();console.log('ok')}catch(e){console.log('refused')}`],{env:{...process.env,EXOSURFACE_MODE:'main',...env},encoding:'utf8'}).stdout.trim();
+ assert.equal(run({}),'refused','no homes named');
+ assert.equal(run({EXOSURFACE_HOME:homedir()+'/.exo-a2ui-spike',EXOSURFACE_OPTCHAT_HOME:'/x',OPTCHAT_HOME:'/x'}),'refused','clone state folder');
+ assert.equal(run({EXOSURFACE_HOME:'/tmp/nowhere',EXOSURFACE_OPTCHAT_HOME:CLONE_OPTCHAT_HOME,OPTCHAT_HOME:CLONE_OPTCHAT_HOME}),'refused','clone OptChat home');
+ assert.equal(run({EXOSURFACE_HOME:'/tmp/nowhere',EXOSURFACE_OPTCHAT_HOME:'/x',OPTCHAT_HOME:'/y'}),'refused','OptChat home mismatch');
 });

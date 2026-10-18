@@ -84,3 +84,19 @@ test('Vocabulary (GLOSSARY.md): nothing the agent reads or the person sees says 
   const bad=strings.filter(x=>/\bcanvas\b/i.test(x)&&!/exo-canvas|canvas-|className/.test(x));assert.deepEqual(bad,[],file);
  }
 });
+test('Main mode: only the page tools are added; Exo keeps every tool; nothing is blocked except legacy page tools',async()=>{
+ const {spawnSync}=await import('node:child_process'),{mkdtempSync,mkdirSync,writeFileSync}=await import('node:fs'),{tmpdir}=await import('node:os'),{join}=await import('node:path');
+ const home=mkdtempSync(join(tmpdir(),'exo-main-')),optchat=mkdtempSync(join(tmpdir(),'exo-optchat-'));mkdirSync(join(home,'owner'));writeFileSync(join(home,'owner','state.json'),'{}');
+ const script=`
+  const {default:ext}=await import(${JSON.stringify(new URL('../src/workspace-extension.ts',import.meta.url).href)});
+  const tools=[],handlers={},setActive=[];
+  const pi={getAllTools:()=>['read','bash','codemode','spawn',...tools].map(name=>({name})),getActiveTools:()=>['read','bash','codemode','spawn',...tools],setActiveTools:t=>setActive.push(t),
+   on:(n,h)=>{(handlers[n]??=[]).push(h);return()=>{}},registerTool:t=>tools.push(t.name),registerCommand:()=>{},appendEntry:()=>{}};
+  ext(pi);
+  const guard=handlers.tool_call.at(-1);
+  console.log(JSON.stringify({tools,setActive:setActive.length,bash:guard({toolName:'bash'})??null,codemode:guard({toolName:'codemode'})??null,legacy:!!guard({toolName:'apply_workspace'})?.block}));`;
+ const r=spawnSync(process.execPath,['--experimental-transform-types','--input-type=module','-e',script],{env:{...process.env,EXOSURFACE_MODE:'main',EXOSURFACE_HOME:home,EXOSURFACE_OPTCHAT_HOME:optchat,OPTCHAT_HOME:optchat},encoding:'utf8'});
+ const out=JSON.parse(r.stdout.trim().split('\n').at(-1)!);
+ assert.deepEqual(out.tools.sort(),['read_exosurface','update_exosurface']);assert.equal(out.setActive,0,'never narrows the active tool set');
+ assert.equal(out.bash,null);assert.equal(out.codemode,null);assert.equal(out.legacy,true);
+});
