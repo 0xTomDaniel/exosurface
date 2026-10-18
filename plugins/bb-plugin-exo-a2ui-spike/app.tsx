@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {definePluginApp,ThreadChat,useRpc,useRealtime,useBbNavigate,useComposer} from '@get-bb/plugin-sdk/app';
 import type {ComposerMention} from '@get-bb/plugin-sdk/app';
 import type {PluginMessageDirectiveProps} from '@get-bb/plugin-sdk/app';
-import {useRewind,setRewind,when,type VersionRef} from './src/rewind-store';
+import {useRewind,setRewind,when,panelOf,type VersionRef} from './src/rewind-store';
 import {A2uiSurface,MarkdownContext} from '@a2ui/react/v0_9';
 import {renderMarkdown} from '@a2ui/markdown-it';
 import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
@@ -47,13 +47,14 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
  const[meta,setMeta]=useState<{title:string;at:string}|null>(null),active=useRewind();
  useEffect(()=>{if(valid)rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).then(m=>setMeta({title:m.title,at:m.at})).catch(()=>{});},[surface,revision,message.threadId]);
  if(!valid)return null;const on=active?.surface===surface&&active.revision===revision;
- return <button type="button" aria-pressed={on} aria-label={`Open page ${meta?.title??surface}`} onClick={async()=>{setRewind({surface,revision});nav.toPluginPanel('workspace');
+ return <button type="button" aria-pressed={on} aria-label={`Open page ${meta?.title??surface}`} onClick={async()=>{
   // Only the latest card of the surface on stage just loads it. Any other card opens a historical surface being worked on:
   // a pill appears in the input and the next message brings it to the stage; ✕ or removing the pill cancels.
   // Always ask fresh: what is current or on stage changes as the conversation moves.
-  const m=await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);
+  const m=await rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).catch(()=>null);if(!m)return;
+  const deployment=m.panel==='surface'?'main' as const:'clone' as const;setRewind({surface,revision,deployment});nav.toPluginPanel(m.panel);
   // Going back to the current stage ends any bring-back in progress (its pill and edits go with it).
-  if(m?.onStage){setRewind(null);await rpc.call('pending',{threadId:message.threadId,op:'clear'}).catch(()=>{});return;}
+  if(m.onStage){setRewind(null);await rpc.call('pending',{threadId:message.threadId,op:'clear'}).catch(()=>{});return;}
   if(m&&!m.onStage)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
   className={`my-1 flex w-full max-w-md items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent ${on?'border-primary':'border-border'}`}>
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 opacity-70"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
@@ -67,7 +68,7 @@ function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:Ver
  const[meta,setMeta]=useState<any>(null),[error,setError]=useState(''),[ticks,tick]=useState(0),[pending,setPending]=useState(false);
  const view=useRef<WorkspaceView|null>(null),press=useRef<(a:any)=>void>(()=>{});
  useEffect(()=>{let alive=true;setMeta(null);setError('');
-  rpc.call('surfaceAt',{threadId,...ref}).then(async m=>{if(!alive)return;if(m.onStage){onCurrent(m.surface);return;}
+  rpc.call('surfaceAt',{threadId,surface:ref.surface,revision:ref.revision}).then(async m=>{if(!alive)return;if(m.onStage){onCurrent(m.surface);return;}
    const v=new WorkspaceView(a=>press.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);v.accept(deliverySchema.parse({epoch:`rewind-${m.surface}-${m.revision}`,checkpoint:m.snapshot,updates:[],preview:null}));
    const p=await rpc.call('pending',{threadId,op:'get'}).catch(()=>null);if(p&&p.surface===m.surface&&p.revision===m.revision)for(const u of p.updates)v.processor.getSurfaces().get(m.surface)?.dataModel.set(u.path,u.value);
    view.current?.dispose();view.current=v;setMeta(m);}).catch(e=>alive&&setError(String(e)));
@@ -90,7 +91,7 @@ function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:Ver
 // The bring-back lives in the input box as a pill (like an attachment). Inserted when a pending bring-back appears;
 // removing the pill cancels it; sending resolves it (the server brings the surface back first). Falls back to a
 // small card above the input if the pill can't be inserted.
-const pillKey=(p:any)=>`${p.surface}@${p.revision}`;
+const pillKey=(p:any)=>`${p.deployment??'clone'}|${p.surface}@${p.revision}`;
 const isPill=(m:ComposerMention,key:string)=>m.kind==='plugin'&&m.provider==='surface'&&m.id===key;
 function BringBackPill(){
  const composer=useComposer(),rpc=useRpc<typeof rpcContract>(),nav=useBbNavigate(),threadId=composer.scope.kind==='thread'?composer.scope.threadId:null;
@@ -117,7 +118,7 @@ function BringBackPill(){
  },[p,mentions,threadId]);
  if(!fallback||!p||!threadId||p.threadId!==threadId)return null;
  return <div className="flex items-center gap-2 text-sm">
-  <button type="button" className="min-w-0 flex-1 truncate text-left hover:underline" onClick={()=>{setRewind({surface:p.surface,revision:p.revision});nav.toPluginPanel('workspace');}}>↺ Bringing back <strong>{p.title}</strong> ({when(p.at)} version)</button>
+  <button type="button" className="min-w-0 flex-1 truncate text-left hover:underline" onClick={()=>{setRewind({surface:p.surface,revision:p.revision,deployment:p.deployment});nav.toPluginPanel(panelOf(p.deployment));}}>↺ Bringing back <strong>{p.title}</strong> ({when(p.at)} version)</button>
   <button type="button" aria-label="Stop bringing it back" className="rounded px-2 py-0.5 hover:bg-accent" onClick={async()=>{setRewind(null);setP(null);await rpc.call('pending',{threadId,op:'clear'}).catch(()=>{});}}>✕</button>
  </div>;
 }
@@ -131,18 +132,19 @@ function BringBackCancel(){
  return <button type="button" aria-label={`Stop bringing back ${p.title}`} title={`Stop bringing back “${p.title}”`} onClick={async()=>{setRewind(null);setP(null);await rpc.call('pending',{threadId,op:'clear'}).catch(()=>{});}}
   className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">↺ <span aria-hidden="true">✕</span></button>;
 }
-function WorkspacePage(){
+function SurfacePage({deployment}:{deployment:'clone'|'main'}){
+ const channel=deployment==='clone'?'workspace':'surface-main',clone=deployment==='clone';
  const rpc=useRpc<typeof rpcContract>();type Status=Awaited<ReturnType<typeof getState>>;
  const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0),[local,setLocal]=useState<Local>(null);
- const saving=useRef(false),rewind=useRewind();
+ const saving=useRef(false),anyRewind=useRewind(),rewind=anyRewind&&(anyRewind.deployment??'clone')===deployment?anyRewind:null;
  useRealtime('pending-restore',v=>{if(!v)setRewind(null);});
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
  const serial=useRef(0),recover=useRef<()=>void>(()=>{});
- async function getState(){return rpc.call('workspace',view.current?.epoch?view.current.cursor():null);}
+ async function getState(){return rpc.call('workspace',{deployment,cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
- useRealtime('workspace',payload=>{serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
- useRealtime('workspace-error',payload=>setError(String((payload as any)?.message??'Workspace stream failed')));
+ useRealtime(channel,payload=>{serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
+ useRealtime(`${channel}-error`,payload=>setError(String((payload as any)?.message??'Workspace stream failed')));
  useEffect(()=>{
   let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,inFlight=false;
   const poll=async()=>{if(stopped||inFlight)return;inFlight=true;const before=serial.current;try{const value=await getState();if(!stopped&&before===serial.current)accept(value);}catch(e){if(!stopped)setError(String(e));}finally{inFlight=false;if(!stopped)timer=setTimeout(poll,document.hidden?10000:5000);}};
@@ -161,16 +163,17 @@ function WorkspacePage(){
  return <div className="flex h-full min-h-0 flex-col md:flex-row">
   <style>{documentStyle+exoTheme}</style>
   <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
-   <div className="exo-topline"><h1>Exosurface clone</h1><p aria-label="Workspace revision">Isolated clone, revision {v?.committed?.revision??0}</p></div>
-   <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:'Clone owner is detached or starting.'}</p>
+   <div className="exo-topline"><h1>{clone?'Exosurface clone':'Exosurface'}</h1><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
+   <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo in the conversation. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
   </div></main>
-  <section aria-label="Clone conversation" className="min-h-[300px] min-w-0 border-t border-border md:w-[35%] md:min-h-0 md:border-l md:border-t-0">{state?.threadId?<ThreadChat threadId={state.threadId} variant="compact"/>:<p className="p-5 text-sm">Clone conversation not provisioned yet.</p>}</section>
+  <section aria-label={clone?"Clone conversation":"Conversation with Exo"} className="min-h-[300px] min-w-0 border-t border-border md:w-[35%] md:min-h-0 md:border-l md:border-t-0">{state?.threadId?<ThreadChat threadId={state.threadId} variant="compact"/>:<p className="p-5 text-sm">{clone?'Clone conversation not provisioned yet.':'Exo’s conversation is not attached yet.'}</p>}</section>
  </div>;
 }
 export default definePluginApp(app=>{
- app.slots.navPanel({id:'workspace',path:'workspace',title:'Exosurface clone',icon:'PanelsTopLeft',component:WorkspacePage});
+ app.slots.navPanel({id:'workspace',path:'workspace',title:'Exosurface clone',icon:'PanelsTopLeft',component:()=><SurfacePage deployment="clone"/>});
+ app.slots.navPanel({id:'surface',path:'surface',title:'Exosurface',icon:'PanelsTopLeft',component:()=><SurfacePage deployment="main"/>});
  app.slots.messageDirective({id:'exo-surface',component:ExoSurfaceCard});
  app.composer.customize({id:'exo-bring-back',scopes:['thread'],banners:[{id:'bring-back',chrome:'bare',component:BringBackPill}],actions:[{id:'bring-back-cancel',component:BringBackCancel}]});
 });

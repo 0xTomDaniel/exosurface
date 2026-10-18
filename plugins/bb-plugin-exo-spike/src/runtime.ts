@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
-import { requireLocal } from './local-config.ts';
+import { requireLocal, local } from './local-config.ts';
+import { realpathSync } from 'node:fs';
 import { HOME, SOURCE, OPTCHAT, FAST, CANONICAL_HOME, CANONICAL_PROFILE, profileHome, save, type RuntimeKind } from './state.ts';
 
 export async function assertNativeOwner(profile: string, kind: RuntimeKind, pid: number | undefined) {
@@ -47,12 +48,18 @@ export function prepareRuntime(profile: string, kind: RuntimeKind) {
 export function runtimeLaunch(profile: string, kind: RuntimeKind, threadId: string, sessionFile?: string) {
   if (kind !== 'offline') requireLocal(OPTCHAT, 'optchat');
   const agentDir = prepareRuntime(profile, kind);
+  // Exosurface on the primary session (local config surfaceMain: on|off; off is the rollback). Same extension order as
+  // the clone: the page extension loads before OptChat, the outline frame after it. Exo's own tools are untouched.
+  // The plugin's location comes from the local config: BB runs this file from its own artifact copy, where no sibling
+  // plugin exists. A missing folder starts the session without the surface rather than failing.
+  const surfaceDir = kind === 'canonical' && local('surfaceMain') === 'on' ? local('exosurfacePlugin') : '';
+  const surface = surfaceDir && existsSync(join(surfaceDir, 'src', 'workspace-extension.ts')) ? realpathSync(surfaceDir) : '';
   const args = kind !== 'offline'
-    ? ['--approve', '-e', OPTCHAT, '-e', join(SOURCE, 'src/live.ts'), '--provider', 'anthropic', '--model', 'claude-opus-5-5', '--thinking', 'high', '--session-dir', kind === 'canonical' ? join(CANONICAL_HOME, 'pi-sessions') : join(HOME, 'live-pi-sessions')]
+    ? ['--approve', ...(surface ? ['-e', join(surface, 'src/workspace-extension.ts')] : []), '-e', OPTCHAT, ...(surface ? ['-e', join(surface, 'src/workspace-frame.ts')] : []), '-e', join(SOURCE, 'src/live.ts'), ...(surface ? ['--skill', join(surface, 'skills/exosurface')] : []), '--provider', 'anthropic', '--model', 'claude-opus-5-5', '--thinking', 'high', '--session-dir', kind === 'canonical' ? join(CANONICAL_HOME, 'pi-sessions') : join(HOME, 'live-pi-sessions')]
     : ['--offline', '--no-extensions', '--no-mcp', '--no-skills', '--no-prompt-templates', '--no-context-files', '-e', join(SOURCE, 'src/fixture.ts'), '-e', FAST, '-e', OPTCHAT, '--provider', 'exo-fixture', '--model', 'offline', '--thinking', 'off', '--session-dir', join(HOME, 'pi-sessions')];
   args.push('--optchat-profile', profile);
   if (sessionFile) args.push('--session', sessionFile);
-  const env = { ...process.env, OPTCHAT_HOME: profileHome(profile, kind), PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: kind === 'offline' ? '1' : '0', PI_TELEMETRY: '0', EXO_BB_RUNTIME_KIND: kind, EXO_BB_PROFILE: profile, EXO_BB_INFO_FILE: join(HOME, 'runtime-info', `${threadId}.json`) };
+  const env = { ...process.env, OPTCHAT_HOME: profileHome(profile, kind), PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: kind === 'offline' ? '1' : '0', PI_TELEMETRY: '0', EXO_BB_RUNTIME_KIND: kind, EXO_BB_PROFILE: profile, EXO_BB_INFO_FILE: join(HOME, 'runtime-info', `${threadId}.json`), ...(surface ? { EXOSURFACE_MODE: 'main', EXOSURFACE_HOME: HOME, EXOSURFACE_OPTCHAT_HOME: CANONICAL_HOME } : {}) };
   mkdirSync(join(HOME, 'runtime-info'), { recursive: true, mode: 0o700 });
   return { args, env };
 }

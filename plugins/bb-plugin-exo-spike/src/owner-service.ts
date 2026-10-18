@@ -80,6 +80,17 @@ const server = createServer(socket => {
         let m: any;
         try {
           m = JSON.parse(line); await startup;
+          // Exosurface page commands (same as the clone's owner): idle-only, revision-checked commits by code; no model
+          // call and no view attachment. Same-user accident guards, not a sandbox.
+          if (m.type === 'canvas-data' || m.type === 'canvas-restore') {
+            if (m.threadId !== primary || streaming || JSON.stringify(m.request).length > 12000) throw new Error('Idle primary Exo page command required');
+            const file = join(HOME, 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
+            const before = rev();
+            if (m.type === 'canvas-data' && before !== m.request?.revision) { write(socket, { kind: 'response', id: m.id, ok: false, error: `stale_revision ${before}` }); return; }
+            await pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            const after = rev();
+            write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
+          }
           if (m.type === 'hello') {
             if (m.threadId !== primary) throw new Error('Only the existing primary Exo thread may attach');
             authorized = true; client?.destroy(); client = socket; attached = false; state();

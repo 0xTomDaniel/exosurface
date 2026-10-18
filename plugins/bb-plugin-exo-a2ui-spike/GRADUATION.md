@@ -1,6 +1,6 @@
 # Promoting Exosurface to the primary Exo session
 
-Status: **step 2 done (2026-10-18): the primary session runs upstream OptChat 0.8.6.** Steps 3–6 prepared, not started. Every step below that touches the primary session needs the owner's explicit go at that time. The clone keeps running unchanged until the switch.
+Status: **done 2026-10-18 — the primary Exo session has the surface.** It runs upstream OptChat 0.8.6 and loads the Exosurface extensions in main mode (local config `surfaceMain: on`; `off` plus an owner restart is the rollback). The clone keeps running separately.
 
 ## Readiness evidence (clone, real use)
 
@@ -29,3 +29,13 @@ Restore the previous primary plugin build and OptChat path and restart the owner
 
 - Occasional full prompt-cache misses (about 8 a day in the clone), upstream of Exosurface; likely affects the primary session too.
 - Reply overlap with the pages is about 40% against a 25% target; accepted for now.
+
+## How it was done (2026-10-18)
+
+- One codebase, two deployments. The primary session's Pi loads the same extensions with `EXOSURFACE_MODE=main`, its own state folder and its OptChat home. A guard refuses the clone's homes. Main mode only **adds** the two page tools: it never registers the legacy tools and never narrows Exo's active tools.
+- Main's owner gained the page-edit and bring-back commands; its chat bridge shows page cards.
+- The Exosurface plugin serves both surfaces and routes every request by thread. The primary session's surface is the **Exosurface** panel.
+- Lessons:
+  - BB runs a provider bridge from its own artifact copy, so a plugin must not locate siblings by relative path. The Exosurface location comes from local config (`exosurfacePlugin`).
+  - The owner can leave a dead control socket behind when stopped; clear it only if nobody answers.
+  - Verify with an accepted refresh, never a startup snapshot (MCP tools connect after start).
