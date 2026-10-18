@@ -13,7 +13,7 @@ Status: **spike**, used daily by its author. Graduation to the main agent sessio
 - **Shared state.** Edits are saved as revision-checked state with no chat message and no model turn. A button press commits its values by code first, then reaches the chat as one readable line from the person ("▸ Weekend trip · Plan this trip — Which one?: Lake cabin").
 - **One typed document.** The canvas is `exosurface.canvas` v1, changed only through a pure reducer — shaped for a near one-to-one move to Pi's durable harness (`src/canvas-doc.ts`).
 
-Next: [NEXT-SPIKE.md](NEXT-SPIKE.md) — the canvas as an equal channel to text.
+Promotion runbook: [GRADUATION.md](GRADUATION.md). Next: [NEXT-SPIKE.md](NEXT-SPIKE.md) — the canvas as an equal channel to text.
 
 ## Layout
 
