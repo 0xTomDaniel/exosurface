@@ -53,7 +53,7 @@ test('Snapshot format: every role translates to valid, renderable A2UI',()=>{
  assert.deepEqual(by('Button')[0].action.event,{name:'book',context:{pick:{path:'/pick'},nights:{path:'/nights'},note:{path:'/note'}}});
 });
 test('Snapshot format: clear line-numbered errors',()=>{
- assert.throws(()=>snapshotToA2ui('- region "x":\n  - text: a'),/ref=surface_id/);
+ assert.throws(()=>snapshotToA2ui('- region "x":\n  - text: a'),/ref=page_id/);
  assert.throws(()=>snapshotToA2ui('- region "x" [ref=a]:\n  - blob: a'),/line 2: unknown role "blob"/);
  assert.throws(()=>snapshotToA2ui('- region "x" [ref=a]:\n  not a line'),/line 2/);
  assert.equal(parseLines('- text: a: b "c"')[0].text,'a: b "c"');

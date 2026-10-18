@@ -18,7 +18,7 @@ try{
   proof.widths[width]=m;
   assert.ok(Math.abs(m.frameLeft-m.frameRight)<=24,`frame centered at ${width}: ${JSON.stringify(m)}`);
   assert.ok(m.besideRowItems.every(w=>w>=180),`context row items readable at ${width}: ${m.besideRowItems}`);
-  await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:`${out}/layout-${loaded?'loaded':'staged'}-${width}.png`});await p.close();
+  await p.locator('main[aria-label="Exosurface"]').screenshot({path:`${out}/layout-${loaded?'loaded':'staged'}-${width}.png`});await p.close();
  }
  assert.equal(proof.pageErrors.length,0);proof.passed=true;
 }catch(e){proof.error=e.stack;process.exitCode=1;}finally{await browser?.close();writeFileSync(`${out}/layout-${loaded?'loaded':'staged'}.json`,JSON.stringify(proof,null,2));console.log(JSON.stringify(proof,null,2));}

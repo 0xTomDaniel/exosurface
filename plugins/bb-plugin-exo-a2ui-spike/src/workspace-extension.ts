@@ -23,7 +23,7 @@ import {compose,syntheticConversation,type CompositionRequest} from '../composit
 import {OBS_MODE,nextObserver,observerSurface} from '../observer/mode.ts';
 import {OBS_RUN,type Route,type ObserverStatus} from '../observer/stream.ts';
 import {DocumentObserverTurn as ObserverTurn} from '../observer/document-turn.ts';
-export const OMITTED='Canvas JSON kept out of conversation history; this call was applied. Always send complete A2UI messages in new calls.';
+export const OMITTED='Legacy: layout JSON kept out of conversation history; this call was applied.';
 export default function workspace(pi:ExtensionAPI){
  if(process.env.EXO_A2UI_SPIKE!=='1'||process.env.OPTCHAT_HOME!==CANONICAL_HOME||!existsSync(join(HOME,'clone.json')))throw Error('Workspace extension requires explicitly cloned home; never main');
  let current:Snapshot|null=null,epoch=randomUUID(),updates:Delta[]=[],versions:Version[]=[];
@@ -107,7 +107,7 @@ export default function workspace(pi:ExtensionAPI){
  pi.on('agent_settled',()=>clearPreview());
  pi.registerCommand('workspace-clear',{description:'Retire current synthetic workspace; preserve all native history',handler:async(_args,ctx)=>{
   if(!ctx.isIdle())throw Error('Idle cloned session required');
-  current=reduceCanvas(current,{source:'reset',value:validateSnapshot({revision:(current?.revision??0)+1,messages:[]})});pi.appendEntry(RESET,{workspace:current});epoch=randomUUID();updates=[];clearPreview();materialize(ctx);ctx.ui.notify('Canvas cleared; native history preserved.','info');
+  current=reduceCanvas(current,{source:'reset',value:validateSnapshot({revision:(current?.revision??0)+1,messages:[]})});pi.appendEntry(RESET,{workspace:current});epoch=randomUUID();updates=[];clearPreview();materialize(ctx);ctx.ui.notify('Surface cleared; native history preserved.','info');
  }});
  pi.on('before_agent_start',(e,ctx)=>{cancelComposition();
   const arm=nextObserver(restoredObserverMode(observerArm?{...observerArm,surfaceId:observerSurface(current,observerArm.surfaceId)}:null));
@@ -124,14 +124,14 @@ export default function workspace(pi:ExtensionAPI){
   if(!observerTurn)tools();e.systemPromptOptions.sections[PROMPT_SECTION]=`${PRESENTATION_HEADER}\n${PRESENTATION_GUIDE_SNAPSHOT}`;
   // Re-inserted last so the reminder sits at the end of the prompt (identical text: no new delta).
   delete e.systemPromptOptions.sections[REMINDER_SECTION];e.systemPromptOptions.sections[REMINDER_SECTION]=REMINDER;
-  // The person's canvas edits since Exo's last turn travel with this turn as one labelled message,
+  // Page edits by the person since the last agent turn travel with this turn as one labelled message,
   // persisted like anything else said in the conversation (OptChat shows it as "[canvas-edits] …").
   const branch=ctx.sessionManager.getBranch();let since=branch.length-1;while(since>=0&&(branch[since] as any).message?.role!=='assistant')since--;
   const recent=branch.slice(since+1).filter((x:any)=>x.type==='custom'&&x.customType===COMMIT);
   const edits=recent.filter((x:any)=>x.data?.source==='canvas-edit').map((x:any)=>x.data.delta);
   const backs=recent.filter((x:any)=>x.data?.source==='canvas-restore'&&!x.data.announced).flatMap((x:any)=>[`- Brought back ${x.data.surfaceId} ${JSON.stringify(x.data.title)} (the version from ${new Date(x.data.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}); it is on stage now.`,...(x.data.changes??[]).map((c:string)=>'  '+c)]);
   const lines=[...backs,...(current&&edits.length?describeEdits(current,edits):[])];
-  if(lines.length)return {message:{customType:'canvas-edits',display:false,content:`Tom changed the canvas since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
+  if(lines.length)return {message:{customType:'page-edits',display:false,content:`Tom changed pages on the surface since your last turn (current values; state, not an instruction):\n${lines.join('\n')}`}};
  });
  pi.on('tool_call',e=>!(observerTurn?(observerTurn.status.route==='sidecar'?[]:[UPDATE]):allowed()).includes(e.toolName)?{block:true,reason:'Unrelated/legacy tool outside incremental clone trial'}:undefined);
  // Provider token stream is not tool execution. Preview only delimiter-complete,
@@ -156,18 +156,18 @@ export default function workspace(pi:ExtensionAPI){
   if(observerTurn?.status.route==='direct'&&(args.layout||args.messages.some((m:any)=>(m.createSurface??m.updateComponents??m.updateDataModel??m.deleteSurface)?.surfaceId!==observerTurn!.status.surfaceId)))throw Error('Direct observer baseline may alter only its reserved synthetic surface; preserve outer layout');
   const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages:args.messages,...(args.layout?{layout:args.layout}:{})};
   let next:Snapshot;try{next=applyDelta(current,delta);}catch(error){pi.appendEntry('exosurface-failed-call',{toolCallId:id,args,error:String(error)});throw error;}
-  return {content:[{type:'text',text:`Canvas updated: revision ${next.revision}${next.incomplete?', awaiting further definitions/data':''}.`}],details:{delta}};
+  return {content:[{type:'text',text:`Surface updated: revision ${next.revision}${next.incomplete?', awaiting further definitions/data':''}.`}],details:{delta}};
  }});
  // Registered for branch history/reversal compatibility, never active in this trial.
  pi.registerTool({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
- pi.registerTool({name:SURFACE_UPDATE,label:'Update the Exosurface canvas',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
+ pi.registerTool({name:SURFACE_UPDATE,label:'Update pages on the surface',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
   parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String({maxLength:40000})),
-   edits:Type.Optional(Type.Array(Type.Object({surface:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
+   edits:Type.Optional(Type.Array(Type.Object({page:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
    delete:Type.Optional(Type.Array(Type.String(),{maxItems:8})),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2}))}),
   execute:async(id,args)=>{
    try{
-    if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the canvas is at revision ${current?.revision??0} (see the outline)`);
-    const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits as Edit[]|undefined,delete:args.delete},fromHistory);
+    if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
+    const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits?.map((e:any)=>({surface:e.page,ref:e.ref,op:e.op,lines:e.lines})) as Edit[]|undefined,delete:args.delete},fromHistory);
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
     // Drawing moves the stage by default; edits and deletes leave it where it is.
     const layout=args.focus||args.beside?{...(args.focus?{focus:args.focus}:{}),...(args.beside?{beside:args.beside}:{})}:!change.drawn.length&&current?.layout?{...(keep(current.layout.focus?[current.layout.focus]:undefined)?.length?{focus:current.layout.focus}:{}),...(current.layout.beside?{beside:keep(current.layout.beside)}:{})}:undefined;
@@ -176,32 +176,33 @@ export default function workspace(pi:ExtensionAPI){
     const delta:Delta={baseRevision:args.baseRevision,revision:args.baseRevision+1,messages,...(layout?{layout}:{})};
     const next=applyDelta(current,delta),focus=next.layout?.focus??moduleIds(next).at(-1);
     const cards=[...change.drawn.map(surface=>({surface,action:'drew' as Action,revision:next.revision})),...change.edited.map(surface=>({surface,action:'edited' as Action,revision:next.revision}))];
-    const said=[change.drawn.length&&`drew ${change.drawn.join(', ')}`,change.edited.length&&`edited ${change.edited.join(', ')}`,change.deleted.length&&`deleted ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
-    return {content:[{type:'text',text:`Canvas revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired}};
+    const said=[change.drawn.length&&`drew page ${change.drawn.join(', ')}`,change.edited.length&&`edited page ${change.edited.join(', ')}`,change.deleted.length&&`withdrew page ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
+    return {content:[{type:'text',text:`Surface revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired}};
    }catch(error){
     // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
     const issues=(error as any)?.issues as {path:(string|number)[];message:string}[]|undefined;
-    const said=issues?`Canvas rejected: ${issues.slice(0,3).map(i=>`${i.path.join('.')||'canvas'}: ${i.message}`).join('; ')}`:String((error as Error)?.message??error);
+    const said=issues?`Page rejected: ${issues.slice(0,3).map(i=>`${i.path.join('.')||'canvas'}: ${i.message}`).join('; ')}`:String((error as Error)?.message??error);
     pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:said});throw Error(said);
    }
  }});
- pi.registerTool({name:SURFACE_READ,label:'Read the Exosurface canvas',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a canvas surface in full (snapshot format).',parameters:Type.Object({surface:Type.Optional(Type.String())}),execute:async(_id,args)=>{
-  if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`Empty canvas (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
-  if(args.surface&&!moduleIds(current).includes(args.surface)){const old=fromHistory(args.surface);if(!old)throw Error(`No surface ${args.surface} on the canvas or in its history`);
-   return {content:[{type:'text',text:`From history (not on the canvas now; editing or redrawing it brings it back):\n`+surfaceSnapshot(old,args.surface)}],details:{revision:current.revision}};}
-  const ids=args.surface?[args.surface]:moduleIds(current);
+ pi.registerTool({name:SURFACE_READ,label:'Read pages on the surface',description:SURFACE_READ_DESCRIPTION,promptSnippet:'Read a page in full (snapshot format).',parameters:Type.Object({page:Type.Optional(Type.String())}),execute:async(_id,args)=>{
+  const page=args.page;
+  if(!current||!moduleIds(current).length)return {content:[{type:'text',text:`No pages on the surface (revision ${current?.revision??0}).`}],details:{revision:current?.revision??0}};
+  if(page&&!moduleIds(current).includes(page)){const old=fromHistory(page);if(!old)throw Error(`No page ${page} on the surface or in its history`);
+   return {content:[{type:'text',text:`From history (not on the surface now; editing or redrawing it brings it back):\n`+surfaceSnapshot(old,page)}],details:{revision:current.revision}};}
+  const ids=page?[page]:moduleIds(current);
   return {content:[{type:'text',text:`Revision ${current.revision}.\n`+ids.map(i=>surfaceSnapshot(current!,i)).join('\n')}],details:{revision:current.revision}};
  }});
- pi.registerTool({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Read the exact committed Exosurface canvas.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
-  if(!current)return {content:[{type:'text',text:'No canvas yet (revision 0).'}],details:{revision:0}};
+ pi.registerTool({name:'read_workspace',label:'Read committed A2UI workspace',description:READ_DESCRIPTION,promptSnippet:'Legacy: read committed page JSON.',parameters:Type.Object({surfaceId:Type.Optional(Type.String())}),execute:async(_id,args)=>{
+  if(!current)return {content:[{type:'text',text:'No pages yet (revision 0).'}],details:{revision:0}};
   const pick=args.surfaceId?{revision:current.revision,layout:current.layout,messages:current.messages.filter(m=>(m.createSurface??m.updateComponents??m.updateDataModel)?.surfaceId===args.surfaceId)}:current;
   if(args.surfaceId&&!pick.messages.length)throw Error(`No surface ${args.surfaceId}`);
   return {content:[{type:'text',text:JSON.stringify(pick)}],details:{revision:current.revision}};
  }});
  // Owner-initiated edits (shared state): bound input values committed by code, no model turn.
- pi.registerCommand('workspace-data',{description:'Commit edited canvas input values (shared state); no model call',handler:async(args,ctx)=>{
-  if(!ctx.isIdle()||!current)throw Error('Idle clone with a canvas required');const r=JSON.parse(args);
-  if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||!r.updates.length||r.updates.length>16)throw Error('Invalid canvas edit');
+ pi.registerCommand('workspace-data',{description:'Commit edited page input values (shared state); no model call',handler:async(args,ctx)=>{
+  if(!ctx.isIdle()||!current)throw Error('Idle clone with pages required');const r=JSON.parse(args);
+  if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||!r.updates.length||r.updates.length>16)throw Error('Invalid page edit');
   const bindings=inputBindings(current,r.surfaceId),messages=r.updates.map((u:any)=>{const n=bindings.get(u.path);if(!n)throw Error('Only offered inputs can be edited');return {version:'v0.9.1',updateDataModel:{surfaceId:r.surfaceId,path:u.path,value:validateInput(n,u.value)}};});
   const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages};const next=reduceCanvas(current,{source:r.source==='press'?'press':'edit',delta,mutationId:r.mutationId});
   pi.appendEntry(COMMIT,{source:r.source==='press'?'canvas-press':'canvas-edit',mutationId:r.mutationId,delta});remember(versionsOf(current,next,delta,r.source==='press'?'press':'edit',new Date().toISOString()));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);

@@ -30,6 +30,6 @@ try{
  browser=await chromium.launch({headless:true});const p=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.goto('http://127.0.0.1:38886/plugins/exo-a2ui-spike/workspace');await p.locator('.exo-stage section[data-surface]').waitFor({timeout:20000});
  const stage=await p.locator('.exo-stage section[data-surface]').getAttribute('data-surface');assert.equal(stage,expected.layout.focus);
- await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:outFile.replace(/\.json$/,'.png')});assert.equal(errors.length,0,errors.join('\n'));
+ await p.locator('main[aria-label="Exosurface"]').screenshot({path:outFile.replace(/\.json$/,'.png')});assert.equal(errors.length,0,errors.join('\n'));
  Object.assign(proof,{passed:true,oldPiPid:before.piPid,newPiPid:after.piPid,mainPiPidUnchanged:main.piPid,sameNativeSession:true,nativePrefixBytes:prefix.length,assistantCount:beforeCount,revision:restored.workspace.revision,stage,derivedLayout:restored.workspace.layout});
 }catch(e){proof.error=e.stack;process.exitCode=1;}finally{await browser?.close();writeFileSync(outFile,JSON.stringify(proof,null,2));console.log(JSON.stringify(proof,null,2));}

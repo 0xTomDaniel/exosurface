@@ -1,5 +1,7 @@
 # Next spike: the canvas as an equal channel
 
+> **Vocabulary note (2026-10-18):** written before [GLOSSARY.md](../../GLOSSARY.md). Here "canvas" means what is now the **surface**, and "surface" usually means what is now a **page**.
+
 Status: **planned**, not started. Starts after the owner's current test session. Implemented in the canvas plugin on the isolated clone; graduation to the main agent session follows separately.
 
 ## Minimum promotion spike (revised 2026-10-16, evening)

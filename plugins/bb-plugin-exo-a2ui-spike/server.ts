@@ -67,7 +67,7 @@ export default function plugin(bb:BbPluginApi){
   // an earlier version is brought back as the current one, with the person's edits, before Exo's turn; Exo gets one
   // agent-only line. A current surface is just referenced.
   const SURFACE_ITEM=/^([a-zA-Z0-9_-]{1,80})@(\d{1,9})$/;
-  bb.ui.registerMentionProvider({id:'surface',label:'Canvas surfaces',triggers:['@'],
+  bb.ui.registerMentionProvider({id:'surface',label:'Pages',triggers:['@'],
     search:({query})=>{const all=history(),latest=new Map<string,Version>();for(const v of all)if(v.action!=='withdrawn')latest.set(v.surface,v);
       const q=query.toLowerCase();return [...latest.values()].filter(v=>!q||v.title.toLowerCase().includes(q)||v.surface.includes(q)).sort((a,b)=>b.revision-a.revision).slice(0,12)
         .map(v=>{const last=[...all].reverse().find(x=>x.surface===v.surface&&x.action!=='retired'&&x.action!=='withdrawn')!;return {id:`${v.surface}@${last.revision}`,title:last.title,subtitle:new Date(last.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),icon:'PanelsTopLeft'};});},
@@ -76,12 +76,12 @@ export default function plugin(bb:BbPluginApi){
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((x:any)=>x.createSurface?.surfaceId===surface),p=readPending(),same=!!p&&p.surface===surface&&p.revision===v.revision;
       const stamp=new Date(v.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
       const ids=(st.workspace?.messages??[]).flatMap((x:any)=>x.createSurface?[x.createSurface.surfaceId]:[]),stage=st.workspace?.layout?.focus&&ids.includes(st.workspace.layout.focus)?st.workspace.layout.focus:ids.at(-1);
-      if(live&&!later&&stage===surface&&!same)return {context:`[canvas] Tom is pointing at the surface ${surface} ${JSON.stringify(v.title)} (on stage, current version).`};
+      if(live&&!later&&stage===surface&&!same)return {context:`[surface] Tom is pointing at the page ${surface} ${JSON.stringify(v.title)} (on stage, current version).`};
       try{await restoreViaOwner(st.threadId,{surfaceId:surface,revision:v.revision,updates:same?p!.updates:[],mutationId:randomUUID(),announced:true});rmSync(pendingFile,{force:true});bb.realtime.publish('pending-restore',null);}
       catch(e){bb.log?.warn?.(`bring-back at send failed, retrying at turn start: ${String(e)}`);if(!same){writeFileSync(pendingFile,JSON.stringify({threadId:st.threadId,surface,revision:v.revision,title:v.title,at:v.at,updates:[]}),{mode:0o600});}
-        return {context:`[canvas] Tom is bringing back the surface ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}); it will be on stage as the current version when your turn starts.`};}
+        return {context:`[surface] Tom is bringing back the page ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}); it will be on stage as the current version when your turn starts.`};}
       const changes=same&&p!.updates.length?` He changed: ${p!.updates.map(u=>`${u.path.slice(1)} → ${JSON.stringify(u.value)}`).join('; ')}.`:'';
-      return {context:`[canvas] Tom brought back the surface ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}). It is now the current version, on stage; your edits apply to it.${changes}`};
+      return {context:`[surface] Tom brought back the page ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}). It is now the current version, on stage; your edits apply to it.${changes}`};
     },
   });
   // Fallback: a pending bring-back without a pill (or one that couldn't commit at send time) is committed as the turn starts.

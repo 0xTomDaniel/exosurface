@@ -1,6 +1,6 @@
 ---
 name: exosurface
-description: Reference for composing Exosurface canvas surfaces with update_exosurface in the snapshot format — encoding choices, worked line shapes, edits by ref and how to morph the stage across turns. Read when composing something unusual (diagrams, charts, dense comparisons, multi-surface context) or after a canvas error. The always-on presentation guide and tool contract are already in your system prompt; this is optional depth.
+description: Reference for composing Exosurface pages with update_exosurface in the snapshot format — encoding choices, worked line shapes, edits by ref and how to morph the stage across turns. Read when composing something unusual (diagrams, charts, dense comparisons, several pages at once) or after a page error. The always-on presentation guide and tool contract are already in your system prompt; this is optional depth.
 ---
 
 # Exosurface composition reference
@@ -58,19 +58,19 @@ Table rows need as many cells as the header; flow `[to=…]` must name declared 
 
 ## Morphing across turns
 
-- **Topic continues:** edit the stage surface by ref instead of redrawing it: `replace` a line that changed, `insertAfter`/`insertInto` new lines, `remove` what is settled, or collapse settled parts into a `group [collapsible]`. Keep refs for things that persist.
-- **Topic shifts:** draw a new region (it takes the stage). The previous one recedes on its own; the system moves older surfaces into history, and you can bring any back by editing or redrawing its ref.
-- **Supporting context:** a small surface named in `beside` (≤2), e.g. a timeline of the week while discussing one day.
-- **Button press or canvas edits:** the values are already saved and appear in the outline (and a `[canvas-edits]` message lists what the person changed). Show what changes because of them; don't redraw the whole surface to acknowledge a click.
+- **Topic continues:** edit the page on stage by ref instead of redrawing it: `replace` a line that changed, `insertAfter`/`insertInto` new lines, `remove` what is settled, or collapse settled parts into a `group [collapsible]`. Keep refs for things that persist.
+- **Topic shifts:** draw a new page (it takes the stage). The previous one recedes on its own; the system moves older pages into history, and you can bring any back by editing or redrawing its ref.
+- **Supporting context:** a small page named in `beside` (≤2), e.g. a timeline of the week while discussing one day.
+- **Button press or page edits:** the values are already saved and appear in the outline (and a `[page-edits]` message lists what the person changed). Show what changes because of them; don't redraw the whole page to acknowledge a click.
 
 ## Common errors
 
 | Error | Fix |
 |---|---|
-| `region needs [ref=surface_id]` | Every top-level region line needs a ref. |
-| `No surface … on the canvas or in its history` | Check the ref in the outline's shelf or history list. |
-| `stale baseRevision` | Use the revision in the current canvas outline. |
-| `No ref … in surface …` | Edit refs come from the outline; read_exosurface shows a shelf or history surface in full. |
-| `duplicate ref` | Refs are unique within a surface. |
+| `region needs [ref=page_id]` | Every page (top-level region line) needs a ref. |
+| `No page … on the surface or in its history` | Check the ref in the outline's shelf or history list. |
+| `stale baseRevision` | Use the revision in the current surface outline. |
+| `No ref … in page …` | Edit refs come from the outline; read_exosurface shows a shelf or history page in full. |
+| `duplicate ref` | Refs are unique within a page. |
 | `line N: unknown role` / `expected "- role …"` | Use the roles in the tool description; each line starts with `- `. |
 | `Table rows must match columns` | Same number of cells as the header row. |

@@ -1,5 +1,7 @@
 # Presentation experiments — summary
 
+> **Vocabulary note (2026-10-18):** written before [GLOSSARY.md](../../GLOSSARY.md). Here "canvas" means what is now the **surface**, and "surface" usually means what is now a **page**.
+
 Several routes from conversation to canvas were tried in October 2026. The direct route is the one in use; the others are archived in `composition/` and `observer/`, disabled by `src/generation-policy.ts` (including when an old branch is restored), and kept so existing session history still decodes.
 
 | Route | Idea | Outcome |

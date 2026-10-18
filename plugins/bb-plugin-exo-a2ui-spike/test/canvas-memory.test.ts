@@ -11,7 +11,7 @@ const s=applyDelta(null,{baseRevision:0,revision:1,messages:[{version:V,createSu
  {version:V,updateDataModel:{surfaceId:'tomorrow',value:{tf:[],run:false,fixed:''}}}],layout:{focus:'tomorrow'}});
 test('What was shown is meaning only, bounded, with no layout JSON',()=>{
  const text=describeDelta(s,s.messages,{focus:'tomorrow'});
- assert.match(text,/^Showed on canvas — Saturday, as it stands \[tomorrow\]: new; Saturday, as it stands; Training this week: under 10 h 30%; choice "Training hours so far": Under 10 \/ 10–20; checkbox "Run in the morning"; text input "Anything fixed\?"; Adjust tomorrow; data \(all\)/);
+ assert.match(text,/^Showed on the surface — Saturday, as it stands \[tomorrow\]: new; Saturday, as it stands; Training this week: under 10 h 30%; choice "Training hours so far": Under 10 \/ 10–20; checkbox "Run in the morning"; text input "Anything fixed\?"; Adjust tomorrow; data \(all\)/);
  assert.ok(!/"component"|updateComponents|createSurface/.test(text));
  assert.ok(describeDelta(s,Array.from({length:30},()=>s.messages[1]),undefined,500).length<=500);
  assert.equal(describeComponent({component:'Row',children:[]}),'');

@@ -25,23 +25,23 @@ try{
   await p.locator('.exo-stage section[data-surface]').first().waitFor({timeout:15000});await p.waitForTimeout(700);
   const stage=await p.locator('.exo-stage section[data-surface]').getAttribute('data-surface'),pills=await p.locator('.exo-shelf .exo-pill').count(),beside=await p.locator('.exo-beside section[data-surface]').count();
   proof.checks[`${name}/${scheme}`]={stage,shelf:pills,beside};
-  await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:`${out}/${name}-${scheme}.png`});
+  await p.locator('main[aria-label="Exosurface"]').screenshot({path:`${out}/${name}-${scheme}.png`});
   if(scheme==='light'&&name==='guided'){
    assert.equal(stage,'fixture-trip');assert.equal(beside,1);assert.ok(pills>=1&&pills<=3);
    await p.getByRole('button',{name:'Mountain hike',exact:true}).click();
    await p.locator('.exo-shelf .exo-pill').nth(1).click();
    const away=await p.locator('.exo-stage section[data-surface]').getAttribute('data-surface');assert.notEqual(away,'fixture-trip');
-   await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:`${out}/guided-shelf-pick.png`});
+   await p.locator('main[aria-label="Exosurface"]').screenshot({path:`${out}/guided-shelf-pick.png`});
    await p.getByRole('button',{name:'Back to the current topic'}).click();
    assert.equal(await p.locator('.exo-stage section[data-surface]').getAttribute('data-surface'),'fixture-trip');
-   assert.match(await p.locator('main[aria-label="Exosurface canvas"]').innerText(),/Saving your changes/);
+   assert.match(await p.locator('main[aria-label="Exosurface"]').innerText(),/Saving your changes/);
    await p.locator('.exo-stage summary',{hasText:'Packing list'}).click();await p.waitForTimeout(250);assert.equal(await p.locator('.exo-stage input[type=checkbox]').count(),3);
    proof.checks.shelfRoundTripKeepsDraft=true;proof.checks.disclosureRevealsDetail=true;
-   const fold=await p.evaluate(()=>{const main=document.querySelector('main[aria-label="Exosurface canvas"]'),top=main.getBoundingClientRect().top,h=main.clientHeight;return [...document.querySelectorAll('.exo-stage [data-surface] *')].filter(e=>e.matches('h1,.exo-callout,.exo-table,button.a2ui-button.primary')).map(e=>({tag:e.className||e.tagName,bottom:Math.round(e.getBoundingClientRect().bottom-top),fold:h}));});
+   const fold=await p.evaluate(()=>{const main=document.querySelector('main[aria-label="Exosurface"]'),top=main.getBoundingClientRect().top,h=main.clientHeight;return [...document.querySelectorAll('.exo-stage [data-surface] *')].filter(e=>e.matches('h1,.exo-callout,.exo-table,button.a2ui-button.primary')).map(e=>({tag:e.className||e.tagName,bottom:Math.round(e.getBoundingClientRect().bottom-top),fold:h}));});
    proof.checks.aboveFold=fold;
-   await p.setViewportSize({width:900,height:1000});await p.waitForTimeout(300);await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:`${out}/guided-narrow.png`});
+   await p.setViewportSize({width:900,height:1000});await p.waitForTimeout(300);await p.locator('main[aria-label="Exosurface"]').screenshot({path:`${out}/guided-narrow.png`});
   }
-  await p.setViewportSize({width:1600,height:2600});await p.waitForTimeout(300);await p.locator('main[aria-label="Exosurface canvas"]').screenshot({path:`${out}/${name}-${scheme}-full.png`});
+  await p.setViewportSize({width:1600,height:2600});await p.waitForTimeout(300);await p.locator('main[aria-label="Exosurface"]').screenshot({path:`${out}/${name}-${scheme}-full.png`});
   await ctx.close();
  }
  assert.equal(readFileSync(H+'/workspace/latest.json','utf8'),before);

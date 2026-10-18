@@ -10,8 +10,8 @@ import {surfaceTitle} from './stage.ts';
 
 export const SNAPSHOT_FORMAT=`Exosurface snapshot format — one line per component, modelled on Playwright aria snapshots:
   - role "name" [attr] [attr=value]: inline text
-Indentation (2 spaces) nests children. Quote names with JSON escaping; text after ": " is literal to the end of the line (markdown allowed in text and notes; \\n for a line break). [ref=id] gives a stable id (letters, digits, _ -); refs are unique within a surface and are how you edit later. Lines you write without a ref get one assigned (you'll see it in the canvas outline). "- /prop: value" child lines set extra properties.
-One surface per top-level line:  - region "Surface title" [ref=surface_id]:
+Indentation (2 spaces) nests children. Quote names with JSON escaping; text after ": " is literal to the end of the line (markdown allowed in text and notes; \\n for a line break). [ref=id] gives a stable id (letters, digits, _ -); refs are unique within a page and are how you edit later. Lines you write without a ref get one assigned (you'll see it in the surface outline). "- /prop: value" child lines set extra properties.
+One page per top-level line:  - region "Page title" [ref=page_id]:
 Roles:
   heading "Text" [level=1|2|3]                     (default level 2)
   text: Paragraph (markdown)          text [caption]: Small print
@@ -32,7 +32,7 @@ Roles:
   radiogroup "Label" [ref=id] [chips]:  - radio "Option" [checked] [value=opt]   (pick one)
   listbox "Label" [ref=id] [chips]:  - option "Option" [selected] [value=opt]   (pick several)
   button "Label" [ref=id] [action=event_name] [primary|borderless] [sends=input_ref,…]   (sends the named inputs' current values, ≤24; inputs are saved as the person edits them, so sends is optional)
-tone ∈ neutral|accent|good|caution|risk. Bounds: 64 components per surface, depth 8.`;
+tone ∈ neutral|accent|good|caution|risk. Bounds: 64 components per page, depth 8.`;
 
 export type Line={depth:number;role:string;name?:string;attrs:Record<string,string|true>;text?:string;children:Line[];at:number};
 const HEAD=/^-\s+(\/?[a-z][a-z-]*)(?:\s+"((?:[^"\\]|\\.)*)")?((?:\s*\[[^\]]*\])*)\s*(?::(?:\s(.*))?)?$/;
@@ -78,8 +78,8 @@ type Built={sid:string;title?:string;components:any[];data:Record<string,unknown
 /** One region line → one surface (components root-first, data). Helper nodes get ids derived
  *  from their parent (`<id>__label`, `<id>__body`, …) so translation is deterministic. */
 export function buildSurface(region:Line):Built{
- if(region.role!=='region')throw Error(`line ${region.at}: top-level lines must be region surfaces`);
- const sid=String(region.attrs.ref??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=surface_id]`);
+ if(region.role!=='region')throw Error(`line ${region.at}: top-level lines must be pages (region lines)`);
+ const sid=String(region.attrs.ref??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=page_id]`);
  const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']);let auto=0;
  const claim=(v:string,at:number)=>{if(!ID.test(v))throw Error(`line ${at}: bad ref ${v}`);if(used.has(v))throw Error(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
  const id=(n:Line,hint:string)=>{if(typeof n.attrs.ref==='string')return claim(n.attrs.ref,n.at);let v;do v=`${hint}${++auto}`;while(used.has(v));return claim(v,n.at);};
@@ -136,7 +136,7 @@ export function buildSurface(region:Line):Built{
  const first=kids(region.children)[0],body=region.name!==undefined&&first?.role!=='heading'?[L('heading',{name:region.name,attrs:{ref:`${sid}__title`,level:'2'}}),...region.children]:region.children;
  const root:any={id:'root',component:'Column',children:[]};components.push(root);root.children=kids(body).map(build);
  components.sort((x,y)=>x.id==='root'?-1:y.id==='root'?1:0);
- if(components.length>64)throw Error(`region ${sid}: ${components.length} components exceeds 64`);
+ if(components.length>64)throw Error(`page ${sid}: ${components.length} components exceeds 64`);
  return {sid,title:region.name,components,data};
 }
 
@@ -145,7 +145,7 @@ const surfaceMessages=(b:Built,data:Record<string,unknown>)=>[create(b.sid),{ver
 
 /** Translate a snapshot (one or more complete surfaces) to A2UI messages for an empty canvas. */
 export function snapshotToA2ui(src:string){
- const regions=parseLines(src);if(!regions.length)throw Error('Snapshot has no region surface');
+ const regions=parseLines(src);if(!regions.length)throw Error('Snapshot has no page (region line)');
  return regions.flatMap(r=>{const b=buildSurface(r);return surfaceMessages(b,b.data);});
 }
 
@@ -207,12 +207,12 @@ function find(lines:Line[],ref:string,parent:Line|null=null):{list:Line[];index:
 export function applyEdits(region:Line,edits:Edit[]):Line{
  const root=structuredClone(region);
  for(const e of edits){
-  const hit=e.ref===root.attrs.ref?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw Error(`No ref ${e.ref} in surface ${e.surface}`);
+  const hit=e.ref===root.attrs.ref?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw Error(`No ref ${e.ref} in page ${e.surface}`);
   const fresh=e.op==='remove'?[]:parseLines(e.lines??'');if(e.op!=='remove'&&!fresh.length)throw Error(`Edit ${e.op} on ${e.ref} needs lines`);
-  if(e.op==='replace'){if(hit.node===root){if(fresh.length!==1||fresh[0].role!=='region')throw Error('Replacing a surface needs one region line');Object.assign(root,fresh[0]);}else hit.list.splice(hit.index,1,...fresh);}
-  else if(e.op==='insertAfter'){if(hit.node===root)throw Error('Insert after a surface: draw a new region instead');hit.list.splice(hit.index+1,0,...fresh);}
+  if(e.op==='replace'){if(hit.node===root){if(fresh.length!==1||fresh[0].role!=='region')throw Error('Replacing a page needs one region line');Object.assign(root,fresh[0]);}else hit.list.splice(hit.index,1,...fresh);}
+  else if(e.op==='insertAfter'){if(hit.node===root)throw Error('Insert after a page: draw a new page instead');hit.list.splice(hit.index+1,0,...fresh);}
   else if(e.op==='insertInto')hit.node.children.push(...fresh);
-  else{if(hit.node===root)throw Error('Remove a surface with delete');hit.list.splice(hit.index,1);}
+  else{if(hit.node===root)throw Error('Remove a page with delete');hit.list.splice(hit.index,1);}
  }
  return root;
 }
@@ -232,15 +232,15 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
   }
   messages.push(...surfaceMessages(b,data));existing.add(b.sid);
  };
- for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw Error(`Surface ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
+ for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw Error(`Page ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
  const bySurface=new Map<string,Edit[]>();for(const e of args.edits??[])bySurface.set(e.surface,[...(bySurface.get(e.surface)??[]),e]);
  for(const [sid,edits] of bySurface){
   // A surface from history is reopened by editing it: it comes back as the current version.
   const source=current&&moduleIds(current).includes(sid)?current:history?.(sid)??null;
-  if(!source)throw Error(`No surface ${sid} on the canvas or in its history`);if(drawn.includes(sid))throw Error(`Surface ${sid} is both redrawn and edited; do one`);
-  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a surface ref');replace(buildSurface(region));edited.push(sid);
+  if(!source)throw Error(`No page ${sid} on the surface or in its history`);if(drawn.includes(sid))throw Error(`Page ${sid} is both redrawn and edited; do one`);
+  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a page ref');replace(buildSurface(region));edited.push(sid);
  }
- for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No surface ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
+ for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No page ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
  if(!messages.length)throw Error('Nothing to change: give snapshot, edits or delete');
  return {messages,drawn,edited,deleted:args.delete??[]};
 }

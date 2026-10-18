@@ -6,7 +6,7 @@ const vs=readFileSync(`${H}/workspace/history.jsonl`,'utf8').split('\n').filter(
 const titleOf=id=>vs.filter(v=>v.surface===id).at(-1).title.slice(0,18),stageTitle=titleOf(stageId),otherId=[...vs].reverse().find(v=>v.surface!==stageId&&ids.includes(v.surface)&&v.action!=='retired').surface,otherTitle=titleOf(otherId);
 const b=await chromium.launch(),p=await b.newPage({viewport:{width:1500,height:1000}}),out={staged:true,stage:stageId,other:otherId};
 const pills=()=>p.locator('[contenteditable="true"]').evaluate(el=>(el.textContent.match(/↺/g)??[]).length);
-const click=async name=>{const c=p.getByRole('button',{name:/^Show .* on the canvas$/}).filter({hasText:name});const n=await c.count();await c.nth(n-1).scrollIntoViewIfNeeded();await c.nth(n-1).click();await p.waitForTimeout(1800);return n;};
+const click=async name=>{const c=p.getByRole('button',{name:/^Open page /}).filter({hasText:name});const n=await c.count();await c.nth(n-1).scrollIntoViewIfNeeded();await c.nth(n-1).click();await p.waitForTimeout(1800);return n;};
 try{
  await p.goto('http://127.0.0.1:38886/plugins/exo-a2ui-spike/workspace');await p.waitForTimeout(3000);
  // Bring one surface back with an edit pending, switch to another, then go back to the current stage: no pill left.
