@@ -69,3 +69,7 @@ test('Outline is attached after OptChat rebuilds the request, to whatever head O
  assert.deepEqual(withStatus.at(-1),status,'OptChat status line stays last');assert.ok(withStatus.at(-2).content[0].text.includes('EXOSURFACE revision'));
  assert.throws(()=>withOutline([{role:'user',content:'x'}],snap),/System-first/);
 });
+test('What moves to the primary session says nothing about a clone or synthetic content',async()=>{
+ const{MAIN_HEADER}=await import('../src/tool-contract.ts');const{PRESENTATION_GUIDE_SNAPSHOT}=await import('../src/presentation-guide.ts');const{SURFACE_DESCRIPTION,SURFACE_GUIDELINES}=await import('../src/tool-contract.ts');
+ for(const text of [MAIN_HEADER,PRESENTATION_GUIDE_SNAPSHOT,SURFACE_DESCRIPTION,...SURFACE_GUIDELINES])assert.ok(!/clone|synthetic|isolated|not main/i.test(text),text.slice(0,80));
+});

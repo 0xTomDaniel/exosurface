@@ -118,3 +118,10 @@ test('The translator has no surface limit: a ninth surface is just drawn (the sy
  let s=draw(SAMPLE);for(let i=2;i<=8;i++){const {messages}=changeMessages(s,{snapshot:`- region "S${i}" [ref=s${i}]:\n  - text: x`});s=applyDelta(s,{baseRevision:s.revision,revision:s.revision+1,messages});}
  const r=changeMessages(s,{snapshot:'- region "Nine" [ref=nine]:\n  - text: x'});assert.deepEqual(r.drawn,['nine']);
 });
+
+test('Buttons may send up to 24 inputs; more gets a clear, line-numbered error',()=>{
+ const boxes=(n:number)=>Array.from({length:n},(_,i)=>`  - checkbox "Item ${i}" [ref=c${i}]`).join('\n');
+ const btn=(n:number)=>`  - button "Save" [ref=go] [sends=${Array.from({length:n},(_,i)=>`c${i}`).join(',')}]`;
+ const ok=applyDelta(null,{baseRevision:0,revision:1,messages:snapshotToA2ui(`- region "Ten" [ref=ten]:\n${boxes(10)}\n${btn(10)}`)});assert.equal(ok.incomplete,false);
+ assert.throws(()=>snapshotToA2ui(`- region "Many" [ref=many]:\n${boxes(25)}\n${btn(25)}`),/line 27: button "Save" sends 25 inputs; at most 24/);
+});

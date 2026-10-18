@@ -29,7 +29,11 @@ export const READ_DESCRIPTION='Return exact committed canvas JSON, for one surfa
 export const REMINDER_SECTION='exosurface_reminder';
 // Opus 5-family guidance: explicit conciseness instruction, plus a short reminder late in a long prompt.
 export const REMINDER='<tone_preference>\nWhen the canvas carries the content, keep chat to what it cannot show, usually one to three sentences.\n</tone_preference>';
-export const PRESENTATION_HEADER=`Exosurface: an isolated clone canvas beside this chat (not main Exo). Use update_exosurface to present; canvas use never performs real task, vault, tax or account changes, and no workers are spawned.`;
+// Where the canvas runs. The clone states its isolation; on the primary session the canvas is simply part of Exo
+// (its tools add to Exo's own, and real work happens through Exo's normal tools, never through canvas actions).
+export const CLONE_HEADER=`Exosurface: an isolated clone canvas beside this chat (not main Exo). Use update_exosurface to present; canvas use never performs real task, vault, tax or account changes, and no workers are spawned.`;
+export const MAIN_HEADER=`Exosurface: the canvas beside this chat. Use update_exosurface to present. Canvas edits and button presses are the person talking to you; real changes happen only through your normal tools, never by the canvas itself.`;
+export const PRESENTATION_HEADER=process.env.EXOSURFACE_MODE==='main'?MAIN_HEADER:CLONE_HEADER;
 
 // Snapshot-format tools (2026-10-16): the agent draws, reads and edits the canvas in one
 // readable language; code translates to standard A2UI. Nothing in history is rewritten.
