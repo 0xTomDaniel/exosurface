@@ -1,4 +1,4 @@
-import { EXO_MODELS, isExoModel, mainModel, mainModelFile, save } from './state.ts';
+import { primaryModelDefinition, isExoModel, mainModel, mainModelFile, save } from './state.ts';
 
 type Rpc = { send(type: string, fields?: Record<string, unknown>): Promise<any> };
 const remember = (id: string) => {
@@ -9,7 +9,7 @@ const remember = (id: string) => {
 export async function selectPrimaryModel(rpc: Rpc, picked: unknown, persist = remember) {
   const id = picked ?? mainModel();
   if (!isExoModel(id)) throw new Error('Unsupported primary Exo model; choose an Exo model in BB');
-  const target = EXO_MODELS[id], before = await rpc.send('get_state');
+  const target = primaryModelDefinition(id), before = await rpc.send('get_state');
   const modelChanged = before.model?.provider !== target.provider || before.model?.id !== target.modelId;
   const thinkingChanged = before.thinkingLevel !== target.thinking;
   if (modelChanged || thinkingChanged) {

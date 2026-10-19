@@ -56,11 +56,17 @@ export type RuntimeKind = 'offline' | 'live' | 'canonical';
 export const CANONICAL_MODEL = { id: 'exo-opus-5-5', model: 'exo-opus-5-5', displayName: 'Exo — Opus 5.5 (exo-optchat)', description: 'Existing personal OptChat history; one canonical BB conversation, not a test profile', isDefault: false, supportedReasoningEfforts: [{ reasoningEffort: 'high' as const, description: 'Existing Exo Opus setting' }], defaultReasoningEffort: 'high' as const };
 // Models the primary Exo conversation can run on, picked in BB's model picker. Same session, history and memory;
 // the choice is remembered (main-model.json) so restarts keep it. Auth comes from the owner's own Pi agent folder.
-export const SOL_MODEL = { id: 'exo-gpt-6-1-sol', model: 'exo-gpt-6-1-sol', displayName: 'Exo — GPT-6.1 Sol (exo-optchat)', description: 'Same Exo history and memory, answered by GPT-6.1 Sol via the existing Codex sign-in', isDefault: false, supportedReasoningEfforts: [{ reasoningEffort: 'high' as const, description: 'High' }], defaultReasoningEffort: 'high' as const };
+export const SOL_MODEL = { id: 'exo-gpt-6-1-sol', model: 'exo-gpt-6-1-sol', displayName: 'Exo — GPT-6.1 Sol (exo-optchat)', description: 'Same Exo history and memory, answered by GPT-6.1 Sol via the locally configured provider', isDefault: false, supportedReasoningEfforts: [{ reasoningEffort: 'high' as const, description: 'High' }], defaultReasoningEffort: 'high' as const };
 export const EXO_MODELS: Record<string, { provider: string; modelId: string; thinking: string }> = {
   'exo-opus-5-5': { provider: 'anthropic', modelId: 'claude-opus-5-5', thinking: 'high' },
   'exo-gpt-6-1-sol': { provider: 'openai-codex', modelId: 'gpt-6.1-sol', thinking: 'high' },
 };
+// Optional primary-only provider route. Endpoint/auth/model definitions belong in that agent directory's models.json,
+// never in this public repository. Without local overrides the existing Codex route is unchanged.
+export function primaryModelDefinition(id: string, solProvider = local('primarySolProvider')) {
+  if (!Object.hasOwn(EXO_MODELS, id)) throw new Error('Unsupported primary Exo model');
+  return { ...EXO_MODELS[id], ...(id === SOL_MODEL.id && solProvider ? { provider: solProvider } : {}) };
+}
 export const isExoModel = (id: unknown): id is string => typeof id === 'string' && Object.hasOwn(EXO_MODELS, id);
 export const mainModelFile = () => join(HOME, 'main-model.json');
 export function mainModel(): string { try { const id = load(mainModelFile()).id; return isExoModel(id) ? id : 'exo-opus-5-5'; } catch { return 'exo-opus-5-5'; } }

@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 export const LOCAL_CONFIG = process.env.EXO_CONFIG ?? join(homedir(), '.config', 'exo', 'exosurface.json');
 const raw: Record<string, unknown> = existsSync(LOCAL_CONFIG) ? JSON.parse(readFileSync(LOCAL_CONFIG, 'utf8')) : {};
 const expand = (p: string) => (p.startsWith('~/') ? join(homedir(), p.slice(2)) : p);
-export function local(key: 'vault' | 'piCli' | 'piFast' | 'optchat' | 'optchatCanvas' | 'playwright' | 'surfaceMain' | 'exosurfacePlugin'): string {
+export function local(key: 'vault' | 'piCli' | 'piFast' | 'optchat' | 'optchatCanvas' | 'playwright' | 'surfaceMain' | 'exosurfacePlugin' | 'primaryAgentDir' | 'primarySolProvider'): string {
   const v = raw[key];
   return typeof v === 'string' && v ? expand(v) : '';
 }
