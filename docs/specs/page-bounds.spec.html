@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Page bounds: defined once, told to Exo, named on rejection - Exosurface spec</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./.style/spec.css">
+<script defer src="./.viz/runtime.js"></script>
+</head>
+<body>
+<article class="spec" data-spec-version="1" data-spec-contract="shaped-sections-v1">
+
+<header data-anchor="header">
+<h1 data-anchor="title">Page bounds: defined once, told to Exo, named on rejection</h1>
+<p class="lede" data-anchor="context">Exo draws and edits pages with <code>update_exosurface</code>, written in the snapshot format.
+Every bound the page tool enforces is declared once, and both the tool contract Exo reads and the rejection Exo receives are made from that one declaration, so a page drawn within the contract is never rejected for a bound Exo could not know.</p>
+<p data-anchor="vocabulary">Vocabulary follows the glossary: page, ref, snapshot format, page history.</p>
+</header>
+
+<section data-spec-section="user-stories" data-anchor="user-stories" id="user-stories">
+<h2>User stories</h2>
+<p data-user-story data-user-facing="false" data-anchor="story-bounds-told">As Exo, the page tool's contract tells me every bound a page must stay within, with its value, so a page I draw within the contract is accepted.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-rejection-locates">As Exo, a rejected call tells me which bound it broke, where on the page, and the bound's value, so I fix that element and send again instead of cutting content.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-one-definition">As a maintainer, I change a bound in one place and the validator, the tool contract and the rejection all follow, so they cannot drift apart.</p>
+</section>
+
+<section data-spec-section="acceptance" data-acceptance-scope="traceability" data-anchor="acceptance" id="acceptance">
+<h2>Acceptance criteria</h2>
+<p data-acceptance-criterion data-anchor="acceptance-contract-complete" data-story="story-bounds-told story-one-definition"><span data-acceptance-scenario>Given Exo with the page tools, When Exo starts a request,</span> <span data-acceptance-observable>Then the page tool's contract states every page bound the validator enforces, each with its value and the element and attribute it applies to, in the snapshot format's words, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-missing-bound-fails" data-story="story-one-definition"><span data-acceptance-scenario>Given a maintainer whose change makes the validator enforce a page bound the tool contract does not state, When the maintainer runs the <a href="./quality-gate.spec.html#boundary-check">package check</a>,</span> <span data-acceptance-observable>Then the check fails, naming that bound, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-rejection-length" data-story="story-rejection-locates"><span data-acceptance-scenario>Given Exo drawing a page in which one element's text is longer than its bound, When Exo sends the page,</span> <span data-acceptance-observable>Then the rejection names the page, that element's ref, the attribute and the bound's value, in the words the tool contract uses, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-rejection-choice" data-story="story-rejection-locates"><span data-acceptance-scenario>Given Exo drawing a note with a tone that only other elements accept, When Exo sends the page,</span> <span data-acceptance-observable>Then the rejection names the note's ref and lists the tones a note accepts, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-rejection-page" data-story="story-rejection-locates"><span data-acceptance-scenario>Given Exo drawing a page with more components than a page may hold, When Exo sends the page,</span> <span data-acceptance-observable>Then the rejection names the page, the bound and its value, and the page's count, proven by a unit test: no screen shows it.</span></p>
+</section>
+
+<section data-spec-section="modular-boundaries" data-anchor="modular-boundaries" id="modular-boundaries">
+<h2>Modular boundaries</h2>
+<p data-modular-boundary data-anchor="boundary-bounds"><span data-boundary-responsibility>The bounds definition owns every page bound and its value.</span> <span data-boundary-seam>Caller-facing seam: one declaration inside the package, read by the validator, the tool contract and the rejection text.</span> <span data-boundary-dependency>Dependency direction: self-contained; it depends on nothing else in the package, and the three readers depend on it.</span> <span data-boundary-scope>Observable scope: the values Exo sees in the tool contract and in rejections.</span></p>
+<p data-modular-boundary data-anchor="boundary-validator"><span data-boundary-responsibility>The page validator owns accepting or rejecting a call.</span> <span data-boundary-seam>Caller-facing seam: the <code>update_exosurface</code> result, either the new revision or one rejection message.</span> <span data-boundary-dependency>Dependency direction: reads the bounds definition; never holds a bound value of its own.</span> <span data-boundary-scope>Observable scope: the rejection text Exo receives.</span></p>
+<p data-modular-boundary data-anchor="boundary-contract"><span data-boundary-responsibility>The tool contract owns what Exo is told about valid pages.</span> <span data-boundary-seam>Caller-facing seam: the <code>update_exosurface</code> description Exo receives with every request.</span> <span data-boundary-dependency>Dependency direction: generated from the bounds definition.</span> <span data-boundary-scope>Observable scope: the description text.</span></p>
+</section>
+
+<section data-anchor="bounds" id="bounds">
+<h2>What counts as a page bound</h2>
+<div class="clauses" data-anchor="bound-clauses">
+<p class="clause" data-anchor="bound-definition"><span class="clause-id">B1</span> A page bound is any check the page tool applies that a call written in the snapshot format can break.</p>
+<p class="clause" data-anchor="bound-not-internal"><span class="clause-id">B2</span> A check the snapshot translation always satisfies, such as data nesting or binding paths, is not a page bound.</p>
+<p class="clause" data-anchor="bound-not-system"><span class="clause-id">B3</span> The pages on the surface and the surface's total size are kept by the system, which moves older pages into page history; they are page bounds only where one call alone breaks them.</p>
+<p class="clause" data-anchor="bound-one-place"><span class="clause-id">B4</span> Every page bound and its value are declared once, in the bounds definition; no other code or text holds a bound's value.</p>
+</div>
+<div class="table-scroll" data-anchor="bound-families-wrap">
+<table data-anchor="bound-families"><caption>Families of page bounds; the bounds definition holds each bound and its value</caption>
+<thead><tr><th>Family</th><th>What it bounds</th></tr></thead>
+<tbody>
+<tr data-anchor="family-text"><td>Text length</td><td>Every text attribute: titles, labels, values, details, notes, cells, captions, units, summaries</td></tr>
+<tr data-anchor="family-count"><td>Item count</td><td>Timeline items, table columns and rows, chart rows, flow nodes and links, inputs a button sends</td></tr>
+<tr data-anchor="family-choice"><td>Allowed values</td><td>Tones, which differ between a note and other elements; timeline states; chart kinds; flow directions</td></tr>
+<tr data-anchor="family-range"><td>Number ranges</td><td>Meter progress, the highlighted table column</td></tr>
+<tr data-anchor="family-shape"><td>Page shape</td><td>Components per page, nesting depth, the form of a ref, refs unique within a page</td></tr>
+<tr data-anchor="family-cross"><td>Agreement between parts</td><td>Table rows match the header, flow links join declared nodes, chart values within the declared maximum</td></tr>
+<tr data-anchor="family-call"><td>Call size</td><td>Snapshot length, edits per call, lines per edit, pages withdrawn per call, pages beside the stage, one call's pages within the surface's bounds</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section data-anchor="telling" id="telling">
+<h2>How Exo is told</h2>
+<div class="clauses" data-anchor="telling-clauses">
+<p class="clause" data-anchor="told-in-contract"><span class="clause-id">T1</span> The <code>update_exosurface</code> contract states each bound beside the role or attribute it applies to, in the snapshot format's words, never the renderer's component names.</p>
+<p class="clause" data-anchor="told-once"><span class="clause-id">T2</span> No other agent-facing text, such as the presentation guide or the optional reference skill, states a bound's value; where it needs one, it points to the tool contract.</p>
+<p class="clause" data-anchor="rejection-names"><span class="clause-id">T3</span> A rejection names the page, the element by its ref, the attribute, the bound and its value, in the tool contract's words; a bound on the whole page or call names the page or call instead of an element.</p>
+<p class="clause" data-anchor="rejection-plain"><span class="clause-id">T4</span> A rejection is plain words, never raw schema output.</p>
+</div>
+</section>
+
+<section data-anchor="non-goals" id="non-goals">
+<h2>Non-goals</h2>
+<p data-anchor="non-goal-values">Choosing bound values: the bounds definition holds them, and this spec sets none.</p>
+<p data-anchor="non-goal-legacy">The legacy A2UI page tools, which stay registered only to read old history and are never offered to Exo.</p>
+</section>
+
+</article>
+</body>
+</html>
