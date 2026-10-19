@@ -11,6 +11,7 @@ import {WorkspaceView} from './src/workspace-view';
 import {deliverySchema} from './src/delivery';
 import {moduleNodes,moduleIds} from './src/workspace';
 import {stagePlan,surfaceTitle} from './src/stage';
+import {formPattern} from './src/page-bounds';
 import {exoReactCatalog} from './src/exo-components';
 import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
@@ -43,7 +44,7 @@ function Canvas({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(
 }
 // A surface card in the chat, where Exo drew or edited it. Clicking shows that version on the canvas.
 function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
- const rpc=useRpc<typeof rpcContract>(),nav=useBbNavigate(),surface=attributes.surface??'',revision=Number(attributes.revision),valid=/^[a-zA-Z0-9_-]{1,80}$/.test(surface)&&Number.isInteger(revision);
+ const rpc=useRpc<typeof rpcContract>(),nav=useBbNavigate(),surface=attributes.surface??'',revision=Number(attributes.revision),valid=formPattern('refForm').test(surface)&&Number.isInteger(revision);
  const[meta,setMeta]=useState<{title:string;at:string}|null>(null),active=useRewind();
  useEffect(()=>{if(valid)rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).then(m=>setMeta({title:m.title,at:m.at})).catch(()=>{});},[surface,revision,message.threadId]);
  if(!valid)return null;const on=active?.surface===surface&&active.revision===revision;

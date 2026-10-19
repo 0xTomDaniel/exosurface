@@ -5,19 +5,26 @@
 import {z} from 'zod';
 import {Catalog,AccessibilityAttributesSchema,ComponentIdSchema,DynamicStringSchema} from '@a2ui/web_core/v0_9';
 import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
+import {PAGE_BOUNDS as B,formPattern} from './page-bounds.ts';
 export const EXO_CATALOG='urn:exosurface:catalog:exo-visual:v1';
 const common={accessibility:AccessibilityAttributesSchema.optional(),weight:z.number().optional()};
-const short=z.string().min(1).max(120),line=z.string().max(400);
-export const TONES=['neutral','accent','good','caution','risk'] as const;
-const tone=z.enum(TONES).optional();
-export const CalloutApi={name:'Callout',schema:z.object({...common,tone:z.enum(['note','decision','caution','good']).optional(),title:short.optional(),text:DynamicStringSchema}).strict()};
-export const MetricApi={name:'Metric',schema:z.object({...common,label:short,value:z.string().min(1).max(40),detail:line.optional(),tone,progress:z.number().min(0).max(1).optional()}).strict()};
-export const TimelineApi={name:'Timeline',schema:z.object({...common,items:z.array(z.object({label:short,when:z.string().max(40).optional(),detail:line.optional(),state:z.enum(['done','now','next','later','blocked']).optional()}).strict()).min(1).max(12)}).strict()};
-export const TableApi={name:'Table',schema:z.object({...common,caption:short.optional(),columns:z.array(z.string().max(60)).min(1).max(6),rows:z.array(z.object({cells:z.array(z.string().max(200)).min(1).max(6),tone}).strict()).min(1).max(14),highlightColumn:z.number().int().min(0).max(5).optional()}).strict()};
-export const ChartApi={name:'Chart',schema:z.object({...common,kind:z.enum(['bar','line']),caption:short.optional(),unit:z.string().max(16).optional(),max:z.number().finite().optional(),points:z.array(z.object({label:z.string().min(1).max(40),value:z.number().finite(),note:z.string().max(80).optional(),tone}).strict()).min(1).max(16)}).strict()};
-const nodeId=z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/);
-export const FlowApi={name:'Flow',schema:z.object({...common,caption:short.optional(),direction:z.enum(['right','down']).optional(),nodes:z.array(z.object({id:nodeId,label:z.string().min(1).max(48),detail:z.string().max(90).optional(),tone}).strict()).min(1).max(12),edges:z.array(z.object({from:nodeId,to:nodeId,label:z.string().max(32).optional()}).strict()).max(20)}).strict()};
-export const DisclosureApi={name:'Disclosure',schema:z.object({...common,title:short,summary:z.string().max(120).optional(),open:z.boolean().optional(),child:ComponentIdSchema}).strict()};
+// Every value below comes from the bounds definition (page-bounds.ts); the snapshot validator checks the
+// same bounds first and names them in snapshot-format words, so these schemas are the A2UI-level backstop.
+type Len={limit:{min:number;max:number}};type Count={limit:{min:number;max:number|null}};
+const text=(b:Len)=>z.string().min(b.limit.min).max(b.limit.max);
+const many=<T extends z.ZodTypeAny>(item:T,b:Count)=>{const a=z.array(item).min(b.limit.min);return b.limit.max===null?a:a.max(b.limit.max);};
+const oneOf=<V extends readonly [string,...string[]]>(b:{limit:{values:V}})=>z.enum(b.limit.values as unknown as [V[number],...V[number][]]);
+export const TONES=B.tone.limit.values;
+const tone=oneOf(B.tone).optional();
+export const CalloutApi={name:'Callout',schema:z.object({...common,tone:oneOf(B.noteTone).optional(),title:text(B.noteTitle).optional(),text:DynamicStringSchema}).strict()};
+export const MetricApi={name:'Metric',schema:z.object({...common,label:text(B.meterLabel),value:text(B.meterValue),detail:text(B.meterDetail).optional(),tone,progress:z.number().min(B.meterProgress.limit.min).max(B.meterProgress.limit.max).optional()}).strict()};
+export const TimelineApi={name:'Timeline',schema:z.object({...common,items:many(z.object({label:text(B.timelineLabel),when:text(B.timelineWhen).optional(),detail:text(B.timelineDetail).optional(),state:oneOf(B.timelineState).optional()}).strict(),B.timelineItems)}).strict()};
+export const TableApi={name:'Table',schema:z.object({...common,caption:text(B.tableCaption).optional(),columns:many(text(B.tableHeaderCell),B.tableColumns),rows:many(z.object({cells:many(text(B.tableCell),B.tableColumns),tone}).strict(),B.tableRows),highlightColumn:z.number().int().min(B.tableHighlight.limit.min).max(B.tableHighlight.limit.max).optional()}).strict()};
+export const ChartApi={name:'Chart',schema:z.object({...common,kind:oneOf(B.chartKind),caption:text(B.figureCaption).optional(),unit:text(B.figureUnit).optional(),max:z.number().finite().optional(),points:many(z.object({label:text(B.figureRowLabel),value:z.number().finite(),note:text(B.figureRowNote).optional(),tone}).strict(),B.figureRows)}).strict()};
+const nodeId=z.string().regex(formPattern('flowRefForm'));
+// Edge labels have no snapshot-format line (B2: the translation never writes one), so they are not a page bound.
+export const FlowApi={name:'Flow',schema:z.object({...common,caption:text(B.flowCaption).optional(),direction:oneOf(B.flowDirection).optional(),nodes:many(z.object({id:nodeId,label:text(B.flowLabel),detail:text(B.flowDetail).optional(),tone}).strict(),B.flowNodes),edges:many(z.object({from:nodeId,to:nodeId,label:z.string().max(32).optional()}).strict(),B.flowLinks)}).strict()};
+export const DisclosureApi={name:'Disclosure',schema:z.object({...common,title:text(B.groupTitle),summary:text(B.groupSummary).optional(),open:z.boolean().optional(),child:ComponentIdSchema}).strict()};
 export const EXO_APIS=[CalloutApi,MetricApi,TimelineApi,TableApi,ChartApi,FlowApi,DisclosureApi];
 export const EXO_COMPONENTS=EXO_APIS.map(a=>a.name);
 const basicFunctions=[...basicCatalog.functions.values()];
