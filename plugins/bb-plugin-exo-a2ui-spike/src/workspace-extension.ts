@@ -17,7 +17,7 @@ import {reduceCanvas,foldCanvas} from './canvas-doc.ts';
 import {inputBindings,validateInput} from './workspace.ts';
 import {PROMPT_SECTION,REMINDER_SECTION,REMINDER,PRESENTATION_HEADER,UPDATE_DESCRIPTION,UPDATE_SNIPPET,UPDATE_GUIDELINES,READ_DESCRIPTION,SURFACE_UPDATE,SURFACE_READ,SURFACE_SNIPPET,SURFACE_DESCRIPTION,SURFACE_GUIDELINES,SURFACE_READ_DESCRIPTION} from './tool-contract.ts';
 import {EXO_CATALOG} from './exo-catalog.ts';
-import {checkCall} from './page-validator.ts';
+import {checkCall,Rejection} from './page-validator.ts';
 import {OFFER,OFFER_ENTRY,COMMIT,RUN,validateOffer,recoverOffer,type Offer} from '../composition/contract.ts';
 import {offerParameters} from '../composition/tool-schema.ts';
 import {compose,syntheticConversation,type CompositionRequest} from '../composition/engine.ts';
@@ -174,10 +174,12 @@ export default function workspace(pi:ExtensionAPI){
    delete:Type.Optional(Type.Array(Type.String())),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String()))}),
   execute:async(id,args)=>{
    try{
-    if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
+    if(args.baseRevision!==(current?.revision??0))throw new Rejection(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
     checkCall({snapshot:args.snapshot,edits:args.edits,delete:args.delete,beside:args.beside});
     const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits?.map((e:any)=>({surface:e.page,ref:e.ref,op:e.op,lines:e.lines})) as Edit[]|undefined,delete:args.delete},fromHistory);
-    checkCall({pages:new Set([...change.drawn,...change.edited]).size,bytes:JSON.stringify(change.messages).length});
+    checkCall({pages:new Set([...change.drawn,...change.edited]).size});
+    const after=new Set([...live(),...change.drawn,...change.edited].filter(p=>!change.deleted.includes(p)));
+    for(const [what,named] of [['focus',args.focus?[args.focus]:[]],['beside',args.beside??[]]] as const)for(const p of named)if(!after.has(p))throw new Rejection(`Call rejected: ${what} names page ${p}, which is not on the surface after this call.`);
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
     // Drawing moves the stage by default; edits and deletes leave it where it is.
     const layout=args.focus||args.beside?{...(args.focus?{focus:args.focus}:{}),...(args.beside?{beside:args.beside}:{})}:!change.drawn.length&&current?.layout?{...(keep(current.layout.focus?[current.layout.focus]:undefined)?.length?{focus:current.layout.focus}:{}),...(current.layout.beside?{beside:keep(current.layout.beside)}:{})}:undefined;
@@ -189,9 +191,10 @@ export default function workspace(pi:ExtensionAPI){
     const said=[change.drawn.length&&`drew page ${change.drawn.join(', ')}`,change.edited.length&&`edited page ${change.edited.join(', ')}`,change.deleted.length&&`withdrew page ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
     return {content:[{type:'text',text:`Surface revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired}};
    }catch(error){
-    // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
+    // Rejections (bounds and format) come back as written, in plain words. Anything else is a check that no
+    // stated bound covers: said as a page-tool defect, never as raw schema output (which misled the model).
     const issues=(error as any)?.issues as {path:(string|number)[];message:string}[]|undefined;
-    const said=issues?`Page rejected: ${issues.slice(0,3).map(i=>`${i.path.join('.')||'canvas'}: ${i.message}`).join('; ')}`:String((error as Error)?.message??error);
+    const said=error instanceof Rejection?error.message:`Call rejected by a check the update_exosurface contract does not state (a page tool defect, not a bound you broke): ${issues?issues.slice(0,3).map(i=>`${i.path.join('.')||'call'} ${i.message}`).join('; '):String((error as Error)?.message??error)}`;
     pi.appendEntry('exosurface-failed-call',{toolCallId:id,tool:SURFACE_UPDATE,error:said});throw Error(said);
    }
  }});

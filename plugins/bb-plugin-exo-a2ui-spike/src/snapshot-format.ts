@@ -7,7 +7,7 @@
 import {EXO_CATALOG} from './exo-catalog.ts';
 import {moduleIds,moduleNodes,moduleData,atPath,type Snapshot} from './workspace.ts';
 import {PAGE_BOUNDS,boundsSection,formPattern} from './page-bounds.ts';
-import {checkLines,checkComponents} from './page-validator.ts';
+import {checkLines,checkComponents,Rejection} from './page-validator.ts';
 const allowed=(k:'timelineState'|'flowDirection'|'noteTone'|'chartKind')=>PAGE_BOUNDS[k].limit.values.join('|');
 import {surfaceTitle} from './stage.ts';
 
@@ -48,7 +48,7 @@ export function parseLines(src:string,base=0):Line[]{
  src.replace(/\r/g,'').split('\n').forEach((raw,i)=>{
   if(!raw.trim()||raw.trim().startsWith('#'))return;
   const indent=raw.match(/^ */)![0].length,m=HEAD.exec(raw.trim());
-  if(!m)throw Error(`line ${base+i+1}: expected "- role \\"name\\" [attrs]: text", got: ${raw.trim().slice(0,80)}`);
+  if(!m)throw new Rejection(`line ${base+i+1}: expected "- role \\"name\\" [attrs]: text", got: ${raw.trim().slice(0,80)}`);
   const attrs:Record<string,string|true>={};
   for(const a of (m[3]??'').match(/\[[^\]]*\]/g)??[]){const [k,...v]=a.slice(1,-1).split('=');attrs[k.trim()]=v.length?v.join('=').trim():true;}
   const node:Line={depth:indent,role:m[1],name:m[2]!==undefined?JSON.parse(`"${m[2]}"`):undefined,attrs,text:m[4]?.trim()?unescapeText(m[4].trim()):undefined,children:[],at:base+i+1};
@@ -68,7 +68,7 @@ export function formatLines(lines:Line[],depth=0):string{
  }).join('\n');
 }
 
-const num=(v:unknown,at:number,what:string)=>{const n=Number(String(v).replace(/[,\s]/g,''));if(!Number.isFinite(n))throw Error(`line ${at}: ${what} must be a number, got ${v}`);return n;};
+const num=(v:unknown,at:number,what:string)=>{const n=Number(String(v).replace(/[,\s]/g,''));if(!Number.isFinite(n))throw new Rejection(`line ${at}: ${what} must be a number, got ${v}`);return n;};
 export const cells=(t:string|undefined)=>(t??'').split(/(?<!\\)\|/).map(s=>s.trim().replace(/\\\|/g,'|'));
 const joinCells=(c:string[])=>c.map(s=>String(s).replace(/\|/g,'\\|')).join(' | ');
 export const prop=(n:Line,key:string)=>n.children.find(c=>c.role===`/${key}`)?.text;
@@ -83,44 +83,60 @@ export const tableParts=(n:Line)=>{const rows=n.children.filter(k=>k.role==='row
 export const chartRows=(n:Line)=>[...n.children,...n.children.filter(k=>k.role==='table').flatMap(k=>k.children)].filter(k=>k.role==='row'&&!k.attrs.header&&Number.isFinite(Number(cells(k.text)[1]?.replace(/[,\s$%]/g,''))));
 /** A slider's [min] and [max], with the format's defaults. */
 export const sliderRange=(n:Line)=>({min:num(n.attrs.min??0,n.at,'min'),max:num(n.attrs.max??10,n.at,'max')});
+const P=PAGE_BOUNDS.refReserved.limit.part;
+const fnv=(t:string)=>{let h=0x811c9dc5;for(const c of t){h^=c.charCodeAt(0);h=Math.imul(h,0x01000193)>>>0;}return h.toString(16).padStart(8,'0');};
+/** The id of one of a line's own parts (title, body, label, item…): <base>__<part>. A base too long for the ref
+ *  form is shortened and tagged with its hash, so a part never breaks the form, and (refs never hold __) never
+ *  meets a ref. */
+const partId=(base:string,part:string)=>{const tail=`${P}${part}`,max=PAGE_BOUNDS.refForm.limit.max;return base.length+tail.length<=max?`${base}${tail}`:`${base.slice(0,max-tail.length-9)}_${fnv(base)}${tail}`;};
+/** Names in a [to] or [sends] list (empty entries ignored). */
+export const refList=(v:string|true|undefined)=>typeof v==='string'?v.split(',').map(x=>x.trim()).filter(Boolean):[];
+/** Node ids of a flow's listitems: the [ref], else n<position>, never one a listitem declares. */
+export const flowNodeIds=(items:Line[])=>{const taken=new Set(items.flatMap(k=>typeof k.attrs['ref']==='string'?[k.attrs['ref']]:[]));
+ return items.map((k,j)=>{if(typeof k.attrs['ref']==='string')return k.attrs['ref'];let v=`n${String(j+1)}`;for(let c=2;taken.has(v);c++)v=`n${String(j+1)}_${String(c)}`;taken.add(v);return v;});};
+/** A radiogroup's or listbox's options with their values: the [value], else one made from the label that no other option has. */
+export const choiceOptions=(n:Line)=>{const opts=n.children.filter(k=>k.role==='radio'||k.role==='option'),taken=new Set(opts.flatMap(k=>typeof k.attrs['value']==='string'?[k.attrs['value']]:[]));
+ return opts.map(k=>{const label=k.name??k.text??'';if(typeof k.attrs['value']==='string')return {line:k,label,value:k.attrs['value']};const base=optionValue(label);let v=base;for(let c=2;taken.has(v);c++)v=`${base}_${String(c)}`;taken.add(v);return {line:k,label,value:v};});};
 type Built={sid:string;title?:string;components:any[];data:Record<string,unknown>};
 /** One region line → one surface (components root-first, data). Helper nodes get ids derived
  *  from their parent (`<id>__label`, `<id>__body`, …) so translation is deterministic. */
 export function buildSurface(region:Line):Built{
- if(region.role!=='region')throw Error(`line ${region.at}: top-level lines must be pages (region lines)`);
+ if(region.role!=='region')throw new Rejection(`line ${region.at}: top-level lines must be pages (region lines)`);
  checkLines(region);
- const sid=String(region.attrs.ref??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=page_id]`);
- const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']);let auto=0;
- const claim=(v:string,at:number)=>{if(!ID.test(v))throw Error(`line ${at}: bad ref ${v}`);if(used.has(v))throw Error(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
- const id=(n:Line,hint:string)=>{if(typeof n.attrs.ref==='string')return claim(n.attrs.ref,n.at);let v;do v=`${hint}${++auto}`;while(used.has(v));return claim(v,n.at);};
+ const sid=String(region.attrs.ref??'');if(!ID.test(sid))throw new Rejection(`line ${region.at}: region needs [ref=page_id]`);
+ const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']),written=new Set<string>();let auto=0;
+ // Refs written anywhere on the page are kept free for their own lines: an assigned id never takes one.
+ const note=(ls:Line[]):void=>{for(const l of ls){const r=l.attrs['ref'];if(typeof r==='string')written.add(r);note(l.children);}};note(region.children);
+ const claim=(v:string,at:number)=>{if(!ID.test(v))throw new Rejection(`line ${at}: bad ref ${v}`);if(used.has(v))throw new Rejection(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
+ const id=(n:Line,hint:string)=>{if(typeof n.attrs.ref==='string')return claim(n.attrs.ref,n.at);let v;do v=`${hint}${++auto}`;while(used.has(v)||written.has(v));return claim(v,n.at);};
  const kids=(ls:Line[])=>ls.filter(k=>!k.role.startsWith('/'));
  const stack=(i:string,ls:Line[],layout:'Column'|'Row'='Column')=>{claim(i,0);const c:any={id:i,component:layout,children:[]};components.push(c);c.children=kids(ls).map(build);return i;};
- const titled=(name:string|undefined,owner:string,ls:Line[])=>name!==undefined?[L('heading',{name,attrs:{ref:`${owner}__title`,level:'3'}}),...ls]:ls;
+ const titled=(name:string|undefined,owner:string,ls:Line[])=>name!==undefined?[L('heading',{name,attrs:{ref:partId(owner,'title'),level:'3'}}),...ls]:ls;
  const build=(n:Line):string=>{
   const a=n.attrs;
   switch(n.role){
    case 'heading':{const i=id(n,'h');components.push({id:i,component:'Text',text:n.name??n.text??'',variant:`h${Math.min(3,Math.max(1,Number(a.level??2)))}`});return i;}
    case 'text':case 'paragraph':{const i=id(n,'t');components.push(clean({id:i,component:'Text',text:n.text??n.name??'',variant:a.caption?'caption':undefined}));return i;}
    case 'separator':{const i=id(n,'d');components.push({id:i,component:'Divider'});return i;}
-   case 'article':{const i=id(n,'c'),c:any={id:i,component:'Card',child:''};components.push(c);c.child=stack(`${i}__body`,titled(n.name,i,n.children));return i;}
+   case 'article':{const i=id(n,'c'),c:any={id:i,component:'Card',child:''};components.push(c);c.child=stack(partId(i,'body'),titled(n.name,i,n.children));return i;}
    case 'group':{
-    if(a.collapsible||'expanded' in a){const i=id(n,'x'),c:any=clean({id:i,component:'Disclosure',title:n.name??'Details',summary:prop(n,'summary'),open:a.expanded===true||a.expanded==='true',child:''});components.push(c);c.child=stack(`${i}__body`,n.children);return i;}
+    if(a.collapsible||'expanded' in a){const i=id(n,'x'),c:any=clean({id:i,component:'Disclosure',title:n.name??'Details',summary:prop(n,'summary'),open:a.expanded===true||a.expanded==='true',child:''});components.push(c);c.child=stack(partId(i,'body'),n.children);return i;}
     const i=id(n,'g'),c:any={id:i,component:a.layout==='row'?'Row':'Column',children:[]};components.push(c);c.children=kids(titled(n.name,i,n.children)).map(build);return i;}
    case 'list':{
     const items=n.children.filter(k=>k.role==='listitem');
     if(a.timeline){const i=id(n,'tl');components.push({id:i,component:'Timeline',items:items.map(k=>clean({label:k.name??k.text??'',when:typeof k.attrs.when==='string'?k.attrs.when:undefined,detail:k.name!==undefined?k.text:undefined,state:typeof k.attrs.state==='string'?k.attrs.state:undefined}))});return i;}
-    if(a.flow){const i=id(n,'fl'),nodes=items.map((k,j)=>({id:typeof k.attrs.ref==='string'?k.attrs.ref:`n${j+1}`,k}));
-     components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a.direction==='string'?a.direction:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>typeof k.attrs.to==='string'?k.attrs.to.split(',').map(t=>({from:id,to:t.trim()})):[])}));return i;}
+    if(a.flow){const i=id(n,'fl'),ids=flowNodeIds(items),nodes=items.map((k,j)=>({id:ids.at(j)??'',k}));
+     components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a.direction==='string'?a.direction:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>refList(k.attrs.to).map(t=>({from:id,to:t})))}));return i;}
     const i=id(n,'l'),c:any={id:i,component:'List',children:[]};
-    const wrap=n.name!==undefined?`${i}__wrap`:null;
+    const wrap=n.name!==undefined?partId(i,'wrap'):null,title=partId(i,'title');
     if(wrap){claim(wrap,n.at);components.push({id:wrap,component:'Column',children:[]});}
     components.push(c);
-    if(wrap){const w=components.find(x=>x.id===wrap);claim(`${i}__title`,n.at);components.push({id:`${i}__title`,component:'Text',text:n.name,variant:'h3'});w.children=[`${i}__title`,i];}
-    c.children=items.map((k,j)=>{const item=`${i}__item${j+1}`;
+    if(wrap){const w=components.find(x=>x.id===wrap);claim(title,n.at);components.push({id:title,component:'Text',text:n.name,variant:'h3'});w.children=[title,i];}
+    c.children=items.map((k,j)=>{const item=partId(i,`item${j+1}`);
      if(!k.children.length){claim(item,k.at);components.push({id:item,component:'Text',text:k.text??k.name??''});return item;}
-     return stack(item,[...(k.text?[L('text',{text:k.text,attrs:{ref:`${item}__text`}})]:[]),...k.children]);});
+     return stack(item,[...(k.text?[L('text',{text:k.text,attrs:{ref:partId(item,'text')}})]:[]),...k.children]);});
     return wrap??i;}
-   case 'tablist':{const i=id(n,'tabs'),c:any={id:i,component:'Tabs',tabs:[]};components.push(c);c.tabs=n.children.filter(k=>k.role==='tab').map((k,j)=>({title:k.name??k.text??'Tab',child:stack(`${i}__tab${j+1}`,k.children)}));return i;}
+   case 'tablist':{const i=id(n,'tabs'),c:any={id:i,component:'Tabs',tabs:[]};components.push(c);c.tabs=n.children.filter(k=>k.role==='tab').map((k,j)=>({title:k.name??k.text??'Tab',child:stack(partId(i,`tab${j+1}`),k.children)}));return i;}
    case 'note':{const i=id(n,'n'),text=[n.text,...n.children.filter(k=>k.role==='text').map(k=>k.text)].filter(Boolean).join('\n\n');components.push(clean({id:i,component:'Callout',title:n.name,tone:typeof a.tone==='string'?a.tone:undefined,text}));return i;}
    case 'meter':{const i=id(n,'m');components.push(clean({id:i,component:'Metric',label:n.name??'',value:n.text??'',detail:prop(n,'detail'),tone:tone(n),progress:a.progress!==undefined?num(a.progress,n.at,'progress'):undefined}));return i;}
    case 'table':{const i=id(n,'tb'),{columns,rows}=tableParts(n);
@@ -131,18 +147,17 @@ export function buildSurface(region:Line):Built{
    case 'textbox':{const i=id(n,'in');data[i]=n.text??'';components.push({id:i,component:'TextField',label:n.name??'',value:{path:`/${i}`},variant:a.multiline?'longText':'shortText'});return i;}
    case 'checkbox':{const i=id(n,'cb');data[i]=a.checked===true||a.checked==='true';components.push({id:i,component:'CheckBox',label:n.name??'',value:{path:`/${i}`}});return i;}
    case 'slider':{const i=id(n,'sl'),{min,max}=sliderRange(n);data[i]=n.text!==undefined?num(n.text,n.at,'slider value'):min;components.push({id:i,component:'Slider',label:n.name??'',min,max,value:{path:`/${i}`}});return i;}
-   case 'radiogroup':case 'listbox':{const i=id(n,'ch'),opts=n.children.filter(k=>k.role==='radio'||k.role==='option');
-    const options=opts.map(k=>({label:k.name??k.text??'',value:typeof k.attrs.value==='string'?k.attrs.value:optionValue(k.name??k.text??'')}));
-    data[i]=opts.flatMap((k,j)=>k.attrs.checked||k.attrs.selected?[options[j].value]:[]);
+   case 'radiogroup':case 'listbox':{const i=id(n,'ch'),chosen=choiceOptions(n),options=chosen.map(o=>({label:o.label,value:o.value}));
+    data[i]=chosen.flatMap(o=>o.line.attrs.checked||o.line.attrs.selected?[o.value]:[]);
     components.push({id:i,component:'ChoicePicker',label:n.name??'',options,value:{path:`/${i}`},variant:n.role==='radiogroup'?'mutuallyExclusive':'multipleSelection',displayStyle:a.chips?'chips':'checkbox'});return i;}
-   case 'button':{const i=id(n,'b'),label=claim(`${i}__label`,n.at);components.push({id:label,component:'Text',text:n.name??n.text??'OK'});
-    const sends=typeof a.sends==='string'?a.sends.split(',').map(s=>s.trim()).filter(Boolean):[];
+   case 'button':{const i=id(n,'b'),label=claim(partId(i,'label'),n.at);components.push({id:label,component:'Text',text:n.name??n.text??'OK'});
+    const sends=refList(a.sends);
     components.push({id:i,component:'Button',child:label,variant:a.primary?'primary':a.borderless?'borderless':'default',action:{event:{name:typeof a.action==='string'?a.action:i,context:Object.fromEntries(sends.map(s=>[s,{path:`/${s}`}]))}}});return i;}
-   default:throw Error(`line ${n.at}: unknown role "${n.role}"`);
+   default:throw new Rejection(`line ${n.at}: unknown role "${n.role}"`);
   }
  };
  // The region name titles the surface; rendered only when the surface doesn't open with its own heading.
- const first=kids(region.children)[0],body=region.name!==undefined&&first?.role!=='heading'?[L('heading',{name:region.name,attrs:{ref:`${sid}__title`,level:'2'}}),...region.children]:region.children;
+ const first=kids(region.children)[0],body=region.name!==undefined&&first?.role!=='heading'?[L('heading',{name:region.name,attrs:{ref:partId(sid,'title'),level:'2'}}),...region.children]:region.children;
  const root:any={id:'root',component:'Column',children:[]};components.push(root);root.children=kids(body).map(build);
  components.sort((x,y)=>x.id==='root'?-1:y.id==='root'?1:0);
  checkComponents(sid,components);
@@ -154,7 +169,7 @@ const surfaceMessages=(b:Built,data:Record<string,unknown>)=>[create(b.sid),{ver
 
 /** Translate a snapshot (one or more complete surfaces) to A2UI messages for an empty canvas. */
 export function snapshotToA2ui(src:string){
- const regions=parseLines(src);if(!regions.length)throw Error('Snapshot has no page (region line)');
+ const regions=parseLines(src);if(!regions.length)throw new Rejection('Snapshot has no page (region line)');
  return regions.flatMap(r=>{const b=buildSurface(r);return surfaceMessages(b,b.data);});
 }
 
@@ -164,7 +179,7 @@ const literal=(v:unknown,data:any)=>typeof v==='string'?v:typeof v==='number'?St
 export function surfaceLines(s:Snapshot,sid:string):Line{
  const nodes=new Map(moduleNodes(s,sid).map((n:any)=>[n.id,n])),data=moduleData(s,sid);
  const inputByPath=new Map<string,string>();for(const n of nodes.values())if(n.value?.path)inputByPath.set(n.value.path,n.id);
- const ref=(id:string):Record<string,string|true>=>id.includes('__')?{}:{ref:id};
+ const ref=(id:string):Record<string,string|true>=>id.includes(P)?{}:{ref:id};
  const children=(ids:string[]=[])=>ids.flatMap(c=>nodes.has(c)?[line(nodes.get(c))]:[]);
  const inline=(id:string|undefined)=>{const n=id?nodes.get(id):undefined;return n&&n.component==='Column'?children(n.children):n?[line(n)]:[];};
  const line=(n:any):Line=>{
@@ -175,13 +190,13 @@ export function surfaceLines(s:Snapshot,sid:string):Line{
     return L('text',{text:t,attrs:{...r,...(v==='caption'?{caption:true as const}:{})}});}
    case 'Divider':return L('separator',{attrs:r});
    case 'Row':case 'Column':{
-    const kids=children(n.children),title=kids[0]?.attrs.ref===undefined&&kids[0]?.role==='heading'&&String(n.children[0]).endsWith('__title')?kids.shift()!.name:undefined;
-    if(n.id.endsWith('__wrap')){const list=kids.find(k=>k.role==='list');if(list){list.name=title;return list;}}
+    const kids=children(n.children),title=kids[0]?.attrs.ref===undefined&&kids[0]?.role==='heading'&&String(n.children[0]).endsWith(`${P}title`)?kids.shift()!.name:undefined;
+    if(n.id.endsWith(`${P}wrap`)){const list=kids.find(k=>k.role==='list');if(list){list.name=title;return list;}}
     return L('group',{name:title,attrs:{...r,...(n.component==='Row'?{layout:'row'}:{})},children:kids});}
-   case 'Card':{const body=inline(n.child),title=body[0]?.role==='heading'&&String(nodes.get(n.child)?.children?.[0]).endsWith('__title')?body.shift()!.name:undefined;return L('article',{name:title,attrs:r,children:body});}
+   case 'Card':{const body=inline(n.child),title=body[0]?.role==='heading'&&String(nodes.get(n.child)?.children?.[0]).endsWith(`${P}title`)?body.shift()!.name:undefined;return L('article',{name:title,attrs:r,children:body});}
    case 'List':return L('list',{attrs:r,children:(n.children??[]).flatMap((c:string)=>{const k=nodes.get(c);if(!k)return [];
     if(k.component==='Text')return [L('listitem',{text:literal(k.text,data)})];
-    const inner=k.component==='Column'?children(k.children):[line(k)],lead=inner[0]?.role==='text'&&String(k.children?.[0]).endsWith('__text')?inner.shift()!.text:undefined;
+    const inner=k.component==='Column'?children(k.children):[line(k)],lead=inner[0]?.role==='text'&&String(k.children?.[0]).endsWith(`${P}text`)?inner.shift()!.text:undefined;
     return [L('listitem',{text:lead,children:inner})];})});
    case 'Tabs':return L('tablist',{attrs:r,children:n.tabs.map((t:any)=>L('tab',{name:t.title,children:inline(t.child)}))});
    case 'Callout':return L('note',{name:n.title,text:literal(n.text,data),attrs:{...r,...(n.tone?{tone:n.tone}:{})}});
@@ -202,7 +217,7 @@ export function surfaceLines(s:Snapshot,sid:string):Line{
   }
  };
  // Title once: from our own title helper, else omitted when the surface opens with its own heading.
- const rootKids=children(nodes.get('root')?.children),title=rootKids[0]?.role==='heading'&&String(nodes.get('root')?.children?.[0]).endsWith('__title')?rootKids.shift()!.name:rootKids[0]?.role==='heading'?undefined:surfaceTitle(moduleNodes(s,sid),sid);
+ const rootKids=children(nodes.get('root')?.children),title=rootKids[0]?.role==='heading'&&String(nodes.get('root')?.children?.[0]).endsWith(`${P}title`)?rootKids.shift()!.name:rootKids[0]?.role==='heading'?undefined:surfaceTitle(moduleNodes(s,sid),sid);
  return L('region',{name:title,attrs:{ref:sid},children:rootKids});
 }
 export const surfaceSnapshot=(s:Snapshot,sid:string)=>formatLines([surfaceLines(s,sid)]);
@@ -216,12 +231,12 @@ function find(lines:Line[],ref:string,parent:Line|null=null):{list:Line[];index:
 export function applyEdits(region:Line,edits:Edit[]):Line{
  const root=structuredClone(region);
  for(const e of edits){
-  const hit=e.ref===root.attrs.ref?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw Error(`No ref ${e.ref} in page ${e.surface}`);
-  const fresh=e.op==='remove'?[]:parseLines(e.lines??'');if(e.op!=='remove'&&!fresh.length)throw Error(`Edit ${e.op} on ${e.ref} needs lines`);
-  if(e.op==='replace'){if(hit.node===root){if(fresh.length!==1||fresh[0].role!=='region')throw Error('Replacing a page needs one region line');Object.assign(root,fresh[0]);}else hit.list.splice(hit.index,1,...fresh);}
-  else if(e.op==='insertAfter'){if(hit.node===root)throw Error('Insert after a page: draw a new page instead');hit.list.splice(hit.index+1,0,...fresh);}
+  const hit=e.ref===root.attrs.ref?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw new Rejection(`No ref ${e.ref} in page ${e.surface}`);
+  const fresh=e.op==='remove'?[]:parseLines(e.lines??'');if(e.op!=='remove'&&!fresh.length)throw new Rejection(`Edit ${e.op} on ${e.ref} needs lines`);
+  if(e.op==='replace'){if(hit.node===root){if(fresh.length!==1||fresh[0].role!=='region')throw new Rejection('Replacing a page needs one region line');Object.assign(root,fresh[0]);}else hit.list.splice(hit.index,1,...fresh);}
+  else if(e.op==='insertAfter'){if(hit.node===root)throw new Rejection('Insert after a page: draw a new page instead');hit.list.splice(hit.index+1,0,...fresh);}
   else if(e.op==='insertInto')hit.node.children.push(...fresh);
-  else{if(hit.node===root)throw Error('Remove a page with delete');hit.list.splice(hit.index,1);}
+  else{if(hit.node===root)throw new Rejection('Remove a page with delete');hit.list.splice(hit.index,1);}
  }
  return root;
 }
@@ -241,15 +256,15 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
   }
   messages.push(...surfaceMessages(b,data));existing.add(b.sid);
  };
- for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw Error(`Page ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
+ for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw new Rejection(`Page ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
  const bySurface=new Map<string,Edit[]>();for(const e of args.edits??[])bySurface.set(e.surface,[...(bySurface.get(e.surface)??[]),e]);
  for(const [sid,edits] of bySurface){
   // A surface from history is reopened by editing it: it comes back as the current version.
   const source=current&&moduleIds(current).includes(sid)?current:history?.(sid)??null;
-  if(!source)throw Error(`No page ${sid} on the surface or in its history`);if(drawn.includes(sid))throw Error(`Page ${sid} is both redrawn and edited; do one`);
-  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a page ref');replace(buildSurface(region));edited.push(sid);
+  if(!source)throw new Rejection(`No page ${sid} on the surface or in its history`);if(drawn.includes(sid))throw new Rejection(`Page ${sid} is both redrawn and edited; do one`);
+  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw new Rejection('An edit cannot change a page ref');replace(buildSurface(region));edited.push(sid);
  }
- for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No page ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
- if(!messages.length)throw Error('Nothing to change: give snapshot, edits or delete');
+ for(const sid of args.delete??[]){if(!existing.has(sid))throw new Rejection(`No page ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
+ if(!messages.length)throw new Rejection('Nothing to change: give snapshot, edits or delete');
  return {messages,drawn,edited,deleted:args.delete??[]};
 }

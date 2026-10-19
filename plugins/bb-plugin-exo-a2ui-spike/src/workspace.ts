@@ -11,6 +11,9 @@ export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='a
 export const CATALOGS=[CATALOG,EXO_CATALOG];
 export const MAX_BYTES=kilobytes(PAGE_BOUNDS.callSize.limit.max), MAX_SURFACES=PAGE_BOUNDS.callPages.limit.max;
 const MAX_SENDS=PAGE_BOUNDS.buttonSends.limit.max;
+// Keys refused anywhere in a message: the data words of the bounds definition's reserved refs (input refs become
+// data keys), the renderer's root aside, plus __proto__ (which holds the reserved separator).
+const FORBIDDEN_KEYS=new Set([...PAGE_BOUNDS.refReserved.limit.names.filter(n=>n!=='root'),'__proto__']);
 const MAX_COMPONENTS=PAGE_BOUNDS.pageComponents.limit.max,MAX_DEPTH=PAGE_BOUNDS.pageDepth.limit.max;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
@@ -36,7 +39,7 @@ function inspect(value:any,depth=0){
  if(Array.isArray(value)){for(const v of value)inspect(v,depth+1);return;}
  if(!value||typeof value!=='object')return;
  for(const[k,v]of Object.entries(value)){
-  if(['call','functionCall','url','html','script','__proto__','constructor','prototype'].includes(k))throw Error('Expressions/external content outside spike vocabulary');
+  if(FORBIDDEN_KEYS.has(k))throw Error('Expressions/external content outside spike vocabulary');
   if(k==='path'&&v!==undefined)checkPath(v as string);inspect(v,depth+1);
  }
 }

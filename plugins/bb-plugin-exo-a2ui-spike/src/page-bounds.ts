@@ -19,6 +19,7 @@ export type Limit =
   | {readonly kind: 'range'; readonly min: number; readonly max: number; readonly integer: boolean}
   | {readonly kind: 'form'; readonly chars: string; readonly pattern: string; readonly min: number; readonly max: number}
   | {readonly kind: 'size'; readonly max: number; readonly unit: string}
+  | {readonly kind: 'reserved'; readonly names: readonly string[]; readonly part: string}
   | {readonly kind: 'rule'; readonly rule: string};
 
 export interface Bound {
@@ -86,12 +87,17 @@ export const PAGE_BOUNDS = {
   refForm: {family: 'page shape', on: ['any line'], attribute: '[ref], [sends] names and button [action]', limit: {kind: 'form', chars: 'letters, digits, _ and -', pattern: 'a-zA-Z0-9_-', min: 1, max: 80}},
   flowRefForm: {family: 'page shape', on: ['flow listitem'], attribute: '[ref] and [to] names', limit: {kind: 'form', chars: 'letters, digits, _ and -', pattern: 'a-zA-Z0-9_-', min: 1, max: 40}},
   refsUnique: {family: 'page shape', on: ['page'], attribute: 'refs', limit: rule('each ref is used once within a page')},
+  // The renderer's root, the data words the tool refuses as keys (input refs become data keys), and the separator
+  // the translation names a line's own parts with (a title, a button label…), so they never meet a ref.
+  refReserved: {family: 'page shape', on: ['page'], attribute: 'refs of the lines inside it', limit: {kind: 'reserved', names: ['root', 'call', 'functionCall', 'url', 'html', 'script', 'constructor', 'prototype'], part: '__'}},
   // Agreement between parts
   tableRowsMatchHeader: {family: 'agreement between parts', on: ['table'], attribute: 'rows', limit: rule('every row has as many cells as the header row')},
   tableHighlightInColumns: {family: 'agreement between parts', on: ['table'], attribute: '[highlight]', limit: rule('names one of the header row\'s columns')},
   flowLinksJoinNodes: {family: 'agreement between parts', on: ['list [flow]'], attribute: '[to]', limit: rule('names other listitems of the same flow, each [ref] used once')},
   chartWithinMax: {family: 'agreement between parts', on: ['figure'], attribute: 'row numbers', limit: rule('none above the figure\'s [max]')},
-  sliderWithinRange: {family: 'agreement between parts', on: ['slider'], attribute: 'current number', limit: rule('within its [min] and [max]')},
+  sliderWithinRange: {family: 'agreement between parts', on: ['slider'], attribute: 'current number', limit: rule('within its [min] and [max] (with no current number, [min] is used)')},
+  listboxSelectedDistinct: {family: 'agreement between parts', on: ['listbox'], attribute: 'options [selected]', limit: rule('have different [value]s (an option without [value] gets its own one)')},
+  sendsNameInputs: {family: 'agreement between parts', on: ['button'], attribute: '[sends]', limit: rule('names the [ref]s of textbox, checkbox, slider, radiogroup or listbox lines on the same page')},
   // Call size
   snapshotLength: {family: 'call size', on: ['call'], attribute: 'snapshot', limit: {kind: 'size', max: 40000, unit: 'characters'}},
   editsPerCall: {family: 'call size', on: ['call'], attribute: 'edits', limit: count(0, 24)},
@@ -99,7 +105,7 @@ export const PAGE_BOUNDS = {
   deletePerCall: {family: 'call size', on: ['call'], attribute: 'delete', limit: count(0, 8, 'pages')},
   besidePages: {family: 'call size', on: ['call'], attribute: 'beside', limit: count(0, 2, 'pages')},
   callPages: {family: 'call size', on: ['call'], attribute: 'pages drawn or edited (the surface holds this many; older pages move into history)', limit: count(0, 8)},
-  callSize: {family: 'call size', on: ['call'], attribute: 'pages drawn or edited, together', limit: {kind: 'size', max: 40, unit: 'KB'}},
+  callSize: {family: 'call size', on: ['call'], attribute: 'page changes, together, once translated (the snapshot text plus the structure each line and each page change adds)', limit: {kind: 'size', max: 40, unit: 'KB'}},
   // Within every other call bound only withdrawing a page the same call draws or edits can exceed this one.
   callChanges: {family: 'call size', on: ['call'], attribute: 'page changes (a page drawn or edited counts 3, plus 1 when it replaces a page on the surface; a page withdrawn, or moved into history by the system, counts 1)', limit: count(0, 32)},
 } as const satisfies Record<string, Bound>;
@@ -130,6 +136,7 @@ function limitWords(l: Limit): string {
     case 'form': return `${l.chars}, ${n(l.min)} to ${n(l.max)} characters`;
     case 'size': return `at most ${n(l.max)} ${l.unit}`;
     case 'rule': return l.rule;
+    case 'reserved': return `none of ${l.names.join(', ')}, and none containing ${l.part} (the page's own parts use them)`;
   }
 }
 

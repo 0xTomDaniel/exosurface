@@ -4,7 +4,11 @@
 // from the definition. A rejection names the page or call, the element by its ref, the attribute and the
 // bound in the tool contract's words.
 import {PAGE_BOUNDS, BOUND_KEYS, statement, formPattern, kilobytes, type BoundKey, type Subject, type Limit} from './page-bounds.ts';
-import {cells, prop, tableParts, chartRows, sliderRange, type Line} from './snapshot-format.ts';
+import {cells, prop, tableParts, chartRows, sliderRange, refList, flowNodeIds, choiceOptions, type Line} from './snapshot-format.ts';
+
+/** A rejection Exo receives as written: plain words, naming the bound or the line. Anything else that fails a
+ *  call is a check no stated bound covers (update_exosurface reports it as a page-tool defect). */
+export class Rejection extends Error {}
 
 interface Measured {value: string | number | undefined; where?: string}
 interface Element {subject: Subject; line: Line; who: string}
@@ -14,7 +18,7 @@ export interface CallFacts {snapshot?: string | undefined; edits?: readonly {lin
 
 type Check =
   | {at: 'line'; measure: (l: Line) => Measured[]}
-  | {at: 'rule'; violation: (l: Line) => string | undefined}
+  | {at: 'rule'; violation: (l: Line, page: Line) => string | undefined}
   | {at: 'page'; measure: (p: PageFacts) => Measured[]}
   | {at: 'call'; measure: (c: CallFacts) => Measured[]};
 
@@ -25,7 +29,9 @@ const listitems = (l: Line) => l.children.filter(k => k.role === 'listitem');
 const label = (l: Line) => [{value: l.name ?? l.text ?? ''}];
 const detail = (l: Line) => one(l.name !== undefined ? l.text : undefined);
 const numberAttr = (l: Line, key: string) => { const v = str(l.attrs[key]); const x = v === undefined ? NaN : Number(v.replace(/[,\s]/g, '')); return Number.isFinite(x) ? [{value: x}] : []; };
-const names = (v: string | true | undefined) => (str(v) ?? '').split(',').map(s => s.trim()).filter(Boolean);
+// Called, never read at load: page-validator and snapshot-format import each other.
+const names = (v: string | true | undefined) => refList(v);
+const INPUTS = new Set(['textbox', 'checkbox', 'slider', 'radiogroup', 'listbox']);
 const checked = (l: Line) => l.children.filter(k => (k.role === 'radio' || k.role === 'option') && Boolean(k.attrs['checked'] || k.attrs['selected'])).length;
 const lineOf = (l: Line) => l.at ? ` on line ${String(l.at)}` : '';
 
@@ -83,7 +89,7 @@ const CHECKS: {[K in BoundKey]: Check} = {
     return typeof h === 'number' && h >= columns ? `has [highlight=${String(h)}] but ${String(columns)} columns` : undefined;
   }},
   flowLinksJoinNodes: {at: 'rule', violation: l => {
-    const items = listitems(l), ids = items.map((k, j) => str(k.attrs['ref']) ?? `n${String(j + 1)}`);
+    const items = listitems(l), ids = flowNodeIds(items);
     const twice = ids.find((id, j) => ids.indexOf(id) !== j);
     if (twice !== undefined) return `uses [ref=${twice}] for two listitems`;
     for (const [j, k] of items.entries()) for (const to of names(k.attrs['to'])) {
@@ -99,10 +105,23 @@ const CHECKS: {[K in BoundKey]: Check} = {
     return over ? `has a row${lineOf(over)} of ${cells(over.text)[1] ?? ''}, above [max=${String(max)}]` : undefined;
   }},
   sliderWithinRange: {at: 'rule', violation: l => {
-    const v = l.text === undefined ? NaN : Number(l.text.replace(/[,\s]/g, ''));
+    const {min, max} = sliderRange(l), v = l.text === undefined ? min : Number(l.text.replace(/[,\s]/g, ''));
     if (!Number.isFinite(v)) return undefined;
-    const {min, max} = sliderRange(l);
     return v < min || v > max ? `has ${String(v)}, outside [min=${String(min)}] and [max=${String(max)}]` : undefined;
+  }},
+  refReserved: {at: 'rule', violation: l => {
+    const {names: reserved, part} = PAGE_BOUNDS.refReserved.limit, bad = builtRefs(l).find(r => (reserved as readonly string[]).includes(r) || r.includes(part));
+    return bad === undefined ? undefined : `has a line with [ref=${bad}]`;
+  }},
+  listboxSelectedDistinct: {at: 'rule', violation: l => {
+    const picked = choiceOptions(l).filter(o => Boolean(o.line.attrs['selected'] || o.line.attrs['checked'])).map(o => o.value);
+    const twice = picked.find((v, i) => picked.indexOf(v) !== i);
+    return twice === undefined ? undefined : `has two [selected] options with [value=${twice}]`;
+  }},
+  sendsNameInputs: {at: 'rule', violation: (l, page) => {
+    const inputs = new Set(elements(page, '').filter(e => e.subject === 'any line' && INPUTS.has(e.line.role)).flatMap(e => one(str(e.line.attrs['ref'])).map(m => String(m.value))));
+    const stray = names(l.attrs['sends']).find(n => !inputs.has(n));
+    return stray === undefined ? undefined : `has [sends] naming ${stray}, which is no input on this page`;
   }},
   snapshotLength: {at: 'call', measure: c => one(c.snapshot?.length)},
   editsPerCall: {at: 'call', measure: c => one(c.edits?.length)},
@@ -139,15 +158,15 @@ function broken(key: BoundKey, who: string, m: Measured): string | undefined {
     case 'choice': return typeof v === 'string' && !l.values.includes(v) ? `${who} has ${withValue(attr, v)}` : undefined;
     case 'range': return typeof v === 'number' && (v < l.min || v > l.max || (l.integer && !Number.isInteger(v))) ? `${who} has ${withValue(attr, v)}` : undefined;
     case 'form': return typeof v === 'string' && !formPattern(key === 'flowRefForm' ? 'flowRefForm' : 'refForm').test(v) ? `${who} has the name ${JSON.stringify(v)}` : undefined;
-    case 'size': return typeof v === 'number' && v > (l.unit === 'KB' ? kilobytes(l.max) : l.max) ? `${who}: ${attr}${where} is ${l.unit === 'KB' ? `${(v / 1024).toFixed(1)} KB` : `${String(v)} ${l.unit}`}` : undefined;
-    case 'rule': return undefined;
+    case 'size': return typeof v === 'number' && v > (l.unit === 'KB' ? kilobytes(l.max) : l.max) ? `${who}: ${attr}${where} is ${String(v)} ${l.unit === 'KB' ? `characters, over ${String(kilobytes(l.max))} (${String(l.max)} KB)` : l.unit}` : undefined;
+    case 'rule': case 'reserved': return undefined;
   }
 }
 
 const sentence = (key: BoundKey, said: string) => `${said}. Bound: ${statement(key)}.`;
 const MAX_REPORTED = 5;
 const NAME_SHOWN = 40; // how much of an element's quoted name a rejection repeats (not a page bound)
-const reject = (head: string, said: string[]) => { if (said.length) throw Error(`${head} rejected: ${said.slice(0, MAX_REPORTED).join(' ')}`); };
+const reject = (head: string, said: string[]) => { if (said.length) throw new Rejection(`${head} rejected: ${said.slice(0, MAX_REPORTED).join(' ')}`); };
 
 /** Every element of a page the translation builds, with its subject in the contract's words. */
 function elements(region: Line, sid: string): Element[] {
@@ -197,7 +216,7 @@ export function checkLines(region: Line): void {
     if (check.at !== 'line' && check.at !== 'rule') continue;
     for (const e of all) {
       if (!on.includes(e.subject)) continue;
-      if (check.at === 'rule') { const v = check.violation(e.line); if (v !== undefined) said.push(sentence(key, `${e.who} ${v}`)); continue; }
+      if (check.at === 'rule') { const v = check.violation(e.line, region); if (v !== undefined) said.push(sentence(key, `${e.who} ${v}`)); continue; }
       for (const m of check.measure(e.line)) { const b = broken(key, e.who, m); if (b !== undefined) said.push(sentence(key, b)); }
     }
   }

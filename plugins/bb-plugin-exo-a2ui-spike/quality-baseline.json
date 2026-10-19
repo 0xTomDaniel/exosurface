@@ -1,6 +1,6 @@
 {
-  "strictest-typecheck": 245,
-  "lint": 3769,
+  "strictest-typecheck": 238,
+  "lint": 3768,
   "unused-files": 0,
   "unused-exports": 18,
   "unused-types": 2
