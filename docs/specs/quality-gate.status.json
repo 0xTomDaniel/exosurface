@@ -3,24 +3,24 @@
   "accepted_commit": "9aabe3c",
   "criteria": {
     "acceptance-check-green": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     },
     "acceptance-unlisted-fails": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     },
     "acceptance-ratchet-raise": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     },
     "acceptance-ratchet-record": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     },
     "acceptance-ratchet-no-raise": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     }
   }
 }
