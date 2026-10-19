@@ -11,7 +11,7 @@ import {
 import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
-import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
+import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, EXO_MODELS, isExoModel, mainModel, mainModelFile, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
 import { runtimeLaunch, assertNativeOwner } from './src/runtime.ts';
 
 const io = createBridgeIo<any>();
@@ -143,6 +143,14 @@ async function close(s: Session) {
   s.closing = true; if (s.poll) clearInterval(s.poll);
   await s.rpc?.close(); sessions.delete(s.threadId); audit(s, s.runtimeKind === 'canonical' ? 'view-detached' : 'owner-released');
 }
+// The model picked in BB for the primary Exo conversation: switch Pi before the message when it changed, and remember it.
+async function useModel(s: Session, picked: unknown) {
+  if (s.runtimeKind !== 'canonical' || s.childId || !isExoModel(picked) || !s.rpc || picked === mainModel()) return;
+  const m = EXO_MODELS[picked];
+  await s.rpc.send('set_model', { provider: m.provider, modelId: m.modelId });
+  await s.rpc.send('set_thinking_level', { level: m.thinking });
+  save(mainModelFile(), { id: picked, at: new Date().toISOString() }); audit(s, 'model-switched', { model: picked });
+}
 async function prompt(s: Session, input: any[], requestId?: string) {
   if (input.some(p => p.type !== 'text')) throw new Error('Attachments are outside this spike');
   const value = input.map(p => p.text).join('');
@@ -169,12 +177,12 @@ function project(s: Session) {
 const schemas: Record<string, any> = { initialize: initializeParamsSchema, 'model/list': modelListParamsSchema, 'thread/start': threadStartParamsSchema, 'thread/resume': threadResumeParamsSchema, 'thread/stop': threadStopParamsSchema, 'turn/start': turnStartParamsSchema, 'turn/steer': turnSteerParamsSchema };
 async function request(id: string | number, method: string, p: any) {
   if (method === 'initialize') return io.sendResult(id, { protocolVersion: PROVIDER_BRIDGE_PROTOCOL_VERSION, capabilities: { grammarVersions: [THREAD_DELTA_GRAMMAR_V3, THREAD_DELTA_GRAMMAR_V3], sessionRestore: true, fork: 'none', threadArchive: false, threadRename: false, threadGoalClear: false, approvalEnforcedBy: 'provider', steerMode: 'queue' } });
-  if (method === 'model/list') return io.sendResult(id, { models: [MODEL, LIVE_MODEL, CANONICAL_MODEL], selectedOnlyModels: [] });
+  if (method === 'model/list') return io.sendResult(id, { models: [MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL], selectedOnlyModels: [] });
   if (method === 'thread/start' || method === 'thread/resume') {
     const initial = (p.input ?? []).filter((i: any) => i.type === 'text').map((i: any) => i.text).join('');
     const match = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(initial);
     const attachment = p.options.providerOptions?.attachment;
-    const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || p.options.model === CANONICAL_MODEL.id ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
+    const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || isExoModel(p.options.model) ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
     const s = await construct(p.threadId, p.cwd, p.providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
     io.sendResult(id, { providerThreadId: s.providerThreadId, sessionRestorable: true });
     if (p.input?.length) await prompt(s, p.input);
@@ -186,7 +194,7 @@ async function request(id: string | number, method: string, p: any) {
   if (p.options?.providerOptions?.runtimeKind && p.options.providerOptions.runtimeKind !== s.runtimeKind) throw new Error('Cannot change fixture/live runtime on an existing conversation');
   if (method === 'turn/start') {
     io.sendResult(id, {});
-    try { await prompt(s, p.input, p.clientRequestId); }
+    try { await useModel(s, p.options?.model); await prompt(s, p.input, p.clientRequestId); }
     catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
     return;
   }

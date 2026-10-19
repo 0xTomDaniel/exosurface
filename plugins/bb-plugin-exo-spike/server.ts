@@ -1,6 +1,6 @@
 import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, feedback, save, bindingFile } from './src/state.ts';
+import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile } from './src/state.ts';
 export const rpcContract = defineRpcContract({
   overview: { input: z.null(), output: z.object({ threads: z.array(z.object({ id: z.string(), title: z.string().nullable(), status: z.string(), parentThreadId: z.string().nullable(), profile: z.string().nullable(), childId: z.string().nullable(), runtimeKind: z.enum(['offline', 'live', 'canonical']), commands: z.array(z.string()), feedback: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }), children: z.array(z.object({ id: z.string(), state: z.string(), report: z.string().nullable() })) })) }) },
   attach_child: { input: z.object({ threadId: z.string(), childId: z.string() }), output: z.object({ threadId: z.string() }) },
@@ -13,9 +13,9 @@ export default function plugin(bb: BbPluginApi) {
     strings: { signInHint: 'Fixture or isolated live trial using existing Pi authentication.', expiredHint: 'Check the existing Pi authentication route; do not paste credentials here.', installUrl: 'https://github.com/get-bb/bb', brandPrefix: 'Exo ' },
     maintenance: { health: false, usage: false, installation: false },
     capabilities: { supportsServiceTier: false, supportsNativeUserQuestion: false, fork: 'none', supportsManualCompaction: false, supportsThreadArchive: false, supportsThreadRename: false, permissionModes: ['full'], reasoningLevels: ['low', 'high'] },
-    composerActions: [], models: { fallback: [MODEL, LIVE_MODEL, CANONICAL_MODEL], scope: 'host' }, env: { passthrough: [] },
+    composerActions: [], models: { fallback: [MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL], scope: 'host' }, env: { passthrough: [] },
     completedTurnDisplay: 'flat',
-    deriveProviderOptions(ctx): Readonly<Record<string, JsonValue>> { const state = binding(ctx.threadId); const runtimeKind = ctx.model === CANONICAL_MODEL.id ? 'canonical' : ctx.model === LIVE_MODEL.id ? 'live' : 'offline'; return { runtimeKind, ...(state?.childId ? { attachment: { profile: state.profile, childId: state.childId } } : {}) }; },
+    deriveProviderOptions(ctx): Readonly<Record<string, JsonValue>> { const state = binding(ctx.threadId); const runtimeKind = isExoModel(ctx.model) ? 'canonical' : ctx.model === LIVE_MODEL.id ? 'live' : 'offline'; return { runtimeKind, ...(state?.childId ? { attachment: { profile: state.profile, childId: state.childId } } : {}) }; },
     extensionKinds: { 'pi-ui': { state: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }) } },
   });
   // Admission runs before provider construction; initial input need not be included
