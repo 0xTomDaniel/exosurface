@@ -100,6 +100,8 @@ export const PAGE_BOUNDS = {
   besidePages: {family: 'call size', on: ['call'], attribute: 'beside', limit: count(0, 2, 'pages')},
   callPages: {family: 'call size', on: ['call'], attribute: 'pages drawn or edited (the surface holds this many; older pages move into history)', limit: count(0, 8)},
   callSize: {family: 'call size', on: ['call'], attribute: 'pages drawn or edited, together', limit: {kind: 'size', max: 40, unit: 'KB'}},
+  // Within every other call bound only withdrawing a page the same call draws or edits can exceed this one.
+  callChanges: {family: 'call size', on: ['call'], attribute: 'page changes (a page drawn or edited counts 3, plus 1 when it replaces a page on the surface; a page withdrawn, or moved into history by the system, counts 1)', limit: count(0, 32)},
 } as const satisfies Record<string, Bound>;
 
 export type BoundKey = keyof typeof PAGE_BOUNDS;

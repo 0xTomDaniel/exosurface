@@ -10,7 +10,7 @@ interface Measured {value: string | number | undefined; where?: string}
 interface Element {subject: Subject; line: Line; who: string}
 interface PageFacts {sid: string; components: readonly ComponentNode[]}
 interface ComponentNode {id: string; children?: readonly string[]; child?: string; tabs?: readonly {child: string}[]}
-export interface CallFacts {snapshot?: string | undefined; edits?: readonly {lines?: string | undefined}[] | undefined; delete?: readonly string[] | undefined; beside?: readonly string[] | undefined; pages?: number; bytes?: number}
+export interface CallFacts {snapshot?: string | undefined; edits?: readonly {lines?: string | undefined}[] | undefined; delete?: readonly string[] | undefined; beside?: readonly string[] | undefined; pages?: number; bytes?: number; changes?: number}
 
 type Check =
   | {at: 'line'; measure: (l: Line) => Measured[]}
@@ -111,6 +111,7 @@ const CHECKS: {[K in BoundKey]: Check} = {
   besidePages: {at: 'call', measure: c => one(c.beside?.length)},
   callPages: {at: 'call', measure: c => one(c.pages)},
   callSize: {at: 'call', measure: c => one(c.bytes)},
+  callChanges: {at: 'call', measure: c => one(c.changes)},
 };
 
 // Max nesting below the root, counted like the A2UI validator counts it.
@@ -220,7 +221,9 @@ export function checkCall(facts: CallFacts): void {
   for (const key of BOUND_KEYS) {
     const check = CHECKS[key];
     if (check.at !== 'call') continue;
-    for (const m of check.measure(facts)) { const b = broken(key, 'this call', m); if (b !== undefined) said.push(sentence(key, b)); }
+    // One sentence per broken call bound (the first place it breaks), so every broken bound is named.
+    const b = check.measure(facts).map(m => broken(key, 'this call', m)).find(x => x !== undefined);
+    if (b !== undefined) said.push(sentence(key, b));
   }
   reject('Call', said);
 }

@@ -108,3 +108,68 @@ void test('Agreement and form bounds reject with the element and the contract wo
   const ref = await rejection({snapshot: '- region "R" [ref=r]:\n  - text [ref=bad.ref]: hi'});
   assert.ok(ref.includes('"bad.ref"') && ref.includes(statement('refForm')), ref);
 });
+
+// A live extension with a committed surface: execute computes a call against it without committing, so one
+// surface serves many probes.
+interface Handlers {on: Map<string, ((e: unknown, ctx: unknown) => unknown)[]>; tool: Tool & {parameters: unknown}}
+async function liveExtension(): Promise<Handlers> {
+  process.env['EXO_A2UI_SPIKE'] = '1';
+  process.env['OPTCHAT_HOME'] = CANONICAL_HOME;
+  const {default: workspace} = await import('../src/workspace-extension.ts');
+  const tools = new Map<string, Tool & {parameters: unknown}>(), on = new Map<string, ((e: unknown, ctx: unknown) => unknown)[]>();
+  let active: string[] = [];
+  const pi = {getAllTools: () => [...tools.keys()].map(name => ({name})), on: (n: string, h: (e: unknown, ctx: unknown) => unknown) => { on.set(n, [...(on.get(n) ?? []), h]); return () => undefined; },
+    registerTool: (t: Tool & {name: string; parameters: unknown}) => tools.set(t.name, t), registerCommand: () => undefined, appendEntry: () => undefined, setActiveTools: (t: string[]) => { active = t; }, getActiveTools: () => active};
+  workspace(pi as never);
+  const tool = tools.get('update_exosurface');
+  assert.ok(tool);
+  const ctx = {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}};
+  for (const h of on.get('session_start') ?? []) h({}, ctx);
+  return {on, tool};
+}
+async function commit(x: Handlers, id: string, args: Record<string, unknown>) {
+  const result = await x.tool.execute(id, args) as {details: unknown};
+  const ctx = {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}};
+  for (const h of x.on.get('message_end') ?? []) h({message: {role: 'toolResult', toolName: 'update_exosurface', isError: false, toolCallId: id, details: result.details}}, ctx);
+}
+const page = (ref: string) => `- region "Page ${ref}" [ref=${ref}]:\n  - text [ref=${ref}_t]: ${ref}`;
+const changes = (r: unknown) => (r as {details: {delta: {messages: unknown[]}}}).details.delta.messages.length;
+
+void test('callChanges: no call within every other bound exceeds it; withdrawing a page the call also draws is named when it does', async () => {
+  const pages = PAGE_BOUNDS.callPages.limit.max, max = PAGE_BOUNDS.callChanges.limit.max;
+  const x = await liveExtension(), on = Array.from({length: pages}, (_, i) => `p${String(i)}`);
+  await commit(x, 'setup', {baseRevision: 0, snapshot: on.map(page).join('\n')});
+  // Every split of the call-size bound on pages drawn or edited (k pages already on the surface redrawn,
+  // m new), with the rest of the surface withdrawn (delete) or left for the system to move into history.
+  let worst = 0;
+  for (let k = 0; k <= pages; k++) for (let m = 0; k + m <= pages; m++) for (const withdraw of [true, false]) {
+    const drawn = [...on.slice(0, k), ...Array.from({length: m}, (_, i) => `n${String(i)}`)];
+    const r = await x.tool.execute('probe', {baseRevision: 1, snapshot: drawn.map(page).join('\n') || undefined, ...(withdraw && k < pages ? {delete: on.slice(k)} : {}), ...(drawn.length ? {} : {delete: on})});
+    worst = Math.max(worst, changes(r));
+  }
+  // Edits at their bound, spread over every page on the surface.
+  const edits = Array.from({length: PAGE_BOUNDS.editsPerCall.limit.max}, (_, i) => ({page: on[i % pages], ref: `${on[i % pages] ?? ''}_t`, op: 'replace', lines: `- text [ref=${on[i % pages] ?? ''}_t]: edit ${String(i)}`}));
+  worst = Math.max(worst, changes(await x.tool.execute('edits', {baseRevision: 1, edits: edits.slice(0, pages), beside: on.slice(0, PAGE_BOUNDS.besidePages.limit.max)})));
+  assert.equal(worst, max, `the worst call within every other bound has exactly ${String(max)} page changes`);
+  // Beyond it only by withdrawing a page the same call redraws: rejected in the contract's words.
+  const said = await x.tool.execute('over', {baseRevision: 1, snapshot: on.map(page).join('\n'), delete: [on[0]]}).then(() => '', (e: unknown) => (e as Error).message);
+  assert.ok(said.startsWith(`Call rejected: this call has ${String(max + 1)} page changes.`) && said.includes(statement('callChanges')), said);
+  PLAIN(said);
+});
+
+void test('T4: pi validates tool arguments against the schema before execute, so no page bound lives in the schema', async () => {
+  const {Compile} = await import('typebox/compile');
+  const x = await liveExtension(), schema = x.tool.parameters as Parameters<typeof Compile>[0];
+  const limits = (v: unknown): string[] => v && typeof v === 'object' ? Object.entries(v).flatMap(([k, w]) => [...(/^(max|min)(Length|Items|imum)$/.test(k) && k !== 'minimum' ? [k] : []), ...limits(w)]) : [];
+  assert.deepEqual(limits(schema), [], 'no length or count limits in the update_exosurface schema');
+  // Over every call bound at once: the schema (pi's validator, Compile like pi-ai validateToolArguments) lets it
+  // through, and execute names the bounds in plain words.
+  const B = PAGE_BOUNDS, over = {baseRevision: 0, snapshot: 'x'.repeat(B.snapshotLength.limit.max + 1),
+    edits: Array.from({length: B.editsPerCall.limit.max + 1}, () => ({page: 'p', ref: 'r', op: 'replace', lines: 'y'.repeat(B.editLines.limit.max + 1)})),
+    delete: Array.from({length: B.deletePerCall.limit.max + 1}, (_, i) => `d${String(i)}`), beside: Array.from({length: B.besidePages.limit.max + 1}, (_, i) => `b${String(i)}`)};
+  assert.ok(Compile(schema).Check(over), 'pi would pass these arguments to execute');
+  const said = await x.tool.execute('t4', over).then(() => '', (e: unknown) => (e as Error).message);
+  assert.match(said, /^Call rejected: /);
+  for (const k of ['snapshotLength', 'editsPerCall', 'editLines', 'deletePerCall', 'besidePages'] as const) assert.ok(said.includes(statement(k)), `${k}: ${said.slice(0, 300)}`);
+  PLAIN(said);
+});

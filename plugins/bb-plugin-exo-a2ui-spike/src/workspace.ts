@@ -105,7 +105,7 @@ export function validateSnapshot(value:unknown):Snapshot{
   p.processMessages(rendererMessages(s));if(p.getSurfaces().size!==ids.length)throw Error('Renderer surface count mismatch');return s.incremental?{...s,incomplete}:s;
  }finally{p.dispose();}
 }
-export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).min(1).max(32),layout:snapshotSchema.shape.layout}).strict();
+export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).min(1).max(PAGE_BOUNDS.callChanges.limit.max),layout:snapshotSchema.shape.layout}).strict();
 export type Delta=z.infer<typeof deltaSchema>;
 export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  const d=deltaSchema.parse(raw);if(d.baseRevision!==(current?.revision??0)||d.revision!==d.baseRevision+1)throw Error('Stale/nonsequential delta');
