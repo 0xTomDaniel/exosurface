@@ -2,7 +2,8 @@
 // compared with the committed baseline, which only the record step writes and only ever lowers.
 // Every tool is a pinned devDependency of this package; nothing here calls a network service or model.
 import {spawn} from 'node:child_process';
-import {existsSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -56,17 +57,33 @@ function tscErrors(r: Run): string[] {
   return errors;
 }
 
-interface KnipIssue {file: string; files: unknown[]; exports: unknown[]; types: unknown[]; unlisted: {name: string}[]}
-interface Knip {unlisted: string[]; files: number; exports: number; types: number}
+interface KnipIssue {file: string; files?: unknown[]; exports?: unknown[]; types?: unknown[]; unlisted?: {name: string}[]}
+async function knipIssues(dir: string, args: readonly string[]): Promise<KnipIssue[]> {
+  const r = await tool('knip', [...args, '--reporter', 'json', '--no-progress', '--no-exit-code', '--no-config-hints'], dir);
+  try { return (JSON.parse(r.stdout) as {issues: KnipIssue[]}).issues; } catch { throw new ToolError(`knip failed: ${firstLine(r)}`); }
+}
+
+// Unused files, exports and types: knip's reachability analysis from the configured entries.
+interface Knip {files: number; exports: number; types: number}
 async function knip(dir: string): Promise<Knip> {
-  const r = await tool('knip', ['--reporter', 'json', '--no-progress', '--no-exit-code', '--no-config-hints'], dir);
-  let issues: KnipIssue[];
-  try { issues = (JSON.parse(r.stdout) as {issues: KnipIssue[]}).issues; } catch { throw new ToolError(`knip failed: ${firstLine(r)}`); }
-  const sum = (key: 'files' | 'exports' | 'types') => issues.reduce((n, i) => n + i[key].length, 0);
-  return {
-    unlisted: issues.flatMap(i => i.unlisted.map(u => `${u.name} (${i.file})`)).sort(),
-    files: sum('files'), exports: sum('exports'), types: sum('types'),
-  };
+  const issues = await knipIssues(dir, []);
+  const sum = (key: 'files' | 'exports' | 'types') => issues.reduce((n, i) => n + (i[key]?.length ?? 0), 0);
+  return {files: sum('files'), exports: sum('exports'), types: sum('types')};
+}
+
+// Unlisted dependencies in EVERY project file, reachable or not: knip skips imports inside unused
+// files, so this pass makes every project file an entry. Counted unused-file debt cannot hide one.
+const KNIP_DEFAULT_PROJECT = ['**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}!'];
+async function unlisted(dir: string): Promise<string[]> {
+  const file = join(dir, 'knip.json');
+  const config = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown> : {};
+  const project = config['project'] ?? KNIP_DEFAULT_PROJECT;
+  const temp = mkdtempSync(join(tmpdir(), 'knip-all-files-'));
+  try {
+    writeFileSync(join(temp, 'knip.json'), JSON.stringify({...config, entry: project, project}));
+    const issues = await knipIssues(dir, ['--config', join(temp, 'knip.json'), '--include', 'unlisted']);
+    return issues.flatMap(i => (i.unlisted ?? []).map(u => `${u.name} (${i.file})`)).sort();
+  } finally { rmSync(temp, {recursive: true, force: true}); }
 }
 
 async function strictest(dir: string): Promise<number> {
@@ -133,7 +150,7 @@ export async function check(dir: string): Promise<Report> {
   const typecheck = Promise.all(TYPECHECK_PROJECTS.filter(p => existsSync(join(dir, p)))
     .map(async p => tscErrors(await tool('tsc', ['--noEmit', '--pretty', 'false', '-p', p], dir)).map(e => `${p}: ${e}`)));
   const [tc, deps, tests, counted] = await Promise.all([
-    settle(typecheck.then(all => all.flat())), settle(knipRun.then(k => k.unlisted)), settle(run('npm', ['test'], dir)), counts(dir, knipRun),
+    settle(typecheck.then(all => all.flat())), settle(unlisted(dir)), settle(run('npm', ['test'], dir)), counts(dir, knipRun),
   ]);
   const details: string[] = [], lines: string[] = [], failed: HardGate[] = [];
   const hard = (gate: HardGate, failure: string | null, detail: readonly string[] = []) => {

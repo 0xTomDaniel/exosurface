@@ -63,6 +63,17 @@ void test('an import of an unlisted package fails the check, naming the dependen
   assert.match(line(r.out, 'typecheck'), /^ok /, 'only the dependency gate is at fault');
 });
 
+void test('an unlisted import in an unused file fails the dependency gate too', t => {
+  const dir = fixture(t);
+  writeFileSync(join(dir, 'src/orphan.ts'), 'export const orphan = 1;\n');
+  assert.equal(recorded(dir)['unused-files'], 1, 'the orphan is recorded unused-file debt');
+  writeFileSync(join(dir, 'src/orphan.ts'), `import {z} from 'zod';\nexport const orphan = z.string();\n`);
+  const r = step('check', dir);
+  assert.equal(r.code, 1, r.out);
+  assert.match(line(r.out, 'dependencies'), /^FAIL dependencies: .*unlisted zod \(src\/orphan\.ts\)/);
+  assert.match(line(r.out, 'unused-files'), /^ok .*count 1, baseline 1$/, 'unused-file debt unchanged, still fails');
+});
+
 void test('one added unused export fails the check, naming the unused-exports gate with count and baseline', t => {
   const dir = fixture(t);
   recorded(dir);
