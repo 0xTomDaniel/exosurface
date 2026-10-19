@@ -1,0 +1,26 @@
+{
+  "spec": "page-bounds.spec.html",
+  "accepted_commit": "9aabe3c",
+  "criteria": {
+    "acceptance-contract-complete": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-missing-bound-fails": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-rejection-length": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-rejection-choice": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-rejection-page": {
+      "status": "planned",
+      "pr": null
+    }
+  }
+}
