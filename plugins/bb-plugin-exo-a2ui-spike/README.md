@@ -34,9 +34,8 @@ Next: [NEXT-SPIKE.md](NEXT-SPIKE.md).
 ## Develop
 
 ```sh
-npm install
-npm run typecheck && ./node_modules/.bin/tsc -p tsconfig.live.json
-npm test
+npm ci
+just check          # the gate: type check, dependencies, tests, and the counted gates (AGENTS.md)
 bb plugin build .   # then: bb plugin reload exo-a2ui-spike
 ```
 

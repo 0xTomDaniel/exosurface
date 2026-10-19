@@ -1,0 +1,18 @@
+# The package gate (AGENTS.md): run `just check` before hand-off.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+default:
+    @just --list
+
+# Install the pinned tools and dependencies from the lockfile.
+setup:
+    npm ci
+
+# Hard gates (tsc, knip unlisted, tests) clean; counted gates at or below quality-baseline.json.
+check:
+    npm run --silent check
+
+# Lower quality-baseline.json to the current counts; refuses if any count is above its baseline.
+record:
+    npm run --silent record
