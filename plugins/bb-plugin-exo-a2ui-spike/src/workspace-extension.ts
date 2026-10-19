@@ -17,6 +17,7 @@ import {reduceCanvas,foldCanvas} from './canvas-doc.ts';
 import {inputBindings,validateInput} from './workspace.ts';
 import {PROMPT_SECTION,REMINDER_SECTION,REMINDER,PRESENTATION_HEADER,UPDATE_DESCRIPTION,UPDATE_SNIPPET,UPDATE_GUIDELINES,READ_DESCRIPTION,SURFACE_UPDATE,SURFACE_READ,SURFACE_SNIPPET,SURFACE_DESCRIPTION,SURFACE_GUIDELINES,SURFACE_READ_DESCRIPTION} from './tool-contract.ts';
 import {EXO_CATALOG} from './exo-catalog.ts';
+import {checkCall} from './page-validator.ts';
 import {OFFER,OFFER_ENTRY,COMMIT,RUN,validateOffer,recoverOffer,type Offer} from '../composition/contract.ts';
 import {offerParameters} from '../composition/tool-schema.ts';
 import {compose,syntheticConversation,type CompositionRequest} from '../composition/engine.ts';
@@ -166,13 +167,17 @@ export default function workspace(pi:ExtensionAPI){
  // Registered for branch history/reversal compatibility, never active in this trial.
  register({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
  register({name:SURFACE_UPDATE,label:'Update pages on the surface',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
-  parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String({maxLength:40000})),
-   edits:Type.Optional(Type.Array(Type.Object({page:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
-   delete:Type.Optional(Type.Array(Type.String(),{maxItems:8})),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2}))}),
+    // No page bound in the schema: pi checks the schema before execute and answers with raw schema output and
+  // the echoed arguments (T4), so call bounds are enforced in execute (checkCall), in the contract's words.
+  parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String()),
+   edits:Type.Optional(Type.Array(Type.Object({page:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String())}))),
+   delete:Type.Optional(Type.Array(Type.String())),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String()))}),
   execute:async(id,args)=>{
    try{
     if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
+    checkCall({snapshot:args.snapshot,edits:args.edits,delete:args.delete,beside:args.beside});
     const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits?.map((e:any)=>({surface:e.page,ref:e.ref,op:e.op,lines:e.lines})) as Edit[]|undefined,delete:args.delete},fromHistory);
+    checkCall({pages:new Set([...change.drawn,...change.edited]).size,bytes:JSON.stringify(change.messages).length});
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
     // Drawing moves the stage by default; edits and deletes leave it where it is.
     const layout=args.focus||args.beside?{...(args.focus?{focus:args.focus}:{}),...(args.beside?{beside:args.beside}:{})}:!change.drawn.length&&current?.layout?{...(keep(current.layout.focus?[current.layout.focus]:undefined)?.length?{focus:current.layout.focus}:{}),...(current.layout.beside?{beside:keep(current.layout.beside)}:{})}:undefined;

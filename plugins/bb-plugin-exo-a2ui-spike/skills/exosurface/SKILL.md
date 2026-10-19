@@ -5,19 +5,19 @@ description: Reference for composing Exosurface pages with update_exosurface in 
 
 # Exosurface composition reference
 
-The presentation guide (system prompt) says *what* good presentation is; the `update_exosurface` description says *what is valid*. This file shows *how* the pieces look in practice. Examples are shapes to adapt, not templates to reuse: compose for the conversation in front of you.
+The presentation guide (system prompt) says *what* good presentation is; the `update_exosurface` description says *what is valid*, including every bound and its value (lengths, counts, allowed tones and states, page and call sizes). This file states no bound values: check the tool description for them. This file shows *how* the pieces look in practice. Examples are shapes to adapt, not templates to reuse: compose for the conversation in front of you.
 
 ## Choosing an encoding
 
 | The content is… | Use | Notes |
 |---|---|---|
-| The one thing to notice, decide or watch | `note` | `tone` decision/caution/good/note. One per view is usually enough. |
-| Ordered in time or sequence | `list [timeline]` | `state` now/next/done/later/blocked; exactly one `now` when there is a present moment. |
+| The one thing to notice, decide or watch | `note` | A note has its own `tone` values (see the tool description). One per view is usually enough. |
+| Ordered in time or sequence | `list [timeline]` | `[state]` per item; exactly one `now` when there is a present moment. |
 | Options against the same criteria | `table` | Options as columns, criteria as rows; `[highlight=n]` for your recommendation; `[tone=…]` on a row. |
 | Amounts to compare | `figure [chart=bar]` | Sorted when order carries no meaning. Write the unit. |
 | Change over time | `figure [chart=line]` | ≥3 points; say in words if the axis does not start at zero. |
 | A few headline numbers or progress | `meter` lines in a `group [layout=row]` | The value is text, so "2 of 3" or "≈ 40 h" works. Mark estimates. |
-| How things connect or flow | `list [flow]` | ≤12 nodes; `[to=…]` names the next nodes; loops are fine. |
+| How things connect or flow | `list [flow]` | `[to=…]` names the next nodes; loops are fine. |
 | Depth the person may want later | `group "Title" [collapsible]` | Title says what is inside; `/summary` previews it. |
 | A real question for the person | `radiogroup`/`listbox`/`textbox` + one primary `button` | Only when their answer changes what happens next. |
 
@@ -60,7 +60,7 @@ Table rows need as many cells as the header; flow `[to=…]` must name declared 
 
 - **Topic continues:** edit the page on stage by ref instead of redrawing it: `replace` a line that changed, `insertAfter`/`insertInto` new lines, `remove` what is settled, or collapse settled parts into a `group [collapsible]`. Keep refs for things that persist.
 - **Topic shifts:** draw a new page (it takes the stage). The previous one recedes on its own; the system moves older pages into history, and you can bring any back by editing or redrawing its ref.
-- **Supporting context:** a small page named in `beside` (≤2), e.g. a timeline of the week while discussing one day.
+- **Supporting context:** a small page named in `beside`, e.g. a timeline of the week while discussing one day.
 - **Button press or page edits:** the values are already saved and appear in the outline (and a `[page-edits]` message lists what the person changed). Show what changes because of them; don't redraw the whole page to acknowledge a click.
 
 ## Common errors
@@ -73,4 +73,5 @@ Table rows need as many cells as the header; flow `[to=…]` must name declared 
 | `No ref … in page …` | Edit refs come from the outline; read_exosurface shows a shelf or history page in full. |
 | `duplicate ref` | Refs are unique within a page. |
 | `line N: unknown role` / `expected "- role …"` | Use the roles in the tool description; each line starts with `- `. |
+| `Page … rejected: … Bound: …` | The rejection names the page, the element's ref, the attribute and the bound in the tool description's words: fix that element and send again; do not cut other content. |
 | `Table rows must match columns` | Same number of cells as the header row. |

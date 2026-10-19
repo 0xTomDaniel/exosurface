@@ -9,6 +9,7 @@ import {
   type ThreadDelta,
 } from '@get-bb/plugin-sdk/provider-bridge';
 import { PiRpc } from './src/pi-rpc.ts';
+import { formPattern } from './src/page-bounds.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
 import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
@@ -64,7 +65,7 @@ function event(s: Session, e: any) {
     emit(s, [{ kind: 'item.close', key: { providerItemId: e.toolCallId }, status: ok ? 'completed' : 'failed', item: { type: 'tool', tool: e.toolName, result: text(e.result?.content) },
       presentation: { icon: { glyph: 'PanelsTopLeft' }, label: { pending: 'Updating a page', completed: ok ? 'Updated a page' : 'Page update failed' }, suppress: true } }]);
     if (!ok) message(s, `Page update failed: ${text(e.result?.content).slice(0, 300)}`);
-    for (const c of cards) if (/^[a-zA-Z0-9_-]{1,80}$/.test(c.surface) && Number.isInteger(c.revision)) message(s, `::exo-surface{surface="${c.surface}" revision="${c.revision}" action="${c.action === 'edited' ? 'edited' : 'drew'}"}`);
+    for (const c of cards) if (formPattern('refForm').test(c.surface) && Number.isInteger(c.revision)) message(s, `::exo-surface{surface="${c.surface}" revision="${c.revision}" action="${c.action === 'edited' ? 'edited' : 'drew'}"}`);
   } else if (e.type === 'tool_execution_end') emit(s, [{ kind: 'item.close', key: { providerItemId: e.toolCallId }, status: e.isError ? 'failed' : 'completed', item: { type: 'tool', tool: e.toolName, result: text(e.result?.content) } }]);
   if (e.type === 'message_end' && e.message.role === 'custom' && e.message.display) message(s, `[OptChat report]\n${text(e.message.content)}`);
   if (e.type === 'agent_settled') { audit(s, 'bb-settle'); settle(s, e.aborted ? 'interrupted' : s.failed ? 'failed' : 'completed'); }

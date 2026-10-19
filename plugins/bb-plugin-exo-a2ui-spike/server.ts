@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 import { load, CANONICAL_MODEL, CLONE_HOME } from './src/state.ts';
+import { PAGE_BOUNDS, formPattern } from './src/page-bounds.ts';
 import { CATALOG, actionSchema, validateAction, validateSnapshot, deltaSchema } from './src/workspace.ts';
 import { describePress, boundUpdates } from './src/canvas-memory.ts';
 import { canvasDataViaOwner, restoreViaOwner } from './src/canvas-client.ts';
@@ -17,7 +18,7 @@ const observerSchema=z.object({id:z.string(),route:z.enum(['sidecar','direct']),
 const compositionSchema=z.object({configured:z.boolean(),surfaceId:z.string().nullable(),candidateCount:z.number(),running:z.boolean(),lastRun:z.object({id:z.string(),mode:z.string(),status:z.string(),elapsedMs:z.number().optional(),calls:z.number().optional(),costUsd:z.number().nullable().optional()}).nullable()});
 const statusSchema=z.object({threadId:z.string().nullable(),ready:z.boolean(),streaming:z.boolean(),revision:z.number(),delivery:deliverySchema,composition:compositionSchema,observer:observerSchema.nullable()});
 const eventSchema=z.object({version:z.literal('v0.9.1'),action:actionSchema}).strict();
-const versionRef=z.object({surface:z.string().max(80),revision:z.number().int().nonnegative()}).strict();
+const versionRef=z.object({surface:z.string().max(PAGE_BOUNDS.refForm.limit.max),revision:z.number().int().nonnegative()}).strict();
 const pendingSchema=z.object({deployment:z.enum(['clone','main']).default('clone'),threadId:z.string(),surface:z.string(),revision:z.number().int(),title:z.string(),at:z.string(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16)}).strict();
 // Two deployments of the same surface: the isolated clone and the primary Exo session. Each has its own state folder
 // (written by the Exosurface Pi extensions running in that session), owner, BB thread and provider. Requests are routed
@@ -39,7 +40,7 @@ export const rpcContract=defineRpcContract({
   workspace:{input:z.object({deployment:z.enum(['clone','main']),cursor:cursorSchema.nullable()}).strict(),output:statusSchema},
   compose:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),mode:z.enum(['jev','haiku','haiku-both']),prompt:z.string().min(1).max(1600),resumeRunId:z.string().uuid().optional()}).strict(),output:z.object({completed:z.boolean()})},
   observerArm:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),route:z.enum(['sidecar','direct','off'])}).strict(),output:z.object({armed:z.boolean()})},
-  edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(80),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).min(1).max(16),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
+  edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(PAGE_BOUNDS.refForm.limit.max),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).min(1).max(16),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
   surfaceAt:{input:z.object({threadId:z.string()}).merge(versionRef).strict(),output:z.object({surface:z.string(),revision:z.number(),title:z.string(),at:z.string(),action:z.string(),current:z.boolean(),onStage:z.boolean(),panel:z.string(),snapshot:z.any()})},
   pending:{input:z.object({threadId:z.string(),op:z.enum(['get','set','clear']),version:versionRef.optional(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16).optional()}).strict(),output:pendingSchema.nullable()},
   action:{input:z.object({threadId:z.string(),revision:z.number().int(),rewind:versionRef.optional(),event:eventSchema,actionId:z.string().uuid(),metadata:z.object({a2uiClientCapabilities:z.object({'v0.9.1':z.object({supportedCatalogIds:z.array(z.string())})})})}),output:z.object({accepted:z.boolean()})},
@@ -81,7 +82,7 @@ export default function plugin(bb:BbPluginApi){
   // A surface pill in the composer (inserted when the person opens an earlier version, or typed with @). At send time
   // an earlier version is brought back as the current one, with the person's edits, before Exo's turn; Exo gets one
   // agent-only line. A current surface is just referenced.
-  const SURFACE_ITEM=/^(?:(clone|main)\|)?([a-zA-Z0-9_-]{1,80})@(\d{1,9})$/;
+  const SURFACE_ITEM=new RegExp(`^(?:(clone|main)\\|)?(${formPattern('refForm').source.slice(1,-1)})@(\\d{1,9})$`);
   bb.ui.registerMentionProvider({id:'surface',label:'Pages',triggers:['@'],
     search:({query,threadId})=>{let d:Deployment;try{d=deploymentFor(threadId??'');}catch{return [];}const all=history(d),latest=new Map<string,Version>();for(const v of all)if(v.action!=='withdrawn')latest.set(v.surface,v);
       const q=query.toLowerCase();return [...latest.values()].filter(v=>!q||v.title.toLowerCase().includes(q)||v.surface.includes(q)).sort((a,b)=>b.revision-a.revision).slice(0,12)

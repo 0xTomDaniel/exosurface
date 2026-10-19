@@ -2,8 +2,9 @@
 // at most two supporting context surfaces beside it, everything else recedes
 // (kept mounted, drafts intact, one click to bring back). Pure, shared by the
 // native reducer and frontend.
+import {PAGE_BOUNDS} from './page-bounds.ts';
 export type Layout={columns?:number;wide?:string[];focus?:string;beside?:string[]};
-export const MAX_BESIDE=2;
+export const MAX_BESIDE=PAGE_BOUNDS.besidePages.limit.max;
 // Focus follows what the conversation just touched: an explicit layout.focus wins;
 // otherwise the last surface created or structurally redesigned in this delta;
 // otherwise the previous focus. Data-only updates (e.g. applying submitted values)

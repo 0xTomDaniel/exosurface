@@ -5,16 +5,19 @@ import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 import {z} from 'zod';
 import {EXO_CATALOG,EXO_COMPONENTS,exoApiCatalog,checkExoComponent} from './exo-catalog.ts';
 import {nextLayout} from './stage.ts';
+import {PAGE_BOUNDS,formPattern,kilobytes} from './page-bounds.ts';
 export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='apply_workspace', SURFACE_UPDATE_TOOL='update_exosurface', RESET='exosurface-workspace-reset';
 // Basic catalog remains valid for existing surfaces; new surfaces use the Exo superset.
 export const CATALOGS=[CATALOG,EXO_CATALOG];
-export const MAX_BYTES=40*1024, MAX_SURFACES=8, MAX_SENDS=24;
+export const MAX_BYTES=kilobytes(PAGE_BOUNDS.callSize.limit.max), MAX_SURFACES=PAGE_BOUNDS.callPages.limit.max;
+const MAX_SENDS=PAGE_BOUNDS.buttonSends.limit.max;
+const MAX_COMPONENTS=PAGE_BOUNDS.pageComponents.limit.max,MAX_DEPTH=PAGE_BOUNDS.pageDepth.limit.max;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
-const identifier=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
-const atom=z.union([z.string().max(2000),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
+const identifier=z.string().regex(formPattern('refForm'));
+const atom=z.union([z.string().max(PAGE_BOUNDS.textboxValue.limit.max),z.number().finite(),z.boolean(),z.array(z.string().max(PAGE_BOUNDS.optionValue.limit.max)).max(PAGE_BOUNDS.listboxSelected.limit.max)]);
 export const actionSchema=z.object({name:identifier,surfaceId:identifier,sourceComponentId:identifier,timestamp:z.string().datetime(),context:z.record(identifier,atom)}).strict();
-export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(2).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
+export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(PAGE_BOUNDS.besidePages.limit.max).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
 export type Snapshot=z.infer<typeof snapshotSchema>;
 // Official DataModel takes ownership of supplied value objects. Never let local
 // input mutation alias the authoritative React/RPC/native publication snapshot.
@@ -56,7 +59,7 @@ export function validateInput(n:any,value:unknown){
 }
 export function validateSnapshot(value:unknown):Snapshot{
  const s=snapshotSchema.parse(value);
- if(new TextEncoder().encode(JSON.stringify(s)).length>MAX_BYTES)throw Error('Workspace exceeds 40KB bound; delete stale surfaces');
+ if(new TextEncoder().encode(JSON.stringify(s)).length>MAX_BYTES)throw Error(`Workspace exceeds ${String(PAGE_BOUNDS.callSize.limit.max)}KB bound; delete stale surfaces`);
  // Data snapshot uses root '/', unlike leaf component bindings.
  inspect(s.messages.map(m=>m.updateDataModel?{...m,updateDataModel:{...m.updateDataModel,path:undefined}}:m));
  if(!s.incremental&&s.messages.length%3)throw Error('Full snapshot uses three consecutive messages per surface');
@@ -72,7 +75,7 @@ export function validateSnapshot(value:unknown):Snapshot{
    rows.forEach(m=>A2uiMessageSchema.parse(m));
    if(!CATALOGS.includes(create.catalogId)||data.path!=='/'||!data.value||Array.isArray(data.value)||typeof data.value!=='object')throw Error('Wrong catalog or incomplete object data snapshot');
    const components=rows.find(m=>m.updateComponents)?.updateComponents.components??[];
-   if(!Array.isArray(components)||(!s.incremental&&components.length<1)||components.length>64)throw Error('Component count outside bound');
+   if(!Array.isArray(components)||(!s.incremental&&components.length<1)||components.length>MAX_COMPONENTS)throw Error('Component count outside bound');
    const nodes=new Map<string,any>();
    for(const c of components){
     identifier.parse(c.id);if(nodes.has(c.id))throw Error('Duplicate component ID');
@@ -86,7 +89,7 @@ export function validateSnapshot(value:unknown):Snapshot{
     nodes.set(c.id,c);
    }
    const seen=new Set<string>();const walk=(nodeId:string,depth:number)=>{
-    if(depth>8||seen.has(nodeId))throw Error('Cycle/shared child/depth violation');const n=nodes.get(nodeId);if(!n){if(s.incremental){incomplete=true;return;}throw Error('Missing child');}seen.add(nodeId);
+    if(depth>MAX_DEPTH||seen.has(nodeId))throw Error('Cycle/shared child/depth violation');const n=nodes.get(nodeId);if(!n){if(s.incremental){incomplete=true;return;}throw Error('Missing child');}seen.add(nodeId);
     if(n.children&&!Array.isArray(n.children))throw Error('Only fixed child lists');
     for(const child of [...(n.children??[]),...(n.child?[n.child]:[]),...(n.tabs?.map((t:any)=>t.child)??[])])walk(child,depth+1);
    };
@@ -94,7 +97,7 @@ export function validateSnapshot(value:unknown):Snapshot{
    // Orphans may remain after a standard component replacement. Still reject
    // cycles/depth violations anywhere, including in currently unmounted nodes.
    const visiting=new Set<string>(),heights=new Map<string,number>();
-   const height=(key:string):number=>{if(visiting.has(key))throw Error('Cycle violation');if(heights.has(key))return heights.get(key)!;const n=nodes.get(key);if(!n)return 0;visiting.add(key);const children=[...(n.children??[]),...(n.child?[n.child]:[]),...(n.tabs?.map((t:any)=>t.child)??[])];const h=children.length?1+Math.max(...children.map(height)):0;if(h>8)throw Error('Depth violation');visiting.delete(key);heights.set(key,h);return h;};
+   const height=(key:string):number=>{if(visiting.has(key))throw Error('Cycle violation');if(heights.has(key))return heights.get(key)!;const n=nodes.get(key);if(!n)return 0;visiting.add(key);const children=[...(n.children??[]),...(n.child?[n.child]:[]),...(n.tabs?.map((t:any)=>t.child)??[])];const h=children.length?1+Math.max(...children.map(height)):0;if(h>MAX_DEPTH)throw Error('Depth violation');visiting.delete(key);heights.set(key,h);return h;};
    for(const key of nodes.keys())height(key);
    const bindings=inputBindings(s,id);for(const[path,n]of bindings){const value=atPath(moduleData(s,id),path);if(s.incremental&&value===undefined)incomplete=true;else validateInput(n,value);}
    for(const n of nodes.values())for(const v of Object.values(n.action?.event?.context??{}))if((v as any)?.path&&atPath(moduleData(s,id),(v as any).path)===undefined){if(s.incremental)incomplete=true;else throw Error('Action binding absent from published data');}
@@ -102,7 +105,7 @@ export function validateSnapshot(value:unknown):Snapshot{
   p.processMessages(rendererMessages(s));if(p.getSurfaces().size!==ids.length)throw Error('Renderer surface count mismatch');return s.incremental?{...s,incomplete}:s;
  }finally{p.dispose();}
 }
-export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).min(1).max(32),layout:snapshotSchema.shape.layout}).strict();
+export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).min(1).max(PAGE_BOUNDS.callChanges.limit.max),layout:snapshotSchema.shape.layout}).strict();
 export type Delta=z.infer<typeof deltaSchema>;
 export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  const d=deltaSchema.parse(raw);if(d.baseRevision!==(current?.revision??0)||d.revision!==d.baseRevision+1)throw Error('Stale/nonsequential delta');
