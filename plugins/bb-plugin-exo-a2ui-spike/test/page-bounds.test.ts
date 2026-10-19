@@ -34,6 +34,7 @@ const valueWords = (l: Limit): string[] => {
     case 'choice': return [...l.values];
     case 'size': return [String(l.max), l.unit];
     case 'rule': return [l.rule];
+    case 'reserved': return [...l.names, l.part];
   }
 };
 const PLAIN = (said: string) => { assert.ok(!/[{}]|too_big|invalid_type|"code"|\bpath\b/.test(said), `plain words: ${said}`); };
@@ -173,4 +174,120 @@ void test('T4: pi validates tool arguments against the schema before execute, so
   assert.match(said, /^Call rejected: /);
   for (const k of ['snapshotLength', 'editsPerCall', 'editLines', 'deletePerCall', 'besidePages'] as const) assert.ok(said.includes(statement(k)), `${k}: ${said.slice(0, 300)}`);
   PLAIN(said);
+});
+
+// ---- Final review (#23): the translation's own names, selected values, and downstream checks ----
+const DEFECT = 'does not state';
+async function accepted(snapshot: string): Promise<void> {
+  const t = await updateTool();
+  await t.execute('ok', {baseRevision: 0, snapshot}).catch((e: unknown) => { assert.fail(`rejected a page within every stated bound: ${(e as Error).message.slice(0, 400)}\n${snapshot.slice(0, 300)}`); });
+}
+const longRef = (tag: string, max: number = PAGE_BOUNDS.refForm.limit.max) => `${tag}${'r'.repeat(max - tag.length)}`;
+
+void test('review 1: refs at their longest never collide with or overflow the parts the translation names', async () => {
+  const R = (t: string) => longRef(t);
+  // Titled page, card, group, collapsible group, list, tablist and a button, every ref at the form's length.
+  await accepted(`- region "Titled" [ref=${R('p')}]:
+  - text [ref=${R('a')}]: first line is not a heading, so the page title is a part
+  - article "Card" [ref=${R('b')}]:
+    - text [ref=${R('c')}]: in a card
+  - group "Group" [ref=${R('d')}]:
+    - text [ref=${R('e')}]: in a group
+  - group "More" [ref=${R('f')}] [collapsible]:
+    - text [ref=${R('g')}]: hidden
+  - list "List" [ref=${R('h')}]:
+    - listitem: one
+    - listitem: two
+      - text [ref=${R('i')}]: nested
+  - tablist [ref=${R('j')}]:
+    - tab "One":
+      - text [ref=${R('k')}]: tab
+  - checkbox "Pick" [ref=${R('l')}]
+  - button "Go" [ref=${R('m')}] [sends=${R('l')}]`);
+  // Read back, a page with the longest refs shows them (never its parts) and redraws to the same components.
+  const {snapshotToA2ui, surfaceSnapshot} = await import('../src/snapshot-format.ts'), {applyDelta, moduleNodes} = await import('../src/workspace.ts');
+  const src = `- region "T" [ref=${R('p')}]:\n  - text [ref=${R('a')}]: x\n  - list "L" [ref=${R('h')}]:\n    - listitem: one\n  - button "Go" [ref=${R('m')}]`;
+  const drawn = applyDelta(null, {baseRevision: 0, revision: 1, messages: snapshotToA2ui(src)}), text = surfaceSnapshot(drawn, R('p'));
+  assert.ok(!text.includes(PAGE_BOUNDS.refReserved.limit.part) && text.includes(`[ref=${R('m')}]`), text);
+  assert.deepEqual(moduleNodes(applyDelta(null, {baseRevision: 0, revision: 1, messages: snapshotToA2ui(text)}), R('p')), moduleNodes(drawn, R('p')));
+  // An assigned id never takes a ref written later on the page; a flow's default node id never takes a declared one.
+  await accepted('- region "Auto" [ref=auto]:\n  - heading "Untitled"\n  - text [ref=h1]: written after the heading that would have been h1\n  - list [ref=fl] [flow]:\n    - listitem "First" [to=n1]\n    - listitem "Second" [ref=n1]');
+});
+
+void test('review 1: refs the page itself needs are a declared bound, named in the contract\'s words', async () => {
+  for (const ref of [...PAGE_BOUNDS.refReserved.limit.names, `a${PAGE_BOUNDS.refReserved.limit.part}b`]) {
+    const said = await rejection({snapshot: `- region "R" [ref=r]:\n  - textbox "Field" [ref=${ref}]`});
+    assert.ok(said.startsWith('Page r rejected:') && said.includes(`[ref=${ref}]`) && said.includes(statement('refReserved')), said);
+    PLAIN(said);
+  }
+});
+
+void test('review 2: a listbox whose [selected] options share a [value] is named; values made from labels never clash', async () => {
+  const said = await rejection({snapshot: '- region "P" [ref=p]:\n  - listbox "Pick" [ref=pick]:\n    - option "A" [selected] [value=a]\n    - option "Again" [selected] [value=a]'});
+  assert.ok(said.includes('listbox "Pick" [ref=pick]') && said.includes('[value=a]') && said.includes(statement('listboxSelectedDistinct')), said);
+  PLAIN(said);
+  await accepted('- region "P" [ref=p]:\n  - listbox "Pick" [ref=pick]:\n    - option "Yes!" [selected]\n    - option "Yes?" [selected]');
+});
+
+void test('review 2 (B1 search): other downstream checks a snapshot call could break are declared and named', async () => {
+  const sends = await rejection({snapshot: '- region "S" [ref=s]:\n  - text [ref=note]: not an input\n  - button "Go" [ref=go] [sends=note]'});
+  assert.ok(sends.includes('[ref=go]') && sends.includes(statement('sendsNameInputs')), sends);
+  const slider = await rejection({snapshot: '- region "S" [ref=s]:\n  - slider "Level" [ref=lvl] [min=5] [max=1]'});
+  assert.ok(slider.includes('[ref=lvl]') && slider.includes(statement('sliderWithinRange')), slider);
+  const focus = await rejection({snapshot: '- region "S" [ref=s]:\n  - text: x', focus: 'gone'});
+  assert.equal(focus, 'Call rejected: focus names page gone, which is not on the surface after this call.');
+  for (const said of [sends, slider, focus]) { PLAIN(said); assert.ok(!said.includes(DEFECT), said); }
+});
+
+void test('review 3A: a snapshot within its length whose translation is over the call size is named, not "Delta exceeds bound"', async () => {
+  const lines = 40, perLine = Math.floor((PAGE_BOUNDS.snapshotLength.limit.max - 40) / lines) - 14;
+  const snapshot = `- region "Long" [ref=long]:\n${Array.from({length: lines}, (_, i) => `  - text: ${String(i).padStart(2, '0')}${'x'.repeat(perLine)}`).join('\n')}`;
+  assert.ok(snapshot.length <= PAGE_BOUNDS.snapshotLength.limit.max, String(snapshot.length));
+  const said = await rejection({snapshot});
+  assert.match(said, /^Call rejected: this call: page changes, together, once translated is \d+ characters, over 40960 \(40 KB\)\. Bound: /);
+  assert.ok(said.includes(statement('callSize')) && !said.includes(DEFECT), said);
+});
+
+void test('review 3B: an empty name in [to] is ignored by the validator and the translation alike', async () => {
+  await accepted('- region "F" [ref=f]:\n  - list [ref=fl] [flow]:\n    - listitem "A" [ref=a] [to=b,]\n    - listitem "B" [ref=b]');
+});
+
+// General guard: one page per role at every element bound's limit, built from the definition, every ref at its
+// longest. A call within every stated bound is accepted; one step over a bound is named in the contract's words.
+void test('guard: pages at every element bound are accepted; a call within every stated bound never hits an unstated check', async () => {
+  const B = PAGE_BOUNDS, s = (n: number, c = 'w') => c.repeat(n), R = (t: string) => longRef(t), F = (t: string) => longRef(t, B.flowRefForm.limit.max);
+  const page = (tag: string, body: string[]) => `- region "${s(B.noteTitle.limit.max)}" [ref=${R(tag)}]:\n${body.map(l => `  ${l}`).join('\n')}`;
+  const cycle = (vals: readonly string[], i: number) => vals[i % vals.length] ?? '';
+  const pages = [
+    page('note', B.noteTone.limit.values.map((t, i) => `- note "${s(B.noteTitle.limit.max)}" [ref=${R(`n${String(i)}`)}] [tone=${t}]: ${s(500)}`)),
+    page('meter', B.tone.limit.values.map((t, i) => `- meter "${s(B.meterLabel.limit.max)}" [ref=${R(`m${String(i)}`)}] [tone=${t}] [progress=${String(B.meterProgress.limit.max)}]: ${s(B.meterValue.limit.max)}\n    - /detail: ${s(B.meterDetail.limit.max)}`)),
+    page('timeline', [`- list [ref=${R('tl')}] [timeline]:`, ...Array.from({length: B.timelineItems.limit.max}, (_, i) => `  - listitem "${s(B.timelineLabel.limit.max)}" [when=${s(B.timelineWhen.limit.max)}] [state=${cycle(B.timelineState.limit.values, i)}]: ${s(B.timelineDetail.limit.max)}`)]),
+    page('table', [`- table "${s(B.tableCaption.limit.max)}" [ref=${R('tb')}] [highlight=${String(B.tableHighlight.limit.max)}]:`, `  - row [header]: ${Array.from({length: B.tableColumns.limit.max}, () => s(B.tableHeaderCell.limit.max)).join(' | ')}`,
+      ...Array.from({length: B.tableRows.limit.max}, (_, i) => `  - row [tone=${cycle(B.tone.limit.values, i)}]: ${Array.from({length: B.tableColumns.limit.max}, () => s(B.tableCell.limit.max / 2)).join(' | ')}`)]),
+    page('figure', B.chartKind.limit.values.flatMap((k, j) => [`- figure "${s(B.figureCaption.limit.max)}" [ref=${R(`f${String(j)}`)}] [chart=${k}] [unit=${s(B.figureUnit.limit.max)}] [max=${String(B.figureRows.limit.max)}]:`,
+      ...Array.from({length: B.figureRows.limit.max}, (_, i) => `  - row [tone=${cycle(B.tone.limit.values, i)}]: ${s(B.figureRowLabel.limit.max)} | ${String(i + 1)} | ${s(B.figureRowNote.limit.max)}`)])),
+    page('flow', B.flowDirection.limit.values.flatMap((d, j) => {
+      const ids = Array.from({length: B.flowNodes.limit.max}, (_, i) => F(`x${String(j)}${String(i).padStart(2, '0')}`));
+      let links = B.flowLinks.limit.max;
+      return [`- list "${s(B.flowCaption.limit.max)}" [ref=${R(`fl${String(j)}`)}] [flow] [direction=${d}]:`, ...ids.map((id, i) => {
+        const to = ids.filter((_, k) => k !== i).slice(0, Math.min(2, links)); links -= to.length;
+        return `  - listitem "${s(B.flowLabel.limit.max)}" [ref=${id}]${to.length ? ` [to=${to.join(',')}]` : ''} [tone=${cycle(B.tone.limit.values, i)}]: ${s(B.flowDetail.limit.max)}`;
+      })];
+    })),
+    page('inputs', [
+      `- group "${s(B.groupTitle.limit.max)}" [ref=${R('gr')}] [collapsible]:`, `  - /summary: ${s(B.groupSummary.limit.max)}`, `  - textbox "Long" [ref=${R('tx')}] [multiline]: ${s(B.textboxValue.limit.max)}`,
+      `- listbox "Many" [ref=${R('lb')}]:`, ...Array.from({length: B.listboxSelected.limit.max}, (_, i) => `  - option "O${String(i)}" [selected] [value=${String(i).padStart(2, '0')}${s(B.optionValue.limit.max - 2, 'v')}]`),
+      `- radiogroup "One" [ref=${R('rg')}]:`, '  - radio "A" [checked]', '  - radio "B"',
+      `- slider "Level" [ref=${R('sl')}] [min=0] [max=10]: 10`,
+      `- tablist [ref=${R('tabs')}]:`, '  - tab "Only":', '    - text: one',
+      ...Array.from({length: B.buttonSends.limit.max}, (_, i) => `- checkbox "C${String(i)}" [ref=${R(`c${String(i)}`)}] [checked]`),
+      `- button "Send" [ref=${R('go')}] [action=${R('act')}] [sends=${Array.from({length: B.buttonSends.limit.max}, (_, i) => R(`c${String(i)}`)).join(',')}]`]),
+    page('deep', [...Array.from({length: B.pageDepth.limit.max - 1}, (_, i) => `${'  '.repeat(i)}- group [ref=${R(`d${String(i)}`)}]:`), `${'  '.repeat(B.pageDepth.limit.max - 1)}- text: at the bottom`]),
+    page('wide', Array.from({length: B.pageComponents.limit.max - 2}, (_, i) => `- text [ref=${R(`w${String(i)}`)}]: ${String(i)}`)),
+  ];
+  for (const p of pages) await accepted(p);
+  // One step over: depth and components are named, never "Cycle/shared child/depth violation" or a schema error.
+  const deeper = page('deeper', [...Array.from({length: B.pageDepth.limit.max}, (_, i) => `${'  '.repeat(i)}- group:`), `${'  '.repeat(B.pageDepth.limit.max)}- text: too deep`]);
+  const said = await rejection({snapshot: deeper});
+  assert.ok(said.includes(statement('pageDepth')) && !said.includes(DEFECT), said);
 });
