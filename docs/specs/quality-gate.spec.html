@@ -55,12 +55,6 @@ Some gates must be clean; the rest are counts of stricter findings that are reco
 </tbody>
 </table>
 </div>
-<p data-anchor="tests-tbd" data-spec-tbd>Some tests fail on a fresh clone today, most because the archived composition experiment, which the live extension still imports, needs a package the plugin does not list.
-How do those tests turn green?
-<button type="button" data-spec-choice="Fix them to current behaviour">Fix them to current behaviour (recommended)</button>
-<button type="button" data-spec-choice="Delete them as obsolete spike tests">Delete them as obsolete spike tests</button>
-<button type="button" data-spec-choice="Quarantine them with a named reason">Quarantine them with a named reason</button>
-</p>
 </section>
 
 <section data-anchor="ratchet" id="ratchet">
@@ -76,7 +70,9 @@ How do those tests turn green?
 <h2>Running the check</h2>
 <div class="clauses" data-anchor="running-clauses">
 <p class="clause" data-anchor="run-fresh"><span class="clause-id">C1</span> The check runs on a fresh clone after a clean npm install from the package's lockfile; every tool it needs is a pinned development dependency.</p>
-<p class="clause" data-anchor="run-agents"><span class="clause-id">C2</span> The package's agent instructions name the package check as the gate to run before hand-off.</p>
+<p class="clause" data-anchor="run-tests-resolve"><span class="clause-id">C2</span> Every test runs from the package's own install, including tests of the archived composition experiment the live extension imports; the package lists every dependency that experiment needs.</p>
+<p class="clause" data-anchor="run-tests-fixed"><span class="clause-id">C3</span> A failing test is fixed to the package's current behaviour; the tests gate never turns green by deleting, skipping or quarantining a test.</p>
+<p class="clause" data-anchor="run-agents"><span class="clause-id">C4</span> The package's agent instructions name the package check as the gate to run before hand-off.</p>
 </div>
 </section>
 
