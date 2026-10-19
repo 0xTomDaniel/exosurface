@@ -110,8 +110,11 @@ const CHECKS: {[K in BoundKey]: Check} = {
     return v < min || v > max ? `has ${String(v)}, outside [min=${String(min)}] and [max=${String(max)}]` : undefined;
   }},
   refReserved: {at: 'rule', violation: l => {
-    const {names: reserved, part} = PAGE_BOUNDS.refReserved.limit, bad = builtRefs(l).find(r => (reserved as readonly string[]).includes(r) || r.includes(part));
-    return bad === undefined ? undefined : `has a line with [ref=${bad}]`;
+    const {names: reserved, part, inputNames} = PAGE_BOUNDS.refReserved.limit;
+    const bad = builtRefs(l).find(r => (reserved as readonly string[]).includes(r) || r.includes(part));
+    if (bad !== undefined) return `has a line with [ref=${bad}]`;
+    const input = elements(l, '').find(e => e.subject === 'any line' && INPUTS.has(e.line.role) && (inputNames as readonly string[]).includes(str(e.line.attrs['ref']) ?? ''));
+    return input ? `has a ${input.line.role} with [ref=${str(input.line.attrs['ref']) ?? ''}]` : undefined;
   }},
   listboxSelectedDistinct: {at: 'rule', violation: l => {
     const picked = choiceOptions(l).filter(o => Boolean(o.line.attrs['selected'] || o.line.attrs['checked'])).map(o => o.value);

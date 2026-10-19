@@ -19,7 +19,7 @@ export type Limit =
   | {readonly kind: 'range'; readonly min: number; readonly max: number; readonly integer: boolean}
   | {readonly kind: 'form'; readonly chars: string; readonly pattern: string; readonly min: number; readonly max: number}
   | {readonly kind: 'size'; readonly max: number; readonly unit: string}
-  | {readonly kind: 'reserved'; readonly names: readonly string[]; readonly part: string}
+  | {readonly kind: 'reserved'; readonly names: readonly string[]; readonly part: string; readonly inputNames: readonly string[]}
   | {readonly kind: 'rule'; readonly rule: string};
 
 export interface Bound {
@@ -87,9 +87,10 @@ export const PAGE_BOUNDS = {
   refForm: {family: 'page shape', on: ['any line'], attribute: '[ref], [sends] names and button [action]', limit: {kind: 'form', chars: 'letters, digits, _ and -', pattern: 'a-zA-Z0-9_-', min: 1, max: 80}},
   flowRefForm: {family: 'page shape', on: ['flow listitem'], attribute: '[ref] and [to] names', limit: {kind: 'form', chars: 'letters, digits, _ and -', pattern: 'a-zA-Z0-9_-', min: 1, max: 40}},
   refsUnique: {family: 'page shape', on: ['page'], attribute: 'refs', limit: rule('each ref is used once within a page')},
-  // The renderer's root, the data words the tool refuses as keys (input refs become data keys), and the separator
-  // the translation names a line's own parts with (a title, a button label…), so they never meet a ref.
-  refReserved: {family: 'page shape', on: ['page'], attribute: 'refs of the lines inside it', limit: {kind: 'reserved', names: ['root', 'call', 'functionCall', 'url', 'html', 'script', 'constructor', 'prototype'], part: '__'}},
+  // Only what the system refuses: root is the renderer's root id; __ is how reading a page back tells the page's own
+  // parts (a title, a body, a button label) from written refs; an input's ref is its data key and binding path,
+  // where these words are refused as path segments (prototype safety).
+  refReserved: {family: 'page shape', on: ['page'], attribute: 'refs of the lines inside it', limit: {kind: 'reserved', names: ['root'], part: '__', inputNames: ['constructor', 'prototype', '__proto__']}},
   // Agreement between parts
   tableRowsMatchHeader: {family: 'agreement between parts', on: ['table'], attribute: 'rows', limit: rule('every row has as many cells as the header row')},
   tableHighlightInColumns: {family: 'agreement between parts', on: ['table'], attribute: '[highlight]', limit: rule('names one of the header row\'s columns')},
@@ -136,7 +137,7 @@ function limitWords(l: Limit): string {
     case 'form': return `${l.chars}, ${n(l.min)} to ${n(l.max)} characters`;
     case 'size': return `at most ${n(l.max)} ${l.unit}`;
     case 'rule': return l.rule;
-    case 'reserved': return `none of ${l.names.join(', ')}, and none containing ${l.part} (the page's own parts use them)`;
+    case 'reserved': return `none is ${l.names.join(', ')} or contains ${l.part} (the page's own parts use them); the ref of a textbox, checkbox, slider, radiogroup or listbox is also none of ${l.inputNames.join(', ')}`;
   }
 }
 

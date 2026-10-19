@@ -34,7 +34,7 @@ const valueWords = (l: Limit): string[] => {
     case 'choice': return [...l.values];
     case 'size': return [String(l.max), l.unit];
     case 'rule': return [l.rule];
-    case 'reserved': return [...l.names, l.part];
+    case 'reserved': return [...l.names, l.part, ...l.inputNames];
   }
 };
 const PLAIN = (said: string) => { assert.ok(!/[{}]|too_big|invalid_type|"code"|\bpath\b/.test(said), `plain words: ${said}`); };
@@ -214,12 +214,40 @@ void test('review 1: refs at their longest never collide with or overflow the pa
   await accepted('- region "Auto" [ref=auto]:\n  - heading "Untitled"\n  - text [ref=h1]: written after the heading that would have been h1\n  - list [ref=fl] [flow]:\n    - listitem "First" [to=n1]\n    - listitem "Second" [ref=n1]');
 });
 
+void test('review 1 (again): parts are allocated against every id on the page, never a hash assumed unique', async () => {
+  const max = PAGE_BOUNDS.refForm.limit.max;
+  // The reviewer's pair: equal 32-bit FNV hashes of two legal 80-character refs.
+  const pair = ['0000000000009vl8', '000000000000apd6'].map(t => `${'r'.repeat(max - t.length)}${t}`);
+  await accepted(`- region "P" [ref=p]:\n${pair.map((r, i) => `  - article "${String(i)}" [ref=${r}]:\n    - text: one`).join('\n')}`);
+  // General: refs that differ only past where every part cuts them, on every role that has parts.
+  const R = (i: number) => `${'q'.repeat(max - 2)}${String(i).padStart(2, '0')}`;
+  const roles = (i: number) => [`- article "A" [ref=${R(i)}]:\n    - text: a`, `- group "G" [ref=${R(i + 1)}]:\n    - text: g`, `- group "C" [ref=${R(i + 2)}] [collapsible]:\n    - text: c`,
+    `- list "L" [ref=${R(i + 3)}]:\n    - listitem: x\n      - text: nested`, `- tablist [ref=${R(i + 4)}]:\n    - tab "T":\n      - text: t`, `- button "B" [ref=${R(i + 5)}]`];
+  await accepted(`- region "Same prefix" [ref=${R(99)}]:\n  - text: first\n${[0, 6].flatMap(roles).map(l => `  ${l}`).join('\n')}`);
+});
+
 void test('review 1: refs the page itself needs are a declared bound, named in the contract\'s words', async () => {
-  for (const ref of [...PAGE_BOUNDS.refReserved.limit.names, `a${PAGE_BOUNDS.refReserved.limit.part}b`]) {
-    const said = await rejection({snapshot: `- region "R" [ref=r]:\n  - textbox "Field" [ref=${ref}]`});
+  const {names, part, inputNames} = PAGE_BOUNDS.refReserved.limit;
+  for (const [line, ref] of [...names.map(r => ['text', r]), ['text', `a${part}b`], ...inputNames.map(r => ['textbox "Field"', r])] as const) {
+    const said = await rejection({snapshot: `- region "R" [ref=r]:\n  - ${line} [ref=${ref}]: x`});
     assert.ok(said.startsWith('Page r rejected:') && said.includes(`[ref=${ref}]`) && said.includes(statement('refReserved')), said);
     PLAIN(said);
   }
+});
+
+void test('review 2/3: every word inspect or checkPath reads, and every Object.prototype name, is a legal input ref unless the definition reserves it', async () => {
+  const {INSPECT_WORDS} = await import('../src/workspace.ts');
+  const {names, part, inputNames} = PAGE_BOUNDS.refReserved.limit, words0: readonly string[] = [...names, ...inputNames], reserved = (w: string) => words0.includes(w) || w.includes(part);
+  const words = [...new Set([...INSPECT_WORDS, ...Object.getOwnPropertyNames(Object.prototype), ...names, ...inputNames])];
+  const inputs = (w: string) => [`- checkbox "C" [ref=${w}] [checked]`, `- textbox "T" [ref=${w}]: hello`, `- slider "S" [ref=${w}] [min=0] [max=4]: 2`,
+    `- radiogroup "R" [ref=${w}]:\n    - radio "A" [checked]`, `- listbox "L" [ref=${w}]:\n    - option "A" [selected]`];
+  for (const w of words) for (const input of inputs(w)) {
+    const snapshot = `- region "P" [ref=p]:\n  ${input}\n  - button "Go" [ref=go] [sends=${w}]`;
+    if (reserved(w)) { const said = await rejection({snapshot}); assert.ok(said.includes(statement('refReserved')), `${w}: ${said}`); continue; }
+    await accepted(snapshot);
+  }
+  // Data-key words are refused only where the ref becomes a data key: on other lines they are ordinary refs.
+  for (const w of INSPECT_WORDS.filter(x => !reserved(x))) await accepted(`- region "P" [ref=p]:\n  - text [ref=${w}]: x`);
 });
 
 void test('review 2: a listbox whose [selected] options share a [value] is named; values made from labels never clash', async () => {
