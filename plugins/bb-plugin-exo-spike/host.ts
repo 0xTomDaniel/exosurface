@@ -11,8 +11,9 @@ import {
 import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
-import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, EXO_MODELS, isExoModel, mainModel, mainModelFile, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
+import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
 import { runtimeLaunch, assertNativeOwner } from './src/runtime.ts';
+import { promptWithPrimaryModel } from './src/model-selection.ts';
 
 const io = createBridgeIo<any>();
 const sessions = new Map<string, Session>();
@@ -143,13 +144,13 @@ async function close(s: Session) {
   s.closing = true; if (s.poll) clearInterval(s.poll);
   await s.rpc?.close(); sessions.delete(s.threadId); audit(s, s.runtimeKind === 'canonical' ? 'view-detached' : 'owner-released');
 }
-// The model picked in BB for the primary Exo conversation: switch Pi before the message when it changed, and remember it.
-async function useModel(s: Session, picked: unknown) {
-  if (s.runtimeKind !== 'canonical' || s.childId || !isExoModel(picked) || !s.rpc || picked === mainModel()) return;
-  const m = EXO_MODELS[picked];
-  await s.rpc.send('set_model', { provider: m.provider, modelId: m.modelId });
-  await s.rpc.send('set_thinking_level', { level: m.thinking });
-  save(mainModelFile(), { id: picked, at: new Date().toISOString() }); audit(s, 'model-switched', { model: picked });
+async function selectedPrompt(s: Session, picked: unknown, input: any[], requestId?: string) {
+  const send = () => prompt(s, input, requestId);
+  if (s.runtimeKind !== 'canonical' || s.childId || !s.rpc) return send();
+  return promptWithPrimaryModel(s.rpc, picked, async () => {
+    audit(s, 'model-verified', { model: picked });
+    return send();
+  });
 }
 async function prompt(s: Session, input: any[], requestId?: string) {
   if (input.some(p => p.type !== 'text')) throw new Error('Attachments are outside this spike');
@@ -185,7 +186,10 @@ async function request(id: string | number, method: string, p: any) {
     const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || isExoModel(p.options.model) ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
     const s = await construct(p.threadId, p.cwd, p.providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
     io.sendResult(id, { providerThreadId: s.providerThreadId, sessionRestorable: true });
-    if (p.input?.length) await prompt(s, p.input);
+    if (p.input?.length) {
+      try { await selectedPrompt(s, p.options?.model, p.input); }
+      catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
+    }
     if (s.childId) s.poll = setInterval(() => { try { const before = s.cursor; project(s); if (s.cursor !== before) settle(s); } catch { audit(s, 'child-projection-error'); } }, 250);
     return;
   }
@@ -194,14 +198,16 @@ async function request(id: string | number, method: string, p: any) {
   if (p.options?.providerOptions?.runtimeKind && p.options.providerOptions.runtimeKind !== s.runtimeKind) throw new Error('Cannot change fixture/live runtime on an existing conversation');
   if (method === 'turn/start') {
     io.sendResult(id, {});
-    try { await useModel(s, p.options?.model); await prompt(s, p.input, p.clientRequestId); }
+    try { await selectedPrompt(s, p.options?.model, p.input, p.clientRequestId); }
     catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
     return;
   }
   if (method === 'turn/steer') {
     if (!s.rpc || !s.open) return io.sendError(id, -32003, 'No active main turn to steer');
     const value = p.input.map((i: any) => i.text ?? '').join('');
-    await s.rpc.send('prompt', { message: value, streamingBehavior: 'steer' });
+    const send = () => s.rpc!.send('prompt', { message: value, streamingBehavior: 'steer' });
+    if (s.runtimeKind === 'canonical' && !s.childId) await promptWithPrimaryModel(s.rpc, p.options?.model, send);
+    else await send();
     if (p.clientRequestId) emit(s, [{ kind: 'input.accepted', clientRequestId: p.clientRequestId }]);
     return io.sendResult(id, {});
   }

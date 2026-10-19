@@ -8,6 +8,7 @@ Status: **spike**, used daily by its author.
 
 - **Independent owner.** A per-user owner service (`src/owner-service.ts`, run by launchd) owns the Pi process and its OptChat profile lock. BB attaches and detaches; closing BB does not stop the agent, and the standalone terminal can take over after the owner is stopped.
 - **Native history stays authoritative.** OptChat owns the conversation; BB's display is replayed from the Pi session journal with an acknowledgement cursor (`src/journal.ts`), so a reply produced while BB was detached reappears exactly.
+- **Verified primary model selection.** The primary model picker offers Opus 5.5 and GPT-6.1 Sol, both at high reasoning, in the same session. Startup/resume input, normal turns and steering check Pi's actual model and thinking before sending. A failed switch never falls back silently; changing models while busy is rejected without stopping work or clearing queues. `main-model.json` remembers the verified choice for owner restarts. The picker alone is a next-message choice, not proof Pi already switched; a page-button send uses BB's saved thread choice, not an unsent composer draft.
 - **Bounded projections.** Status and overview use a small latest-state store and cached, single-flight RPC instead of replaying whole history on startup.
 - **Children as projections.** OptChat subagents appear as read-only projections with guidance mediated by the parent.
 
