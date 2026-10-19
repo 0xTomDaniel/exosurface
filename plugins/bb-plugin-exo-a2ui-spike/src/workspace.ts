@@ -11,9 +11,13 @@ export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='a
 export const CATALOGS=[CATALOG,EXO_CATALOG];
 export const MAX_BYTES=kilobytes(PAGE_BOUNDS.callSize.limit.max), MAX_SURFACES=PAGE_BOUNDS.callPages.limit.max;
 const MAX_SENDS=PAGE_BOUNDS.buttonSends.limit.max;
-// Keys refused anywhere in a message: the data words of the bounds definition's reserved refs (input refs become
-// data keys), the renderer's root aside, plus __proto__ (which holds the reserved separator).
-const FORBIDDEN_KEYS=new Set([...PAGE_BOUNDS.refReserved.limit.names.filter(n=>n!=='root'),'__proto__']);
+// Protocol words refused as keys of components and messages (no expressions, links or scripts). The keys of a data
+// model and of a button's context are names (input refs), not protocol: only the prototype words, which the bounds
+// definition reserves for input refs, are refused there, as in binding paths.
+const FORBIDDEN_KEYS=new Set(['call','functionCall','url','html','script','__proto__','constructor','prototype']);
+const NAME_WORDS:readonly string[]=PAGE_BOUNDS.refReserved.limit.inputNames;
+/** The words inspect reads as protocol (refused, or a binding, or a map of names); a test draws every one as an input ref. */
+export const INSPECT_WORDS=[...FORBIDDEN_KEYS,'path','context','value','updateDataModel'];
 const MAX_COMPONENTS=PAGE_BOUNDS.pageComponents.limit.max,MAX_DEPTH=PAGE_BOUNDS.pageDepth.limit.max;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
@@ -30,17 +34,28 @@ export const moduleNodes=(s:Snapshot,id:string):any[]=>s.messages.find(m=>m.upda
 export const moduleData=(s:Snapshot,id:string):any=>s.messages.find(m=>m.updateDataModel?.surfaceId===id)?.updateDataModel.value;
 export function checkPath(path:string){
  if(!/^\/(?:[^/~]+(?:~[01][^/~]*)*\/?)+$/.test(path)||path==='/'||path.length>160)throw Error('Only bounded absolute JSON Pointer leaf bindings');
- if(path.split('/').some(k=>['__proto__','constructor','prototype'].includes(k.replace(/~1/g,'/').replace(/~0/g,'~'))))throw Error('Forbidden path segment');
+ if(path.split('/').some(k=>NAME_WORDS.includes(k.replace(/~1/g,'/').replace(/~0/g,'~'))))throw Error('Forbidden path segment');
  return path;
 }
 export function atPath(data:any,path:string){return checkPath(path).split('/').slice(1).reduce((v:any,k:string)=>v?.[k.replace(/~1/g,'/').replace(/~0/g,'~')],data);}
-function inspect(value:any,depth=0){
+// Keys of a map of names (data model: deep; button context: its own keys, values are literals or bindings).
+function inspectNames(value:unknown,depth:number,deep:boolean):void{
+ if(depth>20)throw Error('JSON nesting exceeds bound');
+ const next=(v:unknown)=>{if(deep)inspectNames(v,depth+1,true);else inspect(v,depth+1);};
+ if(Array.isArray(value)){value.forEach(next);return;}
+ if(!value||typeof value!=='object')return;
+ for(const[k,v]of Object.entries(value)){if(NAME_WORDS.includes(k))throw Error('Forbidden data key');next(v);}
+}
+function inspect(value:any,depth=0,parent=''){
  if(depth>20)throw Error('JSON nesting exceeds bound');
  if(Array.isArray(value)){for(const v of value)inspect(v,depth+1);return;}
  if(!value||typeof value!=='object')return;
  for(const[k,v]of Object.entries(value)){
   if(FORBIDDEN_KEYS.has(k))throw Error('Expressions/external content outside spike vocabulary');
-  if(k==='path'&&v!==undefined)checkPath(v as string);inspect(v,depth+1);
+  if(k==='path'&&v!==undefined)checkPath(v as string);
+  if(k==='value'&&parent==='updateDataModel')inspectNames(v,depth+1,true);
+  else if(k==='context'&&parent==='event')inspectNames(v,depth+1,false);
+  else inspect(v,depth+1,k);
  }
 }
 export function inputBindings(s:Snapshot,id:string):Map<string,any>{
@@ -122,7 +137,7 @@ export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
   const s=surfaces.get(id);if(!s)throw Error('Update/delete before create');
   if('deleteSurface' in m){surfaces.delete(id);continue;}
   if('updateComponents' in m){inspect(body);s.componentVersion=m.version;for(const n of body.components){const i=s.nodes.findIndex(c=>c.id===n.id);if(i<0)s.nodes.push(structuredClone(n));else s.nodes[i]=structuredClone(n);}continue;}
-  const path=body.path??'/';if(path!=='/')checkPath(path);inspect(body.value);
+  const path=body.path??'/';if(path!=='/')checkPath(path);inspectNames(body.value,0,true);
   const data=new DataModel(structuredClone(s.data));if(Object.hasOwn(body,'value'))data.set(path,structuredClone(body.value));else data.delete(path);s.data=data.get('/')??{};s.dataVersion=m.version;data.dispose();
  }
  const messages=[...surfaces].flatMap(([id,s])=>[s.create,...(s.nodes.length?[{version:s.componentVersion,updateComponents:{surfaceId:id,components:s.nodes}}]:[]),{version:s.dataVersion,updateDataModel:{surfaceId:id,path:'/',value:s.data}}]);

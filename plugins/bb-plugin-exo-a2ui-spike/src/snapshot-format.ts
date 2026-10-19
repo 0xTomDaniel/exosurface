@@ -84,11 +84,6 @@ export const chartRows=(n:Line)=>[...n.children,...n.children.filter(k=>k.role==
 /** A slider's [min] and [max], with the format's defaults. */
 export const sliderRange=(n:Line)=>({min:num(n.attrs.min??0,n.at,'min'),max:num(n.attrs.max??10,n.at,'max')});
 const P=PAGE_BOUNDS.refReserved.limit.part;
-const fnv=(t:string)=>{let h=0x811c9dc5;for(const c of t){h^=c.charCodeAt(0);h=Math.imul(h,0x01000193)>>>0;}return h.toString(16).padStart(8,'0');};
-/** The id of one of a line's own parts (title, body, label, item…): <base>__<part>. A base too long for the ref
- *  form is shortened and tagged with its hash, so a part never breaks the form, and (refs never hold __) never
- *  meets a ref. */
-const partId=(base:string,part:string)=>{const tail=`${P}${part}`,max=PAGE_BOUNDS.refForm.limit.max;return base.length+tail.length<=max?`${base}${tail}`:`${base.slice(0,max-tail.length-9)}_${fnv(base)}${tail}`;};
 /** Names in a [to] or [sends] list (empty entries ignored). */
 export const refList=(v:string|true|undefined)=>typeof v==='string'?v.split(',').map(x=>x.trim()).filter(Boolean):[];
 /** Node ids of a flow's listitems: the [ref], else n<position>, never one a listitem declares. */
@@ -107,6 +102,12 @@ export function buildSurface(region:Line):Built{
  const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']),written=new Set<string>();let auto=0;
  // Refs written anywhere on the page are kept free for their own lines: an assigned id never takes one.
  const note=(ls:Line[]):void=>{for(const l of ls){const r=l.attrs['ref'];if(typeof r==='string')written.add(r);note(l.children);}};note(region.children);
+ // The page's own parts (title, body, label, item…) are <base>__<part>, allocated against every id the page has or
+ // will have (written refs, assigned ids, other parts): a base too long for the ref form is cut, and a part that
+ // would meet a taken id takes the next free number. Collision-free by construction, not by a hash.
+ const parts=new Set<string>(),taken=(v:string)=>used.has(v)||written.has(v)||parts.has(v);
+ const partId=(base:string,part:string)=>{const tail=`${P}${part}`,max=PAGE_BOUNDS.refForm.limit.max,cut=(n:string)=>`${base.slice(0,max-tail.length-n.length)}${n}${tail}`;
+  let v=cut('');for(let k=2;taken(v);k++)v=cut(`_${String(k)}`);parts.add(v);return v;};
  const claim=(v:string,at:number)=>{if(!ID.test(v))throw new Rejection(`line ${at}: bad ref ${v}`);if(used.has(v))throw new Rejection(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
  const id=(n:Line,hint:string)=>{if(typeof n.attrs.ref==='string')return claim(n.attrs.ref,n.at);let v;do v=`${hint}${++auto}`;while(used.has(v)||written.has(v));return claim(v,n.at);};
  const kids=(ls:Line[])=>ls.filter(k=>!k.role.startsWith('/'));
@@ -128,7 +129,7 @@ export function buildSurface(region:Line):Built{
     if(a.flow){const i=id(n,'fl'),ids=flowNodeIds(items),nodes=items.map((k,j)=>({id:ids.at(j)??'',k}));
      components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a.direction==='string'?a.direction:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>refList(k.attrs.to).map(t=>({from:id,to:t})))}));return i;}
     const i=id(n,'l'),c:any={id:i,component:'List',children:[]};
-    const wrap=n.name!==undefined?partId(i,'wrap'):null,title=partId(i,'title');
+    const wrap=n.name!==undefined?partId(i,'wrap'):null,title=wrap?partId(i,'title'):'';
     if(wrap){claim(wrap,n.at);components.push({id:wrap,component:'Column',children:[]});}
     components.push(c);
     if(wrap){const w=components.find(x=>x.id===wrap);claim(title,n.at);components.push({id:title,component:'Text',text:n.name,variant:'h3'});w.children=[title,i];}
