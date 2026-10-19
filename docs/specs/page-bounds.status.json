@@ -7,8 +7,8 @@
       "pr": 24
     },
     "acceptance-missing-bound-fails": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 24
     },
     "acceptance-rejection-length": {
       "status": "built",
