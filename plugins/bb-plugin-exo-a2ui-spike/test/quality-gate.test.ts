@@ -7,6 +7,7 @@ import {copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
 import {tmpdir} from 'node:os';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {BOUND_KEYS, statement} from '../src/page-bounds.ts';
 
 const PKG = fileURLToPath(new URL('..', import.meta.url));
 const pinned = (JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')) as {devDependencies: Record<string, string>}).devDependencies;
@@ -107,4 +108,27 @@ void test('one added lint finding makes recording refuse, naming the lint gate, 
   assert.equal(r.code, 1, r.out);
   assert.deepEqual(r.out.trim().split('\n'), ['REFUSED lint: lint (typescript-eslint strictTypeChecked): count 1 above baseline 0; recording never raises a count', 'record: refused, quality-baseline.json unchanged']);
   assert.deepEqual(readFileSync(join(dir, 'quality-baseline.json')), bytes);
+});
+
+void test('a failing test is named with its assertion message: a page bound the contract omits is named by the check, for every bound', t => {
+  const dir = fixture(t);
+  recorded(dir);
+  // The package's own missing-bound assertion, run once per bound against the real contract with that bound's
+  // statement removed (as a maintainer's change would leave it).
+  const src = (f: string) => JSON.stringify(new URL(f, `file://${PKG}`).href);
+  writeFileSync(join(dir, 'package.json'), FILES['package.json'].replace('node --test', 'node --experimental-transform-types --disable-warning=ExperimentalWarning --test'));
+  writeFileSync(join(dir, 'test/bounds.test.mjs'), `import test from 'node:test';
+import {BOUND_KEYS, statement} from ${src('src/page-bounds.ts')};
+import {SURFACE_DESCRIPTION} from ${src('src/tool-contract.ts')};
+import {assertContractStatesEveryBound} from ${src('test/contract-bounds.ts')};
+for (const key of BOUND_KEYS) test(\`contract without \${key}\`, () => { assertContractStatesEveryBound(SURFACE_DESCRIPTION.replaceAll(statement(key), '')); });
+`);
+  const r = step('check', dir);
+  assert.equal(r.code, 1, r.out);
+  assert.match(line(r.out, 'tests'), new RegExp(`^FAIL tests: tests \\(npm test\\): ${String(BOUND_KEYS.length)} failing$`));
+  for (const key of BOUND_KEYS) {
+    const i = r.out.split('\n').findIndex(l => l.endsWith(`- contract without ${key}`));
+    assert.ok(i >= 0, key);
+    assert.ok(r.out.split('\n')[i + 1]?.includes(`${key} (${statement(key)})`), `check output names ${key}:\n${r.out.split('\n').slice(i, i + 2).join('\n')}`);
+  }
 });
