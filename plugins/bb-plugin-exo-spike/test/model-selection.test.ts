@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { promptWithPrimaryModel } from '../src/model-selection.ts';
+import { primaryModelDefinition } from '../src/state.ts';
 
-const sol = { provider: 'openai-codex', id: 'gpt-6.1-sol' };
+const sol = { provider: primaryModelDefinition('exo-gpt-6-1-sol').provider, id: 'gpt-6.1-sol' };
 const opus = { provider: 'anthropic', id: 'claude-opus-5-5' };
 function fake(model = opus, thinkingLevel = 'high') {
   const calls: string[] = [], saved: string[] = [];

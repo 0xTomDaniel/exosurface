@@ -4,7 +4,7 @@ import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { requireLocal, local } from './local-config.ts';
 import { realpathSync } from 'node:fs';
-import { HOME, SOURCE, OPTCHAT, FAST, CANONICAL_HOME, CANONICAL_PROFILE, profileHome, save, EXO_MODELS, mainModel, type RuntimeKind } from './state.ts';
+import { HOME, SOURCE, OPTCHAT, FAST, CANONICAL_HOME, CANONICAL_PROFILE, profileHome, save, EXO_MODELS, mainModel, primaryModelDefinition, type RuntimeKind } from './state.ts';
 
 export async function assertNativeOwner(profile: string, kind: RuntimeKind, pid: number | undefined) {
   if (!pid) throw new Error('Pi owner PID missing');
@@ -26,7 +26,9 @@ export function prepareRuntime(profile: string, kind: RuntimeKind) {
     const dir = join(profileHome(profile, kind), 'profiles', profile);
     if (profile !== CANONICAL_PROFILE || !existsSync(join(dir, 'config.json')) || !existsSync(join(dir, 'active-memory.json'))) throw new Error('Existing canonical profile/generation required; never initialize or replace it');
     if (existsSync(join(dir, 'imports', 'pending.json'))) throw new Error('Pending canonical import must be reconciled before handoff');
-    return join(homedir(), '.pi', 'agent');
+    const agentDir = local('primaryAgentDir') || join(homedir(), '.pi', 'agent');
+    requireLocal(agentDir, 'primaryAgentDir');
+    return agentDir;
   }
   const dir = join(HOME, 'profiles', profile);
   if (!existsSync(dir)) {
@@ -55,7 +57,7 @@ export function runtimeLaunch(profile: string, kind: RuntimeKind, threadId: stri
   const surfaceDir = kind === 'canonical' && local('surfaceMain') === 'on' ? local('exosurfacePlugin') : '';
   const surface = surfaceDir && existsSync(join(surfaceDir, 'src', 'workspace-extension.ts')) ? realpathSync(surfaceDir) : '';
   // Primary Exo starts on the model last picked in BB; the isolated live trial stays on Opus.
-  const launchModel = kind === 'canonical' ? EXO_MODELS[mainModel()] : EXO_MODELS['exo-opus-5-5'];
+  const launchModel = kind === 'canonical' ? primaryModelDefinition(mainModel()) : EXO_MODELS['exo-opus-5-5'];
   const args = kind !== 'offline'
     ? ['--approve', ...(surface ? ['-e', join(surface, 'src/workspace-extension.ts')] : []), '-e', OPTCHAT, ...(surface ? ['-e', join(surface, 'src/workspace-frame.ts')] : []), '-e', join(SOURCE, 'src/live.ts'), ...(surface ? ['--skill', join(surface, 'skills/exosurface')] : []), '--provider', launchModel.provider, '--model', launchModel.modelId, '--thinking', launchModel.thinking, '--session-dir', kind === 'canonical' ? join(CANONICAL_HOME, 'pi-sessions') : join(HOME, 'live-pi-sessions')]
     : ['--offline', '--no-extensions', '--no-mcp', '--no-skills', '--no-prompt-templates', '--no-context-files', '-e', join(SOURCE, 'src/fixture.ts'), '-e', FAST, '-e', OPTCHAT, '--provider', 'exo-fixture', '--model', 'offline', '--thinking', 'off', '--session-dir', join(HOME, 'pi-sessions')];
