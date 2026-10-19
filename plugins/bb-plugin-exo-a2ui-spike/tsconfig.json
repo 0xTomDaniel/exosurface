@@ -30,6 +30,7 @@
     "src/runtime.ts",
     "components",
     "lib",
-    "hooks"
+    "hooks",
+    "quality"
   ]
 }

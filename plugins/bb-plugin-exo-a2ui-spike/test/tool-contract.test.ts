@@ -1,3 +1,4 @@
+import'./clone-home.ts';
 import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
 import{CANONICAL_HOME}from'../src/state.ts';
 import{PRESS_PREFIX,PROMPT_SECTION,REMINDER_SECTION,REMINDER,SURFACE_GUIDELINES,SURFACE_DESCRIPTION}from'../src/tool-contract.ts';

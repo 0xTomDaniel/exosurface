@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "host.ts",
+    "server.ts",
+    "app.tsx",
+    "src/workspace-extension.ts",
+    "src/workspace-frame.ts",
+    "src/live.ts",
+    "src/owner-service.ts",
+    "test/**/*.{ts,mts,mjs}"
+  ],
+  "project": [
+    "**/*.{ts,tsx,mts,mjs,js}"
+  ],
+  "typescript": {
+    "config": [
+      "tsconfig.json",
+      "tsconfig.*.json"
+    ]
+  }
+}

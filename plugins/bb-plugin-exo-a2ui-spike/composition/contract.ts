@@ -1,5 +1,5 @@
 // Application vocabulary/IR only. json-render composes; the existing A2UI renderer renders.
-import {z} from 'zod';
+import {z} from 'zod/v4';
 import type {Experimental_CompositionCatalog,Spec} from '@json-render/core';
 import {CATALOG,applyDelta,moduleIds,moduleNodes,moduleData,checkPath,type Snapshot,type Delta} from '../src/workspace.ts';
 export const OFFER='configure_composition', OFFER_ENTRY='exosurface-composition-offer', COMMIT='exosurface-composition-commit', RUN='exosurface-composition-run';
@@ -46,7 +46,10 @@ export function recoverOffer(branch:readonly any[],toolCallId:string):Offer{
  for(const k of ['slots','data'])if(typeof repaired[k]==='string')repaired[k]=JSON.parse(repaired[k]);return validateOffer(repaired);
 }
 const specSchema=z.object({root:z.string(),elements:z.record(z.string(),z.object({type:z.string(),props:z.record(z.string(),z.unknown()),children:z.array(z.string())}).strict()),state:z.record(z.string(),z.unknown()).optional()}).strict();
-export const catalog:Experimental_CompositionCatalog={data:{components:Object.fromEntries(Object.entries(props).map(([type,p])=>[type,{props:p,...(['Column','Row'].includes(type)?{slots:['default']}: {})}]))},validate:value=>({success:specSchema.safeParse(value).success})};
+// json-render bundles its own zod 4 release; the package's zod 3.25 serves this experiment its zod 4 API
+// (zod/v4). Both are zod 4 schemas at runtime, but the declaration files differ, so assert at this one seam.
+type CatalogProps=Experimental_CompositionCatalog['data']['components'][string]['props'];
+export const catalog:Experimental_CompositionCatalog={data:{components:Object.fromEntries(Object.entries(props).map(([type,p])=>[type,{props:p as unknown as CatalogProps,...(['Column','Row'].includes(type)?{slots:['default']}: {})}]))},validate:value=>({success:specSchema.safeParse(value).success})};
 export const fallbacks=(o:Offer)=>Object.fromEntries(Object.entries(o.slots).map(([k,v])=>[k,v.fallback]));
 // Semantic keys, bindings, labels and offered events are app-owned, never inferred from a decision answer.
 export function mapSpec(o:Offer,spec:Spec,copy:Record<string,string>,current:Snapshot|null,complete=false):Delta{
