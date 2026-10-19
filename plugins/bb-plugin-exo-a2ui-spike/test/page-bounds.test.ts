@@ -7,6 +7,7 @@ import {PAGE_BOUNDS, BOUND_KEYS, statement, type Limit} from '../src/page-bounds
 import {SURFACE_DESCRIPTION, contractMisses} from '../src/tool-contract.ts';
 import {COMPONENTS} from '../src/workspace.ts';
 import {CANONICAL_HOME} from '../src/state.ts';
+import {assertContractStatesEveryBound} from './contract-bounds.ts';
 
 interface Tool {description: string; execute: (id: string, args: Record<string, unknown>) => Promise<unknown>}
 async function updateTool(): Promise<Tool> {
@@ -54,7 +55,7 @@ void test('acceptance-contract-complete: the contract states every bound, its va
 });
 
 void test('acceptance-missing-bound-fails: a bound the validator enforces but the contract does not state fails, naming it', () => {
-  assert.deepEqual(contractMisses(SURFACE_DESCRIPTION), [], 'bounds the validator enforces that the update_exosurface contract does not state');
+  assertContractStatesEveryBound(SURFACE_DESCRIPTION);
   // The enforced set is the bounds definition itself (the validator's checks are typed against its keys), so
   // dropping any one bound's statement from the contract is caught and named.
   for (const key of BOUND_KEYS) assert.ok(contractMisses(SURFACE_DESCRIPTION.replaceAll(statement(key), '')).includes(key), key);

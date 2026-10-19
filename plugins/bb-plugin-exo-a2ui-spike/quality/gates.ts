@@ -145,6 +145,37 @@ function compareCounts(result: CountResult, baseline: Counts | null): {ok: boole
   return {ok, lines};
 }
 
+// Each failing test (subtests indented as in the TAP) with the first lines of its assertion message, so the
+// check output itself says what broke. Only the message is kept: no durations or stacks, so it is deterministic.
+const MESSAGE_LINES = 6, MESSAGE_WIDTH = 400;
+function failures(tap: string): string[] {
+  const lines = tap.split('\n'), out: string[] = [];
+  lines.forEach((l, i) => {
+    const head = /^( *)not ok \d+ - /.exec(l);
+    if (!head) return;
+    const indent = (head.at(1) ?? '') + '  ';
+    out.push(l);
+    for (let j = i + 1; j < lines.length; j++) {
+      const y = lines.at(j) ?? '';
+      if (y === `${indent}...` || !y.startsWith(indent)) break;
+      const field = /^error: (.*)$/.exec(y.slice(indent.length));
+      if (!field) continue;
+      const value = field.at(1) ?? '';
+      let message: string[];
+      if (/^[|>][-+]?$/.test(value)) {
+        message = [];
+        for (let k = j + 1; k < lines.length && (lines.at(k) === '' || (lines.at(k) ?? '').startsWith(`${indent}  `)); k++) message.push((lines.at(k) ?? '').slice(indent.length + 2));
+      } else {
+        const q = /^'(.*)'$/.exec(value) ?? /^"(.*)"$/.exec(value);
+        message = [q ? (q.at(1) ?? '').replace(/''/g, "'") : value];
+      }
+      out.push(...message.filter(m => m.trim()).slice(0, MESSAGE_LINES).map(m => `${indent}  ${m.length > MESSAGE_WIDTH ? `${m.slice(0, MESSAGE_WIDTH)}…` : m}`));
+      break;
+    }
+  });
+  return out;
+}
+
 export async function check(dir: string): Promise<Report> {
   const knipRun = knip(dir);
   const typecheck = Promise.all(TYPECHECK_PROJECTS.filter(p => existsSync(join(dir, p)))
@@ -165,7 +196,7 @@ export async function check(dir: string): Promise<Report> {
   else {
     const notOk = tests.value.stdout.split('\n').filter(l => l.startsWith('not ok'));
     hard('tests', tests.value.code === 0 ? null : notOk.length ? `${String(notOk.length)} failing` : `npm test exited ${String(tests.value.code)}`,
-      notOk.length ? notOk : [tests.value.stdout, tests.value.stderr].join('\n').trim().split('\n').slice(-20));
+      notOk.length ? failures(tests.value.stdout) : [tests.value.stdout, tests.value.stderr].join('\n').trim().split('\n').slice(-20));
   }
   const compared = compareCounts(counted, readBaseline(dir));
   return {ok: !failed.length && compared.ok, details, lines: [...lines, ...compared.lines]};
