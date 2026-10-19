@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quality gate: one green check per package, debt that only goes down - Exosurface spec</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./.style/spec.css">
+<script defer src="./.viz/runtime.js"></script>
+</head>
+<body>
+<article class="spec" data-spec-version="1" data-spec-contract="shaped-sections-v1">
+
+<header data-anchor="header">
+<h1 data-anchor="title">Quality gate: one green check per package, debt that only goes down</h1>
+<p class="lede" data-anchor="context">The Exosurface plugin package has one deterministic check that says whether a change may land.
+Some gates must be clean; the rest are counts of stricter findings that are recorded and may only go down.</p>
+</header>
+
+<section data-spec-section="user-stories" data-anchor="user-stories" id="user-stories">
+<h2>User stories</h2>
+<p data-user-story data-user-facing="false" data-anchor="story-one-check">As a maintainer or an implementing agent, one check in the package tells me whether my change may land, and it says the same on a fresh clone as on my machine.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-debt-ratchet">As the owner, the recorded counts of stricter findings may only go down, so quality debt is paid off over time and never grows back.</p>
+</section>
+
+<section data-spec-section="acceptance" data-acceptance-scope="traceability" data-anchor="acceptance" id="acceptance">
+<h2>Acceptance criteria</h2>
+<p data-acceptance-criterion data-anchor="acceptance-check-green" data-story="story-one-check" data-project-rule="Green package check"><span data-acceptance-scenario>Given an implementer, When any change to the package is ready for hand-off,</span> <span data-acceptance-observable>Then the package check is green at the change's head on a fresh clone with dependencies installed from the lockfile; this applies to every feature.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-unlisted-fails" data-story="story-one-check"><span data-acceptance-scenario>Given an implementer whose change imports a package that is not a listed dependency, When the implementer runs the package check,</span> <span data-acceptance-observable>Then the check fails, naming the dependency gate and the unlisted package, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-ratchet-raise" data-story="story-debt-ratchet"><span data-acceptance-scenario>Given an implementer whose change adds one unused export, When the implementer runs the package check,</span> <span data-acceptance-observable>Then the check fails, naming the unused-exports gate with its count and its baseline, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-ratchet-record" data-story="story-debt-ratchet"><span data-acceptance-scenario>Given an implementer whose change removes one strictest-type-check error, When the implementer records the baseline,</span> <span data-acceptance-observable>Then the recorded strictest-type-check count is one lower and every other recorded count is unchanged, proven by a unit test: no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-ratchet-no-raise" data-story="story-debt-ratchet"><span data-acceptance-scenario>Given an implementer whose change adds one lint finding, When the implementer records the baseline,</span> <span data-acceptance-observable>Then recording refuses, naming the lint gate, and the baseline is unchanged, proven by a unit test: no screen shows it.</span></p>
+</section>
+
+<section data-spec-section="modular-boundaries" data-anchor="modular-boundaries" id="modular-boundaries">
+<h2>Modular boundaries</h2>
+<p data-modular-boundary data-anchor="boundary-check"><span data-boundary-responsibility>The package check owns every deterministic gate of the package.</span> <span data-boundary-seam>Caller-facing seam: <code>just check</code> in the package directory, its exit status, and one line per failed gate naming it.</span> <span data-boundary-dependency>Dependency direction: self-contained; it runs only tools pinned in the package's own npm dependencies and calls no network service or model.</span> <span data-boundary-scope>Observable scope: pass or fail, with each failed gate named and, for a counted gate, its count and baseline.</span></p>
+<p data-modular-boundary data-anchor="boundary-baseline"><span data-boundary-responsibility>The ratchet baseline owns the recorded count of every counted gate.</span> <span data-boundary-seam>Caller-facing seam: a committed file in the package, read by the check and written only by the record step.</span> <span data-boundary-dependency>Dependency direction: self-contained within the package; the check reads it, and the record step writes it from the check's own counts.</span> <span data-boundary-scope>Observable scope: the counts in the file and in the check's output.</span></p>
+</section>
+
+<section data-anchor="gates" id="gates">
+<h2>Gates</h2>
+<div class="table-scroll" data-anchor="gates-wrap">
+<table data-anchor="gates-table"><caption>What the package check runs and when each gate passes</caption>
+<thead><tr><th>Gate</th><th>Kind</th><th>Passes when</th></tr></thead>
+<tbody>
+<tr data-anchor="gate-types"><td>Type check with the package's own settings</td><td>Clean</td><td>No errors</td></tr>
+<tr data-anchor="gate-deps"><td>Dependencies (knip, unlisted)</td><td>Clean</td><td>Every imported package is a listed dependency</td></tr>
+<tr data-anchor="gate-tests"><td>Tests</td><td>Clean</td><td>Every test passes</td></tr>
+<tr data-anchor="gate-strictest"><td>Strictest type check (@tsconfig/strictest)</td><td>Counted</td><td>Errors at or below the baseline</td></tr>
+<tr data-anchor="gate-lint"><td>Lint (typescript-eslint strictTypeChecked)</td><td>Counted</td><td>Findings at or below the baseline</td></tr>
+<tr data-anchor="gate-unused-files"><td>Unused files (knip)</td><td>Counted</td><td>At or below the baseline</td></tr>
+<tr data-anchor="gate-unused-exports"><td>Unused exports (knip)</td><td>Counted</td><td>At or below the baseline</td></tr>
+<tr data-anchor="gate-unused-types"><td>Unused exported types (knip)</td><td>Counted</td><td>At or below the baseline</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section data-anchor="ratchet" id="ratchet">
+<h2>Ratchet</h2>
+<div class="clauses" data-anchor="ratchet-clauses">
+<p class="clause" data-anchor="ratchet-compare"><span class="clause-id">R1</span> The check compares each counted gate's count with its recorded baseline and fails on any count above it.</p>
+<p class="clause" data-anchor="ratchet-lower"><span class="clause-id">R2</span> A count below its baseline passes, and the check names it as ready to record.</p>
+<p class="clause" data-anchor="ratchet-record"><span class="clause-id">R3</span> The baseline changes only through the record step, which lowers counts and never raises one.</p>
+</div>
+</section>
+
+<section data-anchor="running" id="running">
+<h2>Running the check</h2>
+<div class="clauses" data-anchor="running-clauses">
+<p class="clause" data-anchor="run-fresh"><span class="clause-id">C1</span> The check runs on a fresh clone after a clean npm install from the package's lockfile; every tool it needs is a pinned development dependency.</p>
+<p class="clause" data-anchor="run-tests-resolve"><span class="clause-id">C2</span> Every test runs from the package's own install, including tests of the archived composition experiment the live extension imports; the package lists every dependency that experiment needs.</p>
+<p class="clause" data-anchor="run-tests-fixed"><span class="clause-id">C3</span> A failing test is fixed to the package's current behaviour; the tests gate never turns green by deleting, skipping or quarantining a test.</p>
+<p class="clause" data-anchor="run-agents"><span class="clause-id">C4</span> The package's agent instructions name the package check as the gate to run before hand-off.</p>
+</div>
+</section>
+
+</article>
+</body>
+</html>

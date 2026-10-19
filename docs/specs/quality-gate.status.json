@@ -1,0 +1,26 @@
+{
+  "spec": "quality-gate.spec.html",
+  "accepted_commit": "9aabe3c",
+  "criteria": {
+    "acceptance-check-green": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-unlisted-fails": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-ratchet-raise": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-ratchet-record": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-ratchet-no-raise": {
+      "status": "planned",
+      "pr": null
+    }
+  }
+}
