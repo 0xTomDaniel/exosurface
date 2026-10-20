@@ -1,9 +1,13 @@
 // Surfaces as conversation history: every version of every surface, derived from the
 // native session (never a second source of truth), plus the system's rule for keeping
 // the live canvas small. The agent never manages the past; nothing is ever deleted.
-import {applyDelta,moduleIds,moduleNodes,validateSnapshot,MAX_BYTES,MAX_SURFACES,RESET,PUBLICATION,UPDATE,SURFACE_UPDATE_TOOL,type Snapshot,type Delta} from './workspace.ts';
+import {applyDelta,moduleIds,moduleNodes,validateSnapshot,MAX_SURFACES,SURFACE_OVER,RESET,PUBLICATION,UPDATE,SURFACE_UPDATE_TOOL,type Snapshot,type Delta} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
-import {PAGE_BOUNDS,statement} from './page-bounds.ts';
+import {statement} from './page-bounds.ts';
+// Retirement keeps the live surface as small as before #23: at most MAX_SURFACES pages and, by bytes, today's
+// threshold (0.9 of the former 40 KB ceiling). The derived ceiling (internal-limits.ts) is far above it and is only
+// what a call's own pages must fit under; retirement never holds more pages because of it.
+const RETIRE_BYTES=36864;
 import {checkCall,Rejection} from './page-validator.ts';
 
 export type Action='drew'|'edited'|'changed'|'brought back'|'retired'|'withdrawn';
@@ -66,17 +70,16 @@ const idsAfter=(current:Snapshot|null,messages:any[])=>{const order=current?modu
 export function retirement(current:Snapshot|null,messages:any[],layout:Delta['layout'],protect:readonly string[]):{messages:any[];retired:string[]}{
  const baseRevision=current?.revision??0,retired:string[]=[];let all=messages;
  for(let guard=0;guard<64;guard++){
-  // The call's page changes, with the retirements added so far, stay within their bounds, measured on exactly
-  // what applyDelta measures (named in the contract's words, never a schema error or a bare 'exceeds bound').
+  // The call's page changes, with the retirements added so far, stay within their bound (named, never a schema error).
   const delta={baseRevision,revision:baseRevision+1,messages:all,...(layout?{layout}:{})};
-  checkCall({changes:all.length,bytes:JSON.stringify(delta).length});
+  checkCall({changes:all.length});
   let next:Snapshot;try{next=applyDelta(current,delta);}
-  catch(e){const tooMany=String(e).includes('too_big')||String(e).includes(`exceeds ${String(PAGE_BOUNDS.callSize.limit.max)}KB`);if(!tooMany)throw e;next=null as any;}
+  catch(e){const tooMany=String(e).includes('too_big')||String(e).includes(SURFACE_OVER);if(!tooMany)throw e;next=null as any;}
   const ids=next?moduleIds(next):idsAfter(current,all);
   const bytes=next?JSON.stringify(next).length:Infinity;
-  if(next&&ids.length<=MAX_SURFACES&&bytes<=MAX_BYTES*0.9)return {messages:all,retired};
+  if(next&&ids.length<=MAX_SURFACES&&bytes<=RETIRE_BYTES)return {messages:all,retired};
   const keep=new Set([...protect,...(next?.layout?.focus?[next.layout.focus]:[]),...(next?.layout?.beside??[])]);
-  const victim=ids.find(id=>!keep.has(id)&&!retired.includes(id));if(!victim){if(next)return {messages:all,retired};throw new Rejection(`Call rejected: this call's pages alone exceed the surface. Bound: ${statement('callPages')}; ${statement('callSize')}.`);}
+  const victim=ids.find(id=>!keep.has(id)&&!retired.includes(id));if(!victim){if(next)return {messages:all,retired};throw new Rejection(`Call rejected: this call's pages alone exceed the surface. Bound: ${statement('callPages')}.`);}
   retired.push(victim);all=[...all,{version:'v0.9.1',deleteSurface:{surfaceId:victim}}];
  }
  throw Error('Retirement did not converge');

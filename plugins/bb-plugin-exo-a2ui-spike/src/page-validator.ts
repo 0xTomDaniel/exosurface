@@ -3,7 +3,7 @@
 // bound in the definition (the type makes it total), and every limit and every word of a rejection comes
 // from the definition. A rejection names the page or call, the element by its ref, the attribute and the
 // bound in the tool contract's words.
-import {PAGE_BOUNDS, BOUND_KEYS, statement, formPattern, kilobytes, type BoundKey, type Subject, type Limit} from './page-bounds.ts';
+import {PAGE_BOUNDS, BOUND_KEYS, statement, formPattern, type BoundKey, type Subject, type Limit} from './page-bounds.ts';
 import {cells, prop, tableParts, chartRows, sliderRange, refList, flowNodeIds, choiceOptions, type Line} from './snapshot-format.ts';
 
 /** A rejection Exo receives as written: plain words, naming the bound or the line. Anything else that fails a
@@ -14,7 +14,7 @@ interface Measured {value: string | number | undefined; where?: string}
 interface Element {subject: Subject; line: Line; who: string}
 interface PageFacts {sid: string; components: readonly ComponentNode[]}
 interface ComponentNode {id: string; children?: readonly string[]; child?: string; tabs?: readonly {child: string}[]}
-export interface CallFacts {snapshot?: string | undefined; edits?: readonly {lines?: string | undefined}[] | undefined; delete?: readonly string[] | undefined; beside?: readonly string[] | undefined; pages?: number; bytes?: number; changes?: number}
+export interface CallFacts {snapshot?: string | undefined; edits?: readonly {lines?: string | undefined}[] | undefined; delete?: readonly string[] | undefined; beside?: readonly string[] | undefined; pages?: number; pageChars?: readonly {sid: string; chars: number}[]; changes?: number}
 
 type Check =
   | {at: 'line'; measure: (l: Line) => Measured[]}
@@ -132,7 +132,7 @@ const CHECKS: {[K in BoundKey]: Check} = {
   deletePerCall: {at: 'call', measure: c => one(c.delete?.length)},
   besidePages: {at: 'call', measure: c => one(c.beside?.length)},
   callPages: {at: 'call', measure: c => one(c.pages)},
-  callSize: {at: 'call', measure: c => one(c.bytes)},
+  pageLength: {at: 'call', measure: c => (c.pageChars ?? []).map(p => ({value: p.chars, where: ` (page ${p.sid})`}))},
   callChanges: {at: 'call', measure: c => one(c.changes)},
 };
 
@@ -161,7 +161,7 @@ function broken(key: BoundKey, who: string, m: Measured): string | undefined {
     case 'choice': return typeof v === 'string' && !l.values.includes(v) ? `${who} has ${withValue(attr, v)}` : undefined;
     case 'range': return typeof v === 'number' && (v < l.min || v > l.max || (l.integer && !Number.isInteger(v))) ? `${who} has ${withValue(attr, v)}` : undefined;
     case 'form': return typeof v === 'string' && !formPattern(key === 'flowRefForm' ? 'flowRefForm' : 'refForm').test(v) ? `${who} has the name ${JSON.stringify(v)}` : undefined;
-    case 'size': return typeof v === 'number' && v > (l.unit === 'KB' ? kilobytes(l.max) : l.max) ? `${who}: ${attr}${where} is ${String(v)} ${l.unit === 'KB' ? `characters, over ${String(kilobytes(l.max))} (${String(l.max)} KB)` : l.unit}` : undefined;
+    case 'size': return typeof v === 'number' && v > l.max ? `${who}: ${attr}${where} is ${String(v)} ${l.unit}` : undefined;
     case 'rule': case 'reserved': return undefined;
   }
 }

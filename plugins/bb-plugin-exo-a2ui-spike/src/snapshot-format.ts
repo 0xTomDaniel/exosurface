@@ -92,7 +92,13 @@ export const flowNodeIds=(items:Line[])=>{const taken=new Set(items.flatMap(k=>t
 /** A radiogroup's or listbox's options with their values: the [value], else one made from the label that no other option has. */
 export const choiceOptions=(n:Line)=>{const opts=n.children.filter(k=>k.role==='radio'||k.role==='option'),taken=new Set(opts.flatMap(k=>typeof k.attrs['value']==='string'?[k.attrs['value']]:[]));
  return opts.map(k=>{const label=k.name??k.text??'';if(typeof k.attrs['value']==='string')return {line:k,label,value:k.attrs['value']};const base=optionValue(label);let v=base;for(let c=2;taken.has(v);c++)v=`${base}_${String(c)}`;taken.add(v);return {line:k,label,value:v};});};
-type Built={sid:string;title?:string;components:any[];data:Record<string,unknown>};
+/** The pageLength measure: the page in the snapshot format without [ref=…] and without indentation (each line's leading
+ *  spaces removed, lines joined by newlines). For a draw it is the page as written; for an edit, the whole page it leaves. */
+export function pageChars(region:Line):number{
+ const bare=(l:Line):Line=>({...l,attrs:Object.fromEntries(Object.entries(l.attrs).filter(([k])=>k!=='ref')),children:l.children.map(bare)});
+ return formatLines([bare(region)]).split('\n').map(x=>x.trimStart()).join('\n').length;
+}
+type Built={sid:string;title?:string;components:any[];data:Record<string,unknown>;chars:number};
 /** One region line → one surface (components root-first, data). Helper nodes get ids derived
  *  from their parent (`<id>__label`, `<id>__body`, …) so translation is deterministic. */
 export function buildSurface(region:Line):Built{
@@ -162,7 +168,7 @@ export function buildSurface(region:Line):Built{
  const root:any={id:'root',component:'Column',children:[]};components.push(root);root.children=kids(body).map(build);
  components.sort((x,y)=>x.id==='root'?-1:y.id==='root'?1:0);
  checkComponents(sid,components);
- return {sid,title:region.name,components,data};
+ return {sid,title:region.name,components,data,chars:pageChars(region)};
 }
 
 const create=(sid:string)=>({version:'v0.9.1',createSurface:{surfaceId:sid,catalogId:EXO_CATALOG}});
@@ -247,7 +253,7 @@ const isDefault=(v:unknown)=>v===''||v===false||(Array.isArray(v)&&!v.length)||v
 /** Messages that (re)draw surfaces, apply edits and delete surfaces against the committed canvas.
  *  A redrawn surface keeps the person's input values by component id when the new line leaves them at default. */
 export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edits?:Edit[];delete?:string[]},history?:(surface:string)=>Snapshot|null){
- const existing=new Set(current?moduleIds(current):[]),messages:any[]=[],drawn:string[]=[],edited:string[]=[];
+ const existing=new Set(current?moduleIds(current):[]),messages:any[]=[],drawn:string[]=[],edited:string[]=[],pages:{sid:string;chars:number}[]=[];
  const replace=(b:Built)=>{
   let data=b.data;
   if(current&&existing.has(b.sid)){
@@ -255,7 +261,7 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
    for(const n of b.components)if(n.value?.path){const o=oldNodes.get(n.id);if(o?.value?.path&&o.component===n.component&&isDefault(data[n.id])){const v=atPath(old,o.value.path);if(v!==undefined)data[n.id]=v;}}
    messages.push({version:'v0.9.1',deleteSurface:{surfaceId:b.sid}});
   }
-  messages.push(...surfaceMessages(b,data));existing.add(b.sid);
+  messages.push(...surfaceMessages(b,data));existing.add(b.sid);pages.push({sid:b.sid,chars:b.chars});
  };
  for(const r of args.snapshot?parseLines(args.snapshot):[]){const b=buildSurface(r);if(drawn.includes(b.sid))throw new Rejection(`Page ${b.sid} drawn twice`);replace(b);drawn.push(b.sid);}
  const bySurface=new Map<string,Edit[]>();for(const e of args.edits??[])bySurface.set(e.surface,[...(bySurface.get(e.surface)??[]),e]);
@@ -267,5 +273,5 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
  }
  for(const sid of args.delete??[]){if(!existing.has(sid))throw new Rejection(`No page ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
  if(!messages.length)throw new Rejection('Nothing to change: give snapshot, edits or delete');
- return {messages,drawn,edited,deleted:args.delete??[]};
+ return {messages,drawn,edited,deleted:args.delete??[],pages};
 }

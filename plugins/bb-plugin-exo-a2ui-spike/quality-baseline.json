@@ -2,6 +2,6 @@
   "strictest-typecheck": 238,
   "lint": 3768,
   "unused-files": 0,
-  "unused-exports": 18,
+  "unused-exports": 15,
   "unused-types": 2
 }

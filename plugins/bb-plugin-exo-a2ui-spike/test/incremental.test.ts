@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {CATALOG,UPDATE,applyDelta,validateSnapshot,latestSnapshot,moduleData,moduleNodes,moduleIds,type Delta} from '../src/workspace.ts';
+import {DELTA_CEILING} from '../src/internal-limits.ts';import {CATALOG,UPDATE,MAX_BYTES,applyDelta,validateSnapshot,latestSnapshot,moduleData,moduleNodes,moduleIds,type Delta} from '../src/workspace.ts';
 import {WorkspaceView} from '../src/workspace-view.ts';import {StreamFrames} from '../src/stream-frames.ts';import {delivery} from '../src/delivery.ts';
 const m=(key:string,body:any)=>({version:'v0.9.1',[key]:body});
 const create=(id:string)=>m('createSurface',{surfaceId:id,catalogId:CATALOG});
@@ -24,7 +24,7 @@ test('Progressive initial create/root/child/data accepts dangling references unt
 });
 test('Stable leaf removal/root replacement use official DataModel semantics; stale/unknown/unsafe/oversize updates rejected',()=>{
  const s=initial();const next=applyDelta(s,delta(1,[m('updateDataModel',{surfaceId:'one',path:'/x'})]));assert.equal(moduleData(next,'one').x,undefined);assert.equal(moduleData(s,'one').x,1);
- for(const d of[delta(0,[data('one','/x',2)]),delta(1,[data('absent','/x',2)]),delta(1,[create('one')]),delta(1,[data('one','/__proto__/x','bad')]),delta(1,[data('one','/x','a'.repeat(42000))]),delta(1,[components('one',[{id:'title',component:'Text',text:{call:'evil'}}])]),delta(1,[components('one',[{id:'root',component:'Column',children:['root']}])]),delta(1,[{version:'v0.9',deleteSurface:{surfaceId:'one'}}]),delta(1,[m('createSurface',{surfaceId:'three',catalogId:CATALOG,sendDataModel:true})])])assert.throws(()=>applyDelta(s,d));
+ for(const d of[delta(0,[data('one','/x',2)]),delta(1,[data('absent','/x',2)]),delta(1,[create('one')]),delta(1,[data('one','/__proto__/x','bad')]),delta(1,[data('one','/x','a'.repeat(DELTA_CEILING+1))]),delta(1,[components('one',[{id:'title',component:'Text',text:{call:'evil'}}])]),delta(1,[components('one',[{id:'root',component:'Column',children:['root']}])]),delta(1,[{version:'v0.9',deleteSurface:{surfaceId:'one'}}]),delta(1,[m('createSurface',{surfaceId:'three',catalogId:CATALOG,sendDataModel:true})])])assert.throws(()=>applyDelta(s,d));
 });
 test('Native checkpoint plus deltas restores exactly; failed patches, prose and abandoned branch do not become authority',()=>{
  const s=initial(),d=delta(1,[data('one','/x',2)]),checkpoint={message:{role:'toolResult',toolName:'publish_workspace',details:{workspace:s}}},patch={message:{role:'toolResult',toolName:UPDATE,details:{delta:d}}};
@@ -89,5 +89,5 @@ test('Streaming scanner accepts ONLY delimited complete JSON frames, handles arb
  const frames=[create('one'),components('one',[{id:'root',component:'Text',text:'Quotes " and braces } ] \\ end'}]),data('one','/',{})],text=JSON.stringify({baseRevision:0,messages:frames}),p=new StreamFrames();let last:any;
  for(const c of text){const v=p.append(c);if(v)last=v;}assert.deepEqual(last,{baseRevision:0,messages:frames});
  const q=new StreamFrames();assert.equal(q.append('{"baseRevision":0,"messages":[{"version":"v0.9.1","updateComponents":{"surfaceId":"one","components":[{"id":"root","component":"Text","text":"part'),null);
- assert.equal(new StreamFrames().append('{"messages":['),null);assert.throws(()=>new StreamFrames().append(' '.repeat(90000)));
+ assert.equal(new StreamFrames().append('{"messages":['),null);assert.throws(()=>new StreamFrames().append(' '.repeat(2*MAX_BYTES+1)));
 });
