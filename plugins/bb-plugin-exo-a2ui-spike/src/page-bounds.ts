@@ -35,6 +35,8 @@ const count = (min: number, max: number, unit = '') => ({kind: 'count', min, max
 const atLeast = (min: number) => ({kind: 'count', min, max: null, unit: ''}) as const;
 const choice = <const V extends readonly [string, ...string[]]>(...values: V) => ({kind: 'choice', values}) as const;
 const rule = (text: string) => ({kind: 'rule', rule: text}) as const;
+// The owner's one number for how much Exo writes (#23, option B): a call's snapshot, and each page a call draws or edits.
+const SNAPSHOT_CHARS = 40000;
 const TONES = choice('neutral', 'accent', 'good', 'caution', 'risk');
 
 export const PAGE_BOUNDS = {
@@ -100,13 +102,14 @@ export const PAGE_BOUNDS = {
   listboxSelectedDistinct: {family: 'agreement between parts', on: ['listbox'], attribute: 'options [selected]', limit: rule('have different [value]s (an option without [value] gets its own one)')},
   sendsNameInputs: {family: 'agreement between parts', on: ['button'], attribute: '[sends]', limit: rule('names the [ref]s of textbox, checkbox, slider, radiogroup or listbox lines on the same page')},
   // Call size
-  snapshotLength: {family: 'call size', on: ['call'], attribute: 'snapshot', limit: {kind: 'size', max: 40000, unit: 'characters'}},
+  snapshotLength: {family: 'call size', on: ['call'], attribute: 'snapshot', limit: {kind: 'size', max: SNAPSHOT_CHARS, unit: 'characters'}},
+  // Measured on the page the call produces, so a draw is judged on what it wrote and an edit on the whole page it leaves.
+  pageLength: {family: 'call size', on: ['call'], attribute: 'each page drawn or edited, as it then reads in the snapshot format without [ref=…] and without indentation', limit: {kind: 'size', max: SNAPSHOT_CHARS, unit: 'characters'}},
   editsPerCall: {family: 'call size', on: ['call'], attribute: 'edits', limit: count(0, 24)},
   editLines: {family: 'call size', on: ['call'], attribute: 'lines of one edit', limit: {kind: 'size', max: 20000, unit: 'characters'}},
   deletePerCall: {family: 'call size', on: ['call'], attribute: 'delete', limit: count(0, 8, 'pages')},
   besidePages: {family: 'call size', on: ['call'], attribute: 'beside', limit: count(0, 2, 'pages')},
   callPages: {family: 'call size', on: ['call'], attribute: 'pages drawn or edited (the surface holds this many; older pages move into history)', limit: count(0, 8)},
-  callSize: {family: 'call size', on: ['call'], attribute: 'page changes, together, once translated (the snapshot text plus the structure each line and each page change adds)', limit: {kind: 'size', max: 40, unit: 'KB'}},
   // Within every other call bound only withdrawing a page the same call draws or edits can exceed this one.
   callChanges: {family: 'call size', on: ['call'], attribute: 'page changes (a page drawn or edited counts 3, plus 1 when it replaces a page on the surface; a page withdrawn, or moved into history by the system, counts 1)', limit: count(0, 32)},
 } as const satisfies Record<string, Bound>;
@@ -120,8 +123,6 @@ export const formPattern = (key: 'refForm' | 'flowRefForm') => {
   const f = PAGE_BOUNDS[key].limit;
   return new RegExp(`^[${f.pattern}]{${String(f.min)},${String(f.max)}}$`);
 };
-/** A size bound in KB, as bytes. */
-export const kilobytes = (kb: number) => kb * 1024;
 
 const n = (x: number) => String(x);
 function limitWords(l: Limit): string {

@@ -5,11 +5,13 @@ import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 import {z} from 'zod';
 import {EXO_CATALOG,EXO_COMPONENTS,exoApiCatalog,checkExoComponent} from './exo-catalog.ts';
 import {nextLayout} from './stage.ts';
-import {PAGE_BOUNDS,formPattern,kilobytes} from './page-bounds.ts';
+import {PAGE_BOUNDS,formPattern} from './page-bounds.ts';
+import {SURFACE_CEILING,DELTA_CEILING} from './internal-limits.ts';
 export const CATALOG=basicCatalog.id, PUBLICATION='publish_workspace', UPDATE='apply_workspace', SURFACE_UPDATE_TOOL='update_exosurface', RESET='exosurface-workspace-reset';
 // Basic catalog remains valid for existing surfaces; new surfaces use the Exo superset.
 export const CATALOGS=[CATALOG,EXO_CATALOG];
-export const MAX_BYTES=kilobytes(PAGE_BOUNDS.callSize.limit.max), MAX_SURFACES=PAGE_BOUNDS.callPages.limit.max;
+// The surface's internal size ceiling (internal-limits.ts): derived so that no call within the stated bounds reaches it.
+export const MAX_BYTES=SURFACE_CEILING, MAX_SURFACES=PAGE_BOUNDS.callPages.limit.max, SURFACE_OVER='Surface exceeds its internal size ceiling';
 const MAX_SENDS=PAGE_BOUNDS.buttonSends.limit.max;
 // Protocol words refused as keys of components and messages (no expressions, links or scripts). The keys of a data
 // model and of a button's context are names (input refs), not protocol: only the prototype words, which the bounds
@@ -77,7 +79,7 @@ export function validateInput(n:any,value:unknown){
 }
 export function validateSnapshot(value:unknown):Snapshot{
  const s=snapshotSchema.parse(value);
- if(new TextEncoder().encode(JSON.stringify(s)).length>MAX_BYTES)throw Error(`Workspace exceeds ${String(PAGE_BOUNDS.callSize.limit.max)}KB bound; delete stale surfaces`);
+ if(new TextEncoder().encode(JSON.stringify(s)).length>MAX_BYTES)throw Error(SURFACE_OVER);
  // Data snapshot uses root '/', unlike leaf component bindings.
  inspect(s.messages.map(m=>m.updateDataModel?{...m,updateDataModel:{...m.updateDataModel,path:undefined}}:m));
  if(!s.incremental&&s.messages.length%3)throw Error('Full snapshot uses three consecutive messages per surface');
@@ -127,7 +129,7 @@ export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),r
 export type Delta=z.infer<typeof deltaSchema>;
 export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  const d=deltaSchema.parse(raw);if(d.baseRevision!==(current?.revision??0)||d.revision!==d.baseRevision+1)throw Error('Stale/nonsequential delta');
- if(JSON.stringify(d).length>MAX_BYTES)throw Error('Delta exceeds bound');
+ if(JSON.stringify(d).length>DELTA_CEILING)throw Error('Delta exceeds its internal size ceiling');
  const surfaces=new Map<string,{create:any;nodes:any[];data:any;componentVersion:string;dataVersion:string}>();
  for(const id of current?moduleIds(current):[])surfaces.set(id,{create:structuredClone(current!.messages.find(m=>m.createSurface?.surfaceId===id)),nodes:structuredClone(moduleNodes(current!,id)),data:structuredClone(moduleData(current!,id)),componentVersion:current!.messages.find(m=>m.updateComponents?.surfaceId===id)?.version??'v0.9.1',dataVersion:current!.messages.find(m=>m.updateDataModel?.surfaceId===id)?.version??'v0.9.1'});
  for(const rawMessage of d.messages){

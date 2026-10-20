@@ -177,7 +177,7 @@ export default function workspace(pi:ExtensionAPI){
     if(args.baseRevision!==(current?.revision??0))throw new Rejection(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
     checkCall({snapshot:args.snapshot,edits:args.edits,delete:args.delete,beside:args.beside});
     const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits?.map((e:any)=>({surface:e.page,ref:e.ref,op:e.op,lines:e.lines})) as Edit[]|undefined,delete:args.delete},fromHistory);
-    checkCall({pages:new Set([...change.drawn,...change.edited]).size});
+    checkCall({pages:new Set([...change.drawn,...change.edited]).size,pageChars:change.pages});
     const after=new Set([...live(),...change.drawn,...change.edited].filter(p=>!change.deleted.includes(p)));
     for(const [what,named] of [['focus',args.focus?[args.focus]:[]],['beside',args.beside??[]]] as const)for(const p of named)if(!after.has(p))throw new Rejection(`Call rejected: ${what} names page ${p}, which is not on the surface after this call.`);
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));

@@ -267,13 +267,14 @@ void test('review 2 (B1 search): other downstream checks a snapshot call could b
   for (const said of [sends, slider, focus]) { PLAIN(said); assert.ok(!said.includes(DEFECT), said); }
 });
 
-void test('review 3A: a snapshot within its length whose translation is over the call size is named, not "Delta exceeds bound"', async () => {
+void test('review 3A (option B): a snapshot within its length is accepted end to end, however large its translation', async () => {
   const lines = 40, perLine = Math.floor((PAGE_BOUNDS.snapshotLength.limit.max - 40) / lines) - 14;
   const snapshot = `- region "Long" [ref=long]:\n${Array.from({length: lines}, (_, i) => `  - text: ${String(i).padStart(2, '0')}${'x'.repeat(perLine)}`).join('\n')}`;
   assert.ok(snapshot.length <= PAGE_BOUNDS.snapshotLength.limit.max, String(snapshot.length));
-  const said = await rejection({snapshot});
-  assert.match(said, /^Call rejected: this call: page changes, together, once translated is \d+ characters, over 40960 \(40 KB\)\. Bound: /);
-  assert.ok(said.includes(statement('callSize')) && !said.includes(DEFECT), said);
+  // Translated well over the former 40 KB, it was rejected before option B.
+  const {snapshotToA2ui} = await import('../src/snapshot-format.ts');
+  assert.ok(JSON.stringify(snapshotToA2ui(snapshot)).length > 40 * 1024);
+  await accepted(snapshot);
 });
 
 void test('review 3B: an empty name in [to] is ignored by the validator and the translation alike', async () => {
@@ -318,4 +319,147 @@ void test('guard: pages at every element bound are accepted; a call within every
   const deeper = page('deeper', [...Array.from({length: B.pageDepth.limit.max}, (_, i) => `${'  '.repeat(i)}- group:`), `${'  '.repeat(B.pageDepth.limit.max)}- text: too deep`]);
   const said = await rejection({snapshot: deeper});
   assert.ok(said.includes(statement('pageDepth')) && !said.includes(DEFECT), said);
+});
+
+// ---- Option B (#23): the page bound in snapshot words, the band it leaves, and the derived internal ceilings ----
+const OLD_CAP = 40 * 1024; // the former translated limit, for the no-regression claims only
+const snapshotFormat = () => import('../src/snapshot-format.ts');
+
+void test('pageLength: an edit that leaves a page over the bound is named on the page, in the contract\'s words', async () => {
+  const x = await liveExtension();
+  await commit(x, 'draw', {baseRevision: 0, snapshot: `- region "Long" [ref=long]:\n  - text [ref=a]: ${'y'.repeat(30000)}`});
+  const said = await x.tool.execute('grow', {baseRevision: 1, edits: [{page: 'long', ref: 'a', op: 'insertAfter', lines: `- text [ref=b]: ${'z'.repeat(15000)}`}]}).then(() => '', (e: unknown) => (e as Error).message);
+  assert.match(said, /^Call rejected: this call: each page drawn or edited, .* \(page long\) is \d+ characters\. Bound: /);
+  assert.ok(said.includes(statement('pageLength')) && !said.includes(DEFECT), said);
+});
+
+void test('the band (accepted 1d trade-off): a page built by edits to 40,000-40,960 measured chars was accepted before; its next edit is now rejected', async () => {
+  const {changeMessages, pageChars, surfaceLines} = await snapshotFormat(), {applyDelta} = await import('../src/workspace.ts');
+  const x = await liveExtension();
+  await commit(x, 'draw', {baseRevision: 0, snapshot: '- region "P" [ref=p]:\n  - text [ref=a]: x'});
+  let s = applyDelta(null, {baseRevision: 0, revision: 1, messages: changeMessages(null, {snapshot: '- region "P" [ref=p]:\n  - text [ref=a]: x'}).messages});
+  // Three edits of 13,420 characters, each translated under the former 40 KB cap: all accepted before option B.
+  for (const ref of ['b', 'c', 'e']) {
+    const {messages} = changeMessages(s, {edits: [{surface: 'p', ref: 'a', op: 'insertAfter', lines: `- text [ref=${ref}]: ${'y'.repeat(13420)}`}]});
+    const delta = {baseRevision: s.revision, revision: s.revision + 1, messages};
+    assert.ok(JSON.stringify(delta).length <= OLD_CAP, `edit ${ref} was within the former cap`);
+    s = applyDelta(s, delta);
+    await commit(x, `old-${ref}`, {baseRevision: delta.baseRevision, snapshot: undefined, edits: [{page: 'p', ref: 'a', op: 'insertAfter', lines: `- text [ref=${ref}]: ${'y'.repeat(13420)}`}]}).catch(() => {
+      // Under option B this third edit is itself over the page bound; old history holds it, so replay it as committed.
+      for (const h of x.on.get('message_end') ?? []) h({message: {role: 'toolResult', toolName: 'update_exosurface', isError: false, toolCallId: `old-${ref}`, details: {delta}}}, {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}});
+    });
+  }
+  const measured = pageChars(surfaceLines(s, 'p'));
+  assert.ok(measured > PAGE_BOUNDS.pageLength.limit.max && measured < OLD_CAP, `in the band: ${String(measured)}`);
+  const said = await x.tool.execute('next', {baseRevision: s.revision, edits: [{page: 'p', ref: 'a', op: 'replace', lines: '- text [ref=a]: w'}]}).then(() => '', (e: unknown) => (e as Error).message);
+  assert.ok(said.includes(`(page p) is ${String(measured)} characters`) && said.includes(statement('pageLength')), said);
+  PLAIN(said);
+});
+
+// Seeded pages over every role in the contract, with long refs, escapes, CJK, astral and control characters.
+function rng(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function pages(seed: number, count: number): string[] {
+  const r = rng(seed), B = PAGE_BOUNDS, int = (lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1)), pick = <X>(xs: readonly X[]): X => xs.at(int(0, xs.length - 1)) as X;
+  const ALPHA = ['a', 'b', ' ', '"', '\\', '語', '\u0001', '\t', '😀', 'Z'], CELL = ['a', '"', '語', '\u0001', ' ', '7'];
+  const str = (max: number, alpha = ALPHA) => { let o = ''; const n = int(1, Math.max(1, max)); while (o.length < n) o += pick(alpha); return o.slice(0, n).replace(/[\uD800-\uDBFF]$/, 'a').trim() || 'a'; };
+  const name = (max: number) => JSON.stringify(str(max)), ATTR = ['a', 'b', '語', '"', '\u0001', '-'];
+  let n = 0; const ref = (max: number = B.refForm.limit.max) => { n++; return `r${String(n)}${'k'.repeat(int(0, max - 1 - String(n).length))}`; };
+  const out: string[] = [];
+  for (let p = 0; p < count; p++) {
+    const inputs: string[] = [], lines: string[] = [];
+    const el = (d: number): string[] => {
+      const i = '  '.repeat(d), role = pick(['heading', 'text', 'separator', 'group', 'article', 'collapsible', 'list', 'timeline', 'flow', 'tablist', 'note', 'meter', 'table', 'figure', 'textbox', 'checkbox', 'slider', 'radiogroup', 'listbox', 'button']);
+      const kids = () => d < 4 ? Array.from({length: int(1, 2)}, () => el(d + 1)).flat() : [`${i}  - text: leaf`];
+      switch (role) {
+        case 'heading': return [`${i}- heading ${name(60)} [ref=${ref()}] [level=${String(int(1, 3))}]`];
+        case 'text': return [`${i}- text [ref=${ref()}]${r() < 0.3 ? ' [caption]' : ''}: ${str(int(1, 600))}`];
+        case 'separator': return [`${i}- separator`];
+        case 'group': return [`${i}- group ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]${r() < 0.5 ? ' [layout=row]' : ''}:`, ...kids()];
+        case 'article': return [`${i}- article ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]:`, ...kids()];
+        case 'collapsible': return [`${i}- group ${name(B.groupTitle.limit.max)} [ref=${ref()}] [collapsible]${r() < 0.5 ? ' [expanded]' : ''}:`, `${i}  - /summary: ${str(B.groupSummary.limit.max)}`, ...kids()];
+        case 'list': return [`${i}- list ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]:`, ...Array.from({length: int(1, 4)}, () => `${i}  - listitem: ${str(40)}`)];
+        case 'timeline': return [`${i}- list [ref=${ref()}] [timeline]:`, ...Array.from({length: int(1, B.timelineItems.limit.max)}, () => `${i}  - listitem ${name(B.timelineLabel.limit.max)} [when=${str(B.timelineWhen.limit.max, ATTR)}] [state=${pick(B.timelineState.limit.values)}]: ${str(B.timelineDetail.limit.max)}`)];
+        case 'flow': { const ids = Array.from({length: int(1, B.flowNodes.limit.max)}, () => ref(B.flowRefForm.limit.max)); let links = B.flowLinks.limit.max;
+          return [`${i}- list ${name(B.flowCaption.limit.max)} [ref=${ref()}] [flow] [direction=${pick(B.flowDirection.limit.values)}]:`, ...ids.map((id, k) => { const to = ids.filter((_, j) => j !== k && r() < 0.3).slice(0, links); links -= to.length;
+            return `${i}  - listitem ${name(B.flowLabel.limit.max)} [ref=${id}]${to.length ? ` [to=${to.join(',')}]` : ''} [tone=${pick(B.tone.limit.values)}]: ${str(B.flowDetail.limit.max)}`; })]; }
+        case 'tablist': return [`${i}- tablist [ref=${ref()}]:`, ...Array.from({length: int(1, 2)}, () => [`${i}  - tab ${name(20)}:`, `${i}    - text: ${str(30)}`]).flat()];
+        case 'note': return [`${i}- note ${name(B.noteTitle.limit.max)} [ref=${ref()}] [tone=${pick(B.noteTone.limit.values)}]: ${str(800)}`];
+        case 'meter': return [`${i}- meter ${name(B.meterLabel.limit.max)} [ref=${ref()}] [tone=${pick(B.tone.limit.values)}] [progress=${String(r())}]: ${str(B.meterValue.limit.max)}`, `${i}  - /detail: ${str(B.meterDetail.limit.max)}`];
+        case 'table': { const cols = int(1, B.tableColumns.limit.max), cells = (max: number) => Array.from({length: cols}, () => str(max, CELL)).join(' | ');
+          return [`${i}- table ${name(B.tableCaption.limit.max)} [ref=${ref()}] [highlight=${String(int(0, cols - 1))}]:`, `${i}  - row [header]: ${cells(B.tableHeaderCell.limit.max)}`, ...Array.from({length: int(1, B.tableRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${cells(60)}`)]; }
+        case 'figure': return [`${i}- figure ${name(B.figureCaption.limit.max)} [ref=${ref()}] [chart=${pick(B.chartKind.limit.values)}] [unit=${str(B.figureUnit.limit.max, ATTR)}] [max=1e9]:`,
+          ...Array.from({length: int(1, B.figureRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${str(B.figureRowLabel.limit.max, CELL)} | ${pick(['1e8', '7', '0.5', '12,000'])} | ${str(B.figureRowNote.limit.max, CELL)}`)];
+        case 'textbox': { const id = ref(); inputs.push(id); return [`${i}- textbox ${name(40)} [ref=${id}]${r() < 0.5 ? ' [multiline]' : ''}: ${str(B.textboxValue.limit.max)}`]; }
+        case 'checkbox': { const id = ref(); inputs.push(id); return [`${i}- checkbox ${name(40)} [ref=${id}]${r() < 0.5 ? ' [checked]' : ''}`]; }
+        case 'slider': { const id = ref(); inputs.push(id); return [`${i}- slider ${name(40)} [ref=${id}] [min=1e1] [max=1e9]: ${String(int(10, 1e9))}`]; }
+        case 'radiogroup': case 'listbox': { const id = ref(), single = role === 'radiogroup', item = single ? 'radio' : 'option'; inputs.push(id); let picked = 0;
+          return [`${i}- ${role} ${name(40)} [ref=${id}]${r() < 0.5 ? ' [chips]' : ''}:`, ...Array.from({length: int(1, 30)}, (_, k) => {
+            const pickIt = (single ? picked < 1 : picked < B.listboxSelected.limit.max) && r() < 0.5; if (pickIt) picked++;
+            return `${i}  - ${item} ${name(30)}${pickIt ? (single ? ' [checked]' : ' [selected]') : ''}${r() < 0.6 ? ` [value=${String(k)}${str(B.optionValue.limit.max - 3, ATTR)}]` : ''}`; })]; }
+        default: { const sends = inputs.filter(() => r() < 0.5).slice(0, B.buttonSends.limit.max);
+          return [`${i}- button ${name(40)} [ref=${ref()}]${r() < 0.5 ? ` [action=${ref()}]` : ''}${r() < 0.5 ? ' [borderless]' : ''}${sends.length ? ` [sends=${sends.join(',')}]` : ''}`]; }
+      }
+    };
+    for (let k = int(1, 6); k > 0; k--) lines.push(...el(1));
+    out.push(`- region ${name(60)} [ref=${ref()}]:\n${lines.join('\n')}`);
+  }
+  return out;
+}
+
+void test('no regression and derivation: over seeded pages of every role, the page measure never exceeds the former translated size, and pageBytes bounds the translation', async () => {
+  const {snapshotToA2ui, parseLines, surfaceLines, pageChars, SNAPSHOT_FORMAT} = await snapshotFormat(), {applyDelta, moduleIds, moduleNodes} = await import('../src/workspace.ts');
+  const {pageBytes} = await import('../src/internal-limits.ts');
+  // Every role the contract lists is generated (heading … button; list kinds and the collapsible group included).
+  const roles = new Set(SNAPSHOT_FORMAT.split('Roles:')[1]?.split('Bounds')[0]?.split('\n').map(l => /^ {2}([a-z]+)\b/.exec(l)?.[1]).filter((x): x is string => x !== undefined));
+  const sample = pages(23, 400), seen = new Set<string>(), utf8 = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length;
+  let accepted = 0;
+  for (const snap of sample) {
+    for (const l of snap.split('\n')) { const role = /^\s*- ([a-z]+)/.exec(l)?.[1]; if (role) seen.add(role); }
+    let s; let messages;
+    try { messages = snapshotToA2ui(snap); s = applyDelta(null, {baseRevision: 0, revision: 1, messages}); } catch { continue; }
+    accepted++;
+    const sid = moduleIds(s).at(0) ?? '', translated = JSON.stringify(messages).length, first = parseLines(snap).at(0);
+    if (!first) continue;
+    const drawn = pageChars(first), back = pageChars(surfaceLines(s, sid));
+    // Edits are judged on the page read back: never more than its translation, so nothing within the former cap
+    // measures over it (the band 40,000 to the former cap is the one accepted trade-off). A draw never measures more than it wrote.
+    assert.ok(back <= translated, `read back ${String(back)} > translated ${String(translated)}\n${snap.slice(0, 400)}`);
+    assert.ok(drawn <= snap.length, `drawn ${String(drawn)} > written ${String(snap.length)}`);
+    const nodes = moduleNodes(s, sid) as unknown[], links = nodes.reduce((k: number, c) => k + ((c as {edges?: unknown[]}).edges?.length ?? 0), 0);
+    assert.ok(utf8(messages) <= pageBytes(Math.min(drawn, back), nodes.length, links, 0), `pageBytes under the translation: ${String(utf8(messages))}`);
+  }
+  for (const role of roles) assert.ok(seen.has(role), `generated ${role}`);
+  assert.ok(accepted >= 300, `accepted ${String(accepted)} of ${String(sample.length)}`);
+});
+
+void test('worst case: a 40,000-character snapshot built for translated size passes execute, and the internal ceilings exceed it', async () => {
+  const B = PAGE_BOUNDS, L = await import('../src/internal-limits.ts'), {MAX_BYTES} = await import('../src/workspace.ts');
+  const R = (t: string) => longRef(t), ctl = '\u0001';
+  // Structure: buttons with the longest refs sending the longest-ref inputs (about 11.6x). Content: selected option
+  // values of control characters (escaped to 6 bytes, stored twice: 12 bytes per character).
+  const buttons = (p: number) => `- region "B" [ref=${R(`pb${String(p)}`)}]:\n${Array.from({length: 20}, (_, k) => `  - checkbox "c" [ref=${R(`c${String(p)}_${String(k)}`)}] [checked]`).join('\n')}\n${Array.from({length: 20}, (_, k) => `  - button "b" [ref=${R(`b${String(p)}_${String(k)}`)}] [sends=${R(`c${String(p)}_${String(k)}`)}]`).join('\n')}`;
+  const values = (p: number, per: number) => `- region "V" [ref=${R(`pv${String(p)}`)}]:\n${Array.from({length: 2}, (_, l) => `  - listbox "L" [ref=${R(`l${String(p)}_${String(l)}`)}]:\n${Array.from({length: B.listboxSelected.limit.max}, (_, k) => `    - option "o" [selected] [value=${String(k).padStart(2, '0')}${ctl.repeat(per)}]`).join('\n')}`).join('\n')}`;
+  const head = [0, 1, 2, 3].map(buttons).join('\n');
+  const build = (per: number) => `${head}\n${[0, 1, 2, 3].map(p => values(p, per)).join('\n')}`;
+  let per = B.optionValue.limit.max - 2;
+  while (build(per).length > B.snapshotLength.limit.max) per--;
+  const snapshot = build(per);
+  assert.ok(snapshot.length <= B.snapshotLength.limit.max && snapshot.length > B.snapshotLength.limit.max * 0.95, String(snapshot.length));
+  const t = await updateTool(), result = await t.execute('worst', {baseRevision: 0, snapshot}) as {details: {delta: unknown}};
+  const bytes = new TextEncoder().encode(JSON.stringify(result.details.delta)).length;
+  assert.ok(bytes > 4 * 40 * 1024, `built for size: ${String(bytes)} bytes from ${String(snapshot.length)} characters`);
+  assert.ok(L.DELTA_CEILING > bytes && L.SURFACE_CEILING > bytes && MAX_BYTES === L.SURFACE_CEILING, `ceilings ${String(L.DELTA_CEILING)} / ${String(L.SURFACE_CEILING)} over ${String(bytes)}`);
+  // The ceilings cover the bound's own worst case: every page at its limits, the surface full, a call's deletes.
+  assert.ok(L.PAGE_BYTES >= L.BYTES_PER_CHAR * B.pageLength.limit.max && L.SURFACE_CEILING >= B.callPages.limit.max * L.PAGE_BYTES && L.DELTA_CEILING > L.SURFACE_CEILING);
+  // The live preview never stops before a valid call's arguments end: escaped snapshot and edits at their bounds.
+  assert.ok(2 * MAX_BYTES > L.ESCAPED_BYTES * (B.snapshotLength.limit.max + B.editsPerCall.limit.max * B.editLines.limit.max) + 1024);
+});
+
+void test('retirement: a call whose own pages are larger than today\'s threshold is accepted, and older pages still move into history', async () => {
+  const x = await liveExtension();
+  await commit(x, 'small', {baseRevision: 0, snapshot: ['a', 'b', 'c'].map(p => `- region "${p}" [ref=${p}]:\n  - text: ${p}`).join('\n')});
+  const big = `- region "Big" [ref=big]:\n${Array.from({length: 40}, () => `  - text: ${'"'.repeat(900)}`).join('\n')}`;
+  const r = await x.tool.execute('big', {baseRevision: 1, snapshot: big}) as {details: {retired: string[]; delta: unknown}};
+  assert.ok(JSON.stringify(r.details.delta).length > 36864, 'over today\'s retirement threshold');
+  assert.deepEqual(r.details.retired, ['a', 'b', 'c'], 'retirement by bytes still runs as today');
 });
