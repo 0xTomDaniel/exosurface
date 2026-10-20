@@ -92,11 +92,17 @@ export const flowNodeIds=(items:Line[])=>{const taken=new Set(items.flatMap(k=>t
 /** A radiogroup's or listbox's options with their values: the [value], else one made from the label that no other option has. */
 export const choiceOptions=(n:Line)=>{const opts=n.children.filter(k=>k.role==='radio'||k.role==='option'),taken=new Set(opts.flatMap(k=>typeof k.attrs['value']==='string'?[k.attrs['value']]:[]));
  return opts.map(k=>{const label=k.name??k.text??'';if(typeof k.attrs['value']==='string')return {line:k,label,value:k.attrs['value']};const base=optionValue(label);let v=base;for(let c=2;taken.has(v);c++)v=`${base}_${String(c)}`;taken.add(v);return {line:k,label,value:v};});};
-/** The pageLength measure: the page in the snapshot format without [ref=…] and without indentation (each line's leading
- *  spaces removed, lines joined by newlines). For a draw it is the page as written; for an edit, the whole page it leaves. */
+/** The pageLength measure: the page in the snapshot format without [ref=…] and without indentation (lines joined by
+ *  newlines), each escape counted as the one character it stands for (\| in cells, \n in text, \" and the like in quoted
+ *  names): the same lines formatLines writes, with names and text counted unescaped. For a draw it is the page as
+ *  written; for an edit, the whole page it leaves. */
 export function pageChars(region:Line):number{
- const bare=(l:Line):Line=>({...l,attrs:Object.fromEntries(Object.entries(l.attrs).filter(([k])=>k!=='ref')),children:l.children.map(bare)});
- return formatLines([bare(region)]).split('\n').map(x=>x.trimStart()).join('\n').length;
+ const line=(n:Line):number=>{
+  const attrs=Object.entries(n.attrs).filter(([k])=>k!=='ref').map(([k,v])=>v===true?`[${k}]`:`[${k}=${v}]`).join(' ');
+  const text=n.text!==undefined?2+n.text.replace(/\\\|/g,'|').length:n.children.length?1:0;
+  return 2+n.role.length+(n.name!==undefined?3+n.name.length:0)+(attrs?1+attrs.length:0)+text+n.children.reduce((k,c)=>k+1+line(c),0);
+ };
+ return line(region);
 }
 type Built={sid:string;title?:string;components:any[];data:Record<string,unknown>;chars:number};
 /** One region line → one surface (components root-first, data). Helper nodes get ids derived

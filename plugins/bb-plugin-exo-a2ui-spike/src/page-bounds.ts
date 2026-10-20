@@ -104,7 +104,7 @@ export const PAGE_BOUNDS = {
   // Call size
   snapshotLength: {family: 'call size', on: ['call'], attribute: 'snapshot', limit: {kind: 'size', max: SNAPSHOT_CHARS, unit: 'characters'}},
   // Measured on the page the call produces, so a draw is judged on what it wrote and an edit on the whole page it leaves.
-  pageLength: {family: 'call size', on: ['call'], attribute: 'each page drawn or edited, as it then reads in the snapshot format without [ref=…] and without indentation', limit: {kind: 'size', max: SNAPSHOT_CHARS, unit: 'characters'}},
+  pageLength: {family: 'call size', on: ['call'], attribute: 'each page drawn or edited, as it then reads in the snapshot format without [ref=…] and without indentation, each escape such as \\|, \\n or \\" counted as the one character it stands for', limit: {kind: 'size', max: SNAPSHOT_CHARS, unit: 'characters'}},
   editsPerCall: {family: 'call size', on: ['call'], attribute: 'edits', limit: count(0, 24)},
   editLines: {family: 'call size', on: ['call'], attribute: 'lines of one edit', limit: {kind: 'size', max: 20000, unit: 'characters'}},
   deletePerCall: {family: 'call size', on: ['call'], attribute: 'delete', limit: count(0, 8, 'pages')},

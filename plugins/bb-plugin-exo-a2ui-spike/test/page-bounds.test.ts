@@ -360,36 +360,49 @@ void test('the band (accepted 1d trade-off): a page built by edits to 40,000-40,
 function rng(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function pages(seed: number, count: number): string[] {
   const r = rng(seed), B = PAGE_BOUNDS, int = (lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1)), pick = <X>(xs: readonly X[]): X => xs.at(int(0, xs.length - 1)) as X;
-  const ALPHA = ['a', 'b', ' ', '"', '\\', '語', '\u0001', '\t', '😀', 'Z'], CELL = ['a', '"', '語', '\u0001', ' ', '7'];
-  const str = (max: number, alpha = ALPHA) => { let o = ''; const n = int(1, Math.max(1, max)); while (o.length < n) o += pick(alpha); return o.slice(0, n).replace(/[\uD800-\uDBFF]$/, 'a').trim() || 'a'; };
-  const name = (max: number) => JSON.stringify(str(max)), ATTR = ['a', 'b', '語', '"', '\u0001', '-'];
+  // Every character the snapshot format escapes or treats specially, in every text field: | (cell separator), \n (line
+  // break), " and \ (names), [ ] (attributes), : (text), # (comments), plus = , { } and control, CJK and astral characters.
+  const ALPHA = ['a', 'b', ' ', '"', '\\', '語', '\u0001', '\t', '😀', 'Z', '|', '[', ']', ':', '#', ',', '=', '{', '}', '\n'], CELL = ALPHA;
+  // Each page leans on one character (half the characters of every field), so an escape that costs more in the
+  // snapshot than in the JSON dominates some pages.
+  // Half the pages hold one element with every count and length at its bound, so no other element dilutes it.
+  let heavy = 'a', big = false;
+  const ROLES = ['heading', 'text', 'separator', 'group', 'article', 'collapsible', 'list', 'timeline', 'flow', 'tablist', 'note', 'meter', 'table', 'figure', 'textbox', 'checkbox', 'slider', 'radiogroup', 'listbox', 'button'];
+  const str = (max: number, alpha = ALPHA) => { let o = ''; const n = big ? Math.max(1, max) : int(1, Math.max(1, max)); while (o.length < n) o += r() < 0.5 && alpha.includes(heavy) ? heavy : pick(alpha); return o.slice(0, n).replace(/[\uD800-\uDBFF]$/, 'a').trim() || 'a'; };
+  const many = (hi: number) => big ? hi : int(1, hi);
+  const name = (max: number) => JSON.stringify(str(max)), ATTR = ['a', 'b', '語', '"', '\u0001', '-', '|', ':', '[', '\\', ',', '=', ' ', '#'];
+  // Text after ": " writes a line break as \n; a cell also writes | as \|.
+  const text = (max: number, alpha = ALPHA) => str(max, alpha).replace(/\n/g, '\\n'), cell = (max: number) => text(max, CELL).replace(/\|/g, '\\|');
   let n = 0; const ref = (max: number = B.refForm.limit.max) => { n++; return `r${String(n)}${'k'.repeat(int(0, max - 1 - String(n).length))}`; };
   const out: string[] = [];
   for (let p = 0; p < count; p++) {
     const inputs: string[] = [], lines: string[] = [];
-    const el = (d: number): string[] => {
-      const i = '  '.repeat(d), role = pick(['heading', 'text', 'separator', 'group', 'article', 'collapsible', 'list', 'timeline', 'flow', 'tablist', 'note', 'meter', 'table', 'figure', 'textbox', 'checkbox', 'slider', 'radiogroup', 'listbox', 'button']);
+    // Odd pages: every (role, heavy character) pair in turn, one element at its bounds.
+    big = p % 2 === 1; const combo = Math.floor(p / 2);
+    heavy = big ? ALPHA[Math.floor(combo / ROLES.length) % ALPHA.length] ?? 'a' : pick(ALPHA);
+    const el = (d: number, role = pick(ROLES)): string[] => {
+      const i = '  '.repeat(d);
       const kids = () => d < 4 ? Array.from({length: int(1, 2)}, () => el(d + 1)).flat() : [`${i}  - text: leaf`];
       switch (role) {
         case 'heading': return [`${i}- heading ${name(60)} [ref=${ref()}] [level=${String(int(1, 3))}]`];
-        case 'text': return [`${i}- text [ref=${ref()}]${r() < 0.3 ? ' [caption]' : ''}: ${str(int(1, 600))}`];
+        case 'text': return [`${i}- text [ref=${ref()}]${r() < 0.3 ? ' [caption]' : ''}: ${text(int(1, 600))}`];
         case 'separator': return [`${i}- separator`];
         case 'group': return [`${i}- group ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]${r() < 0.5 ? ' [layout=row]' : ''}:`, ...kids()];
         case 'article': return [`${i}- article ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]:`, ...kids()];
-        case 'collapsible': return [`${i}- group ${name(B.groupTitle.limit.max)} [ref=${ref()}] [collapsible]${r() < 0.5 ? ' [expanded]' : ''}:`, `${i}  - /summary: ${str(B.groupSummary.limit.max)}`, ...kids()];
-        case 'list': return [`${i}- list ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]:`, ...Array.from({length: int(1, 4)}, () => `${i}  - listitem: ${str(40)}`)];
-        case 'timeline': return [`${i}- list [ref=${ref()}] [timeline]:`, ...Array.from({length: int(1, B.timelineItems.limit.max)}, () => `${i}  - listitem ${name(B.timelineLabel.limit.max)} [when=${str(B.timelineWhen.limit.max, ATTR)}] [state=${pick(B.timelineState.limit.values)}]: ${str(B.timelineDetail.limit.max)}`)];
-        case 'flow': { const ids = Array.from({length: int(1, B.flowNodes.limit.max)}, () => ref(B.flowRefForm.limit.max)); let links = B.flowLinks.limit.max;
+        case 'collapsible': return [`${i}- group ${name(B.groupTitle.limit.max)} [ref=${ref()}] [collapsible]${r() < 0.5 ? ' [expanded]' : ''}:`, `${i}  - /summary: ${text(B.groupSummary.limit.max)}`, ...kids()];
+        case 'list': return [`${i}- list ${r() < 0.5 ? name(30) + ' ' : ''}[ref=${ref()}]:`, ...Array.from({length: int(1, 4)}, () => `${i}  - listitem: ${text(40)}`)];
+        case 'timeline': return [`${i}- list [ref=${ref()}] [timeline]:`, ...Array.from({length: many(B.timelineItems.limit.max)}, () => `${i}  - listitem ${name(B.timelineLabel.limit.max)} [when=${str(B.timelineWhen.limit.max, ATTR)}] [state=${pick(B.timelineState.limit.values)}]: ${text(B.timelineDetail.limit.max)}`)];
+        case 'flow': { const ids = Array.from({length: many(B.flowNodes.limit.max)}, () => ref(B.flowRefForm.limit.max)); let links = B.flowLinks.limit.max;
           return [`${i}- list ${name(B.flowCaption.limit.max)} [ref=${ref()}] [flow] [direction=${pick(B.flowDirection.limit.values)}]:`, ...ids.map((id, k) => { const to = ids.filter((_, j) => j !== k && r() < 0.3).slice(0, links); links -= to.length;
-            return `${i}  - listitem ${name(B.flowLabel.limit.max)} [ref=${id}]${to.length ? ` [to=${to.join(',')}]` : ''} [tone=${pick(B.tone.limit.values)}]: ${str(B.flowDetail.limit.max)}`; })]; }
-        case 'tablist': return [`${i}- tablist [ref=${ref()}]:`, ...Array.from({length: int(1, 2)}, () => [`${i}  - tab ${name(20)}:`, `${i}    - text: ${str(30)}`]).flat()];
-        case 'note': return [`${i}- note ${name(B.noteTitle.limit.max)} [ref=${ref()}] [tone=${pick(B.noteTone.limit.values)}]: ${str(800)}`];
-        case 'meter': return [`${i}- meter ${name(B.meterLabel.limit.max)} [ref=${ref()}] [tone=${pick(B.tone.limit.values)}] [progress=${String(r())}]: ${str(B.meterValue.limit.max)}`, `${i}  - /detail: ${str(B.meterDetail.limit.max)}`];
-        case 'table': { const cols = int(1, B.tableColumns.limit.max), cells = (max: number) => Array.from({length: cols}, () => str(max, CELL)).join(' | ');
-          return [`${i}- table ${name(B.tableCaption.limit.max)} [ref=${ref()}] [highlight=${String(int(0, cols - 1))}]:`, `${i}  - row [header]: ${cells(B.tableHeaderCell.limit.max)}`, ...Array.from({length: int(1, B.tableRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${cells(60)}`)]; }
+            return `${i}  - listitem ${name(B.flowLabel.limit.max)} [ref=${id}]${to.length ? ` [to=${to.join(',')}]` : ''} [tone=${pick(B.tone.limit.values)}]: ${text(B.flowDetail.limit.max)}`; })]; }
+        case 'tablist': return [`${i}- tablist [ref=${ref()}]:`, ...Array.from({length: int(1, 2)}, () => [`${i}  - tab ${name(20)}:`, `${i}    - text: ${text(30)}`]).flat()];
+        case 'note': return [`${i}- note ${name(B.noteTitle.limit.max)} [ref=${ref()}] [tone=${pick(B.noteTone.limit.values)}]: ${text(800)}`];
+        case 'meter': return [`${i}- meter ${name(B.meterLabel.limit.max)} [ref=${ref()}] [tone=${pick(B.tone.limit.values)}] [progress=${String(r())}]: ${text(B.meterValue.limit.max)}`, `${i}  - /detail: ${text(B.meterDetail.limit.max)}`];
+        case 'table': { const cols = many(B.tableColumns.limit.max), cells = (max: number) => Array.from({length: cols}, () => cell(max)).join(' | ');
+          return [`${i}- table ${name(B.tableCaption.limit.max)} [ref=${ref()}] [highlight=${String(int(0, cols - 1))}]:`, `${i}  - row [header]: ${cells(B.tableHeaderCell.limit.max)}`, ...Array.from({length: many(B.tableRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${cells(B.tableCell.limit.max)}`)]; }
         case 'figure': return [`${i}- figure ${name(B.figureCaption.limit.max)} [ref=${ref()}] [chart=${pick(B.chartKind.limit.values)}] [unit=${str(B.figureUnit.limit.max, ATTR)}] [max=1e9]:`,
-          ...Array.from({length: int(1, B.figureRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${str(B.figureRowLabel.limit.max, CELL)} | ${pick(['1e8', '7', '0.5', '12,000'])} | ${str(B.figureRowNote.limit.max, CELL)}`)];
-        case 'textbox': { const id = ref(); inputs.push(id); return [`${i}- textbox ${name(40)} [ref=${id}]${r() < 0.5 ? ' [multiline]' : ''}: ${str(B.textboxValue.limit.max)}`]; }
+          ...Array.from({length: many(B.figureRows.limit.max)}, () => `${i}  - row [tone=${pick(B.tone.limit.values)}]: ${cell(B.figureRowLabel.limit.max)} | ${pick(['1e8', '7', '0.5', '12,000'])} | ${cell(B.figureRowNote.limit.max)}`)];
+        case 'textbox': { const id = ref(); inputs.push(id); return [`${i}- textbox ${name(40)} [ref=${id}]${r() < 0.5 ? ' [multiline]' : ''}: ${text(B.textboxValue.limit.max)}`]; }
         case 'checkbox': { const id = ref(); inputs.push(id); return [`${i}- checkbox ${name(40)} [ref=${id}]${r() < 0.5 ? ' [checked]' : ''}`]; }
         case 'slider': { const id = ref(); inputs.push(id); return [`${i}- slider ${name(40)} [ref=${id}] [min=1e1] [max=1e9]: ${String(int(10, 1e9))}`]; }
         case 'radiogroup': case 'listbox': { const id = ref(), single = role === 'radiogroup', item = single ? 'radio' : 'option'; inputs.push(id); let picked = 0;
@@ -400,7 +413,8 @@ function pages(seed: number, count: number): string[] {
           return [`${i}- button ${name(40)} [ref=${ref()}]${r() < 0.5 ? ` [action=${ref()}]` : ''}${r() < 0.5 ? ' [borderless]' : ''}${sends.length ? ` [sends=${sends.join(',')}]` : ''}`]; }
       }
     };
-    for (let k = int(1, 6); k > 0; k--) lines.push(...el(1));
+    if (big) lines.push(...el(1, ROLES[combo % ROLES.length]));
+    else for (let k = int(1, 6); k > 0; k--) lines.push(...el(1));
     out.push(`- region ${name(60)} [ref=${ref()}]:\n${lines.join('\n')}`);
   }
   return out;
@@ -411,7 +425,7 @@ void test('no regression and derivation: over seeded pages of every role, the pa
   const {pageBytes} = await import('../src/internal-limits.ts');
   // Every role the contract lists is generated (heading … button; list kinds and the collapsible group included).
   const roles = new Set(SNAPSHOT_FORMAT.split('Roles:')[1]?.split('Bounds')[0]?.split('\n').map(l => /^ {2}([a-z]+)\b/.exec(l)?.[1]).filter((x): x is string => x !== undefined));
-  const sample = pages(23, 400), seen = new Set<string>(), utf8 = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length;
+  const sample = pages(23, 2 * 20 * 20), seen = new Set<string>(), utf8 = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length;
   let accepted = 0;
   for (const snap of sample) {
     for (const l of snap.split('\n')) { const role = /^\s*- ([a-z]+)/.exec(l)?.[1]; if (role) seen.add(role); }
@@ -429,7 +443,7 @@ void test('no regression and derivation: over seeded pages of every role, the pa
     assert.ok(utf8(messages) <= pageBytes(Math.min(drawn, back), nodes.length, links, 0), `pageBytes under the translation: ${String(utf8(messages))}`);
   }
   for (const role of roles) assert.ok(seen.has(role), `generated ${role}`);
-  assert.ok(accepted >= 300, `accepted ${String(accepted)} of ${String(sample.length)}`);
+  assert.ok(accepted >= 600, `accepted ${String(accepted)} of ${String(sample.length)}`);
 });
 
 void test('worst case: a 40,000-character snapshot built for translated size passes execute, and the internal ceilings exceed it', async () => {
@@ -462,4 +476,28 @@ void test('retirement: a call whose own pages are larger than today\'s threshold
   const r = await x.tool.execute('big', {baseRevision: 1, snapshot: big}) as {details: {retired: string[]; delta: unknown}};
   assert.ok(JSON.stringify(r.details.delta).length > 36864, 'over today\'s retirement threshold');
   assert.deepEqual(r.details.retired, ['a', 'b', 'c'], 'retirement by bytes still runs as today');
+});
+
+void test('review (option A): two 6 x 14 tables of 200-pipe cells built by 4 edits are accepted; each \\| counts as the one | it stands for', async () => {
+  const x = await liveExtension(), cell = '\\|'.repeat(200), row = `- row: ${Array.from({length: 6}, () => cell).join(' | ')}`;
+  const rows = (n: number) => Array.from({length: n}, () => row).join('\n'), header = '- row [header]: a | b | c | d | e | f';
+  await commit(x, 'draw', {baseRevision: 0, snapshot: '- region "Pipes" [ref=t]:\n  - text [ref=a]: x'});
+  const edits = [
+    {page: 't', ref: 'a', op: 'insertAfter', lines: `- table [ref=tb1]:\n  ${header}\n${rows(7).replace(/^/gm, '  ')}`},
+    {page: 't', ref: 'tb1', op: 'insertInto', lines: rows(7)},
+    {page: 't', ref: 'tb1', op: 'insertAfter', lines: `- table [ref=tb2]:\n  ${header}\n${rows(7).replace(/^/gm, '  ')}`},
+    {page: 't', ref: 'tb2', op: 'insertInto', lines: rows(7)},
+  ];
+  for (const [k, e] of edits.entries()) {
+    assert.ok(e.lines.length <= PAGE_BOUNDS.editLines.limit.max, String(e.lines.length));
+    await commit(x, `edit${String(k)}`, {baseRevision: k + 1, edits: [e]});
+  }
+  // The page as read back, refs and indentation dropped, written escapes and all, is over the bound; counted with
+  // each escape as one character, it is within it (and within the former translated size).
+  const {surfaceLines, formatLines, pageChars} = await snapshotFormat();
+  const r = await x.tool.execute('read', {baseRevision: 5, edits: [{page: 't', ref: 'a', op: 'replace', lines: '- text [ref=a]: y'}]}) as {details: {delta: {messages: unknown[]}}};
+  const {applyDelta} = await import('../src/workspace.ts'), s = applyDelta(null, {baseRevision: 0, revision: 1, messages: r.details.delta.messages.filter(m => !(m as {deleteSurface?: unknown}).deleteSurface)});
+  const region = surfaceLines(s, 't'), bare = (l: typeof region): typeof region => ({...l, attrs: Object.fromEntries(Object.entries(l.attrs).filter(([k]) => k !== 'ref')), children: l.children.map(bare)});
+  const written = formatLines([bare(region)]).split('\n').map(l => l.trimStart()).join('\n').length;
+  assert.ok(written > PAGE_BOUNDS.pageLength.limit.max && pageChars(region) <= PAGE_BOUNDS.pageLength.limit.max, `written ${String(written)}, counted ${String(pageChars(region))}`);
 });
