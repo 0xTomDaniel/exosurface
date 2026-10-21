@@ -92,15 +92,18 @@ export const flowNodeIds=(items:Line[])=>{const taken=new Set(items.flatMap(k=>t
 /** A radiogroup's or listbox's options with their values: the [value], else one made from the label that no other option has. */
 export const choiceOptions=(n:Line)=>{const opts=n.children.filter(k=>k.role==='radio'||k.role==='option'),taken=new Set(opts.flatMap(k=>typeof k.attrs['value']==='string'?[k.attrs['value']]:[]));
  return opts.map(k=>{const label=k.name??k.text??'';if(typeof k.attrs['value']==='string')return {line:k,label,value:k.attrs['value']};const base=optionValue(label);let v=base;for(let c=2;taken.has(v);c++)v=`${base}_${String(c)}`;taken.add(v);return {line:k,label,value:v};});};
-/** The pageLength measure: the page in the snapshot format without [ref=…] and without indentation (lines joined by
- *  newlines), each escape counted as the one character it stands for (\| in cells, \n in text, \" and the like in quoted
- *  names): the same lines formatLines writes, with names and text counted unescaped. For a draw it is the page as
- *  written; for an edit, the whole page it leaves. */
+/** The pageLength measure, lexical on the page as read_exosurface writes it (the lines formatLines writes): without
+ *  [ref=…] and without indentation (lines joined by newlines), each escape the format defines at that position counted
+ *  as the one character it stands for (\| and \n in a row's cells; \n in other text after ": "; JSON's \", \\, \n, \uXXXX
+ *  and the like in a quoted name), everything else as written. For a draw it is the page as written; for an edit, the
+ *  whole page it leaves. */
+const lexical=(written:string,escape:RegExp)=>written.replace(escape,'.').length;
+const NAME_ESCAPE=/\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g,TEXT_ESCAPE=/\\n/g,ROW_ESCAPE=/\\[n|]/g;
 export function pageChars(region:Line):number{
  const line=(n:Line):number=>{
   const attrs=Object.entries(n.attrs).filter(([k])=>k!=='ref').map(([k,v])=>v===true?`[${k}]`:`[${k}=${v}]`).join(' ');
-  const text=n.text!==undefined?2+n.text.replace(/\\\|/g,'|').length:n.children.length?1:0;
-  return 2+n.role.length+(n.name!==undefined?3+n.name.length:0)+(attrs?1+attrs.length:0)+text+n.children.reduce((k,c)=>k+1+line(c),0);
+  const text=n.text!==undefined?2+lexical(escapeText(n.text),n.role==='row'?ROW_ESCAPE:TEXT_ESCAPE):n.children.length?1:0;
+  return 2+n.role.length+(n.name!==undefined?1+lexical(JSON.stringify(n.name),NAME_ESCAPE):0)+(attrs?1+attrs.length:0)+text+n.children.reduce((k,c)=>k+1+line(c),0);
  };
  return line(region);
 }
