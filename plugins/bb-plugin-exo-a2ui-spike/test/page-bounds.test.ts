@@ -439,37 +439,84 @@ function lexicalCount(read: string): number {
   }).reduce((a, b) => a + b, 0) + lines.length - 1;
 }
 
-void test('pageLength is lexical on the read-back text: literal \\| and \\n in text, \\n in a quoted name, escapes in cells', async () => {
-  const {snapshotToA2ui, surfaceLines, pageChars, parseLines} = await snapshotFormat(), {applyDelta} = await import('../src/workspace.ts');
-  const draw = String.raw`- region "Edge" [ref=e]:
-  - text [ref=pipe]: a\|b
-  - heading "x\\ny" [ref=lit]
-  - heading "x\ny" [ref=nl]
-  - textbox "Path" [ref=path]: x
-  - table [ref=tb]:
+// Public probe of the pageLength bound on one page (update_exosurface and read_exosurface only): the page is drawn
+// with three padding lines, read back, and padded by edits until the reference counter reads exactly the bound, which
+// is accepted; one character more is rejected, and the count the rejection reports is the reference count.
+const PADS = ['pad0', 'pad1', 'pad2'], padLines = PADS.map(r => `  - text [ref=${r}]: x`).join('\n');
+const outcome = (p: Promise<unknown>) => p.then(() => '', (e: unknown) => (e as Error).message);
+async function readPage(x: Handlers, sid: string): Promise<string> {
+  const r = await x.read.execute('read', {page: sid}) as {content: {text: string}[]};
+  return (r.content[0]?.text ?? '').split('\n').slice(1).join('\n');
+}
+async function probeBound(x: Handlers, sid: string): Promise<string> {
+  const bound = PAGE_BOUNDS.pageLength.limit.max, before = await readPage(x, sid), room = bound - lexicalCount(before);
+  assert.ok(room >= 0, `room ${String(room)}`);
+  // Each padding line reads "x" (one character); replaced by L characters it adds L - 1.
+  const len = (k: number) => 1 + Math.floor(room / PADS.length) + (k < room % PADS.length ? 1 : 0);
+  const edits = (extra: number) => PADS.map((ref, k) => ({page: sid, ref, op: 'replace', lines: `- text [ref=${ref}]: ${'y'.repeat(len(k) + (k === 0 ? extra : 0))}`}));
+  const said = await outcome(x.tool.execute('over', {baseRevision: 1, edits: edits(1)}));
+  const atBound = await outcome(commit(x, 'at', {baseRevision: 1, edits: edits(0)}));
+  assert.equal(atBound, '', `the page at the bound by the reference count is accepted\n${before.slice(0, 400)}`);
+  const read = await readPage(x, sid), over = lexicalCount(read.replace('[ref=pad0]: ', '[ref=pad0]: y'));
+  assert.equal(lexicalCount(read), bound, `read back at the bound\n${read.slice(0, 400)}`);
+  assert.equal(over, bound + 1);
+  assert.ok(said.includes(`(page ${sid}) is ${String(over)} characters`) && said.includes(statement('pageLength')), `bound + 1 rejected with the reference count ${String(over)}: ${said.slice(0, 300)}\n${before.slice(0, 400)}`);
+  return read;
+}
+const sidOf = (snap: string) => /\[ref=([^\]\s]+)\]:$/.exec(snap.split('\n')[0] ?? '')?.[1] ?? '';
+
+void test('pageLength is lexical on the read-back text: at the bound accepted, one over rejected with the reference count, for each escape edge case', async () => {
+  const ctx = {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}};
+  // Each edge on its own page, so a miscount in one is never offset by another.
+  const edges: [string, string, string?][] = [
+    [String.raw`- text [ref=pipe]: a\|b`, String.raw`text [ref=pipe]: a\|b`],
+    [String.raw`- heading "x\\ny" [ref=lit]`, String.raw`"x\\ny"`],
+    [String.raw`- heading "x\ny" [ref=nl]`, String.raw`"x\ny"`],
+    [String.raw`- table [ref=tb]:
     - row [header]: a\|b | c\nd
-    - row: \ | e\\|`;
-  // The person's typed value holds a literal backslash-n: written as is, it reads back like an escaped line break.
-  const messages = snapshotToA2ui(draw) as {updateDataModel?: {value: Record<string, unknown>}}[];
-  for (const m of messages) if (m.updateDataModel) m.updateDataModel.value['path'] = String.raw`C:\new`;
-  const x = await liveExtension(), delta = {baseRevision: 0, revision: 1, messages};
-  for (const h of x.on.get('message_end') ?? []) h({message: {role: 'toolResult', toolName: 'update_exosurface', isError: false, toolCallId: 'edge', details: {delta}}}, {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}});
-  const r = await x.read.execute('read', {page: 'e'}) as {content: {text: string}[]};
-  const text = (r.content[0]?.text ?? '').split('\n').slice(1).join('\n');
-  for (const w of [String.raw`text [ref=pipe]: a\|b`, String.raw`"x\\ny"`, String.raw`"x\ny"`, String.raw`: C:\new`, String.raw`row [header]: a\|b | c\nd`]) assert.ok(text.includes(w), `${w} in\n${text}`);
-  assert.equal(pageChars(surfaceLines(applyDelta(null, delta), 'e')), lexicalCount(text), text);
-  // Each edge against the same line in plain characters: \| outside a row is two characters, \\ in a name is one, \n in a
-  // name or text is one, \| and \n in a cell are one each.
-  const one = (l: string) => { const p = parseLines(`- region "E" [ref=e]:\n  ${l}`)[0]; assert.ok(p); return pageChars(p); };
-  assert.equal(one(String.raw`- text: a\|b`), one('- text: axxb'));
-  assert.equal(one(String.raw`- heading "x\\ny"`), one('- heading "xxxy"'));
-  assert.equal(one(String.raw`- heading "x\ny"`), one('- heading "xxy"'));
-  assert.equal(one(String.raw`- row: a\|b | c\nd`), one('- row: axb | cxd'));
-  assert.equal(one(String.raw`- textbox "P": C:\new`), one('- textbox "P": C:xew'));
+    - row: \ | e\\|`, String.raw`row [header]: a\|b | c\nd`],
+    [String.raw`- figure "F" [ref=fg] [chart=bar]:
+    - row: a\|b | 1 | c\nd`, String.raw`row: a\|b | 1 | c\nd`],
+    // The person's typed value holds a literal backslash-n: written as is, it reads back like an escaped line break.
+    ['- textbox "Path" [ref=path]: x', String.raw`: C:\new`, String.raw`C:\new`],
+  ];
+  for (const [line, shown, typed] of edges) {
+    const x = await liveExtension(), snapshot = `- region "Edge" [ref=e]:\n  ${line}\n${padLines}`;
+    const r = await x.tool.execute('draw', {baseRevision: 0, snapshot}) as {details: {delta: {messages: {updateDataModel?: {value: Record<string, unknown>}}[]}}};
+    if (typed !== undefined) for (const m of r.details.delta.messages) if (m.updateDataModel) m.updateDataModel.value['path'] = typed;
+    for (const h of x.on.get('message_end') ?? []) h({message: {role: 'toolResult', toolName: 'update_exosurface', isError: false, toolCallId: 'draw', details: r.details}}, ctx);
+    const before = await readPage(x, 'e');
+    assert.ok(before.includes(shown), `${shown} in\n${before}`);
+    await probeBound(x, 'e');
+  }
+});
+
+void test('pageLength over seeded pages of every role and every escapable character: at the bound accepted, one over rejected with the reference count', async () => {
+  // Every role at its bounds once per heavy character (odd pages: role combo % 20, character combo / 20), plus 20
+  // mixed pages: 43 pages.
+  const all = pages(23, 2 * 20 * 23), picks = [...Array.from({length: 23}, (_, k) => 2 * (k * 20 + k % 20) + 1), ...Array.from({length: 20}, (_, k) => 2 * k)];
+  const reads: string[] = [];
+  let skipped = 0;
+  for (const p of picks) {
+    const snap = `${all[p] ?? ''}\n${padLines}`, sid = sidOf(snap), x = await liveExtension();
+    if (await outcome(commit(x, 'draw', {baseRevision: 0, snapshot: snap}))) { skipped++; continue; }
+    reads.push(await probeBound(x, sid));
+  }
+  assert.ok(reads.length >= 35, `probed ${String(reads.length)}, skipped ${String(skipped)}`);
+  // Coverage of what was probed, read back: every role and list kind, every escape in names and rows, every special
+  // character in text.
+  const lines = reads.join('\n').split('\n'), isRow = (l: string) => /^ *- row\b/.test(l);
+  const rows = lines.filter(isRow), texts = lines.filter(l => !isRow(l)).map(l => /\]: (.*)$|^ *- [a-z/]+(?: "(?:[^"\\]|\\.)*")?: (.*)$/s.exec(l)?.slice(1).join('') ?? '');
+  const names = lines.flatMap(l => / "((?:[^"\\]|\\.)*)"/.exec(l)?.[1] ?? []), roles = new Set(lines.map(l => /^ *- ([a-z]+)/.exec(l)?.[1]));
+  for (const role of ['heading', 'text', 'separator', 'group', 'article', 'list', 'listitem', 'tablist', 'tab', 'note', 'meter', 'table', 'row', 'figure', 'textbox', 'checkbox', 'slider', 'radiogroup', 'radio', 'listbox', 'option', 'button']) assert.ok(roles.has(role), `probed ${role}`);
+  for (const kind of ['[timeline]', '[flow]', '[collapsible]', '- /summary', '- /detail']) assert.ok(lines.some(l => l.includes(kind)), `probed ${kind}`);
+  for (const e of ['\\"', '\\\\', '\\n', '\\t', '\\u0001', '\\ud800', '\\udfff']) assert.ok(names.some(n => n.includes(e)), `a name escapes ${e}`);
+  for (const e of ['\\|', '\\n', '\\\\']) assert.ok(rows.some(l => l.includes(e)), `a row holds ${e}`);
+  for (const e of ['\\|', '\\n', '|', '[', ']', ':', '#', '"', '語', '😀', '\u0001', '\t', '\uD800', '\uDFFF']) assert.ok(texts.some(l => l.includes(e)), `a text holds ${JSON.stringify(e)}`);
 });
 
 void test('no regression and derivation: over seeded pages of every role, the page measure never exceeds the former translated size, and pageBytes bounds the translation', async () => {
-  const {snapshotToA2ui, parseLines, surfaceLines, surfaceSnapshot, formatLines, pageChars, SNAPSHOT_FORMAT} = await snapshotFormat(), {applyDelta, moduleIds, moduleNodes} = await import('../src/workspace.ts');
+  const {snapshotToA2ui, parseLines, surfaceLines, pageChars, SNAPSHOT_FORMAT} = await snapshotFormat(), {applyDelta, moduleIds, moduleNodes} = await import('../src/workspace.ts');
   const {pageBytes} = await import('../src/internal-limits.ts');
   // Every role the contract lists is generated (heading … button; list kinds and the collapsible group included).
   const roles = new Set(SNAPSHOT_FORMAT.split('Roles:')[1]?.split('Bounds')[0]?.split('\n').map(l => /^ {2}([a-z]+)\b/.exec(l)?.[1]).filter((x): x is string => x !== undefined));
@@ -483,11 +530,6 @@ void test('no regression and derivation: over seeded pages of every role, the pa
     const sid = moduleIds(s).at(0) ?? '', translated = JSON.stringify(messages).length, first = parseLines(snap).at(0);
     if (!first) continue;
     const drawn = pageChars(first), back = pageChars(surfaceLines(s, sid));
-    // Reproducible from read_exosurface: the measure is the lexical count of the page as it reads back (and of a draw as
-    // it is written back), by the reference counter above.
-    const read = surfaceSnapshot(s, sid);
-    assert.equal(back, lexicalCount(read), `read back measured ${String(back)}, lexically ${String(lexicalCount(read))}\n${read.slice(0, 400)}`);
-    assert.equal(drawn, lexicalCount(formatLines([first])), 'drawn page, lexically');
     // Edits are judged on the page read back: never more than its translation, so nothing within the former cap
     // measures over it (the band 40,000 to the former cap is the one accepted trade-off). A draw never measures more than it wrote.
     assert.ok(back <= translated, `read back ${String(back)} > translated ${String(translated)}\n${snap.slice(0, 400)}`);
