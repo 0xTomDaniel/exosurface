@@ -113,7 +113,7 @@ void test('Agreement and form bounds reject with the element and the contract wo
 
 // A live extension with a committed surface: execute computes a call against it without committing, so one
 // surface serves many probes.
-interface Handlers {on: Map<string, ((e: unknown, ctx: unknown) => unknown)[]>; tool: Tool & {parameters: unknown}}
+interface Handlers {on: Map<string, ((e: unknown, ctx: unknown) => unknown)[]>; tool: Tool & {parameters: unknown}; read: Tool}
 async function liveExtension(): Promise<Handlers> {
   process.env['EXO_A2UI_SPIKE'] = '1';
   process.env['OPTCHAT_HOME'] = CANONICAL_HOME;
@@ -123,11 +123,11 @@ async function liveExtension(): Promise<Handlers> {
   const pi = {getAllTools: () => [...tools.keys()].map(name => ({name})), on: (n: string, h: (e: unknown, ctx: unknown) => unknown) => { on.set(n, [...(on.get(n) ?? []), h]); return () => undefined; },
     registerTool: (t: Tool & {name: string; parameters: unknown}) => tools.set(t.name, t), registerCommand: () => undefined, appendEntry: () => undefined, setActiveTools: (t: string[]) => { active = t; }, getActiveTools: () => active};
   workspace(pi as never);
-  const tool = tools.get('update_exosurface');
-  assert.ok(tool);
+  const tool = tools.get('update_exosurface'), read = tools.get('read_exosurface');
+  assert.ok(tool && read);
   const ctx = {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}};
   for (const h of on.get('session_start') ?? []) h({}, ctx);
-  return {on, tool};
+  return {on, tool, read};
 }
 async function commit(x: Handlers, id: string, args: Record<string, unknown>) {
   const result = await x.tool.execute(id, args) as {details: unknown};
@@ -361,16 +361,19 @@ function rng(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6D2B7
 function pages(seed: number, count: number): string[] {
   const r = rng(seed), B = PAGE_BOUNDS, int = (lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1)), pick = <X>(xs: readonly X[]): X => xs.at(int(0, xs.length - 1)) as X;
   // Every character the snapshot format escapes or treats specially, in every text field: | (cell separator), \n (line
-  // break), " and \ (names), [ ] (attributes), : (text), # (comments), plus = , { } and control, CJK and astral characters.
-  const ALPHA = ['a', 'b', ' ', '"', '\\', '語', '\u0001', '\t', '😀', 'Z', '|', '[', ']', ':', '#', ',', '=', '{', '}', '\n'], CELL = ALPHA;
+  // break), " and \ (names), [ ] (attributes), : (text), # (comments), plus = , { } and control, CJK, astral and lone
+  // surrogate characters (a JS string holds them anywhere, a name writes them as \uXXXX), and n so that \n and \| also
+  // arise from literal backslashes.
+  const ALPHA = ['a', 'b', 'n', ' ', '"', '\\', '語', '\u0001', '\t', '😀', 'Z', '|', '[', ']', ':', '#', ',', '=', '{', '}', '\n', '\uD800', '\uDFFF'], CELL = ALPHA;
   // Each page leans on one character (half the characters of every field), so an escape that costs more in the
   // snapshot than in the JSON dominates some pages.
   // Half the pages hold one element with every count and length at its bound, so no other element dilutes it.
   let heavy = 'a', big = false;
   const ROLES = ['heading', 'text', 'separator', 'group', 'article', 'collapsible', 'list', 'timeline', 'flow', 'tablist', 'note', 'meter', 'table', 'figure', 'textbox', 'checkbox', 'slider', 'radiogroup', 'listbox', 'button'];
-  const str = (max: number, alpha = ALPHA) => { let o = ''; const n = big ? Math.max(1, max) : int(1, Math.max(1, max)); while (o.length < n) o += r() < 0.5 && alpha.includes(heavy) ? heavy : pick(alpha); return o.slice(0, n).replace(/[\uD800-\uDBFF]$/, 'a').trim() || 'a'; };
+  const str = (max: number, alpha = ALPHA) => { let o = ''; const n = big ? Math.max(1, max) : int(1, Math.max(1, max)); while (o.length < n) o += r() < 0.5 && alpha.includes(heavy) ? heavy : pick(alpha); return o.slice(0, n).trim() || 'a'; };
   const many = (hi: number) => big ? hi : int(1, hi);
-  const name = (max: number) => JSON.stringify(str(max)), ATTR = ['a', 'b', '語', '"', '\u0001', '-', '|', ':', '[', '\\', ',', '=', ' ', '#'];
+  // An attribute value holds every character but ] (it ends the attribute) and a line break.
+  const name = (max: number) => JSON.stringify(str(max)), ATTR = [...ALPHA.filter(c => c !== ']' && c !== '\n'), '-'];
   // Text after ": " writes a line break as \n; a cell also writes | as \|.
   const text = (max: number, alpha = ALPHA) => str(max, alpha).replace(/\n/g, '\\n'), cell = (max: number) => text(max, CELL).replace(/\|/g, '\\|');
   let n = 0; const ref = (max: number = B.refForm.limit.max) => { n++; return `r${String(n)}${'k'.repeat(int(0, max - 1 - String(n).length))}`; };
@@ -420,8 +423,53 @@ function pages(seed: number, count: number): string[] {
   return out;
 }
 
+// Reference for the pageLength rule, independent of pageChars: lex the page as read_exosurface writes it. Per line:
+// drop indentation and the [ref=…] attribute, count \| and \n in a row's cells, \n in other text after ": ", and each
+// JSON escape in the quoted name as one character, everything else as written; lines joined by newlines.
+function lexicalCount(read: string): number {
+  const lines = read.split('\n');
+  return lines.map(raw => {
+    const m = /^ *- (\/?[a-z][a-z-]*)( "(?:[^"\\]|\\.)*")?((?: \[[^\]]*\])*)(?:(:)(?: (.*))?)?$/s.exec(raw);
+    assert.ok(m, `read-back line: ${raw}`);
+    const [, role = '', name = '', attrs = '', colon = ''] = m, text = m.at(5);
+    const kept = (attrs.match(/ \[[^\]]*\]/g) ?? []).filter(a => !a.startsWith(' [ref=')).join('');
+    const nameChars = name.replace(/\\(u[0-9a-fA-F]{4}|.)/gs, '.').length;
+    const textChars = text === undefined ? colon.length : 2 + text.replace(role === 'row' ? /\\[n|]/g : /\\n/g, '.').length;
+    return 2 + role.length + nameChars + kept.length + textChars;
+  }).reduce((a, b) => a + b, 0) + lines.length - 1;
+}
+
+void test('pageLength is lexical on the read-back text: literal \\| and \\n in text, \\n in a quoted name, escapes in cells', async () => {
+  const {snapshotToA2ui, surfaceLines, pageChars, parseLines} = await snapshotFormat(), {applyDelta} = await import('../src/workspace.ts');
+  const draw = String.raw`- region "Edge" [ref=e]:
+  - text [ref=pipe]: a\|b
+  - heading "x\\ny" [ref=lit]
+  - heading "x\ny" [ref=nl]
+  - textbox "Path" [ref=path]: x
+  - table [ref=tb]:
+    - row [header]: a\|b | c\nd
+    - row: \ | e\\|`;
+  // The person's typed value holds a literal backslash-n: written as is, it reads back like an escaped line break.
+  const messages = snapshotToA2ui(draw) as {updateDataModel?: {value: Record<string, unknown>}}[];
+  for (const m of messages) if (m.updateDataModel) m.updateDataModel.value['path'] = String.raw`C:\new`;
+  const x = await liveExtension(), delta = {baseRevision: 0, revision: 1, messages};
+  for (const h of x.on.get('message_end') ?? []) h({message: {role: 'toolResult', toolName: 'update_exosurface', isError: false, toolCallId: 'edge', details: {delta}}}, {sessionManager: {getBranch: () => [], getSessionId: () => 'bounds'}});
+  const r = await x.read.execute('read', {page: 'e'}) as {content: {text: string}[]};
+  const text = (r.content[0]?.text ?? '').split('\n').slice(1).join('\n');
+  for (const w of [String.raw`text [ref=pipe]: a\|b`, String.raw`"x\\ny"`, String.raw`"x\ny"`, String.raw`: C:\new`, String.raw`row [header]: a\|b | c\nd`]) assert.ok(text.includes(w), `${w} in\n${text}`);
+  assert.equal(pageChars(surfaceLines(applyDelta(null, delta), 'e')), lexicalCount(text), text);
+  // Each edge against the same line in plain characters: \| outside a row is two characters, \\ in a name is one, \n in a
+  // name or text is one, \| and \n in a cell are one each.
+  const one = (l: string) => { const p = parseLines(`- region "E" [ref=e]:\n  ${l}`)[0]; assert.ok(p); return pageChars(p); };
+  assert.equal(one(String.raw`- text: a\|b`), one('- text: axxb'));
+  assert.equal(one(String.raw`- heading "x\\ny"`), one('- heading "xxxy"'));
+  assert.equal(one(String.raw`- heading "x\ny"`), one('- heading "xxy"'));
+  assert.equal(one(String.raw`- row: a\|b | c\nd`), one('- row: axb | cxd'));
+  assert.equal(one(String.raw`- textbox "P": C:\new`), one('- textbox "P": C:xew'));
+});
+
 void test('no regression and derivation: over seeded pages of every role, the page measure never exceeds the former translated size, and pageBytes bounds the translation', async () => {
-  const {snapshotToA2ui, parseLines, surfaceLines, pageChars, SNAPSHOT_FORMAT} = await snapshotFormat(), {applyDelta, moduleIds, moduleNodes} = await import('../src/workspace.ts');
+  const {snapshotToA2ui, parseLines, surfaceLines, surfaceSnapshot, formatLines, pageChars, SNAPSHOT_FORMAT} = await snapshotFormat(), {applyDelta, moduleIds, moduleNodes} = await import('../src/workspace.ts');
   const {pageBytes} = await import('../src/internal-limits.ts');
   // Every role the contract lists is generated (heading … button; list kinds and the collapsible group included).
   const roles = new Set(SNAPSHOT_FORMAT.split('Roles:')[1]?.split('Bounds')[0]?.split('\n').map(l => /^ {2}([a-z]+)\b/.exec(l)?.[1]).filter((x): x is string => x !== undefined));
@@ -435,6 +483,11 @@ void test('no regression and derivation: over seeded pages of every role, the pa
     const sid = moduleIds(s).at(0) ?? '', translated = JSON.stringify(messages).length, first = parseLines(snap).at(0);
     if (!first) continue;
     const drawn = pageChars(first), back = pageChars(surfaceLines(s, sid));
+    // Reproducible from read_exosurface: the measure is the lexical count of the page as it reads back (and of a draw as
+    // it is written back), by the reference counter above.
+    const read = surfaceSnapshot(s, sid);
+    assert.equal(back, lexicalCount(read), `read back measured ${String(back)}, lexically ${String(lexicalCount(read))}\n${read.slice(0, 400)}`);
+    assert.equal(drawn, lexicalCount(formatLines([first])), 'drawn page, lexically');
     // Edits are judged on the page read back: never more than its translation, so nothing within the former cap
     // measures over it (the band 40,000 to the former cap is the one accepted trade-off). A draw never measures more than it wrote.
     assert.ok(back <= translated, `read back ${String(back)} > translated ${String(translated)}\n${snap.slice(0, 400)}`);
