@@ -1,19 +1,35 @@
 # Exosurface
 
-The visual half of Exo: what the agent shows beside the chat. Chat and surface are two senses of one conversation, and the visual track is kept as faithfully as the text.
+What the person and Exo share: one surface of pages, each with its own activity, and one input. Words, visuals and presses are senses of one exchange, and every one of them is kept as faithfully as the others. The behaviour is specified in [pages and activity](docs/specs/pages-and-activity.spec.html).
 
 ## The surface
 
 **Surface** (Exosurface in full):
-The whole area beside the chat, where the agent shows pages. On a dedicated device it is the screen itself.
+The whole screen the person and Exo share: the page in view and one input, with no separate chat column.
 _Avoid_: canvas, workspace, board, panel area
 
 **Page**:
-One visual unit the agent draws for a topic: the visual counterpart of a message. Pages are revisited, edited and versioned.
-_Avoid_: surface (A2UI's protocol word, used only inside the code), panel, card, document, module, view
+A general, first-class object made of blocks, with its own activity and any number of child pages. A page can become anything; none is specific to plans or weeks. Pages are revisited, edited and versioned.
+_Avoid_: surface (A2UI's protocol word, used only inside the code), panel, card, document, module, view, chat, thread (a thread is a page's activity)
+
+**Block**:
+One general element of a page, from the visual catalog: text, a note, a table, a chart and the like.
+_Avoid_: widget, component (the renderer's word)
+
+**Exo block**:
+The one block on every page that shows Exo's words from its latest turn there. Each turn replaces it; earlier words stay in the page's activity.
+_Avoid_: chat reply, message bubble
+
+**Input**:
+The one place, always shown, where the person types to Exo. What they send goes to the page in view.
+_Avoid_: composer, chat box
+
+**Child page**:
+A page made from another page, its parent, for work on the side or in parallel. It reads its parent as it is now; the parent lists it and knows its commits.
+_Avoid_: subthread, errand, new chat
 
 **Stage**:
-The place on the surface for the page the conversation is about now; by default the page the agent last drew or redesigned.
+The place on the surface for the page in view. Only the person moves between pages; Exo's turn on a page never changes which page is in view.
 _Avoid_: focus, main view
 
 **Beside**:
@@ -26,6 +42,10 @@ _Avoid_: earlier list, tabs
 
 ## Pages over time
 
+**Activity**:
+A page's own agent thread, in time order: what the person sent and pressed, what Exo said, each version and each commit. It never records typing or unsent drafts. The page shows the work now; its activity shows how it got here: one record, two views.
+_Avoid_: chat history, transcript, page history (pages moved off the surface)
+
 **Version**:
 A page as it was after one change. Every version is kept; the conversation's history of pages is append-only.
 _Avoid_: snapshot (that is the format), revision (that is the whole surface's counter)
@@ -35,7 +55,7 @@ The pages the system has moved off the surface to keep it tidy. Nothing is delet
 _Avoid_: archive, retired surfaces
 
 **Page card**:
-The item in the chat history marking where the agent drew or edited a page. Opening it shows that version.
+The entry in a page's activity marking where Exo drew or edited the page. Opening it shows that version.
 _Avoid_: tool row, surface card
 
 **Bring back**:
@@ -57,7 +77,7 @@ A stable name for a page or an element on it, used to edit or point at it.
 _Avoid_: id, key
 
 **Outline**:
-The current surface, shown to the agent with each request in the snapshot format. Current state, never history.
+The page a turn is on and, for a child page, its parent, shown to Exo with each request in the snapshot format. Current state, never history.
 _Avoid_: canvas state, frame
 
 **Page edits**:
@@ -67,3 +87,13 @@ _Avoid_: canvas edits, form input
 **Press**:
 The person pressing a button on a page, which starts the agent's turn with a readable line.
 _Avoid_: action, event, click
+
+## One Exo across pages
+
+**Trunk**:
+The one shared record of commits for all of the person's pages. Every turn on every page reads it; no page reads another page's activity.
+_Avoid_: main thread, shared chat, memory (the vault)
+
+**Commit**:
+One line Exo adds to the trunk when a page decides or finishes something, linked to the activity entry it came from.
+_Avoid_: summary, note
