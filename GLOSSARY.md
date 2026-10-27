@@ -29,7 +29,7 @@ A page made from another page, its parent, for work on the side or in parallel. 
 _Avoid_: subthread, errand, new chat
 
 **Stage**:
-The place on the surface for the page in view. Only the person moves between pages; Exo's turn on a page never changes which page is in view.
+The place on the surface for the page in view. A turn on a page that is not in view never changes which page is in view.
 _Avoid_: focus, main view
 
 **Beside**:
@@ -95,5 +95,5 @@ The one shared record of commits for all of the person's pages. Every turn on ev
 _Avoid_: main thread, shared chat, memory (the vault)
 
 **Commit**:
-One line Exo adds to the trunk when a page decides or finishes something, linked to the activity entry it came from.
+A one-line record Exo writes to the trunk when a page decides or finishes something, such as "Weekend trip: booked the lake cabin for Friday and Saturday", linked to the activity entry it came from.
 _Avoid_: summary, note
