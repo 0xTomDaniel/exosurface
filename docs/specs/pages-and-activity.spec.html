@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pages and activity: one surface, every page its own thread, one shared trunk - Exosurface spec</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./.style/spec.css">
+<script defer src="./.viz/runtime.js"></script>
+</head>
+<body>
+<article class="spec" data-spec-version="1" data-spec-contract="shaped-sections-v1">
+
+<header data-anchor="header">
+<h1 data-anchor="title">Pages and activity: one surface, every page its own thread, one shared trunk</h1>
+<p class="lede" data-anchor="context">The person and Exo work on one surface with one input and no separate chat.
+Everything is a page made of general blocks, and every page has its own activity: the page shows the work now, the activity shows how it got here.
+Pages work in parallel, and what each page decides reaches every other page through one shared trunk of one-line commits, so every page feels like the same Exo.</p>
+<p data-anchor="vocabulary">Vocabulary follows the glossary: surface, page, stage, version, page edits, press, outline, and the new terms block, Exo block, input, activity, child page, trunk and commit.</p>
+</header>
+
+<section data-spec-section="user-stories" data-anchor="user-stories" id="user-stories">
+<h2>User stories</h2>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-one-surface">As a person, I work with Exo on one surface with one input that is always there and no chat beside it, so the work we are on is always what I see.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-exo-block">As a person, I read Exo's latest words on the page itself, in one Exo block, so its judgement sits with the work instead of in a transcript.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-activity">As a person, I open any page's activity and see how it got here, so the page can stay present tense without losing its past.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-new-page">As a person, I make a new page with one press, and it lands where it belongs instead of in an endless list.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-parallel">As a person, I work on several pages at once, with Exo working on each, so one topic never waits for another.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-same-exo">As Exo, every turn on every page starts from the same trunk, and a child page's turn also starts from its parent page as it is now, so every page is the same Exo and no page reads another page's half-formed thinking.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-commit">As Exo, when a page decides or finishes something, I commit one line to the trunk, linked to where it was said, so every other page knows it at its next turn.</p>
+</section>
+
+<section data-spec-section="acceptance" data-acceptance-scope="traceability" data-anchor="acceptance" id="acceptance">
+<h2>Acceptance criteria</h2>
+<p data-acceptance-criterion data-anchor="acceptance-no-chat" data-story="story-one-surface story-exo-block"><span data-acceptance-scenario>Given a person on a page, which a fixture must be added to provide, When the person types a message in the input and sends it, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then the page's Exo block shows Exo's reply, the input is still shown and empty, and the surface shows no chat transcript.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-exo-block-latest" data-story="story-exo-block"><span data-acceptance-scenario>Given a person on a page whose Exo block shows Exo's reply to an earlier message, which a fixture must be added to provide, When the person sends a new message, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then the Exo block shows only Exo's reply to the new message.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-turns" data-story="story-activity story-exo-block"><span data-acceptance-scenario>Given a person on a page Exo has answered once, which a fixture must be added to provide, When the person sends a second message, then waits for Exo to finish its turn, then opens the page's activity,</span> <span data-acceptance-observable>Then the activity lists both of the person's messages and both of Exo's replies, in the order they were said.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-press" data-story="story-activity"><span data-acceptance-scenario>Given a person on a page with a button, which a fixture must be added to provide, When the person presses the button, then opens the page's activity,</span> <span data-acceptance-observable>Then the activity lists the press by the button's label, with the values it sent.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-no-draft" data-story="story-activity"><span data-acceptance-scenario>Given a person on a page Exo has answered once, which a fixture must be added to provide, When the person types a message in the input without sending it, then opens the page's activity,</span> <span data-acceptance-observable>Then the activity lists the earlier message and Exo's reply, and nothing of the unsent text.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-version" data-story="story-activity"><span data-acceptance-scenario>Given a person on a page Exo has changed twice, which a fixture must be added to provide, When the person opens the page's activity, then opens the earlier version from it,</span> <span data-acceptance-observable>Then the page shows as it was at that version, marked as an earlier version.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-commit" data-story="story-activity story-commit"><span data-acceptance-scenario>Given a person on a page where Exo committed a decision, which a fixture must be added to provide, When the person opens the page's activity,</span> <span data-acceptance-observable>Then the activity shows the commit as one line, marked as a commit, next to the Exo turn it came from.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-new-page" data-story="story-new-page"><span data-acceptance-scenario>Given a person on a page, which a fixture must be added to provide, When the person presses the New button,</span> <span data-acceptance-observable>Then the surface shows a new empty page in view, with the input shown and empty.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-new-page-child" data-story="story-new-page"><span data-acceptance-scenario>Given a person on a page, which a fixture must be added to provide, When the person presses the New button, then goes back to the page they were on,</span> <span data-acceptance-observable>Then that page lists the new page as one of its child pages.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parallel-second" data-story="story-parallel"><span data-acceptance-scenario>Given a person with two pages, which a fixture must be added to provide, When the person sends a message on one page, then opens the other page before Exo finishes that turn, then sends a message there,</span> <span data-acceptance-observable>Then the other page stays in view and its Exo block shows that Exo is working on the message.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parallel-first" data-story="story-parallel"><span data-acceptance-scenario>Given a person with two pages, which a fixture must be added to provide, When the person sends a message on one page, then opens the other page before Exo finishes that turn, then sends a message there, then goes back to the first page after Exo finishes its turn there,</span> <span data-acceptance-observable>Then the first page's Exo block shows Exo's reply to the first message.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-child-reads-parent" data-story="story-same-exo"><span data-acceptance-scenario>Given Exo on a child page whose parent page has changed since the child's last turn, which a fixture must be added to provide, When the person sends a message on the child page,</span> <span data-acceptance-observable>Then Exo's turn reads the parent page as it is now; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-trunk-shared" data-story="story-same-exo story-commit"><span data-acceptance-scenario>Given Exo on a page, while another page that is neither its parent nor its child has committed a decision, which a fixture must be added to provide, When the person sends a message on the first page,</span> <span data-acceptance-observable>Then Exo's turn reads that commit line and nothing of the other page's activity; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parent-knows-child" data-story="story-same-exo story-commit"><span data-acceptance-scenario>Given Exo on a parent page whose child page has committed a decision, which a fixture must be added to provide, When the person sends a message on the parent page,</span> <span data-acceptance-observable>Then Exo's turn reads that commit line, marked as coming from that child page, and nothing of the child's activity; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-commit-linked" data-story="story-commit"><span data-acceptance-scenario>Given Exo on a page that decides something in a turn, which a fixture must be added to provide, When the turn ends,</span> <span data-acceptance-observable>Then the trunk holds one new commit line for it, linked to that turn in the page's activity, and nothing else from the turn; no screen shows it.</span></p>
+</section>
+
+<section data-spec-section="modular-boundaries" data-anchor="modular-boundaries" id="modular-boundaries">
+<h2>Modular boundaries</h2>
+<p data-modular-boundary data-anchor="boundary-pages"><span data-boundary-responsibility>Pages own every page's blocks, its versions, and the tree of parent and child pages.</span> <span data-boundary-seam>Caller-facing seam: the page tools Exo calls on the page its turn belongs to, and the page the surface renders.</span> <span data-boundary-dependency>Dependency direction: self-contained; activity and the surface depend on pages, and pages depend on neither.</span> <span data-boundary-scope>Observable scope: what a page shows, its versions, and the child pages it lists.</span></p>
+<p data-modular-boundary data-anchor="boundary-activity"><span data-boundary-responsibility>Activity owns each page's own agent thread: the record of what was sent, pressed, said, versioned and committed on that page.</span> <span data-boundary-seam>Caller-facing seam: one activity per page, written by the person's sends and presses and by Exo's turns on that page, read by the activity view and by Exo's turns on that page only.</span> <span data-boundary-dependency>Dependency direction: each activity is that page's own OptChat conversation; it points at page versions and writes commits to the trunk, and no activity reads another.</span> <span data-boundary-scope>Observable scope: the activity view of a page, and the Exo block, which shows the latest Exo turn.</span></p>
+<p data-modular-boundary data-anchor="boundary-trunk"><span data-boundary-responsibility>The trunk owns the shared record of commits for all of the person's pages.</span> <span data-boundary-seam>Caller-facing seam: a commit appends one line linked to its activity entry; every Exo turn reads the trunk.</span> <span data-boundary-dependency>Dependency direction: an OptChat conversation that holds only commits, so it stays readable as it grows; activities depend on it, and it depends on no page.</span> <span data-boundary-scope>Observable scope: the commit lines Exo reads each turn, and commits shown in a page's activity.</span></p>
+<p data-modular-boundary data-anchor="boundary-surface"><span data-boundary-responsibility>The surface owns what the person sees and does: the page in view, the input, the New button and the activity view.</span> <span data-boundary-seam>Caller-facing seam: a send or press goes to the activity of the page it was made on.</span> <span data-boundary-dependency>Dependency direction: depends on pages and activity; nothing depends on the surface.</span> <span data-boundary-scope>Observable scope: everything on screen.</span></p>
+</section>
+
+<section data-anchor="surface" id="surface">
+<h2>The surface</h2>
+<div class="clauses" data-anchor="surface-clauses">
+<p class="clause" data-anchor="surface-one"><span class="clause-id">S1</span> The surface shows the page in view and one input; it has no chat column and no transcript.</p>
+<p class="clause" data-anchor="surface-input"><span class="clause-id">S2</span> The input is always shown, and what the person sends from it is a turn in the activity of the page in view.</p>
+<p class="clause" data-anchor="surface-press"><span class="clause-id">S3</span> A press on a page is a turn in that page's activity.</p>
+<p class="clause" data-anchor="surface-stays"><span class="clause-id">S4</span> Exo's turn on a page changes only that page and never changes which page is in view; only the person moves between pages.</p>
+<p class="clause" data-anchor="surface-new"><span class="clause-id">S5</span> The New button makes an empty page as a child of the page in view and puts it in view.</p>
+</div>
+<p data-anchor="tbd-new-label" data-spec-tbd>What does the New button say? Tom ruled out "New chat", "New agent" and "New surface".
+  <button type="button" data-spec-choice="New page">New page (recommended)</button>
+  <button type="button" data-spec-choice="A plus sign">A plus sign</button>
+</p>
+<p data-anchor="tbd-new-placement" data-spec-tbd>Where does the New button put the new page? A child page gets its parent's context and is listed on it; a top-level page starts from the trunk alone.
+  <button type="button" data-spec-choice="Child of the page in view">Child of the page in view (recommended)</button>
+  <button type="button" data-spec-choice="Top-level page">Top-level page</button>
+</p>
+<p data-anchor="tbd-navigation" data-spec-tbd>How does the person reach a page that is not in view?
+  <button type="button" data-spec-choice="Keep the shelf, and list child pages on their parent">Keep the shelf, and list child pages on their parent (recommended)</button>
+  <button type="button" data-spec-choice="A page list of every page, children nested">A page list of every page, children nested</button>
+</p>
+<p data-anchor="tbd-later-input" data-spec-tbd="later">Voice and images in the input, and the surface on other devices.</p>
+</section>
+
+<section data-anchor="pages" id="pages">
+<h2>Pages</h2>
+<div class="clauses" data-anchor="page-clauses">
+<p class="clause" data-anchor="page-general"><span class="clause-id">P1</span> A page is made of general blocks from the visual catalog; no page or block is specific to plans, weeks or any other domain.</p>
+<p class="clause" data-anchor="page-tree"><span class="clause-id">P2</span> Every page has exactly one activity and may have child pages; a child page has exactly one parent.</p>
+<p class="clause" data-anchor="page-lists-children"><span class="clause-id">P3</span> A parent page lists its child pages by title, and opening one puts it in view.</p>
+<p class="clause" data-anchor="page-parallel"><span class="clause-id">P4</span> Exo works on several pages at the same time; a turn on one page never waits for a turn on another.</p>
+<p class="clause" data-anchor="page-same-exo"><span class="clause-id">P5</span> Every page is worked on by the same Exo, with the same identity, vault and trunk.</p>
+<p class="clause" data-anchor="page-two-views"><span class="clause-id">P6</span> A page and its activity are one record with two views: the page shows it now, and the activity shows how it got here.</p>
+</div>
+<p data-anchor="tbd-later-exo-child" data-spec-tbd="later">Exo opening a child page on its own to work on something in parallel, and pinning pages.</p>
+</section>
+
+<section data-anchor="exo-block" id="exo-block">
+<h2>The Exo block</h2>
+<div class="clauses" data-anchor="exo-block-clauses">
+<p class="clause" data-anchor="exo-block-one"><span class="clause-id">E1</span> Every page has one Exo block, which shows Exo's words from its latest turn on that page.</p>
+<p class="clause" data-anchor="exo-block-replaced"><span class="clause-id">E2</span> Each Exo turn replaces the block's words; earlier words stay in the page's activity as the turns they belong to.</p>
+<p class="clause" data-anchor="exo-block-empty"><span class="clause-id">E3</span> A turn that only changes the page leaves the Exo block empty, so no earlier words sit beside a changed page.</p>
+<p class="clause" data-anchor="exo-block-working"><span class="clause-id">E4</span> While Exo works on the page, the Exo block says so.</p>
+<p class="clause" data-anchor="exo-block-adds"><span class="clause-id">E5</span> The Exo block carries what the page cannot, such as judgement, a caveat, or what Exo needs from the person, and never repeats what the page shows.</p>
+<p class="clause" data-anchor="exo-block-exo-only"><span class="clause-id">E6</span> Only Exo writes the Exo block; the person answers through the input.</p>
+</div>
+</section>
+
+<section data-anchor="activity" id="activity">
+<h2>What activity records</h2>
+<div class="table-scroll" data-anchor="activity-table-wrap">
+<table data-anchor="activity-table"><caption>Each entry in a page's activity, in the order it happened; anything not listed is not recorded</caption>
+<thead><tr><th>Event on the page</th><th>Recorded</th><th>As</th></tr></thead>
+<tbody>
+<tr data-anchor="activity-send"><td>The person sends from the input</td><td>Yes</td><td>The message, with the page edits it carries</td></tr>
+<tr data-anchor="activity-press-row"><td>The person presses a button</td><td>Yes</td><td>The press, with the values it sent</td></tr>
+<tr data-anchor="activity-exo-turn"><td>Exo finishes a turn</td><td>Yes</td><td>Exo's words, the ones the Exo block showed</td></tr>
+<tr data-anchor="activity-version-row"><td>Exo changes the page</td><td>Yes</td><td>The new version, which opens the page as it was</td></tr>
+<tr data-anchor="activity-commit-row"><td>Exo commits to the trunk</td><td>Yes</td><td>The commit line, marked as a commit</td></tr>
+<tr data-anchor="activity-typing"><td>The person types without sending</td><td>No</td><td>It stays in the input as a draft</td></tr>
+<tr data-anchor="activity-edits"><td>The person edits a block directly</td><td>With the next send or press on the page</td><td>Page edits carried by that send or press</td></tr>
+</tbody>
+</table>
+</div>
+<p data-anchor="tbd-direct-edits" data-spec-tbd>When does a direct edit to a block enter the activity? Tom asked whether activity should hold only what was sent; the other option records each edit once, after the person stops editing.
+  <button type="button" data-spec-choice="With the next send or press on the page">With the next send or press on the page (recommended)</button>
+  <button type="button" data-spec-choice="Once, after the person stops editing">Once, after the person stops editing</button>
+</p>
+</section>
+
+<section data-anchor="trunk" id="trunk">
+<h2>The trunk and what each turn reads</h2>
+<div class="clauses" data-anchor="trunk-clauses">
+<p class="clause" data-anchor="trunk-one"><span class="clause-id">K1</span> The trunk is one shared record of commits for all of the person's pages; each page's activity is a branch off it.</p>
+<p class="clause" data-anchor="trunk-commit"><span class="clause-id">K2</span> A commit is one line Exo writes when a page decides or finishes something, linked to the activity entry it came from.</p>
+<p class="clause" data-anchor="trunk-only-commits"><span class="clause-id">K3</span> The trunk holds only commits; no message, draft or reasoning from any page enters it.</p>
+<p class="clause" data-anchor="trunk-no-other-activity"><span class="clause-id">K4</span> No turn reads another page's activity, except the one entry Exo opens by following a commit's link.</p>
+</div>
+<div class="table-scroll" data-anchor="turn-context-wrap">
+<table data-anchor="turn-context"><caption>What Exo reads at the start of every turn on a page</caption>
+<thead><tr><th>Source</th><th>Read</th></tr></thead>
+<tbody>
+<tr data-anchor="ctx-page"><td>This page as it is now, in the snapshot format</td><td>In full, every turn</td></tr>
+<tr data-anchor="ctx-activity"><td>This page's activity</td><td>As its own conversation</td></tr>
+<tr data-anchor="ctx-parent"><td>The parent page as it is now</td><td>In full, every turn, for a child page</td></tr>
+<tr data-anchor="ctx-children"><td>The child pages</td><td>By title, with their commits marked as theirs in the trunk</td></tr>
+<tr data-anchor="ctx-trunk"><td>The trunk</td><td>Every turn</td></tr>
+<tr data-anchor="ctx-vault"><td>The vault</td><td>As Exo reads it on any page</td></tr>
+<tr data-anchor="ctx-other"><td>Any other page's activity</td><td>Never, except the one entry a commit's link leads to</td></tr>
+</tbody>
+</table>
+</div>
+<p data-anchor="tbd-later-trunk-view" data-spec-tbd="later">A view where the person reads the whole trunk.</p>
+</section>
+
+<section data-anchor="non-goals" id="non-goals">
+<h2>Non-goals</h2>
+<p data-anchor="non-goal-workflows">Enforcing the steps of parallel work: pages are the interaction layer, and scripted workflows belong to Exomachina underneath.</p>
+<p data-anchor="non-goal-bounds">Page bounds and the snapshot format, which <a href="./page-bounds.spec.html#bounds">page bounds</a> owns.</p>
+</section>
+
+</article>
+</body>
+</html>
