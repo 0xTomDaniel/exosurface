@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { buildArtifact, selftest, verifyArtifact, packArtifact, unpackArtifact } from '../lib/artifact.mjs';
 import { install, update, rollback, uninstall, setModels, launchdPlist } from '../lib/lifecycle.mjs';
-import { sanitizedEnv, removeTree, writeJsonAtomic } from '../lib/util.mjs';
+import { sanitizedEnv, removeTree, writeJsonAtomic, isExactVersion, compareVersions } from '../lib/util.mjs';
 
 // Resolve interpreters before rebinding HOME: mise shims are not safe in a disposable home.
 const PYTHON = execFileSync('/usr/bin/env', ['python3', '-c', 'import sys;print(sys.executable)'], { encoding: 'utf8', env: sanitizedEnv() }).trim();
@@ -114,4 +114,15 @@ test('doctor fails missing tools and never converts unsupported into release-rea
   assert.ok(r.checks.some(c => c.id === 'tool:uv' && c.status === 'fail'));
   assert.ok(r.checks.some(c => c.id === 'tool:python3' && c.status === 'fail'));
   assert.ok(r.checks.some(c => c.id === 'model-auth' && c.status === 'unsupported'));
+});
+
+
+test('exact SemVer permits prereleases/build metadata but not ranges or invalid identifiers', t => {
+  for (const v of ['0.1.0-dev', '1.2.3-rc.1', '1.2.3-0', '1.2.3-x-y', '1.2.3+build.001', '1.2.3-rc.2+local.7']) assert.equal(isExactVersion(v), true, v);
+  for (const v of ['^1.2.3', '~1.2.3', '>=1.2.3', 'latest', 'v1.2.3', '1.2', '01.2.3', '1.02.3', '1.2.03', '1.2.3-01', '1.2.3-a..b', '1.2.3-', '1.2.3+', '../1.2.3', '1.2.3/escape', '1.2.3-a_b']) assert.equal(isExactVersion(v), false, v);
+  assert.equal(compareVersions('1.2.3-rc.10', '1.2.3-rc.2'), 1);
+  assert.equal(compareVersions('1.2.3-alpha.1', '1.2.3-alpha'), 1);
+  assert.equal(compareVersions('1.2.3+build.1', '1.2.3+build.2'), 0);
+  assert.equal(compareVersions('1.2.3-1', '1.2.3-alpha'), -1);
+  const f = fixture(t, '0.1.0-dev'); assert.equal(verifyArtifact(f.artifact()).version, '0.1.0-dev');
 });

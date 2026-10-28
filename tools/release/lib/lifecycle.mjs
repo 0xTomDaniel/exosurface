@@ -10,7 +10,7 @@ import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSy
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { resolveArtifact, verifyArtifact } from './artifact.mjs';
-import { compareVersions, fail, isExecutable, readJson, removeTree, setReadOnly, sha256, sha256File, walk, which, withLock, writeFileAtomic, writeJsonAtomic, toPlist } from './util.mjs';
+import { compareVersions, fail, isExecutable, isExactVersion, readJson, removeTree, setReadOnly, sha256, sha256File, walk, which, withLock, writeFileAtomic, writeJsonAtomic, toPlist } from './util.mjs';
 
 export const RECEIPT_FORMAT = 'exosurface-install/0';
 export const MODEL_ROLES = ['main', 'compactor', 'subagent'];
@@ -251,7 +251,7 @@ export function rollback(opts) {
   const prefix = resolve(opts.prefix ?? defaultPaths(opts.home).prefix);
   const receipt = readReceipt(prefix);
   const target = opts.to ?? receipt.previous;
-  if (target && !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$/.test(target)) fail('Invalid rollback version');
+  if (target && !isExactVersion(target)) fail('Invalid rollback version');
   if (!target) fail('No previous release recorded; pass --to <version>');
   if (target === receipt.current) fail(`${target} is already current`);
   const dir = join(prefix, 'releases', target);

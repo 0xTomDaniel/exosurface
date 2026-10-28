@@ -10,17 +10,19 @@ export class ReleaseError extends Error {
 export const fail = (message, code) => { throw new ReleaseError(message, code); };
 
 // ---- versions -------------------------------------------------------------------------------
-const SEMVER = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
+const NUMERIC = '(0|[1-9][0-9]*)';
+const PRE_ID = '(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)';
+const SEMVER = new RegExp(`^${NUMERIC}\\.${NUMERIC}\\.${NUMERIC}(?:-(${PRE_ID}(?:\\.${PRE_ID})*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$`);
 export const isExactVersion = v => typeof v === 'string' && SEMVER.test(v);
 export function parseVersion(v) {
   const m = SEMVER.exec(String(v).trim().replace(/^v/, ''));
   if (!m) {
     // Tolerate "0.45" style versions reported by apps and engines fields.
     const short = /^(\d+)\.(\d+)$/.exec(String(v).trim().replace(/^v/, ''));
-    if (short) return [Number(short[1]), Number(short[2]), 0, ''];
+    if (short) return [BigInt(short[1]), BigInt(short[2]), 0n, ''];
     return undefined;
   }
-  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ?? ''];
+  return [BigInt(m[1]), BigInt(m[2]), BigInt(m[3]), m[4] ?? ''];
 }
 export function compareVersions(a, b) {
   const x = parseVersion(a), y = parseVersion(b);
@@ -28,11 +30,20 @@ export function compareVersions(a, b) {
   for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1;
   if (x[3] === y[3]) return 0;
   if (!x[3]) return 1; if (!y[3]) return -1;
-  return x[3] < y[3] ? -1 : 1;
+  const xp = x[3].split('.'), yp = y[3].split('.');
+  for (let i = 0; i < Math.max(xp.length, yp.length); i++) {
+    if (xp[i] === undefined) return -1; if (yp[i] === undefined) return 1;
+    if (xp[i] === yp[i]) continue;
+    const xn = /^[0-9]+$/.test(xp[i]), yn = /^[0-9]+$/.test(yp[i]);
+    if (xn && yn) return BigInt(xp[i]) < BigInt(yp[i]) ? -1 : 1;
+    if (xn !== yn) return xn ? -1 : 1;
+    return xp[i] < yp[i] ? -1 : 1;
+  }
+  return 0;
 }
 // Only the two range forms the contract allows: exact "1.2.3" or minimum ">=1.2.3".
 export function minimumOf(range) {
-  const m = /^>=\s*(\d+\.\d+(?:\.\d+)?)$/.exec(String(range ?? '').trim());
+  const m = /^>=\s*((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/.exec(String(range ?? '').trim());
   return m ? m[1] : undefined;
 }
 export function satisfies(version, range) {
