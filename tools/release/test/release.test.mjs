@@ -1,11 +1,20 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { buildArtifact, selftest, verifyArtifact, packArtifact, unpackArtifact } from '../lib/artifact.mjs';
 import { install, update, rollback, uninstall, setModels, launchdPlist } from '../lib/lifecycle.mjs';
 import { sanitizedEnv, removeTree, writeJsonAtomic } from '../lib/util.mjs';
+
+// Resolve interpreters before rebinding HOME: mise shims are not safe in a disposable home.
+const PYTHON = execFileSync('/usr/bin/env', ['python3', '-c', 'import sys;print(sys.executable)'], { encoding: 'utf8', env: sanitizedEnv() }).trim();
+const suiteHome = mkdtempSync(join(tmpdir(), 'exo-release-suite-'));
+process.env.HOME = suiteHome;
+process.env.PATH = [dirname(process.execPath), dirname(PYTHON), '/usr/bin', '/bin', '/usr/sbin', '/sbin'].join(':');
+for (const key of Object.keys(process.env)) if (/^(EXO|OPTCHAT|PI_|HERDR|BB_|CLAUDE|CODEX|ANTHROPIC|OPENAI|OPENROUTER)/.test(key)) delete process.env[key];
+after(() => removeTree(suiteHome));
 
 function fixture(t, version = '1.0.0', schema = 1) {
   const root = mkdtempSync(join(tmpdir(), 'exo-release-test-'));
@@ -19,7 +28,7 @@ function fixture(t, version = '1.0.0', schema = 1) {
 }
 function installOptions(f, artifact) {
   const home = join(f.root, 'home'), vault = join(home, 'vault'); mkdirSync(vault, { recursive: true });
-  return { home, vault, artifact, node: process.execPath, pathValue: '/usr/bin:/bin' };
+  return { acceptFullAccess: true, home, vault, artifact, node: process.execPath, pathValue: '/usr/bin:/bin' };
 }
 
 test('relocated immutable artifact owner executes without node_modules/developer tree', t => {
@@ -68,8 +77,7 @@ test('setup propagates starter conflict exit3 without release writes', async t =
   writeJsonAtomic(join(starter, 'starter-artifact.json'), { contract: 'exo-mac-starter/0' });
   writeFileSync(script, 'import sys\nprint("conflict",file=sys.stderr)\nsys.exit(3)\n');
   // Tests use the existing interpreter resolved by the test harness; no system install.
-  const { execFileSync } = await import('node:child_process');
-  const py = execFileSync('/usr/bin/env', ['python3', '-c', 'import sys;print(sys.executable)'], { encoding: 'utf8', env: sanitizedEnv() }).trim();
+  const py = PYTHON;
   assert.throws(() => setup({ ...opts, starterScript: script, starterArtifact: starter, python: py, ownerTimezone: 'Etc/UTC' }), e => e.exitCode === 3);
   assert.equal(existsSync(join(opts.home, 'Library')), false);
 });
@@ -79,4 +87,31 @@ test('existing conflicting vault binding is refused before release writes', t =>
   writeJsonAtomic(file, { vault: '/other/owner-vault' });
   assert.throws(() => install(opts), /Existing config vault differs/);
   assert.equal(existsSync(join(opts.home, 'Library')), false);
+});
+
+test('declined full-access install/setup makes no writes', async t => {
+  const { setup } = await import('../lib/setup.mjs');
+  const f = fixture(t), opts = installOptions(f, f.artifact()); delete opts.acceptFullAccess;
+  assert.throws(() => install(opts), /not a sandbox/);
+  assert.throws(() => setup(opts), /not a sandbox/);
+  assert.equal(existsSync(join(opts.home, 'Library')), false);
+});
+
+test('archive symlinks refused before extraction', t => {
+  const f = fixture(t), archiveRoot = join(f.root, 'transport'); mkdirSync(archiveRoot);
+  symlinkSync(f.pkg, join(archiveRoot, 'outside'));
+  const tarball = join(f.root, 'bad.tar.gz');
+  execFileSync('/usr/bin/tar', ['-czf', tarball, '-C', f.root, 'transport'], { env: sanitizedEnv() });
+  const target = join(f.root, 'extract');
+  assert.throws(() => unpackArtifact(tarball, target), /links or special/);
+  assert.equal(existsSync(target), false);
+});
+
+test('doctor fails missing tools and never converts unsupported into release-ready', async t => {
+  const { doctor } = await import('../lib/doctor.mjs');
+  const f = fixture(t), r = doctor({ home: join(f.root, 'home'), artifact: f.artifact(), env: { PATH: '' }, bbApp: join(f.root, 'missing-bb'), platform: 'darwin' });
+  assert.equal(r.ok, false); assert.equal(r.ready, false);
+  assert.ok(r.checks.some(c => c.id === 'tool:uv' && c.status === 'fail'));
+  assert.ok(r.checks.some(c => c.id === 'tool:python3' && c.status === 'fail'));
+  assert.ok(r.checks.some(c => c.id === 'model-auth' && c.status === 'unsupported'));
 });

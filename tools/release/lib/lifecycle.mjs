@@ -179,7 +179,9 @@ function writePlist(receipt, manifest) {
   return { plistFile, changed, label, stalePlist };
 }
 
+export const FULL_ACCESS_NOTICE = 'Exo and its skills run with your macOS user permissions: they can read and write files, execute commands and use your authenticated tools. This is not a sandbox. Review the trusted artifact, then explicitly pass --accept-full-access to continue. No installation files were written.';
 export function install(opts) {
+  if (!opts.acceptFullAccess) fail(FULL_ACCESS_NOTICE, 3);
   const home = resolve(opts.home ?? homedir());
   const d = defaultPaths(home);
   const paths = {

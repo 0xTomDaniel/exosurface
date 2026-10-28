@@ -78,7 +78,7 @@ function dependencyManifest(packageDir, contract) {
     if (!v) fail(`Dependency ${name} has no exact version in package-lock.json; the bundle would be unpinned`);
     bundled[name] = v;
   }
-  return { node: contract.requires.node, bb: contract.requires.bb, tools: contract.requires.tools ?? {}, external: contract.pins ?? {}, bundledIntoDist: bundled };
+  return { node: contract.requires.node, bb: contract.requires.bb, tools: contract.requires.tools ?? {}, external: contract.pins ?? {}, lockedRuntimePackages: bundled, runtimeBundling: 'unverified-by-this-tool' };
 }
 
 export function verifyArtifact(dir) {

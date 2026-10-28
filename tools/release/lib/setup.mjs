@@ -4,10 +4,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, realpathSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { homedir } from 'node:os';
-import { install, readReceipt, defaultPaths } from './lifecycle.mjs';
+import { install, readReceipt, defaultPaths, FULL_ACCESS_NOTICE } from './lifecycle.mjs';
 import { fail, readJson, sanitizedEnv } from './util.mjs';
 
 export function setup(opts) {
+  if (!opts.acceptFullAccess) fail(FULL_ACCESS_NOTICE, 3);
   for (const k of ['starterScript', 'starterArtifact', 'python', 'vault', 'artifact', 'ownerTimezone'])
     if (!opts[k]) fail(`setup requires --${k.replace(/[A-Z]/g, x => '-' + x.toLowerCase())}`);
   if (opts.ownerTimezone === 'unconfigured') fail('Owner timezone must be configured before setup');
@@ -26,7 +27,11 @@ export function setup(opts) {
   if (artifact.contract !== 'exo-mac-starter/0') fail('Unknown starter artifact contract');
   const apply = [script, 'apply', '--artifact', resolve(opts.starterArtifact), '--vault', vault, '--owner-timezone', opts.ownerTimezone];
   if (opts.ownerName) apply.push('--owner-name', opts.ownerName);
-  run(apply);
+  const receiptFile = join(vault, '.exo', 'starter-receipt.json');
+  if (existsSync(receiptFile)) {
+    const prior = readJson(receiptFile);
+    if (prior.contract !== artifact.contract || prior.starter_version !== artifact.starter_version || prior.source?.commit !== artifact.source?.commit || prior.bindings?.owner_timezone !== opts.ownerTimezone || (opts.ownerName && prior.bindings?.owner_name !== opts.ownerName)) fail('Existing starter receipt does not match this setup; nothing overwritten', 3);
+  } else run(apply);
   const verification = run([script, 'verify', '--vault', vault]);
   let report; try { report = JSON.parse(verification); } catch { fail('Starter verify did not return JSON'); }
   if (report.ok !== true) fail('Starter verification is not complete; product was not installed');

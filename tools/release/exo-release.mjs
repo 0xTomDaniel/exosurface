@@ -8,7 +8,7 @@ import { doctor, formatDoctor } from './lib/doctor.mjs';
 import { setup } from './lib/setup.mjs';
 import { fail } from './lib/util.mjs';
 
-const flags = new Set(['allowDirty', 'serviceStopped', 'keepConfig', 'queryLaunchd', 'json']);
+const flags = new Set(['acceptFullAccess', 'allowDirty', 'serviceStopped', 'keepConfig', 'queryLaunchd', 'json']);
 export function parse(args) {
   const [command = 'help', ...tail] = args, opts = {};
   for (let i = 0; i < tail.length; i++) {

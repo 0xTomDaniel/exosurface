@@ -29,6 +29,7 @@ First stage the starter from the separate Exocortex repository using `deploy/mac
 
 ```
 "$NODE" tools/release/exo-release.mjs setup \
+  --accept-full-access \
   --artifact /path/to/exosurface-VERSION \
   --starter-script /path/to/exo_mac_starter.py \
   --starter-artifact /path/to/starter-artifact-directory \
@@ -40,7 +41,7 @@ First stage the starter from the separate Exocortex repository using `deploy/mac
   --models /path/to/models.json
 ```
 
-The wrapper checks Python, applies the starter (conflict exit 3, no product-install writes), verifies it, then installs the immutable release. Owner timezone is explicit. Starter verification needs its executable tools, not just skill text. Retry preserves the existing installation; use `models` or `update` deliberately afterward. `--models` is a **file** containing explicit role selections:
+Setup and direct install refuse without `--accept-full-access`, displaying the full-permissions notice before any installation writes. Omitting it is the noninteractive decline path. The wrapper checks Python, applies the starter (conflict exit 3, no product-install writes), verifies it, then installs the immutable release. Owner timezone is explicit. Starter verification needs its executable tools, not just skill text. Retry preserves the existing installation; use `models` or `update` deliberately afterward. `--models` is a **file** containing explicit role selections:
 
 ```json
 {"main":{"provider":"YOUR_PROVIDER","model":"YOUR_MODEL","thinking":"medium"},"compactor":{"provider":"YOUR_PROVIDER","model":"YOUR_MODEL","thinking":"low"},"subagent":{"provider":"YOUR_PROVIDER","model":"YOUR_MODEL","thinking":"medium"}}
@@ -74,3 +75,10 @@ Uninstall requires explicit confirmation that the service has already been stopp
 ```
 
 All lifecycle fixtures are in temporary roots; subprocesses use an environment allowlist. This prevents accidental inherited live selectors, not malicious code access. No test installs/registers a real service or changes live BB.
+
+### Development evidence (2026-10-28)
+
+- Ten disposable-root tests passed on Node 24.15.0, including decline-before-write, starter conflict exit 3, missing-tool doctor failure, relocated owner execution, archive-link refusal, and schema-incompatible rollback refusal.
+- The actual sibling first-run plugin (stable id `exosurface`, version `0.1.0-dev`) built through this strict builder: 30 selected files, six dist owner-graph modules. Its relocated `--release-selftest` returned `ok:true` from a throwaway HOME without artifact node_modules. Package pins were `@earendil-works/pi-coding-agent@1.1.0` and OptChat `aae1caf7715830051d327f819fc776792211167a`; SDK/react/zod versions came from the package lock.
+- That source was still uncommitted, so `--allow-dirty` was explicitly recorded (`clean:false`). This is cross-lane development evidence, not release provenance approval. Only Node 24.15.0 was exercised, not the minimum 22.19.0.
+- The owner import graph resolves. Actual BB host/server/app loading, first-owner authentication, provider connectivity and service startup/reboot remain **unverified**. The dependency manifest says `lockedRuntimePackages`, not that runtime packages were proven bundled into BB's app output. No live service or BB profile was changed.
