@@ -162,7 +162,7 @@
       "id": "production-snapshot-actions",
       "kind": "manual",
       "spec": "acceptance-first-run-press",
-      "proof": "BLOCKED at4570c18: production snapshot/textbox/button implementation absent. Complete actual built snapshot\u2192textbox edit\u2192press\u2192owner\u2192page update with >300 chars, persisted drafts and stable refs before real UI acceptance"
+      "proof": "BLOCKED visual renderer/rendered interactions at8cb1f3b. Backend now independently18/18 plus6 compiled-module checks: compiled server\u2192real socket\u2192mock Pi compiled tools retains232027-byte textbox/reload sentinel. Direct handler/mock proof is not actual browser/BB RPC/Pi loader/inference; require rendered edit/press/reopen with stable refs and drafts within reuse-first scope."
     },
     {
       "id": "native-layout-interactions",
