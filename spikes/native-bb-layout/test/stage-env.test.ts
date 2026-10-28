@@ -13,7 +13,7 @@ test('test process itself carries no inherited live selectors', () => {
 test('stageEnv is an allowlist: live selectors in the parent never reach staging', () => {
   const saved = { ...process.env };
   try {
-    Object.assign(process.env, { EXOSURFACE_HOME: '/Users/x/.exo-bb-spike', EXO_BB_PROFILE: 'exo-optchat', EXO_A2UI_X: '1', OPTCHAT_HOME: '/Users/x/.optchat', PI_CODING_AGENT_DIR: '/Users/x/.pi/agent', EXO_CONFIG: '/Users/x/.config/exo/exosurface.json' });
+    Object.assign(process.env, { EXOSURFACE_HOME: '/home/fixture/.exo-bb-spike', EXO_BB_PROFILE: 'exo-optchat', EXO_A2UI_X: '1', OPTCHAT_HOME: '/home/fixture/.optchat', PI_CODING_AGENT_DIR: '/home/fixture/.pi/agent', EXO_CONFIG: '/home/fixture/.config/exo/exosurface.json' });
     const env = assertClean(stageEnv({ stage: '/tmp/nls-unit' }), '/tmp/nls-unit');
     for (const k of Object.keys(env)) assert.ok(!FORBIDDEN.test(k) || (k === 'EXO_CONFIG' && env[k].startsWith('/tmp/nls-unit')), k);
     assert.equal(env.HOME, '/tmp/nls-unit/home');
@@ -25,9 +25,9 @@ test('stageEnv is an allowlist: live selectors in the parent never reach staging
 test('assertClean rejects inherited selectors and live state paths', () => {
   assert.throws(() => assertClean({ OPTCHAT_HOME: '/tmp/x' }, '/tmp/nls-s'));
   assert.throws(() => assertClean({ PI_SESSION_FILE: '/tmp/x' }, '/tmp/nls-s'));
-  assert.throws(() => assertClean({ EXO_CONFIG: '/Users/x/.config/exo/exosurface.json' }, '/tmp/nls-s'));
-  assert.throws(() => assertClean({ BB_DATA_DIR: '/Users/x/.bb' }, '/tmp/nls-s'));
-  assert.throws(() => stageEnv({ stage: '/Users/x/stage' }));
+  assert.throws(() => assertClean({ EXO_CONFIG: '/home/fixture/.config/exo/exosurface.json' }, '/tmp/nls-s'));
+  assert.throws(() => assertClean({ BB_DATA_DIR: '/home/fixture/.bb' }, '/tmp/nls-s'));
+  assert.throws(() => stageEnv({ stage: '/home/fixture/stage' }));
   assert.throws(() => stageEnv({ stage: '/tmp/nls-s', serverPort: 38886 }));
 });
 
