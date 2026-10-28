@@ -1,0 +1,6 @@
+{
+  "kind": "sampled-process-open-file-audit",
+  "ownedProcessCount": 19,
+  "liveSensitiveOpenFiles": [],
+  "note": "Sample only, not filesystem syscall tracing or security sandbox. Headless BB launcher; no Electron launched. Chromium uses disposable profile."
+}
