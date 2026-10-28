@@ -149,8 +149,11 @@ export function doctor(opts = {}) {
         let sr; try { sr = readJson(receiptFile); } catch {}
         add('starter', sr ? 'ok' : 'fail', sr ? `starter receipt ${sr.contract ?? ''} ${sr.source?.commit?.slice?.(0, 12) ?? ''}`.trim() : `${receiptFile} unreadable`);
         // Provisional field names from the starter lane (98b80a89); accept either spelling.
-        const tz = sr?.bindings?.owner_timezone ?? sr?.bindings?.ownerTimezone ?? sr?.owner_timezone ?? sr?.ownerTimezone;
-        if (!tz || tz === 'unconfigured') add('owner-timezone', 'fail', 'owner timezone is unconfigured; dated planning and automation would guess', 'Re-apply the starter with --owner-timezone <IANA zone>, e.g. America/Denver');
+        let tz;
+        try { tz = /^owner_timezone:\s*"?([^"\n]*)"?\s*$/m.exec(readFileSync(join(vault, 'Exo', 'Owner.md'), 'utf8'))?.[1]?.trim(); } catch {}
+        let validTimezone = false;
+        try { if (tz && tz !== 'unconfigured') { new Intl.DateTimeFormat('en', { timeZone: tz }); validTimezone = true; } } catch {}
+        if (!validTimezone) add('owner-timezone', 'fail', 'owner timezone is unconfigured; dated planning and automation would guess', 'Re-apply the starter with --owner-timezone <IANA zone>, e.g. America/Denver');
         else add('owner-timezone', 'ok', tz);
       }
     }
