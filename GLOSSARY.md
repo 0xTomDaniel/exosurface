@@ -5,7 +5,7 @@ What the person and Exo share: surfaces of pages and one input, where each surfa
 ## The surface
 
 **Surface** (Exosurface in full):
-The place the person and Exo work on one thing together: one or more pages, the page in view and one input, with no separate chat column. A surface and its thread are the same thing, and surface is the person-facing word: its activity is the conversation, across all of its pages. Parallel work is another surface; New surface is the only control that makes something new.
+The place the person and Exo work on one thing together: one or more pages, the page in view and one input, with no separate chat column. A surface and its thread are the same thing, and surface is the person-facing word: its activity is the conversation, across all of its pages. Parallel work is another surface; New surface is the only button for starting new work.
 _Avoid_: canvas, workspace, board, panel area, thread (the internal word for a surface's activity), chat, new chat, new agent
 
 **Home**:
@@ -61,7 +61,7 @@ The list of surfaces, never pages, in three parts: Home at the top, Needs you, a
 _Avoid_: chat list, history
 
 **Needs you**:
-The sidebar part for surfaces that finished a turn or wait on the person. A surface rises into it on its own and leaves when the person settles it; it can be empty. Surfaces Exo is working on fold into a Working group beside it.
+The sidebar part for surfaces, other than the one the person is in, that finished a turn or wait on the person. A surface rises into it on its own and leaves when the person settles it; it can be empty. Surfaces Exo is working on fold into a Working group beside it.
 _Avoid_: inbox, unread
 
 **Tree**:
