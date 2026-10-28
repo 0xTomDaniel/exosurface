@@ -64,7 +64,7 @@ The optional `isolation snapshot --home <explicit-home> --out <outside-artifact>
 
 - Preserved original local spec commits `4c34fc7`, `d7bd6f4`, `d34b7d2` and the interrupted acceptance files; no reset/clean.
 - Shipping spec passes spec-chat `validate-style.py` and `preflight.py` from the installed current workflow. No fake Accept or status file.
-- 44 independent fixture tests pass, including full-keepalive rejection, future-state rejection, path/privacy/pin failures, nested starter hash/provenance metadata, missing-config no writes, and manual gates staying OPEN.
+- 48 independent fixture tests pass, including full-keepalive rejection, future-state rejection, path/privacy/pin failures, nested starter hash/provenance metadata, missing-config no writes, and manual gates staying OPEN.
 - macOS system Python initially created bytecode caches in the temporary HOME; CLI test subprocesses now set `PYTHONDONTWRITEBYTECODE=1`. The temporary-home no-write regression passes. No live owner tests were run.
 - Sibling source inspection found a real integration mismatch: first-run's draft manifest used `format`, string `owner`, top-level label and string pins, whereas bundle and checker require `contract`, owner object and npm/git pin objects. This was reported to the parent; compatibility is **OPEN** until the manifests converge and the actual artifact passes. The checker's starter parser was corrected to the starter's actual `source.commit/source.dirty` and per-file hash objects, with regression coverage.
 
@@ -88,3 +88,25 @@ No clean-account, own-auth, reboot, real-BB or end-to-end result is claimed by t
 - Starter carries GPL-3.0 source license and Nitride MIT/third-party notices. Licensing/distribution review stays OPEN; private sharing does not eliminate license obligations.
 
 - The reconciled draft then used a dotted package id, which violates the bundle lowercase-slug regex. Reported upstream; the independent checker rejects it rather than adapting.
+
+## Independent producer/consumer exercise — 2026-10-28
+
+Actual production producer `4570c1893d1fca47d43a8d5fb1c251535e4be7eb` now supplies package id `exosurface`, an exact npm lock, and real BB `app.js/app.css/server.js/host.js` with SDK metadata. These earlier completeness/shape blockers are resolved for this artifact, not waived. The independent checker now requires those files, matching metadata/host digest, and exact direct dependency lock entries. Four new negative fixtures cover missing lock, owner-only dist, mismatched metadata and altered host.
+
+The lane independently built its own artifact from the actual producer through the sibling bundle consumer. Manifest reports source.clean=true at producer4570c18. `--allow-dirty` was present as a diagnostic flag, but no dirty-source exception was used in the resulting manifest. Consumer was HEAD `a68af070b760a546e918a2f2c4a7b10e020673d7` with evolving working-tree changes: this is **working-tree integration evidence, not clean-committed consumer reproducibility**. Consumer source was subsequently copied into a fixture with a SHA256 inventory and the dirty-status snapshot; exact evidence is outside the repository, pointed to by `/tmp/exo-independent-acceptance-latest`. A clean committed consumer rerun remains required.
+
+Observed under an empty-object subprocess environment, temporary HOME/TMPDIR and resolved absolute Node24.15.0:
+
+- Actual producer→bundle artifact build, verify and independent package check exit0. Runtime lock names SDK0.6.15, React19.3.0, Zod4.6.6. Runtime bundling is still explicitly unverified by the bundle tool.
+- Archive pack→safe unpack→relocated owner selftest exit0 from the artifact with no node_modules. This establishes loading/execution of that owner's built import graph, not Pi authentication, inference, BB app loading or a working page renderer.
+- Relocated `--readiness` exits2, reports config-missing, authentication/connectivity unverified, runtime/aggregate false. Temporary home inventory unchanged, nonexistent state path remains absent.
+- The earlier concern that prerelease0.1.0-dev was rejected was an inspection inference, **not a reproduced failure**; current consumer accepts exact prerelease SemVer and the actual build succeeds. It is not a persistent blocker.
+- A real relocation defect was reproduced: invoking copied `exo-release.mjs` via macOS `/var` path alias returns exit0 with no stdout/action because the direct-run guard compares a canonical `/private/var` import URL to an unresolved argv path. Canonicalizing the fixture path allowed the remaining probes; the alias case was reported upstream and remains a required regression/fix, not a production workaround. `pack --out-dir` additionally required the caller to create that directory.
+
+## Independent reliability and layout assessment
+
+Reviewed reliability52db1f3 source and residual advisory matrix; independently ran its actual legacy RPC/socket/mock-BB regression and seven textbox/overflow/edits unit checks: all eight pass. This is legacy coverage only. The new production app at4570c18 renders title/body and ThreadChat and explicitly lacks snapshot rendering. Production page buttons/textboxes are therefore **BLOCKED: implementation absent**, not merely untested. Require the actual built production snapshot→textbox edit→press→owner→page update path with >300-character input, persisted drafts and stable refs; no waiver from legacy success.
+
+Reviewed layout PR54/b604ad4 source evidence/README. Actual UI evidence is reported there, not independently rerun by this lane. Native child sidebar navigation works, but first visit does not open/select Pages; compact embedded ThreadChat omits the pending native input form; hidden workers leak in parent completion summaries. These are unresolved shipping design/integration gaps, not accepted tradeoffs. The spike's fixture provider is not OptChat/inference. Page-first layout approval stays OPEN.
+
+Cross-lane source finding: layout's actual SDK observations reject empty spawn input `[]`, while production setup at4570c18 still passes `input:[]`. Reported for producer fix and real-BB bootstrap proof; mocks alone do not resolve the discrepancy. Parent-environment provisioning before child spawn is another SDK boundary to respect.

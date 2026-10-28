@@ -37,7 +37,7 @@ def good_manifest(**overrides) -> dict:
     manifest = {
         "contract": "exosurface-package/0",
         "id": "exosurface",
-        "files": ["package.json", "dist/**", "src/**"],
+        "files": ["package.json", "package-lock.json", "dist/**", "src/**"],
         "owner": {"entry": "src/owner-service.ts", "nodeArgs": ["--experimental-transform-types"],
                   "launchdLabel": "app.exosurface.owner"},
         "stateSchema": {"writes": 1, "reads": [1]},
@@ -51,8 +51,17 @@ def good_manifest(**overrides) -> dict:
 
 def make_release(root: Path, manifest: dict = None) -> Path:
     write(root / "release.json", json.dumps(manifest or good_manifest()))
-    write(root / "package.json", '{"name":"bb-plugin-exosurface"}')
-    write(root / "dist/server.js", "export const ok = true;\n")
+    deps = {"@get-bb/plugin-sdk": "0.6.15"}
+    write(root / "package.json", json.dumps({"name": "bb-plugin-exosurface", "version": "0.1.0-dev", "dependencies": deps}))
+    write(root / "package-lock.json", json.dumps({"packages": {"": {"dependencies": deps}, "node_modules/@get-bb/plugin-sdk": {"version": "0.6.15", "resolved": "https://example.invalid/sdk.tgz", "integrity": "fixture-not-network-proof"}}}))
+    for name in ("app", "server", "host"):
+        body = "export const ok = true;\n"
+        write(root / f"dist/{name}.js", body)
+        meta = {"pluginId": "exosurface", "pluginVersion": "0.1.0-dev", "sdkVersion": "0.6.15"}
+        if name == "host":
+            meta["artifactDigest"] = hashlib.sha256(body.encode()).hexdigest()
+        write(root / f"dist/{name}.meta.json", json.dumps(meta))
+    write(root / "dist/app.css", "body {}\n")
     write(root / "src/owner-service.ts", "export {};\n")
     return root
 
@@ -81,6 +90,22 @@ class PackageTests(unittest.TestCase):
 
     def test_good_release_passes(self):
         self.assertEqual(set(), self.rules())
+
+    def test_missing_real_lock_fails(self):
+        (self.root / "package-lock.json").unlink()
+        self.assertIn("bb-package-lock-required", self.rules())
+
+    def test_owner_only_dist_not_bb_release(self):
+        (self.root / "dist/app.js").unlink()
+        self.assertIn("bb-dist-missing", self.rules())
+
+    def test_sdk_metadata_mismatch_fails(self):
+        write(self.root / "dist/app.meta.json", '{}')
+        self.assertIn("bb-meta-mismatch", self.rules())
+
+    def test_tampered_bb_host_digest_fails(self):
+        write(self.root / "dist/host.js", "changed")
+        self.assertIn("bb-host-digest", self.rules())
 
     def test_node_modules_denied(self):
         write(self.root / "node_modules/left-pad/index.js")

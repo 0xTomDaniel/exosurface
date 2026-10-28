@@ -269,6 +269,8 @@ def check_package(release_dir: Path, terms: list[str]) -> Report:
     if not any((release_dir / "dist").glob("*")):
         report.fail("dist-missing", "dist/", "prebuilt dist is required")
 
+    check_bb_payload(report, release_dir)
+
     allow = list(manifest.get("files") or [])
     allow += ["release.json", "SHA256SUMS", "checksums.json"]
     for rel in rel_files(release_dir):
@@ -283,6 +285,42 @@ def check_package(release_dir: Path, terms: list[str]) -> Report:
             report.fail("path-not-allowlisted", text)
         scan_content(report, release_dir, rel, terms)
     return report
+
+
+def check_bb_payload(report: Report, root: Path) -> None:
+    """Static completeness, not a BB loader or dependency-resolution proof."""
+    try:
+        package = json.loads((root / "package.json").read_text())
+        lock = json.loads((root / "package-lock.json").read_text())
+    except (OSError, ValueError):
+        report.fail("bb-package-lock-required", "package-lock.json")
+        return
+    dependencies = package.get("dependencies") or {}
+    packages = lock.get("packages") or {}
+    if not dependencies or packages.get("", {}).get("dependencies") != dependencies:
+        report.fail("bb-lock-root-mismatch", "package-lock.json")
+    for name, version in dependencies.items():
+        pin = packages.get("node_modules/" + name) or {}
+        if pin.get("version") != version or not pin.get("resolved") or not pin.get("integrity"):
+            report.fail("bb-lock-incomplete", "package-lock.json", name)
+    for name in ("app", "server", "host"):
+        for rel in (f"dist/{name}.js", f"dist/{name}.meta.json"):
+            if not (root / rel).is_file():
+                report.fail("bb-dist-missing", rel)
+        meta = root / f"dist/{name}.meta.json"
+        if not meta.is_file():
+            continue
+        try:
+            data = json.loads(meta.read_text())
+        except ValueError:
+            report.fail("bb-meta-invalid", str(meta.relative_to(root)))
+            continue
+        if data.get("pluginId") != "exosurface" or data.get("pluginVersion") != package.get("version") or data.get("sdkVersion") != "0.6.15":
+            report.fail("bb-meta-mismatch", str(meta.relative_to(root)))
+        if name == "host" and (root / "dist/host.js").is_file() and data.get("artifactDigest") != sha256(root / "dist/host.js"):
+            report.fail("bb-host-digest", "dist/host.meta.json")
+    if not (root / "dist/app.css").is_file():
+        report.fail("bb-dist-missing", "dist/app.css")
 
 
 # ---------- starter ----------

@@ -157,6 +157,24 @@
       "kind": "manual",
       "spec": "contract-python-licenses",
       "proof": "Review GPL-3.0 starter plus Nitride MIT/third-party notices and redistribution obligations for actual private artifact; not proved by automated scan"
+    },
+    {
+      "id": "production-snapshot-actions",
+      "kind": "manual",
+      "spec": "acceptance-first-run-press",
+      "proof": "BLOCKED at4570c18: production snapshot/textbox/button implementation absent. Complete actual built snapshot\u2192textbox edit\u2192press\u2192owner\u2192page update with >300 chars, persisted drafts and stable refs before real UI acceptance"
+    },
+    {
+      "id": "native-layout-interactions",
+      "kind": "decision",
+      "spec": "tbd-layout",
+      "proof": "Resolve actual layout PR54 gaps: Pages not opened/selected on first visit, compact pending form missing, hidden worker parent-summary leakage. No accepted tradeoff yet"
+    },
+    {
+      "id": "clean-consumer-reproducibility",
+      "kind": "automated",
+      "spec": "release-pins",
+      "proof": "Rerun real producer artifact through exact clean committed consumer including macOS aliased-path CLI negative test; working-tree run with hash inventory is evidence, not final reproducibility"
     }
   ]
 }
