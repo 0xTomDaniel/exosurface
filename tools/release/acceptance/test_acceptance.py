@@ -43,7 +43,7 @@ def good_manifest(**overrides) -> dict:
         "stateSchema": {"writes": 1, "reads": [1]},
         "requires": {"node": ">=22.19.0", "bb": ">=0.45.0"},
         "pins": {"pi": {"npm": "@earendil-works/pi-coding-agent", "version": "1.1.0"},
-                 "optchat": {"version": "0.8.6", "commit": "aae1caf7715830051d327f819fc776792211167a"}},
+                 "optchat": {"git": "https://github.com/jonaslsaa/pi-optchat.git", "version": "0.8.6", "commit": "aae1caf7715830051d327f819fc776792211167a"}},
     }
     manifest.update(overrides)
     return manifest
@@ -116,6 +116,22 @@ class PackageTests(unittest.TestCase):
         report = acceptance.check_package(self.root, TERMS)
         self.assertIn("content:personal-term", {f["rule"] for f in report.findings})
         self.assertNotIn("Acme", json.dumps(report.as_dict()))
+
+    def test_versioned_slug_accepted(self):
+        make_release(self.root, good_manifest(id="exosurface-0-1-0-dev"))
+        self.assertEqual(set(), self.rules())
+
+    def test_dotted_id_rejected_like_bundle(self):
+        make_release(self.root, good_manifest(id="exosurface-0.1.0-dev"))
+        self.assertIn("id", self.rules())
+
+    def test_owner_string_is_rejected_not_adapted(self):
+        make_release(self.root, good_manifest(owner="dist/owner-service.js"))
+        self.assertIn("owner-shape", self.rules())
+
+    def test_string_pins_rejected(self):
+        make_release(self.root, good_manifest(pins={"pi": "1.1.0", "optchat": "0.8.6"}))
+        self.assertIn("pins-shape", self.rules())
 
     def test_wrong_label_fails(self):
         manifest = good_manifest(owner={"entry": "src/owner-service.ts", "launchdLabel": "local.exocortex.exo-owner"})

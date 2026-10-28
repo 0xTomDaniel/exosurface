@@ -64,7 +64,7 @@ The optional `isolation snapshot --home <explicit-home> --out <outside-artifact>
 
 - Preserved original local spec commits `4c34fc7`, `d7bd6f4`, `d34b7d2` and the interrupted acceptance files; no reset/clean.
 - Shipping spec passes spec-chat `validate-style.py` and `preflight.py` from the installed current workflow. No fake Accept or status file.
-- 40 independent fixture tests pass, including full-keepalive rejection, future-state rejection, path/privacy/pin failures, nested starter hash/provenance metadata, missing-config no writes, and manual gates staying OPEN.
+- 44 independent fixture tests pass, including full-keepalive rejection, future-state rejection, path/privacy/pin failures, nested starter hash/provenance metadata, missing-config no writes, and manual gates staying OPEN.
 - macOS system Python initially created bytecode caches in the temporary HOME; CLI test subprocesses now set `PYTHONDONTWRITEBYTECODE=1`. The temporary-home no-write regression passes. No live owner tests were run.
 - Sibling source inspection found a real integration mismatch: first-run's draft manifest used `format`, string `owner`, top-level label and string pins, whereas bundle and checker require `contract`, owner object and npm/git pin objects. This was reported to the parent; compatibility is **OPEN** until the manifests converge and the actual artifact passes. The checker's starter parser was corrected to the starter's actual `source.commit/source.dirty` and per-file hash objects, with regression coverage.
 
@@ -79,3 +79,12 @@ The optional `isolation snapshot --home <explicit-home> --out <outside-artifact>
 - Author migration and branch-switch isolation proof require separate approval. The current checkout has not been made production-independent by merging documentation.
 
 No clean-account, own-auth, reboot, real-BB or end-to-end result is claimed by this lane.
+
+## Follow-up integration findings
+
+- Local primary source confirms installed Pi package name `@earendil-works/pi-coding-agent`, version `1.1.0`; installed OptChat upstream `v0.8.6` resolves to `aae1caf7715830051d327f819fc776792211167a`, remote `https://github.com/jonaslsaa/pi-optchat.git`. First-run has now changed its manifest to the explicit object contract; actual artifact verification remains separate.
+- SDK 0.6.15 thread spawn has no caller-supplied durable id/idempotency key and metadata follows spawn. Completed repeats may be idempotent; a crash in the spawn/metadata window is ambiguous. Journal intent, fail closed, require manual reconciliation; do not auto-retry or fabricate adoption. Smooth recovery stays OPEN pending injected failures before/after spawn, metadata and receipt, and an owner-facing decision. The spec now records this explicitly rather than promising universal recovery.
+- Stage/apply need Python >=3.9; metadata validation requires Python >=3.11 plus PyYAML/uv dependencies. Offline verify must FAIL if unavailable. A cache on the author's Mac is not a clean-Mac prerequisite solution.
+- Starter carries GPL-3.0 source license and Nitride MIT/third-party notices. Licensing/distribution review stays OPEN; private sharing does not eliminate license obligations.
+
+- The reconciled draft then used a dotted package id, which violates the bundle lowercase-slug regex. Reported upstream; the independent checker rejects it rather than adapting.

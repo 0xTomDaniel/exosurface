@@ -224,9 +224,12 @@ def check_package(release_dir: Path, terms: list[str]) -> Report:
 
     if manifest.get("contract") != PACKAGE_CONTRACT:
         report.fail("contract", "release.json", f"expected {PACKAGE_CONTRACT}")
-    if manifest.get("id") != "exosurface":
-        report.fail("id", "release.json", "expected exosurface")
+    if not re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(manifest.get("id", ""))):
+        report.fail("id", "release.json", "expected lowercase slug")
     owner = manifest.get("owner") or {}
+    if not isinstance(owner, dict):
+        report.fail("owner-shape", "release.json", "expected object")
+        return report
     if owner.get("launchdLabel") != OWNER_LABEL:
         report.fail("owner-label", "release.json", f"expected {OWNER_LABEL}")
     entry = owner.get("entry")
@@ -243,6 +246,13 @@ def check_package(release_dir: Path, terms: list[str]) -> Report:
     if parse_floor(str(requires.get("bb", ""))) is None:
         report.fail("requires-bb", "release.json", "expected >=X.Y.Z")
     pins = manifest.get("pins") or {}
+    if not isinstance(pins, dict) or any(not isinstance(pins.get(name), dict) for name in ("pi", "optchat")):
+        report.fail("pins-shape", "release.json", "expected structured npm/git pin objects")
+        return report
+    if pins["pi"].get("npm") != "@earendil-works/pi-coding-agent":
+        report.fail("pi-package", "release.json")
+    if pins["optchat"].get("git") != "https://github.com/jonaslsaa/pi-optchat.git":
+        report.fail("optchat-source", "release.json")
     for name in ("pi", "optchat"):
         version = str((pins.get(name) or {}).get("version", ""))
         if not EXACT_VERSION.match(version):
