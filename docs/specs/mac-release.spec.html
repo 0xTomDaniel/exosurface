@@ -159,6 +159,20 @@ The Exo the owner uses always runs a fixed release, never a development checkout
 </div>
 </section>
 
+<section data-anchor="implementation-contract" id="implementation-contract">
+<h2>Private release integration contract</h2>
+<p data-anchor="contract-provisional">These are the lanes' provisional implementation bindings, not a recorded Accept or a choice of native BB layout. Integration must prove them together before a release is usable.</p>
+<ul data-anchor="contract-bindings">
+<li data-anchor="contract-config">The installer passes EXO_CONFIG explicitly, defaulting to ~/.config/exosurface/config.json. State defaults to ~/.exosurface, with state-schema.json containing {"schema":1}. Existing configuration and history are never overwritten.</li>
+<li data-anchor="contract-service">The service label is app.exosurface.owner. Its launchd definition has RunAtLoad true and KeepAlive SuccessfulExit false. An owner awaiting first run exits successfully rather than restarting forever.</li>
+<li data-anchor="contract-pins">The candidate uses Node at least 22.19.0, Pi 1.1.0 and OptChat v0.8.6 at commit aae1caf7715830051d327f819fc776792211167a. Models main, compactor and subagent each require explicit provider, model and thinking settings; doctor fails until they are configured.</li>
+<li data-anchor="contract-starter">One documented wrapper applies the exo-mac-starter/0 artifact, then installs with the resulting vault. A starter conflict exits 3 with zero writes. The receipt is .exo/starter-receipt.json. Python at least 3.9, uv and the owner's timezone must be verified, never assumed.</li>
+<li data-anchor="contract-isolation">Test subprocesses receive an environment allowlist and explicit fixture paths, not inherited Exo, Exosurface, OptChat or Pi selectors. A temporary HOME alone is insufficient. Node uses an absolute resolved executable, not a mise shim under a temporary HOME. These are accident guards, not a sandbox.</li>
+<li data-anchor="contract-readiness">The side-effect-free owner --readiness report uses exosurface-readiness/0, reports configuration and runtime separately, and leaves authentication and connectivity unverified until real sign-in and inference. Aggregate ready stays false; exit 2 means unready and exit 1 unsupported schema. A report interface is not proof that Exo can answer.</li>
+<li data-anchor="contract-evidence">Fixture tests establish only their stated assertions. Real BB first answer, own authentication, clean-account install, quit/reopen, reboot, lifecycle and native layout remain open until observed on macOS. No generated status or simulated transcript is an Accept or end-to-end result.</li>
+</ul>
+</section>
+
 <section data-anchor="removal" id="removal">
 <h2>Removal and the check command</h2>
 <div class="table-scroll" data-anchor="removal-table-wrap">

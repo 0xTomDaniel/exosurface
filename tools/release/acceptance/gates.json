@@ -1,0 +1,30 @@
+{
+  "contract": "exosurface-release-gates/0",
+  "note": "kind=automated runs here or in a lane's suite at fixture/installable level; kind=manual needs a person on a real Mac and stays OPEN until an evidence record exists; kind=decision needs Tom. Nothing here is end-to-end proof by itself.",
+  "gates": [
+    {"id": "package-contract", "kind": "automated", "spec": "release-pins release-format boundary-release", "proof": "acceptance.py package <built release>: contract, label, exact pins, node floor >= pinned Pi engines, state schema, prebuilt dist"},
+    {"id": "package-privacy", "kind": "automated", "spec": "acceptance-package-private package-allowlist", "proof": "acceptance.py package <built release> with the author's deny-terms file: allowlist only, no denied path, no secret/home path/proxy/thread id/personal term"},
+    {"id": "starter-privacy", "kind": "automated", "spec": "acceptance-starter-private package-starter-apart", "proof": "acceptance.py starter <starter artifact>: clean commit, hashes match, privacy scan"},
+    {"id": "install-wiring", "kind": "automated", "spec": "install-no-dev-tree install-service trust-own-sign-in trust-no-default-proxy", "proof": "acceptance.py install --home <installed HOME>: launchd label/abs paths/logs/KeepAlive/EXO_CONFIG, config keys, explicit models, no live-spike paths, no ~/.pi links, starter receipt, time zone set"},
+    {"id": "live-isolation", "kind": "automated", "spec": "staging-apart", "proof": "acceptance.py isolation snapshot before and after every lane's tests; compare must pass"},
+    {"id": "lane-negative-suites", "kind": "automated", "spec": "acceptance-rollback-refused acceptance-vault-conflict acceptance-start-twice acceptance-preflight-missing", "proof": "each lane's own temp-HOME tests (bundle: rollback refused, preflight; starter: conflict exit with zero writes; first-run: partial first start, no overwrite); reviewed, not rerun here"},
+    {"id": "spec-accepted", "kind": "decision", "spec": "mac-release", "proof": "Tom presses Accept spec in Spec Chat after the open TBDs are settled"},
+    {"id": "layout-decided", "kind": "decision", "spec": "tbd-layout", "proof": "Tom picks page-first or BB thread view after the native layout spike shows both"},
+    {"id": "delivery-decided", "kind": "decision", "spec": "tbd-delivery", "proof": "Tom picks archive or private tag"},
+    {"id": "fresh-account-install", "kind": "manual", "spec": "acceptance-preflight-missing acceptance-trust-first acceptance-install-done", "proof": "never-used macOS account or VM with only BB installed: install command reports missing tools, shows full-access statement, finishes with version and vault path"},
+    {"id": "install-declined", "kind": "manual", "spec": "acceptance-install-declined acceptance-declined-nothing", "proof": "decline the statement; then isolation-style listing shows no release, plist or plugin"},
+    {"id": "one-entry-real-bb", "kind": "manual", "spec": "acceptance-one-entry acceptance-no-test-models", "proof": "real BB on the fresh account: one Exo entry, model picker has no test/clone Exo; screenshot"},
+    {"id": "own-sign-in", "kind": "manual", "spec": "acceptance-first-run-sign-in acceptance-own-login-only", "proof": "Exo entry asks for the owner's own provider sign-in; the first request goes to that provider directly, no proxy"},
+    {"id": "first-answer", "kind": "manual", "spec": "acceptance-first-run-answers acceptance-first-run-press", "proof": "send hello: reply on a drawn Home page; press a page button: reply arrives; uses the tester's own provider account"},
+    {"id": "first-start-recovery", "kind": "manual", "spec": "acceptance-start-twice", "proof": "kill the owner during first start, start again: one entry, a reply, no second conversation"},
+    {"id": "survives-quit", "kind": "manual", "spec": "acceptance-quit-reopen", "proof": "quit and reopen BB: same conversation"},
+    {"id": "survives-reboot", "kind": "manual", "spec": "acceptance-restart-mac", "proof": "restart the Mac, sign in: owner service running, reply after the same conversation"},
+    {"id": "survives-service-exit", "kind": "manual", "spec": "acceptance-service-restarts", "proof": "kill the owner process: launchd restarts it, next send gets a reply"},
+    {"id": "update-rollback", "kind": "manual", "spec": "acceptance-update acceptance-rollback acceptance-rollback-refused", "proof": "two real releases N and N+1 on the fresh account: update, rollback, refused rollback across an incompatible schema; history kept"},
+    {"id": "remove-reinstall", "kind": "manual", "spec": "acceptance-remove-keeps acceptance-remove-reopen acceptance-reinstall-history", "proof": "remove without deleting data, reopen BB, reinstall: earlier conversation returns"},
+    {"id": "doctor-real", "kind": "manual", "spec": "acceptance-doctor", "proof": "stop the owner and keep it from starting: check command names it, the fix and the log folder"},
+    {"id": "author-on-release", "kind": "manual", "spec": "acceptance-branch-switch staging-release", "proof": "only after Tom approves moving his own Exo onto a release (non-goal migration): switch the dev checkout branch, restart owner, Exo still names the installed version"},
+    {"id": "textbox-full-text", "kind": "manual", "spec": "pages-and-activity page edits (issue #31)", "proof": "type more than 1000 characters in a page textbox, press: Exo receives all of it; the reliability lane's regression test is automated support only"},
+    {"id": "dependency-audit", "kind": "manual", "spec": "boundary-release (issue #27)", "proof": "npm audit on the released plugin's lockfile reviewed; residual advisories written down with reasons"}
+  ]
+}
