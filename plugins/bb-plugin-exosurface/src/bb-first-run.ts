@@ -3,7 +3,7 @@ import { loadIf, save } from './store.ts';
 /** SDK 0.6.15 has no atomic spawn idempotency key. Persist intent BEFORE the external operation, then fail closed
  * on uncertainty. Never adopt by title or infer that an absent local receipt means BB created nothing. */
 export function bbFirstRun(stateDir: string, projectId: string, api: {
-  create(): Promise<{ id: string }>;
+  create(key: string): Promise<{ id: string }>;
   get(id: string): Promise<{ id: string; providerId: string; projectId: string }>;
 }) {
   const file = join(stateDir, 'bb-thread-intent.json');
@@ -19,7 +19,7 @@ export function bbFirstRun(stateDir: string, projectId: string, api: {
     },
     async createThread(key: string) {
       save(file, { key, projectId, providerId: 'exosurface', createdAt: new Date().toISOString(), status: 'creating' });
-      const th = await api.create();
+      const th = await api.create(key);
       if (!th?.id) throw new Error('SDK spawn returned no thread ID; reconcile operation before retry');
       save(file, { ...loadIf(file), key, projectId, providerId: 'exosurface', threadId: th.id, status: 'created' });
       return { id: th.id };

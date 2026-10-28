@@ -6,6 +6,7 @@ import { loadIf } from './src/store.ts';
 import { bootstrap } from './src/bootstrap.ts';
 import { profileOperation } from './src/system.ts';
 import { MODEL } from './src/model.ts';
+import { initializationText } from './src/setup-input.ts';
 import { bbFirstRun } from './src/bb-first-run.ts';
 export const rpcContract = defineRpcContract({
   overview: { input: z.null(), output: z.object({ threadId: z.string().nullable(), page: z.object({ title: z.string(), body: z.string() }).nullable(), problems: z.array(z.string()) }) },
@@ -32,7 +33,7 @@ export default function plugin(bb: BbPluginApi) {
         validateProfile: async () => { profileOperation(config, 'validate'); },
         ...bbFirstRun(config.stateDir, projectId, {
           get: id => bb.sdk.threads.get({ threadId: id }),
-          create: () => bb.sdk.threads.spawn({ projectId, environment: { type: 'host', workspace: { type: 'personal' } }, providerId: 'exosurface', model: 'exo', reasoningLevel: 'medium', permissionMode: 'full', title: 'Exo', input: [] }),
+          create: key => bb.sdk.threads.spawn({ projectId, environment: { type: 'project-default' }, providerId: 'exosurface', model: 'exo', reasoningLevel: 'medium', permissionMode: 'full', title: 'Exo', prompt: initializationText(key) }),
         }),
       });
     },

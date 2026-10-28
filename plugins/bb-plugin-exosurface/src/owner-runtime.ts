@@ -4,6 +4,7 @@ import { mkdirSync, chmodSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { layout, type Config } from './config.ts';
 import { childEnv } from './env.ts';
+import { validatePrompt } from './input.ts';
 import { PiRpc } from './pi-rpc.ts';
 import { save, loadIf } from './store.ts';
 
@@ -49,7 +50,8 @@ export async function startOwner(config: Config) {
             if (request.threadId !== binding.threadId) throw new Error('Not the primary Exo thread');
             if (request.method !== 'prompt' && request.method !== 'abort') throw new Error('Unsupported owner method');
             if (request.method === 'prompt') {
-              if (typeof request.message !== 'string' || !request.message.trim() || Buffer.byteLength(request.message) > 512 * 1024) throw new Error('Prompt must be 1–524288 bytes');
+              if (typeof request.message !== 'string') throw new Error('Prompt must be text. Nothing was sent.');
+              validatePrompt(request.message);
               if (busy) throw new Error('Owner is busy; retry after current turn');
               busy = true; admitted = true; reply = ''; state();
             }

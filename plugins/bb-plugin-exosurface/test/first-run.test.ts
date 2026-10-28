@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, cpSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, existsSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -94,7 +94,7 @@ test('real socket → mock Pi RPC → response page; full long input; wrong thre
   const { config } = fixture(t); save(layout(config.stateDir).primary, { threadId: 'primary' }); mkdirSync(config.agentDir); save(join(config.agentDir, 'auth.json'), {});
   writeFileSync(config.piCli, `import{createInterface}from'node:readline';import{createServer}from'node:net';import{mkdirSync}from'node:fs';import{join}from'node:path';
 const dir=join(process.env.OPTCHAT_HOME,'profiles','exo');mkdirSync(dir,{recursive:true});const lock=createServer(s=>s.end('exo · PID '+process.pid+' · fixture'));await new Promise(r=>lock.listen(join(dir,'lock.sock'),r));
-const out=x=>console.log(JSON.stringify(x));for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);out({type:'response',id:r.id,success:true,data:{}});if(r.type==='prompt'){out({type:'message_end',message:{role:'assistant',content:[{type:'text',text:r.message}]}});out({type:'agent_end'});}}lock.close();`);
+const out=x=>console.log(JSON.stringify(x));for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);out({type:'response',id:r.id,success:true,data:{}});if(r.type==='prompt'){if(r.message==='detached owner proof')await new Promise(r=>setTimeout(r,250));out({type:'message_end',message:{role:'assistant',content:[{type:'text',text:r.message}]}});out({type:'agent_end'});}}lock.close();`);
   const owner = await startOwner(config); t.after(() => owner.close());
   const text = 'x'.repeat(1800), events: any[] = []; let finish: () => void; const done = new Promise<void>(r => { finish = r; });
   const client = ownerConnection(config, e => { events.push(e); if (e.type === 'agent_end') finish(); }); t.after(() => client.close());
@@ -103,6 +103,9 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
   await Promise.race([done, new Promise((_, reject) => setTimeout(() => reject(Error('event timeout')), 3000))]);
   assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, text);
   assert.equal(events[0].message.content[0].text.length, 1800);
+  await assert.rejects(client.send('primary', 'prompt', 'x'.repeat(512 * 1024 + 1)), /524289 bytes.*Nothing was sent/);
+  assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, text);
+  const proof = 'compiled provider proof\n' + 'Multiline 🧪 user text\n'.repeat(100) + 'FINAL FULL-TEXT SENTINEL';
   // Actual BB-built provider -> socket owner -> mock Pi -> native BB deltas and response page.
   const hostFile = resolve(import.meta.dirname, '../dist/host.js');
   assert.ok(existsSync(hostFile), 'Run isolated bb plugin build before this integration test');
@@ -116,14 +119,25 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
   } }) + '\n');
   host.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'turn/start', params: {
     threadId: 'primary', providerThreadId: 'exo:primary', clientRequestId: 'creq_23456789ab',
-    options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null }, input: [{ type: 'text', text: 'compiled provider proof' }],
+    options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null }, input: [{ type: 'text', text: proof }],
   } }) + '\n');
-  for (let i = 0; i < 100 && !output.includes('compiled provider proof'); i++) await new Promise(r => setTimeout(r, 20));
+  for (let i = 0; i < 100 && (!output.includes('compiled provider proof') || !output.includes('turn.boundary')); i++) await new Promise(r => setTimeout(r, 20));
   assert.match(output, /compiled provider proof/, errors);
   assert.match(output, /turn.boundary/);
   assert.equal(output.split('\n').filter(Boolean).map(line => JSON.parse(line)).some(v => v.error), false, output);
-  assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, 'compiled provider proof');
-  host.kill();
+  assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, proof);
+  host.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'turn/start', params: {
+    threadId: 'primary', providerThreadId: 'exo:primary', clientRequestId: 'creq_23456789ac',
+    options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null }, input: [{ type: 'text', text: 'detached owner proof' }],
+  } }) + '\n');
+  for (let i = 0; i < 100 && !JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, true);
+  await assert.rejects(client.send('primary', 'prompt', 'must not be admitted while busy'), /Owner is busy/);
+  assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, true, 'rejected prompt cannot clear admitted turn');
+  host.kill(); // Simulated view/bridge loss must not abort independently owned Pi work.
+  for (let i = 0; i < 100 && (JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body !== 'detached owner proof' || JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy); i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, 'detached owner proof');
+  assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, false);
 
 });
 
@@ -148,4 +162,43 @@ test('concrete BB receipt survives interruption before bootstrap local receipt',
   assert.deepEqual(await adapter.findThread('operation-1'), { id: 'bb-created' }); assert.equal(calls, 1);
   const changed = bbFirstRun(config.stateDir, 'project-1', { async create() { throw Error('no duplicate'); }, async get(id) { return { id, providerId: 'unrelated', projectId: 'project-1' }; } });
   await assert.rejects(changed.findThread('operation-1'), /refusing adoption/);
+});
+
+test('BB nonempty initialization input settles locally without Pi, auth, binding or launchctl', async t => {
+  const { config } = fixture(t), key = 'setup-operation-fixture';
+  save(layout(config.stateDir).firstRun, { key, profile: config.profile, vault: realpathSync(config.vault) });
+  save(join(config.stateDir, 'bb-thread-intent.json'), { key, providerId: 'exosurface', projectId: 'project-1', threadId: 'new-primary', status: 'created' });
+  const hostFile = resolve(import.meta.dirname, '../dist/host.js');
+  const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(hostFile).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
+  const host = spawn(process.execPath, ['--input-type=module', '-e', shim], { cwd: config.vault,
+    env: { HOME: config.vault, TMPDIR: config.vault, PATH: '/usr/bin:/bin', EXO_CONFIG: config.file }, stdio: ['pipe', 'pipe', 'pipe'] });
+  t.after(() => host.kill()); let output = '', errors = '';
+  host.stdout.on('data', b => { output += b; }); host.stderr.on('data', b => { errors += b; });
+  host.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'thread/start', params: {
+    threadId: 'new-primary', cwd: config.vault, instructionMode: 'append',
+    options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null },
+    input: [{ type: 'text', text: `EXOSURFACE_INITIALIZE:${key}` }],
+  } }) + '\n');
+  for (let i = 0; i < 100 && !output.includes('turn.boundary'); i++) await new Promise(r => setTimeout(r, 10));
+  assert.match(output, /turn.boundary/, errors); assert.doesNotMatch(output, /Not sent|"failed"|"error"/);
+  assert.equal(existsSync(config.piCli), false); assert.equal(existsSync(config.agentDir), false);
+  assert.equal(existsSync(layout(config.stateDir).ownerDir), false);
+  assert.equal(existsSync(layout(config.stateDir).primary), false);
+});
+
+test('initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text', async t => {
+  const { config } = fixture(t), { consumeInitialization, initializationText } = await import('../src/setup-input.ts');
+  const journal = { key: 'bound-operation', profile: config.profile, vault: realpathSync(config.vault), threadId: 'bound-thread' };
+  const intent = { key: journal.key, providerId: 'exosurface', projectId: 'fixture-project', threadId: journal.threadId, status: 'created' };
+  const reset = () => { save(layout(config.stateDir).firstRun, journal); save(join(config.stateDir, 'bb-thread-intent.json'), intent); };
+  reset();
+  for (const text of ['hello', initializationText('stale-operation'), initializationText(journal.key) + ' ', ' ' + initializationText(journal.key)]) {
+    assert.equal(await consumeInitialization(config, journal.threadId, text), false);
+  }
+  assert.equal(await consumeInitialization(config, 'unrelated-thread', initializationText(journal.key)), false);
+  assert.equal(await consumeInitialization({ ...config, profile: 'wrong-profile' }, journal.threadId, initializationText(journal.key)), false);
+  save(join(config.stateDir, 'bb-thread-intent.json'), { ...intent, key: 'unrelated-operation' });
+  assert.equal(await consumeInitialization(config, journal.threadId, initializationText(journal.key)), false);
+  reset(); assert.equal(await consumeInitialization(config, journal.threadId, initializationText(journal.key)), true);
+  assert.equal(await consumeInitialization(config, journal.threadId, initializationText(journal.key)), false, 'replay must use ordinary authenticated prompt path');
 });

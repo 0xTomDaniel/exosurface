@@ -1,0 +1,55 @@
+{
+  "schema": "exosurface-isolated-bb-bootstrap/0",
+  "at": "2026-10-28T23:35:23.262Z",
+  "bb": "0.45.0",
+  "sdk": "0.6.15",
+  "node": "v24.15.0",
+  "platform": "darwin",
+  "fixtureOnly": true,
+  "allowlistedEnvironment": true,
+  "ports": [
+    39896,
+    39897
+  ],
+  "livePortsExcluded": [
+    38886,
+    38887
+  ],
+  "setup": {
+    "threadId": "thr_zn2tjnnp4r",
+    "providerId": "exosurface",
+    "projectId": "proj_9eyc6ngiqb",
+    "environment": "project-default",
+    "environmentObserved": "ready",
+    "nativeThreadObserved": "idle",
+    "nonemptyInput": "operation-bound local initialization control",
+    "initializationConsumed": true
+  },
+  "retry": {
+    "sameThread": true,
+    "threadCount": 1
+  },
+  "ambiguousOutcome": {
+    "method": "fixture-injected lost receipt after real BB creation; not an actual process crash",
+    "blocked": true,
+    "error": "Interrupted BB creation outcome unknown; explicit reconciliation required",
+    "threadCountUnchanged": true
+  },
+  "manualFixtureRestore": {
+    "exactSavedReceiptsOnly": true,
+    "sameThread": true
+  },
+  "noInference": {
+    "piExecutableAbsent": true,
+    "privateAuthAbsent": true,
+    "ownerDirectoryAbsent": true,
+    "noLaunchctlInvoked": true
+  },
+  "limitations": [
+    "No real provider/auth proof",
+    "No browser/rendered-page/input action proof",
+    "No reboot/launchd/restart proof",
+    "No parent/child creation; future child spawning must wait for parent environment provisioning",
+    "Same-account accident guards, not OS sandbox or syscall tracing"
+  ]
+}

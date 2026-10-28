@@ -8,6 +8,8 @@ import {
 } from '@get-bb/plugin-sdk/provider-bridge';
 import { readConfig, layout } from './src/config.ts';
 import { loadIf } from './src/store.ts';
+import { consumeInitialization } from './src/setup-input.ts';
+import { validatePrompt } from './src/input.ts';
 import { ensureOwner } from './src/system.ts';
 import { ownerConnection } from './src/owner-client.ts';
 import { MODEL } from './src/model.ts';
@@ -45,7 +47,12 @@ async function turn(s: Session, input: any[], requestId?: string) {
   if (s.open) throw new Error('Turn already running');
   s.open = true; emit(s, [{ kind: 'turn.open' }]);
   if (requestId) emit(s, [{ kind: 'input.accepted', clientRequestId: requestId }]);
-  try { await attach(s); await connections.get(s.threadId)!.send(s.threadId, 'prompt', textOf(input)); }
+  try {
+    const text = textOf(input), { config, problems } = readConfig();
+    if (config && !problems.length && await consumeInitialization(config, s.threadId, text)) { settle(s); return; }
+    validatePrompt(text);
+    await attach(s); await connections.get(s.threadId)!.send(s.threadId, 'prompt', text);
+  }
   catch (e) {
     const key = { providerItemId: `exo-${++s.serial}` };
     emit(s, [{ kind: 'item.open', key, item: { type: 'agentMessage', text: '' } }, { kind: 'item.textClose', key, channel: 'agentMessage', text: `Not sent: ${e instanceof Error ? e.message : String(e)}` }]); settle(s, 'failed');
