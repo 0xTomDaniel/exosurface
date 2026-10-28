@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mac release: install, first run, update and removal of Exo in BB - Exosurface spec</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./.style/spec.css">
+<script defer src="./.viz/runtime.js"></script>
+</head>
+<body>
+<article class="spec" data-spec-version="1" data-spec-contract="shaped-sections-v1">
+
+<header data-anchor="header">
+<h1 data-anchor="title">Mac release: install, first run, update and removal of Exo in BB</h1>
+<p class="lede" data-anchor="context">A new owner installs Exo on their own Mac, inside an unmodified BB, from one versioned release.
+The release carries Exosurface and the owner service, and a separate generic starter gives the owner a vault of their own.
+The owner signs Exo in with their own model provider account, starts Exo from BB without a terminal, and keeps their vault and Exo's history through restarts, updates, rollbacks and removal.
+The Exo the owner uses always runs a fixed release, never a development checkout.</p>
+<p data-anchor="vocabulary">Vocabulary follows the glossary: Exo, surface, Home, page and activity. An owner is the one person an install belongs to. A release is one immutable, versioned build. The owner service is the background process that keeps Exo's conversation running while BB is closed. The starter is the generic vault and skill set a new owner begins with.</p>
+</header>
+
+<section data-spec-section="user-stories" data-anchor="user-stories" id="user-stories">
+<h2>User stories</h2>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-install">As a new owner with BB on my Mac, I install Exo with one documented command that checks what my Mac is missing before it changes anything, so I never assemble Exo by hand.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-trust">As a new owner, I am told plainly, before anything is installed, that Exo acts with my account's full access, so I consent knowing what it can do.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-own-login">As a new owner, I sign Exo in to a model provider with my own account, so nothing of anyone else's accounts, keys or proxies comes with Exo.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-first-run">As a new owner, the first time I open BB after installing, I start Exo from one place and it answers me, with no terminal and no earlier history, so my first minute is a working Exo.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-one-entry">As an owner, BB shows me one Exo entry and offers no test, fixture or clone Exo anywhere, so I can never pick a broken Exo.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-keeps">As an owner, quitting BB, restarting my Mac and signing back in keep Exo running with its history and my vault unchanged, so Exo is always where I left it.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-update">As an owner, I update to a newer release and roll back to the release before it without losing history, and a rollback my data cannot safely go back to is refused with the reason, so updating is never a gamble.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-remove">As an owner, I remove Exo and my vault and Exo's history stay unless I ask for them to be deleted too, so trying Exo costs me nothing.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-doctor">As an owner, when Exo does not answer, I run one check that names what is wrong and where Exo's logs are, so I can fix it or report it.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-starter">As a new owner without a vault, I begin with a generic starter vault that holds no one else's notes, habits, people or accounts, so Exo starts as mine.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-private-package">As the author, a release holds only the files its allowlist names and never a conversation history, review evidence, credential, personal path or name, so sharing a release shares nothing private.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-fixed-release">As the author, the Exo I use day to day runs an installed release, and my development and staging checkouts never change it until I install a release on purpose, so switching a branch never changes the Exo I rely on.</p>
+</section>
+
+<section data-spec-section="acceptance" data-acceptance-scope="traceability" data-anchor="acceptance" id="acceptance">
+<h2>Acceptance criteria</h2>
+<p data-acceptance-criterion data-anchor="acceptance-preflight-missing" data-story="story-install story-doctor"><span data-acceptance-scenario>Given a new owner on a Mac with BB and without one tool the install needs (a fixture must be added to provide it), When the owner runs the documented install command,</span> <span data-acceptance-observable>Then the install stops before changing anything and names the missing tool and how to get it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-trust-first" data-story="story-trust story-install"><span data-acceptance-scenario>Given a new owner on a Mac with BB and every tool the install needs (a fixture must be added to provide it), When the owner runs the documented install command,</span> <span data-acceptance-observable>Then before anything is installed the owner reads that Exo and its BB plugin run with the owner's full account access, can read and change any file the account can, run commands and use the network, and act in every account the owner signs Exo in to, and the install waits for the owner to agree.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-install-declined" data-story="story-trust"><span data-acceptance-scenario>Given a new owner reading the full-access statement during install (a fixture must be added to provide it), When the owner declines,</span> <span data-acceptance-observable>Then the install ends saying nothing was installed, and the Mac holds no Exo files, service or BB plugin.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-install-done" data-story="story-install story-starter"><span data-acceptance-scenario>Given a new owner on a Mac with BB, every tool the install needs and no vault (a fixture must be added to provide it), When the owner runs the documented install command, then agrees to the full-access statement, then waits for it to finish,</span> <span data-acceptance-observable>Then the install reports the installed release's version, where the owner's new starter vault is, and that the next step is opening BB.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-existing-vault" data-story="story-install story-starter"><span data-acceptance-scenario>Given a new owner whose Mac already holds a vault with notes in it (a fixture must be added to provide it), When the owner runs the documented install command naming that vault, then agrees to the full-access statement, then waits for it to finish,</span> <span data-acceptance-observable>Then every note that was in the vault is unchanged, and the install reports which starter files it added beside them.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-vault-conflict" data-story="story-install story-starter"><span data-acceptance-scenario>Given a new owner whose vault already holds a file with the same name as a starter file (a fixture must be added to provide it), When the owner runs the documented install command naming that vault, then agrees to the full-access statement,</span> <span data-acceptance-observable>Then the install stops before changing anything, names each file that is in the way, and the vault is unchanged.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-one-entry" data-story="story-one-entry story-first-run"><span data-acceptance-scenario>Given a new owner who has just installed Exo (a fixture must be added to provide it), When the owner opens BB,</span> <span data-acceptance-observable>Then BB's sidebar shows one Exo entry and no other Exo thread, and BB's model picker offers no offline, fixture, live trial or clone Exo.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-first-run-sign-in" data-story="story-first-run story-own-login"><span data-acceptance-scenario>Given a new owner who has just installed Exo and has not signed in to a model provider (a fixture must be added to provide it), When the owner opens BB, then opens the Exo entry,</span> <span data-acceptance-observable>Then the Exo entry asks the owner to sign in with their own model provider account and shows no reply from Exo yet.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-first-run-answers" data-story="story-first-run"><span data-acceptance-scenario>Given a new owner who has just installed Exo and signed in to a model provider (a fixture must be added to provide it), When the owner opens the Exo entry, then starts Exo, then sends "hello", then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then Home shows Exo's reply on a page Exo drew, and Home shows no earlier conversation.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-first-run-press" data-story="story-first-run"><span data-acceptance-scenario>Given a new owner on Home after Exo's first reply, on a page with a button (a fixture must be added to provide it), When the owner presses the button, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then Home shows Exo's reply to that press.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-start-twice" data-story="story-first-run story-one-entry"><span data-acceptance-scenario>Given a new owner whose first start of Exo stopped partway (needs an induced failure: the owner service exits during first start), When the owner opens the Exo entry, then starts Exo again, then sends a message, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then Home shows Exo's reply, and BB's sidebar still shows one Exo entry.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-own-login-only" data-story="story-own-login story-private-package"><span data-acceptance-scenario>Given a new owner who has just installed Exo and signed in to a model provider (a fixture must be added to provide it), When Exo answers the owner's first message,</span> <span data-acceptance-observable>Then Exo's request went to the provider the owner signed in to, with the owner's own sign-in, and through no proxy the owner did not set up; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-quit-reopen" data-story="story-keeps"><span data-acceptance-scenario>Given an owner on Home with a conversation with Exo (a fixture must be added to provide it), When the owner quits BB, then opens BB again, then opens the Exo entry,</span> <span data-acceptance-observable>Then Home shows the same conversation and pages as before BB quit.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-restart-mac" data-story="story-keeps"><span data-acceptance-scenario>Given an owner on Home with a conversation with Exo (a fixture must be added to provide it), When the owner restarts the Mac, then signs back in, then opens BB, then opens the Exo entry, then sends a message, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then Home shows Exo's reply after the same conversation as before the restart.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-service-restarts" data-story="story-keeps story-doctor"><span data-acceptance-scenario>Given an owner on Home with a conversation with Exo whose owner service has just exited (needs an induced failure: the owner service process ends), When the owner sends a message, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then Home shows Exo's reply after the same conversation as before the service exited.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-update" data-story="story-update"><span data-acceptance-scenario>Given an owner with a conversation with Exo on one release and a newer release available (a fixture must be added to provide it), When the owner runs the documented update command, then opens BB, then opens the Exo entry,</span> <span data-acceptance-observable>Then Home shows the same conversation, and Exo reports the newer release's version when asked.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-rollback" data-story="story-update"><span data-acceptance-scenario>Given an owner who updated to a newer release that kept Exo's data readable by the release before it (a fixture must be added to provide it), When the owner runs the documented rollback command, then opens BB, then opens the Exo entry,</span> <span data-acceptance-observable>Then Home shows the same conversation, and Exo reports the earlier release's version when asked.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-rollback-refused" data-story="story-update"><span data-acceptance-scenario>Given an owner who updated to a newer release that changed Exo's data in a way the release before it cannot read (a fixture must be added to provide it), When the owner runs the documented rollback command,</span> <span data-acceptance-observable>Then the rollback stops before changing anything and says the earlier release cannot read Exo's current data, and the newer release keeps running.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-remove-keeps" data-story="story-remove"><span data-acceptance-scenario>Given an owner with Exo installed, a vault and a conversation with Exo (a fixture must be added to provide it), When the owner runs the documented removal command without asking to delete data,</span> <span data-acceptance-observable>Then the removal reports that Exo's plugin, service and release files are gone and names where the kept vault and Exo's kept history are.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-remove-reopen" data-story="story-remove"><span data-acceptance-scenario>Given an owner who has just removed Exo without asking to delete data (a fixture must be added to provide it), When the owner opens BB,</span> <span data-acceptance-observable>Then BB's sidebar shows no Exo entry, and BB's model picker offers no Exo.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-reinstall-history" data-story="story-remove story-keeps"><span data-acceptance-scenario>Given an owner who removed Exo without asking to delete data (a fixture must be added to provide it), When the owner runs the documented install command again, then agrees to the full-access statement, then opens BB, then opens the Exo entry,</span> <span data-acceptance-observable>Then Home shows the conversation from before the removal.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-doctor" data-story="story-doctor"><span data-acceptance-scenario>Given an owner whose Exo does not answer because its owner service is not running (needs an induced failure: the owner service is stopped and kept from starting), When the owner runs the documented check command,</span> <span data-acceptance-observable>Then the check names the owner service as not running, says how to start it, and names the folder that holds Exo's logs.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-package-private" data-story="story-private-package"><span data-acceptance-scenario>Given the author with a built release (a fixture must be added to provide it), When the author runs the release's privacy check,</span> <span data-acceptance-observable>Then the check passes only when every file in the release is on the release's allowlist and none holds a conversation history, review evidence, credential, the author's paths or names, or a proxy address.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-starter-private" data-story="story-starter story-private-package"><span data-acceptance-scenario>Given a new owner who has just installed Exo with no earlier vault (a fixture must be added to provide it), When the owner searches the starter vault for the author's name, company, colleagues, accounts or home folder,</span> <span data-acceptance-observable>Then the search finds nothing.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-branch-switch" data-story="story-fixed-release"><span data-acceptance-scenario>Given the author with Exo running from an installed release and a development checkout of Exosurface (a fixture must be added to provide it), When the author switches the checkout to another branch, then restarts the owner service, then asks Exo which release it runs,</span> <span data-acceptance-observable>Then Exo reports the installed release's version, unchanged by the branch switch.</span></p>
+</section>
+
+<section data-spec-section="modular-boundaries" data-anchor="modular-boundaries" id="modular-boundaries">
+<h2>Modular boundaries</h2>
+<p data-modular-boundary data-anchor="boundary-release"><span data-boundary-responsibility>The release owns one versioned, immutable build: the production plugin with its prebuilt files, the owner service's source, the exact versions of Pi, OptChat, Node and BB it was built against, the data format version it writes and the ones it reads, and its allowlist.</span> <span data-boundary-seam>Caller-facing seam: one release manifest beside the production plugin, which the installer and the privacy check read.</span> <span data-boundary-dependency>Dependency direction: the installer and the privacy check depend on the release; the release depends on no installed Mac.</span> <span data-boundary-scope>Observable scope: the version Exo reports and what the privacy check finds.</span></p>
+<p data-modular-boundary data-anchor="boundary-installer"><span data-boundary-responsibility>The installer owns the check before install, the full-access statement, install, update, rollback, removal and the check command, including the background service definition and its logs.</span> <span data-boundary-seam>Caller-facing seam: the documented install, update, rollback, removal and check commands.</span> <span data-boundary-dependency>Dependency direction: depends on the release and on a starter render; external providers macOS launchd and BB's plugin commands.</span> <span data-boundary-scope>Observable scope: what each command reports, the one Exo entry in BB, and whether the owner service runs.</span></p>
+<p data-modular-boundary data-anchor="boundary-plugin"><span data-boundary-responsibility>The production plugin owns Exo's one entry in BB, the Exo models BB offers, first start, and the surface the owner sees.</span> <span data-boundary-seam>Caller-facing seam: the Exo entry and its start control in BB; the owner service it talks to.</span> <span data-boundary-dependency>Dependency direction: external provider BB through its plugin SDK; depends on the owner service; the surface behaves as <a href="./pages-and-activity.spec.html#acceptance">pages and activity</a> states.</span> <span data-boundary-scope>Observable scope: BB's sidebar, BB's model picker, and everything inside the Exo entry.</span></p>
+<p data-modular-boundary data-anchor="boundary-owner"><span data-boundary-responsibility>The owner service owns Exo's running conversation, the new owner's own Pi sign-in and settings, the data format marker, and keeping the conversation through quits and restarts.</span> <span data-boundary-seam>Caller-facing seam: the plugin's requests for turns and presses, and the data format version the installer reads before an update or rollback.</span> <span data-boundary-dependency>Dependency direction: external providers Pi, OptChat and the owner's model provider; reads the owner's vault; depends on nothing in BB.</span> <span data-boundary-scope>Observable scope: Exo's replies, its history after restarts, and the version it reports.</span></p>
+<p data-modular-boundary data-anchor="boundary-starter"><span data-boundary-responsibility>The starter owns the generic vault, agent instructions and approved general skills a new owner begins with, and the owner's time zone and name settings in it.</span> <span data-boundary-seam>Caller-facing seam: a render command that writes the starter into a named vault folder, adding files only and changing nothing when any file is in the way, and a verify command that checks a rendered vault.</span> <span data-boundary-dependency>Dependency direction: external, kept in the Exocortex instance repository; the installer calls its render, and the starter depends on no release.</span> <span data-boundary-scope>Observable scope: the starter vault's files and the skills Exo can use on a new install.</span></p>
+</section>
+
+<section data-anchor="lifecycle" id="lifecycle">
+<h2>Lifecycle</h2>
+<div class="rail-wrap" data-anchor="lifecycle-rail-wrap">
+<ol class="rail" data-anchor="lifecycle-rail">
+<li data-anchor="rail-check">Check: report what is missing, change nothing</li>
+<li data-anchor="rail-consent">Full-access statement: the owner agrees or nothing is installed</li>
+<li data-anchor="rail-install">Install: release, starter render, service, plugin</li>
+<li data-anchor="rail-sign-in">Sign in: the owner's own provider account</li>
+<li data-anchor="rail-first-start">First start: Home, once</li>
+<li data-anchor="rail-use">Use: survives quit, service exit, restart</li>
+<li data-anchor="rail-update">Update or rollback: data format checked first</li>
+<li data-anchor="rail-remove">Remove: vault and history kept unless asked</li>
+</ol>
+</div>
+<div class="clauses" data-anchor="install-clauses">
+<p class="clause" data-anchor="install-one-command"><span class="clause-id">I1</span> One documented command installs a release, and it changes nothing until its check passes and the owner agrees to the full-access statement.</p>
+<p class="clause" data-anchor="install-check-only"><span class="clause-id">I2</span> The check names every missing tool, each with how to get it; it never installs a tool on its own.</p>
+<p class="clause" data-anchor="install-no-dev-tree"><span class="clause-id">I3</span> Everything the running Exo loads, the plugin BB loads and the code the owner service runs alike, comes from one installed release, never from a source checkout.</p>
+<p class="clause" data-anchor="install-service"><span class="clause-id">I4</span> The owner service starts when the owner signs in to the Mac, starts again when it exits, finds every program it runs by an absolute path the install recorded, and writes its logs to one named folder.</p>
+<p class="clause" data-anchor="install-vault-safe"><span class="clause-id">I5</span> Install, update and rollback never change or delete a note in the owner's vault; the starter render only adds files, and when any starter file would land on an existing file it adds none and names every such file.</p>
+<p class="clause" data-anchor="install-idempotent"><span class="clause-id">I6</span> Running install again for the same release changes nothing that is already right and repairs what is missing.</p>
+</div>
+</section>
+
+<section data-anchor="trust" id="trust">
+<h2>Full access and accounts</h2>
+<div class="clauses" data-anchor="trust-clauses">
+<p class="clause" data-anchor="trust-statement"><span class="clause-id">T1</span> Exo is not sandboxed: the owner service and the BB plugin run as the owner, with the owner's full access to files, commands, network, and every account the owner signs Exo in to; Exo's instructions ask before risky actions, but nothing technical stops it, and the full-access statement says so in those terms.</p>
+<p class="clause" data-anchor="trust-own-sign-in"><span class="clause-id">T2</span> A new install keeps its own Pi settings and sign-ins, separate from any Pi setup the owner already has; it never copies, links or reads another Pi home, sign-in, key, MCP configuration or proxy setting.</p>
+<p class="clause" data-anchor="trust-no-default-proxy"><span class="clause-id">T3</span> A new install sends model requests straight to the provider the owner signs in to; a proxy is used only when the owner sets one up.</p>
+<p class="clause" data-anchor="trust-no-paid-default"><span class="clause-id">T4</span> A new install connects no paid integration and no third-party account until the owner adds it.</p>
+</div>
+</section>
+
+<section data-anchor="first-run" id="first-run">
+<h2>First start and the one entry</h2>
+<div class="clauses" data-anchor="first-run-clauses">
+<p class="clause" data-anchor="first-run-one-entry"><span class="clause-id">R1</span> BB shows one Exo entry, which opens Home; Exo's backing threads, helpers and earlier test threads never show as other Exo entries.</p>
+<p class="clause" data-anchor="first-run-models"><span class="clause-id">R2</span> The Exo models BB offers are only the production ones; offline, fixture, live trial and clone modes are not in a release.</p>
+<p class="clause" data-anchor="first-run-start"><span class="clause-id">R3</span> First start makes Exo's new, empty conversation and its backing BB thread once, before the owner service serves it; starting again after a partial first start finishes it without making a second conversation or entry, and never replaces an existing conversation.</p>
+<p class="clause" data-anchor="first-run-no-history"><span class="clause-id">R4</span> First start needs no earlier conversation, thread, profile or memory, and creates no memory content Exo did not write itself.</p>
+</div>
+<p data-anchor="tbd-layout" data-spec-tbd>How the Exo entry shows Home in BB: as an Exosurface page with Exo's chat beside it (page first), or as BB's own thread view with Home's pages in its side panel (chat first). The first-start screen's mockups wait on this answer.
+<button type="button" data-spec-choice="Exosurface page, chat beside it">Exosurface page, chat beside it</button>
+<button type="button" data-spec-choice="BB thread view, pages in its side panel">BB thread view, pages in its side panel</button>
+<button type="button" data-spec-choice="Decide after the native layout spike shows both working">Decide after the native layout spike shows both working (recommended)</button>
+</p>
+</section>
+
+<section data-anchor="releases" id="releases">
+<h2>Releases, update and rollback</h2>
+<div class="clauses" data-anchor="release-clauses">
+<p class="clause" data-anchor="release-immutable"><span class="clause-id">L1</span> A release never changes once built; a fix is a new release with a new version.</p>
+<p class="clause" data-anchor="release-current"><span class="clause-id">L2</span> An install keeps the releases it has installed side by side, and exactly one of them is current; update and rollback only change which one is current.</p>
+<p class="clause" data-anchor="release-format"><span class="clause-id">L3</span> Exo's data carries the version of its format; every release states the format it writes and the formats it reads, and update or rollback to a release that cannot read the current format is refused before anything changes.</p>
+<p class="clause" data-anchor="release-pins"><span class="clause-id">L4</span> A release states the exact Pi and OptChat versions and the lowest Node and BB versions it was built against, and the install check refuses a Mac that cannot meet them.</p>
+<p class="clause" data-anchor="release-reports"><span class="clause-id">L5</span> Exo can tell the owner which release it runs.</p>
+</div>
+<p data-anchor="tbd-delivery" data-spec-tbd>How a new owner receives a release: as a built, versioned archive the author hands over, or by installing from a version tag of the private repository, which needs the owner to have repository access.
+<button type="button" data-spec-choice="Built versioned archive">Built versioned archive (recommended)</button>
+<button type="button" data-spec-choice="Private repository version tag">Private repository version tag</button>
+</p>
+</section>
+
+<section data-anchor="package" id="package">
+<h2>What a release holds</h2>
+<div class="table-scroll" data-anchor="package-table-wrap">
+<table data-anchor="package-table"><caption>A release holds only the left column; the privacy check fails on anything in the right column, wherever it appears</caption>
+<thead><tr><th>Allowed in a release</th><th>Never in a release</th></tr></thead>
+<tbody>
+<tr data-anchor="package-row-plugin"><td>The production plugin's manifest, package description and prebuilt files</td><td>Installed dependency folders copied from a development machine</td></tr>
+<tr data-anchor="package-row-owner"><td>The owner service's source</td><td>Conversation histories, sessions, memory and review evidence</td></tr>
+<tr data-anchor="package-row-manifest"><td>The release manifest, its file list and checksums</td><td>Sign-ins, keys, tokens, MCP configurations and client secrets</td></tr>
+<tr data-anchor="package-row-docs"><td>The install, update, rollback, removal and check instructions</td><td>The author's home paths, names, colleagues, company, thread ids and proxy addresses</td></tr>
+</tbody>
+</table>
+</div>
+<div class="clauses" data-anchor="package-clauses">
+<p class="clause" data-anchor="package-allowlist"><span class="clause-id">P1</span> A release is built from its allowlist, never by copying a folder, and the privacy check runs on the built release, not on its source.</p>
+<p class="clause" data-anchor="package-starter-apart"><span class="clause-id">P2</span> The starter is checked by the same rules before it is rendered into any vault.</p>
+</div>
+</section>
+
+<section data-anchor="removal" id="removal">
+<h2>Removal and the check command</h2>
+<div class="table-scroll" data-anchor="removal-table-wrap">
+<table data-anchor="removal-table"><caption>What removal does without and with the owner asking to delete data</caption>
+<thead><tr><th>Item</th><th>Removed by default</th><th>Removed when asked to delete data</th></tr></thead>
+<tbody>
+<tr data-anchor="removal-row-plugin"><td>Exo's BB plugin and its entry</td><td>Yes</td><td>Yes</td></tr>
+<tr data-anchor="removal-row-service"><td>The owner service and its definition</td><td>Yes</td><td>Yes</td></tr>
+<tr data-anchor="removal-row-releases"><td>Installed releases</td><td>Yes</td><td>Yes</td></tr>
+<tr data-anchor="removal-row-history"><td>Exo's conversation, sign-ins and settings</td><td>No</td><td>Yes</td></tr>
+<tr data-anchor="removal-row-vault"><td>The owner's vault</td><td>No</td><td>No; the owner deletes it themselves</td></tr>
+</tbody>
+</table>
+</div>
+<div class="clauses" data-anchor="doctor-clauses">
+<p class="clause" data-anchor="doctor-names"><span class="clause-id">D1</span> The check command reports, each with a fix: missing tools, the current release and whether its files match their checksums, whether the owner service runs, whether Exo is signed in to a provider, whether the owner's time zone is set, and the log folder.</p>
+<p class="clause" data-anchor="doctor-read-only"><span class="clause-id">D2</span> The check command changes nothing.</p>
+</div>
+</section>
+
+<section data-anchor="staging" id="staging">
+<h2>The author's own Exo and staging</h2>
+<div class="clauses" data-anchor="staging-clauses">
+<p class="clause" data-anchor="staging-release"><span class="clause-id">G1</span> The author's own Exo is an install like any owner's: it runs a release and keeps its existing history and vault, which its configuration names.</p>
+<p class="clause" data-anchor="staging-apart"><span class="clause-id">G2</span> Staging runs a release too, with its own data, and never shares a conversation, sign-in or service with the author's own Exo.</p>
+</div>
+<p data-anchor="tbd-later-staging-bb" data-spec-tbd="later">Whether staging can run in a BB kept apart from the author's own BB on the same Mac account.</p>
+</section>
+
+<section data-anchor="non-goals" id="non-goals">
+<h2>Non-goals</h2>
+<p data-anchor="non-goal-surfaces">What happens on Home and on other surfaces once Exo is running, which <a href="./pages-and-activity.spec.html#user-stories">pages and activity</a> owns; several surfaces at once need several conversations under one Exo, and this spec does not decide how the owner service runs them.</p>
+<p data-anchor="non-goal-public">Public distribution, an App Store or notarized app, automatic updates, Windows or Linux, and more than one owner per Mac account.</p>
+<p data-anchor="non-goal-migration">Moving the author's existing Exo onto a release, which is a one-time task, not product behavior.</p>
+</section>
+
+</article>
+</body>
+</html>
