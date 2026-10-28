@@ -71,5 +71,19 @@
     "older producer has no production snapshot renderer; no new-feature acceptance",
     "latest starter29-test pass reported by owner lane, not independently repeated here"
   ],
-  "external_evidence_pointer": "/tmp/exo-clean-independent-latest -> independent-proof.json and logs"
+  "external_evidence_pointer": "/tmp/exo-clean-independent-latest -> independent-proof.json and logs",
+  "separate_new_producer_review": {
+    "producer": "3b685b206d045d4fb0da64c1b1e5cb9d1b942411",
+    "clean": true,
+    "independent_checks": [
+      "offline cached npm ci",
+      "actual BB build only",
+      "owner build",
+      "typecheck",
+      "12 isolated/mock tests pass after short TMPDIR"
+    ],
+    "initial_failure": "Unix socket EINVAL from long macOS fixture path; retained; short dedicated /private/tmp rerun passes",
+    "committed_actual_bb_evidence": "Reviewed, not independently rerun. Parent ready/idle, retry same ID/count1; lost receipt fixture-injected, not process crash. No Pi/auth/owner.",
+    "scope": "Distinct from older pinned38-file package; no renderer/inference/lifecycle acceptance"
+  }
 }
