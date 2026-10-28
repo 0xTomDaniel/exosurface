@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pages and activity: every surface its own thread, one shared trunk - Exosurface spec</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./.style/spec.css">
+<script defer src="./.viz/runtime.js"></script>
+</head>
+<body>
+<article class="spec" data-spec-version="1" data-spec-contract="shaped-sections-v1">
+
+<header data-anchor="header">
+<h1 data-anchor="title">Pages and activity: every surface its own thread, one shared trunk</h1>
+<p class="lede" data-anchor="context">The person and Exo work on a surface: one or more pages and one input, with no separate chat.
+Everything is a page made of general blocks, and a surface's activity is its thread: everything sent, pressed, said, versioned and committed on that surface, across all of its pages.
+Exo gives each new topic a new page, and the person keeps the pages worth coming back to; the pages show the work now, and the activity shows how it got here.
+Parallel work is another surface, and what each surface decides reaches every other surface through one shared trunk of commits, so every surface feels like the same Exo.</p>
+<p data-anchor="commit-defined">A commit is a one-line record Exo writes to the trunk when a surface decides or finishes something, for example "Weekend trip: booked the lake cabin for Friday and Saturday".</p>
+<p data-anchor="vocabulary">Vocabulary follows the glossary: surface, Home, page, message page, kept page, page strip, page history, stage, version, follow mode, sidebar, Needs you, Working, tree, settle, child surface, block, Exo block, input, activity, thread, trunk and commit. A thread and its surface are the same thing; the person-facing word is surface.</p>
+</header>
+
+<section data-spec-section="user-stories" data-anchor="user-stories" id="user-stories">
+<h2>User stories</h2>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-one-surface">As a person, I work with Exo on a surface with one input that is always there and no chat beside it, so the work we are on is always what I see.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-exo-block">As a person, I read Exo's latest words on the page itself, in one Exo block, so its judgement sits with the work instead of in a transcript.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-activity">As a person, I open a surface's activity and see how its pages got here, so the pages can stay present tense without losing their past.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-new-surface">As a person, I start new work with the one New surface button and never make pages myself, so starting is one press and Exo shapes the pages.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-pages-by-topic">As a person, I see Exo give each new topic its own page, on every surface including Home, so a topic change never overwrites the page I was on.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-out-of-scope">As a person, when I raise a topic that falls entirely outside a surface's scope, Exo offers to start a new surface or take it to Home, so surfaces stay focused instead of drifting.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-follow">As a person, while I am following, Exo's new page comes into view on its own, and once I scroll, click or type my view stays put, so Exo never pulls me away from what I am reading.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-parallel">As a person, I work on several surfaces at once, with Exo working on each, and Exo never switches the surface I am in, so one topic never waits for another.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-sidebar">As a person, my sidebar shows Home, the surfaces that need me, and the tree of all my surfaces, so I see what needs me without managing a list of chats.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-tree">As a person, I nest, move, rename and settle my surfaces in a tree that Exo never rearranges, so the structure is mine.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-kept-page">As a person, I keep the pages I come back to, and Exo refreshes a kept page in place instead of adding pages, so the page strip holds what matters.</p>
+<p data-user-story data-user-facing="true" data-guided-journey="no" data-anchor="story-kept-to-surface">As a person, I move a kept page into its own surface when it needs its own conversation.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-same-exo">As Exo, every turn on every surface starts from the same trunk, a child surface's turn also starts from its parent surface's pages as they are now, and a parent surface knows what its children committed, so every surface is the same Exo and no surface reads another surface's half-formed thinking.</p>
+<p data-user-story data-user-facing="false" data-anchor="story-commit">As Exo, when a surface decides or finishes something, I commit one line to the trunk, linked to where it was said, so every other surface knows it at its next turn.</p>
+</section>
+
+<section data-spec-section="acceptance" data-acceptance-scope="traceability" data-anchor="acceptance" id="acceptance">
+<h2>Acceptance criteria</h2>
+<p data-acceptance-criterion data-anchor="acceptance-no-chat" data-story="story-one-surface story-exo-block"><span data-acceptance-scenario>Given a person on a page, When the person types a message in the input and sends it, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then the page's Exo block shows Exo's reply, the input is still shown and empty, and the surface shows no chat transcript.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-exo-block-latest" data-story="story-exo-block"><span data-acceptance-scenario>Given a person on a page whose Exo block shows Exo's reply to an earlier message, When the person sends a new message on the same topic, then waits for Exo to finish its turn,</span> <span data-acceptance-observable>Then the Exo block shows only Exo's reply to the new message.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-turns" data-story="story-activity story-exo-block"><span data-acceptance-scenario>Given a person on a surface Exo has answered once, When the person sends a second message, then waits for Exo to finish its turn, then opens the surface's activity,</span> <span data-acceptance-observable>Then the activity lists both of the person's messages and both of Exo's replies, in the order they were said.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-press" data-story="story-activity"><span data-acceptance-scenario>Given a person on a page with a button, When the person presses the button, then opens the surface's activity,</span> <span data-acceptance-observable>Then the activity lists the press by the button's label, with the values it sent.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-no-draft" data-story="story-activity"><span data-acceptance-scenario>Given a person on a surface Exo has answered once, When the person types a message in the input without sending it, then opens the surface's activity,</span> <span data-acceptance-observable>Then the activity lists the earlier message and Exo's reply, and nothing of the unsent text.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-version" data-story="story-activity"><span data-acceptance-scenario>Given a person on a page Exo has changed twice, When the person opens the surface's activity, then opens the page's earlier version from it,</span> <span data-acceptance-observable>Then the page shows as it was at that version, marked as an earlier version.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-activity-commit" data-story="story-activity story-commit"><span data-acceptance-scenario>Given a person on a surface where Exo committed a decision, When the person opens the surface's activity,</span> <span data-acceptance-observable>Then the activity shows the commit as one line, marked as a commit, next to the Exo turn it came from.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-new-surface" data-story="story-new-surface story-sidebar"><span data-acceptance-scenario>Given a person on a surface, When the person presses the New surface button,</span> <span data-acceptance-observable>Then a new surface with one empty page is in view, with the input shown and empty, and the tree lists the new surface at its top level.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-topic-new-page" data-story="story-pages-by-topic story-new-surface"><span data-acceptance-scenario>Given a person on a surface other than Home whose page in view is about one topic, When the person sends a message about another topic within the surface's scope, then waits without scrolling, clicking or typing until Exo finishes its turn,</span> <span data-acceptance-observable>Then a new page about that topic is in view, and the page strip lists it as the surface's current page.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-topic-home" data-story="story-pages-by-topic"><span data-acceptance-scenario>Given a person on Home whose page in view is about one topic, When the person sends a message about an unrelated topic, then waits without scrolling, clicking or typing until Exo finishes its turn,</span> <span data-acceptance-observable>Then Home shows a new page about that topic in view, with no offer to start a new surface.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-topic-history" data-story="story-pages-by-topic"><span data-acceptance-scenario>Given a person on a surface whose page in view is a message page, When the person sends a message about another topic, then waits until Exo finishes its turn, then opens the surface's page history from the page strip, then opens the earlier page from it,</span> <span data-acceptance-observable>Then the earlier page is in view as Exo last left it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-out-of-scope-offer" data-story="story-out-of-scope"><span data-acceptance-scenario>Given a person on a surface other than Home that is about one project, When the person sends a message about a topic entirely outside that project, then waits until Exo finishes its turn,</span> <span data-acceptance-observable>Then the page in view offers to start a new surface for the topic and to take it to Home.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-out-of-scope-new" data-story="story-out-of-scope story-tree"><span data-acceptance-scenario>Given a person on a surface other than Home that is about one project, When the person sends a message about a topic entirely outside that project, then waits until Exo finishes its turn, then presses the offer to start a new surface,</span> <span data-acceptance-observable>Then a new surface with a page about the topic is in view, and the tree lists it under the surface it came from.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-out-of-scope-home" data-story="story-out-of-scope"><span data-acceptance-scenario>Given a person on a surface other than Home that is about one project, When the person sends a message about a topic entirely outside that project, then waits until Exo finishes its turn, then presses the offer to take it to Home,</span> <span data-acceptance-observable>Then Home is in view with a page about the topic.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-follow-stays" data-story="story-follow"><span data-acceptance-scenario>Given a person on a surface, When the person sends a message about another topic, then scrolls the page in view before Exo finishes its turn, then waits until Exo finishes,</span> <span data-acceptance-observable>Then the page the person scrolled is still in view, and the page strip shows a dot on the new page.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-follow-resumes" data-story="story-follow"><span data-acceptance-scenario>Given a person on a surface, When the person sends a message about another topic, then scrolls the page in view before Exo finishes its turn, then waits until Exo finishes, then sends a message about a third topic, then waits without scrolling, clicking or typing until Exo finishes its turn,</span> <span data-acceptance-observable>Then the page about the third topic is in view.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parallel-second" data-story="story-parallel story-sidebar"><span data-acceptance-scenario>Given a person with two surfaces, When the person sends a message on one surface, then opens the other surface before Exo finishes that turn, then waits until Exo finishes its turn on the first surface,</span> <span data-acceptance-observable>Then the surface the person opened is still the surface in view, not pulled back to the first surface, and the sidebar lists the first surface under Needs you.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parallel-active" data-story="story-parallel story-sidebar"><span data-acceptance-scenario>Given a person with two surfaces, When the person sends a message on one surface, then opens the other surface before Exo finishes that turn,</span> <span data-acceptance-observable>Then the sidebar shows the first surface in the Working group.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parallel-first" data-story="story-parallel"><span data-acceptance-scenario>Given a person with two surfaces, When the person sends a message on one surface, then opens the other surface before Exo finishes that turn, then sends a message there, then goes back to the first surface after Exo finishes its turn there,</span> <span data-acceptance-observable>Then the Exo block on the first surface's page in view shows Exo's reply to the first message.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-sidebar-parts" data-story="story-sidebar"><span data-acceptance-scenario>Given a person with Home and several other surfaces, one of which is waiting on the person, When the person opens the sidebar,</span> <span data-acceptance-observable>Then the sidebar shows Home first, then Needs you with the waiting surface, then the tree of every surface, and it lists no pages.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-settle" data-story="story-sidebar story-tree"><span data-acceptance-scenario>Given a person with a surface under Needs you, When the person settles that surface,</span> <span data-acceptance-observable>Then the sidebar no longer lists it under Needs you, and the tree still lists it where it was.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-needs-you-empty" data-story="story-sidebar"><span data-acceptance-scenario>Given a person whose surfaces are all settled or working, When the person opens the sidebar,</span> <span data-acceptance-observable>Then Needs you shows that nothing needs the person.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-tree-nest" data-story="story-tree"><span data-acceptance-scenario>Given a person with two surfaces at the top level of the tree, When the person drags one surface onto the other,</span> <span data-acceptance-observable>Then the tree lists the dragged surface nested under the other.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-tree-kept" data-story="story-tree"><span data-acceptance-scenario>Given a person with a surface nested under another surface, When the person sends a message on the nested surface, then waits until Exo finishes its turn,</span> <span data-acceptance-observable>Then the tree still lists the surface under the surface the person put it under, with the name the person gave it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-keep" data-story="story-kept-page"><span data-acceptance-scenario>Given a person on a surface with a message page in view, When the person presses Keep on that page, then sends a message about another topic, then waits until Exo finishes its turn,</span> <span data-acceptance-observable>Then the page strip lists the kept page, marked as kept, and the new page.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-keep-refresh" data-story="story-kept-page"><span data-acceptance-scenario>Given a person on a surface with a kept page in view, When the person asks Exo to update the kept page, then waits until Exo finishes its turn,</span> <span data-acceptance-observable>Then the kept page shows the update, and the page strip lists it once, with no added page.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-keep-versions" data-story="story-kept-page"><span data-acceptance-scenario>Given a person on a surface with a kept page Exo has refreshed once, When the person opens the kept page's history, then opens its earlier version,</span> <span data-acceptance-observable>Then the kept page shows as it was before the refresh, marked as an earlier version.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-unkeep" data-story="story-kept-page"><span data-acceptance-scenario>Given a person on a surface with a kept page that is not the page in view, When the person unkeeps that page,</span> <span data-acceptance-observable>Then the page strip no longer lists it and its page history lists it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-reorder" data-story="story-kept-page"><span data-acceptance-scenario>Given a person on a surface with two kept pages, When the person drags one kept page past the other in the page strip,</span> <span data-acceptance-observable>Then the page strip lists the two kept pages in the new order.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-kept-to-surface" data-story="story-kept-to-surface"><span data-acceptance-scenario>Given a person on Home with a kept page, When the person moves the kept page into its own surface,</span> <span data-acceptance-observable>Then a new surface holding that page is in view, and the tree lists the new surface.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-child-reads-parent" data-story="story-same-exo"><span data-acceptance-scenario>Given Exo on a child surface whose parent surface's pages have changed since the child's last turn, When the person sends a message on the child surface,</span> <span data-acceptance-observable>Then Exo's turn reads the parent surface's pages as they are now and nothing of the parent's activity; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-trunk-shared" data-story="story-same-exo story-commit"><span data-acceptance-scenario>Given Exo on a surface, while another surface that is neither its parent nor its child has committed a decision, When the person sends a message on the first surface,</span> <span data-acceptance-observable>Then Exo's turn reads that commit line and nothing of the other surface's activity; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-parent-knows-child" data-story="story-same-exo story-commit"><span data-acceptance-scenario>Given Exo on a parent surface whose child surface has committed a decision, When the person sends a message on the parent surface,</span> <span data-acceptance-observable>Then Exo's turn reads that commit line, marked as coming from that child surface, and nothing of the child's activity; no screen shows it.</span></p>
+<p data-acceptance-criterion data-anchor="acceptance-commit-linked" data-story="story-commit"><span data-acceptance-scenario>Given Exo on a surface that decides something in a turn, When the turn ends,</span> <span data-acceptance-observable>Then the trunk holds one new commit line for it, linked to that turn in the surface's activity, and nothing else from the turn; no screen shows it.</span></p>
+</section>
+
+<section data-spec-section="modular-boundaries" data-anchor="modular-boundaries" id="modular-boundaries">
+<h2>Modular boundaries</h2>
+<p data-modular-boundary data-anchor="boundary-pages"><span data-boundary-responsibility>Pages own every page's blocks, its versions, its kind (message or kept), the surface it is on, the order of kept pages, and each surface's page history.</span> <span data-boundary-seam>Caller-facing seam: the page tools Exo calls on the pages of the surface its turn is on, and the pages the surface view renders.</span> <span data-boundary-dependency>Dependency direction: self-contained; surfaces, activity and the surface view depend on pages, and pages depend on none of them.</span> <span data-boundary-scope>Observable scope: what a page shows, its versions, and what the page strip and page history list.</span></p>
+<p data-modular-boundary data-anchor="boundary-surfaces"><span data-boundary-responsibility>Surfaces own every surface, Home included, the tree of parent and child surfaces, names, and whether a surface is working, needs the person, or is settled.</span> <span data-boundary-seam>Caller-facing seam: the person's nest, move, rename and settle, Exo's adding of a child surface, and the state each surface reports as its turns start and end.</span> <span data-boundary-dependency>Dependency direction: self-contained; the surface view and activity depend on surfaces, and surfaces depend on neither.</span> <span data-boundary-scope>Observable scope: the sidebar's Home, Needs you, Working and tree.</span></p>
+<p data-modular-boundary data-anchor="boundary-activity"><span data-boundary-responsibility>Activity owns each surface's thread: the record of what was sent, pressed, said, versioned and committed on that surface, across all of its pages.</span> <span data-boundary-seam>Caller-facing seam: one activity per surface, written by the person's sends and presses and by Exo's turns on that surface, read by the activity view and by Exo's turns on that surface only.</span> <span data-boundary-dependency>Dependency direction: external provider OptChat, as each surface's own conversation; an activity points at page versions and writes commits to the trunk, and no activity reads another.</span> <span data-boundary-scope>Observable scope: the activity view of a surface, and the Exo block on each page, which shows the latest Exo turn there.</span></p>
+<p data-modular-boundary data-anchor="boundary-trunk"><span data-boundary-responsibility>The trunk owns the shared record of commits for all of the person's surfaces.</span> <span data-boundary-seam>Caller-facing seam: a commit appends one line linked to its activity entry; every Exo turn reads the trunk.</span> <span data-boundary-dependency>Dependency direction: external provider OptChat, as one conversation that holds only commits, so it stays readable as it grows; activities depend on the trunk, and it depends on no surface.</span> <span data-boundary-scope>Observable scope: the commit lines Exo reads each turn, and commits shown in a surface's activity.</span></p>
+<p data-modular-boundary data-anchor="boundary-surface"><span data-boundary-responsibility>The surface view owns what the person sees and does: the sidebar, the surface in view, its page in view, the page strip, follow mode, the input, the New surface button and the activity view.</span> <span data-boundary-seam>Caller-facing seam: a send or press goes to the activity of the surface it was made on.</span> <span data-boundary-dependency>Dependency direction: self-contained within the package; it depends on surfaces, pages and activity, and nothing depends on the surface view.</span> <span data-boundary-scope>Observable scope: everything on screen.</span></p>
+</section>
+
+<section data-anchor="surface" id="surface">
+<h2>Surfaces</h2>
+<div class="clauses" data-anchor="surface-clauses">
+<p class="clause" data-anchor="surface-one"><span class="clause-id">S1</span> A surface holds one or more pages and shows its page in view and one input; it has no chat column and no transcript.</p>
+<p class="clause" data-anchor="surface-input"><span class="clause-id">S2</span> The input is always shown, and what the person sends from it is a turn in the activity of the surface in view.</p>
+<p class="clause" data-anchor="surface-press"><span class="clause-id">S3</span> A press of a button on a page is a turn in the activity of that page's surface.</p>
+<p class="clause" data-anchor="surface-stays"><span class="clause-id">S4</span> Exo makes every page: on every surface, Home included, a new topic gets a new page; the person never makes a page, and asks Exo instead.</p>
+<p class="clause" data-anchor="surface-out-of-scope"><span class="clause-id">S5</span> When a topic falls entirely outside the scope of a surface other than Home, Exo offers, on the page, to start a new surface for it or to take it to Home, rather than drift; Home has no scope and never offers.</p>
+<p class="clause" data-anchor="surface-background"><span class="clause-id">S6</span> Exo never switches which surface the person is in; a surface the person is not in may edit its blocks and change its pages quietly, and lights up in the sidebar.</p>
+<p class="clause" data-anchor="surface-new-surface"><span class="clause-id">S7</span> New surface is the only button for starting new work, and there is no New page button; New surface starts a top-level surface with one empty page and puts it in view.</p>
+<p class="clause" data-anchor="surface-exo-starts"><span class="clause-id">S8</span> A surface Exo starts, from an offer the person presses or a kept page the person moves, is a child of the surface it came from; one that comes from Home is at the top level of the tree.</p>
+<p class="clause" data-anchor="page-parallel"><span class="clause-id">S9</span> Exo works on several surfaces at the same time; a turn on one surface never waits for a turn on another.</p>
+<p class="clause" data-anchor="page-same-exo"><span class="clause-id">S10</span> Every surface is worked on by the same Exo, with the same identity, vault and trunk.</p>
+</div>
+<p data-anchor="tbd-later-input" data-spec-tbd="later">Voice and images in the input, and the surface on other devices.</p>
+<p data-anchor="tbd-later-exo-child" data-spec-tbd="later">Exo starting a surface without an offer the person presses.</p>
+</section>
+
+<section data-anchor="follow" id="follow">
+<h2>Follow mode</h2>
+<div class="clauses" data-anchor="follow-clauses">
+<p class="clause" data-anchor="follow-following"><span class="clause-id">F1</span> The person is following from each send until they next scroll, click or type on that surface.</p>
+<p class="clause" data-anchor="follow-moves"><span class="clause-id">F2</span> While the person is following, Exo moving to a new page puts that page in view.</p>
+<p class="clause" data-anchor="follow-stays"><span class="clause-id">F3</span> Once the person scrolls, clicks or types, the view stays on the page they are on, and each new page Exo moves to gets a dot in the page strip until the person opens it.</p>
+<p class="clause" data-anchor="follow-resumes"><span class="clause-id">F4</span> The person's next send resumes following.</p>
+<p class="clause" data-anchor="follow-one-surface"><span class="clause-id">F5</span> Follow mode moves the view only between pages of the surface the person is in, never to another surface.</p>
+</div>
+</section>
+
+<section data-anchor="sidebar" id="sidebar">
+<h2>The sidebar</h2>
+<div class="clauses" data-anchor="sidebar-clauses">
+<p class="clause" data-anchor="sidebar-surfaces"><span class="clause-id">N1</span> The sidebar lists surfaces only, never pages, in three parts: Home, always at the top; Needs you; and the tree.</p>
+<p class="clause" data-anchor="sidebar-needs-you"><span class="clause-id">N2</span> Needs you lists the surfaces, other than the one the person is in, that have finished a turn or wait on the person; a surface rises into it on its own and leaves it when the person settles it, and Needs you may be empty.</p>
+<p class="clause" data-anchor="sidebar-working"><span class="clause-id">N3</span> A surface Exo is working on sits in a folded Working group beside Needs you until it finishes or needs the person, then rises into Needs you; wherever else the sidebar lists a working surface, it shows as active.</p>
+<p class="clause" data-anchor="sidebar-home"><span class="clause-id">N4</span> Home stays at the top and lights up in its place when it is working or needs the person.</p>
+<p class="clause" data-anchor="sidebar-tree"><span class="clause-id">N5</span> The tree lists every surface, nested like Notion pages; the person nests, moves, renames and settles surfaces, and Exo may add a child surface but never moves, nests, renames or settles one.</p>
+<p class="clause" data-anchor="sidebar-settled"><span class="clause-id">N6</span> A settled surface leaves Needs you and keeps its place in the tree; it rises into Needs you again the next time it finishes a turn or waits on the person.</p>
+</div>
+</section>
+
+<section data-anchor="pages" id="pages">
+<h2>Pages</h2>
+<div class="clauses" data-anchor="page-clauses">
+<p class="clause" data-anchor="page-general"><span class="clause-id">P1</span> A page is made of general blocks from the visual catalog; no page or block is specific to plans, weeks or any other domain.</p>
+<p class="clause" data-anchor="page-tree"><span class="clause-id">P2</span> Every page is on exactly one surface and keeps its own versions, so it can be rewound; its conversation belongs to the surface's activity.</p>
+<p class="clause" data-anchor="page-strip"><span class="clause-id">P3</span> A surface lists its pages only in its own page strip, never in the sidebar: its kept pages in the person's order and its current message page, with the surface's page history one click away.</p>
+<p class="clause" data-anchor="page-message"><span class="clause-id">P4</span> A page is a message page unless it is kept: a snapshot Exo changes only while it is the topic, which slides into the surface's page history when the topic moves, one click back.</p>
+<p class="clause" data-anchor="page-kept"><span class="clause-id">P5</span> A page becomes a kept page when the person presses Keep on it, either unprompted or when Exo suggests keeping it; a kept page stays in the page strip, Exo refreshes it in place, and its earlier versions live in that page's history, never as extra pages.</p>
+<p class="clause" data-anchor="page-unkeep"><span class="clause-id">P6</span> The person can unkeep a kept page, which makes it a message page again and, when it is not the topic, slides it into the page history; the person can also reorder kept pages in the page strip.</p>
+<p class="clause" data-anchor="page-to-surface"><span class="clause-id">P7</span> The person can move a kept page into its own surface when it needs its own conversation; the new surface holds that page with its versions, and the page leaves the old surface's page strip.
+For example, a "Today" agenda starts as a kept page in Home and moves to its own Daily surface when it needs one.</p>
+<p class="clause" data-anchor="page-two-views"><span class="clause-id">P8</span> A surface's pages and its activity are one record with two views: the pages show it now, and the activity shows how it got here.</p>
+</div>
+</section>
+
+<section data-anchor="exo-block" id="exo-block">
+<h2>The Exo block</h2>
+<div class="clauses" data-anchor="exo-block-clauses">
+<p class="clause" data-anchor="exo-block-one"><span class="clause-id">E1</span> Every page has one Exo block, which shows Exo's words from its latest turn on that page.</p>
+<p class="clause" data-anchor="exo-block-replaced"><span class="clause-id">E2</span> Each Exo turn replaces the block's words; earlier words stay in the surface's activity as the turns they belong to.</p>
+<p class="clause" data-anchor="exo-block-empty"><span class="clause-id">E3</span> A turn that only changes the page leaves the Exo block empty, so no earlier words sit beside a changed page.</p>
+<p class="clause" data-anchor="exo-block-working"><span class="clause-id">E4</span> While Exo works on the page, the Exo block says so.</p>
+<p class="clause" data-anchor="exo-block-adds"><span class="clause-id">E5</span> The Exo block carries what the page cannot, such as judgement or a caveat, and never repeats what the page shows.</p>
+<p class="clause" data-anchor="exo-block-asks"><span class="clause-id">E6</span> When Exo needs something from the person, the page's own inputs ask for it, and the Exo block only points to them.</p>
+<p class="clause" data-anchor="exo-block-exo-only"><span class="clause-id">E7</span> Only Exo writes the Exo block; the person answers through the input.</p>
+</div>
+</section>
+
+<section data-anchor="activity" id="activity">
+<h2>What activity records</h2>
+<div class="table-scroll" data-anchor="activity-table-wrap">
+<table data-anchor="activity-table"><caption>Each entry in a surface's activity, across all of its pages, in the order it happened; anything not listed is not recorded</caption>
+<thead><tr><th>Event on the surface</th><th>Recorded</th><th>As</th></tr></thead>
+<tbody>
+<tr data-anchor="activity-send"><td>The person sends from the input</td><td>Yes</td><td>The message, with the page edits it carries</td></tr>
+<tr data-anchor="activity-press-row"><td>The person presses a button</td><td>Yes</td><td>The press, with the values it sent</td></tr>
+<tr data-anchor="activity-exo-turn"><td>Exo finishes a turn</td><td>Yes</td><td>Exo's words, the ones the Exo block showed</td></tr>
+<tr data-anchor="activity-version-row"><td>Exo makes or changes a page</td><td>Yes</td><td>The page's new version, which opens the page as it was</td></tr>
+<tr data-anchor="activity-commit-row"><td>Exo commits to the trunk</td><td>Yes</td><td>The commit line, marked as a commit</td></tr>
+<tr data-anchor="activity-typing"><td>The person types without sending</td><td>No</td><td>It stays in the input as a draft</td></tr>
+<tr data-anchor="activity-edits"><td>The person edits a block directly</td><td>Yes, with the next send or press on the page</td><td>Page edits carried by that send or press</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section data-anchor="trunk" id="trunk">
+<h2>The trunk and what each turn reads</h2>
+<div class="clauses" data-anchor="trunk-clauses">
+<p class="clause" data-anchor="trunk-one"><span class="clause-id">K1</span> The trunk is one shared record of commits for all of the person's surfaces; each surface's activity is a branch off it.</p>
+<p class="clause" data-anchor="trunk-commit"><span class="clause-id">K2</span> Every commit links to the activity entry it came from.</p>
+<p class="clause" data-anchor="trunk-only-commits"><span class="clause-id">K3</span> The trunk holds only commits; no message, draft or reasoning from any surface enters it.</p>
+<p class="clause" data-anchor="trunk-no-other-activity"><span class="clause-id">K4</span> No turn reads another surface's activity, except the one entry Exo opens by following a commit's link.</p>
+</div>
+<div class="table-scroll" data-anchor="turn-context-wrap">
+<table data-anchor="turn-context"><caption>What Exo reads at the start of every turn on a surface</caption>
+<thead><tr><th>Source</th><th>Read</th></tr></thead>
+<tbody>
+<tr data-anchor="ctx-page"><td>The surface's current message page and its kept pages as they are now, in the snapshot format</td><td>In full, every turn</td></tr>
+<tr data-anchor="ctx-activity"><td>The surface's activity, its own OptChat thread</td><td>As this turn's own OptChat conversation</td></tr>
+<tr data-anchor="ctx-parent"><td>The parent surface's current message page and kept pages as they are now, never the parent's activity</td><td>In full, every turn, for a child surface; a child reads one OptChat, its own</td></tr>
+<tr data-anchor="ctx-children"><td>The child surfaces</td><td>By name, with their commits marked as theirs in the trunk</td></tr>
+<tr data-anchor="ctx-trunk"><td>The trunk</td><td>Every turn</td></tr>
+<tr data-anchor="ctx-vault"><td>The vault</td><td>As Exo reads it on any surface</td></tr>
+<tr data-anchor="ctx-other"><td>Any other surface's activity</td><td>Never, except the one entry a commit's link leads to</td></tr>
+</tbody>
+</table>
+</div>
+<p data-anchor="tbd-later-trunk-view" data-spec-tbd="later">A view where the person reads the whole trunk.</p>
+</section>
+
+<section data-anchor="non-goals" id="non-goals">
+<h2>Non-goals</h2>
+<p data-anchor="non-goal-workflows">Enforcing the steps of parallel work: surfaces and their pages are the interaction layer, and scripted workflows belong to Exomachina underneath.</p>
+<p data-anchor="non-goal-bounds">Page bounds and the snapshot format, which <a href="./page-bounds.spec.html#bounds">page bounds</a> owns.</p>
+</section>
+
+</article>
+</body>
+</html>

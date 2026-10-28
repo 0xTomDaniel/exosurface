@@ -7,8 +7,8 @@ Exosurface is a shared, adaptive workspace where a person and their personal age
 **Exo**: The personal agent that helps the user plan and act across their information and devices.
 _Avoid_: Exosurface (the workspace, not the agent).
 
-**Thread**: The continuing exchange between the person and Exo, ordered through time and composed of visual interaction, language, or both. A thread remains a complete conversation when it contains no chat.
-_Avoid_: Chat transcript (language is optional).
+**Thread**: A surface's activity: everything sent, pressed, said, versioned and committed on one surface, across all of its pages, ordered through time and composed of visual interaction, language, or both. A thread and its surface are the same thing, and the person-facing word is surface. A thread remains a complete conversation when it contains no chat.
+_Avoid_: Chat transcript (language is optional), a separate list of chats (every thread belongs to a surface).
 
 **Turn**: A meaningful contribution to the thread from either participant, expressed through a visualization, direct interaction, language, or a combination of these.
 _Avoid_: Text message, agent run (neither defines a turn).
