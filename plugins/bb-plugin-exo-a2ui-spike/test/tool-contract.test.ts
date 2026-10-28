@@ -1,5 +1,6 @@
-import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
-import{CANONICAL_HOME}from'../src/state.ts';
+import './isolation.ts';
+import test from'node:test';import assert from'node:assert/strict';import{readFileSync,mkdirSync,writeFileSync}from'node:fs';
+import{CANONICAL_HOME,HOME}from'../src/state.ts';
 import{PRESS_PREFIX,PROMPT_SECTION,REMINDER_SECTION,REMINDER,SURFACE_GUIDELINES,SURFACE_DESCRIPTION}from'../src/tool-contract.ts';
 import{PRESENTATION_GUIDE_SNAPSHOT}from'../src/presentation-guide.ts';
 import{EXO_CATALOG}from'../src/exo-catalog.ts';
@@ -7,6 +8,7 @@ import{EXO_CATALOG}from'../src/exo-catalog.ts';
 // session_start, so no runtime files are written.
 async function load(){
  process.env.EXO_A2UI_SPIKE='1';process.env.OPTCHAT_HOME=CANONICAL_HOME;
+ mkdirSync(HOME,{recursive:true});writeFileSync(HOME+'/clone.json','{}');
  const {default:workspace}=await import('../src/workspace-extension.ts');
  const handlers=new Map<string,Function[]>(),tools=new Map<string,any>(),entries:any[]=[];let active:string[]=[];
  const pi:any={getAllTools:()=>[...tools.keys(),'zoom','date','spawn','bash'].map(name=>({name})),on:(n:string,h:Function)=>{handlers.set(n,[...(handlers.get(n)??[]),h]);return()=>{};},registerTool:(t:any)=>tools.set(t.name,t),registerCommand:()=>{},appendEntry:(type:string,data:any)=>entries.push({type,data}),setActiveTools:(t:string[])=>{active=t;},getActiveTools:()=>active};

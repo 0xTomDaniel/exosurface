@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {validateSnapshot,validateAction,latestSnapshot,MAX_BYTES} from '../src/workspace.ts';
 import {sampleMessages} from './sample.ts';

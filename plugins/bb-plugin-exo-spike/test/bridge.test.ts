@@ -1,13 +1,19 @@
+import { EVIDENCE_DIR, canonicalFixture as fixture, realBinaries } from './isolation.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { createServer } from 'node:net';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { experimental_captureBridgeJsonRpcOutput, experimental_runBridgeConformance, experimental_formatConformanceReport } from '@get-bb/plugin-sdk/provider-bridge/testing';
 import { handleLine, experimental_providerBridge } from '../host.ts';
 import { runtimeLaunch, assertNativeOwner } from '../src/runtime.ts';
-import { HOME, OPTCHAT, CANONICAL_HOME, CANONICAL_PROFILE } from '../src/state.ts';
+import { HOME, OPTCHAT, PI_CLI, FAST, CANONICAL_HOME, CANONICAL_PROFILE } from '../src/state.ts';
 
-test('public bridge conformance against real Pi 1.1 + isolated OptChat', { timeout: 180_000 }, async () => {
+// Real Pi + OptChat binaries are opt-in (EXO_TEST_PI_CLI/EXO_TEST_OPTCHAT/EXO_TEST_PI_FAST); they run offline in the isolated HOME.
+const binaries = realBinaries() && [PI_CLI, OPTCHAT, FAST].every(p => p && existsSync(p));
+
+test('public bridge conformance against real Pi 1.1 + isolated OptChat', { timeout: 180_000, skip: binaries ? false : 'set EXO_TEST_PI_CLI, EXO_TEST_OPTCHAT and EXO_TEST_PI_FAST to run the offline bridge proof' }, async () => {
   const capture = experimental_captureBridgeJsonRpcOutput();
   let report;
   // The kit reuses fixed thread IDs; isolate each run from durable prior evidence.
@@ -21,7 +27,7 @@ test('public bridge conformance against real Pi 1.1 + isolated OptChat', { timeo
       session: { cwd: process.cwd(), promptInput: [{ type: 'text', text: 'EXO_CONFORMANCE', mentions: [] }], zeroWorkPromptInput: [{ type: 'text', text: '/exo-noop', mentions: [] }], interruptiblePromptInput: [{ type: 'text', text: 'EXO_SLOW', mentions: [] }] },
     });
   } finally { await experimental_providerBridge.onClose?.(); capture.restore(); }
-  writeFileSync('evidence/conformance.json', JSON.stringify(report, null, 2) + '\n');
+  writeFileSync(join(EVIDENCE_DIR, 'conformance.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(experimental_formatConformanceReport(report!));
   assert.equal(report?.passed, true);
 });
@@ -39,7 +45,10 @@ test('live trial restores normal resources without claiming the personal profile
   assert.equal(launch.args[launch.args.indexOf('--optchat-profile') + 1], profile);
 });
 
+const canonicalFixture = () => fixture(CANONICAL_HOME, CANONICAL_PROFILE);
+
 test('canonical launch reuses existing configuration without initializing/rebinding it', () => {
+  canonicalFixture();
   const paths = ['config.json', 'AGENTS.md', 'active-memory.json', 'DO-NOT-DELETE.md'].map(p => `${CANONICAL_HOME}/profiles/${CANONICAL_PROFILE}/${p}`);
   const before = paths.map(p => readFileSync(p, 'utf8'));
   const launch = runtimeLaunch(CANONICAL_PROFILE, 'canonical', 'test-canonical-options');
@@ -50,9 +59,21 @@ test('canonical launch reuses existing configuration without initializing/rebind
   assert.throws(() => runtimeLaunch('wrong-profile', 'canonical', 'test-no-rebind'));
 });
 
+test('canonical launch refuses to initialize a missing profile', () => {
+  const dir = join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE); rmSync(dir, { recursive: true, force: true });
+  assert.throws(() => runtimeLaunch(CANONICAL_PROFILE, 'canonical', 'test-no-init'), /never initialize/);
+  assert.equal(existsSync(join(dir, 'config.json')), false);
+});
+
 test('persisted profile name is not sufficient evidence of current native ownership', async () => {
-  // Read-only check: this test process is not the canonical profile's Pi owner.
+  // Fixture profile in the isolated HOME: no owner socket, then an owner that is a different process.
   await assert.rejects(assertNativeOwner(CANONICAL_PROFILE, 'canonical', process.pid));
+  const dir = canonicalFixture(), sock = join(dir, 'lock.sock');
+  const answer = (text: string) => new Promise<() => Promise<void>>(ok => { const s = createServer(c => c.end(text)); s.listen(sock, () => ok(() => new Promise(r => s.close(() => r())))); });
+  let close = await answer(`${CANONICAL_PROFILE} · PID ${process.pid + 1} · other`);
+  try { await assert.rejects(assertNativeOwner(CANONICAL_PROFILE, 'canonical', process.pid), /not owned by this Pi process/); } finally { await close(); }
+  close = await answer(`${CANONICAL_PROFILE} · PID ${process.pid} · owner`);
+  try { await assertNativeOwner(CANONICAL_PROFILE, 'canonical', process.pid); } finally { await close(); }
 });
 
 test('source uses public BB imports and leaves provider bundles alone', () => {

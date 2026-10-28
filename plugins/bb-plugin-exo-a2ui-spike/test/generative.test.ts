@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {CATALOG,RESET,rendererMessages,moduleIds,moduleData,validateSnapshot,validateAction,latestSnapshot,inputBindings,checkPath} from '../src/workspace.ts';
 import {DraftStore} from '../src/drafts.ts';

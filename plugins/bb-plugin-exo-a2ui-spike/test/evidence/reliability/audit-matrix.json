@@ -1,0 +1,3510 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "368cba4",
+  "notes": [
+    "No provider credentials, raw environment, authenticated URL, or provider responses collected.",
+    "52 distinct public GitHub advisory records checked. Ranges are advisory-specific; npm propagated package entries are not distinct advisories.",
+    "devOptional is NOT equivalent to dev-only. Hono is an optional SDK peer and imported by SDK dist/testing/index.js; no direct Hono import was found in either plugin source. Final artifact reachability is unverified.",
+    "Pi is dev-only in these npm locks, but a separately installed live Pi runtime is outside this audit boundary.",
+    "Legacy spike dependencies are not proven part of the new production artifact; unknown reachability is not an exemption.",
+    "No major Zod override/migration or npm audit fix --force."
+  ],
+  "packages": [
+    {
+      "package": "bb-plugin-exo-spike",
+      "before_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 1,
+        "high": 1,
+        "critical": 0,
+        "total": 2
+      },
+      "after_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "final_lock_sha256": "da4b179f6753b91b54144dce752c9c76935a6f71676a635a68d901e3bcf90805",
+      "after_audit": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 67,
+            "dev": 205,
+            "optional": 0,
+            "peer": 3,
+            "peerOptional": 0,
+            "total": 274
+          }
+        }
+      }
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "before_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 1,
+        "high": 7,
+        "critical": 1,
+        "total": 9
+      },
+      "after_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 4,
+        "critical": 0,
+        "total": 4
+      },
+      "final_lock_sha256": "7e85fcd0918f32576c103c1c827afc89fb963c644107068749c1d4ed60cb65e2",
+      "after_audit": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {
+          "@a2ui/markdown-it": {
+            "name": "@a2ui/markdown-it",
+            "severity": "high",
+            "isDirect": false,
+            "via": [
+              "@a2ui/web_core"
+            ],
+            "effects": [],
+            "range": "*",
+            "nodes": [
+              "node_modules/@a2ui/markdown-it"
+            ],
+            "fixAvailable": true
+          },
+          "@a2ui/react": {
+            "name": "@a2ui/react",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              "@a2ui/markdown-it",
+              "@a2ui/web_core",
+              "zod"
+            ],
+            "effects": [],
+            "range": "*",
+            "nodes": [
+              "node_modules/@a2ui/react"
+            ],
+            "fixAvailable": {
+              "name": "@a2ui/react",
+              "version": "0.8.0",
+              "isSemVerMajor": true
+            }
+          },
+          "@a2ui/web_core": {
+            "name": "@a2ui/web_core",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              "zod"
+            ],
+            "effects": [
+              "@a2ui/markdown-it",
+              "@a2ui/react"
+            ],
+            "range": "*",
+            "nodes": [
+              "node_modules/@a2ui/web_core"
+            ],
+            "fixAvailable": {
+              "name": "@a2ui/react",
+              "version": "0.8.0",
+              "isSemVerMajor": true
+            }
+          },
+          "zod": {
+            "name": "zod",
+            "severity": "high",
+            "isDirect": true,
+            "via": [
+              {
+                "source": 1243066,
+                "name": "zod",
+                "dependency": "zod",
+                "title": "Zod can exhaust memory while validating oversized constrained collections",
+                "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+                "severity": "high",
+                "cwe": [
+                  "CWE-770"
+                ],
+                "cvss": {
+                  "score": 7.5,
+                  "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                },
+                "range": "<4.6.6"
+              }
+            ],
+            "effects": [
+              "@a2ui/react",
+              "@a2ui/web_core"
+            ],
+            "range": "<4.6.6",
+            "nodes": [
+              "node_modules/zod"
+            ],
+            "fixAvailable": {
+              "name": "@a2ui/react",
+              "version": "0.8.0",
+              "isSemVerMajor": true
+            }
+          }
+        },
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 4,
+            "critical": 0,
+            "total": 4
+          },
+          "dependencies": {
+            "prod": 44,
+            "dev": 113,
+            "optional": 0,
+            "peer": 0,
+            "peerOptional": 0,
+            "total": 156
+          }
+        }
+      }
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike/composition",
+      "before_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 1,
+        "critical": 0,
+        "total": 1
+      },
+      "after_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "final_lock_sha256": "33a12d8ea2a9657372fe097fa28cfe68c985224a9b758842dd56a4ff82e05cc9",
+      "after_audit": {
+        "auditReportVersion": 2,
+        "vulnerabilities": {},
+        "metadata": {
+          "vulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          },
+          "dependencies": {
+            "prod": 3,
+            "dev": 0,
+            "optional": 0,
+            "peer": 0,
+            "peerOptional": 0,
+            "total": 2
+          }
+        }
+      }
+    }
+  ],
+  "advisory_matrix": [
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-4qv8-2p9j-2685",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.5.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-f72v-6w45-q472",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-xjj6-f33q-929c",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.23.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-4w7w-5xrc-9h26",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-2m5v-pch6-74hx",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.0.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-qrxm-fqhp-jwvm",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.2.1, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-9fm3-97px-rjf6",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 5.15.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-55wc-3pg8-jfw6",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-55q2-fjhq-7xh7",
+      "severity": "moderate",
+      "npm_affected_range": "<=3.4.12",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.12",
+          "first_patched_version": "3.4.13",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-c2j3-45gr-mqc4",
+      "severity": "low",
+      "npm_affected_range": "<=3.4.11",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.11",
+          "first_patched_version": "3.4.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-6688-9rhm-gjv2",
+      "severity": "low",
+      "npm_affected_range": "<=3.4.15",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.15",
+          "first_patched_version": "3.4.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-cg2g-xh64-v4q7",
+      "severity": "critical",
+      "npm_affected_range": ">=3.4.4 <=3.4.16",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": ">= 3.4.4, <= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-mrv2-3pqr-j5jr",
+      "severity": "high",
+      "npm_affected_range": "<=3.4.16",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "dompurify",
+      "advisory_id": "GHSA-c6gr-qvv4-5v3f",
+      "severity": "low",
+      "npm_affected_range": "<=3.4.16",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "dompurify"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/dompurify",
+          "baseline_version": "3.4.11",
+          "final_version": "3.4.17",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "3.4.11",
+          "final": "3.4.17",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-gq3j-xvxp-8hrf",
+      "severity": "low",
+      "npm_affected_range": "<4.11.10",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.11.10",
+          "first_patched_version": "4.11.10",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-5pq2-9x2x-5p6w",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.4",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-p6xx-57qc-3wxr",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.4",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-q5qw-h33p-qvwr",
+      "severity": "high",
+      "npm_affected_range": "<4.12.4",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-r5rp-j6wh-rvv4",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.12",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-xf4j-xp2r-rqqx",
+      "severity": "moderate",
+      "npm_affected_range": ">=4.0.0 <=4.12.11",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.0.0, <= 4.12.11",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-wmmm-f939-6g9c",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.12",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-xpcf-pg52-r92g",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.12",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-qp7p-654g-cw7p",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.18",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-hm8q-7f3q-5f36",
+      "severity": "low",
+      "npm_affected_range": "<4.12.18",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-p77w-8qqv-26rm",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.18",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-9vqf-7f2p-gf9v",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.16",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.16",
+          "first_patched_version": "4.12.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-69xw-7hcm-h432",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.16",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.16",
+          "first_patched_version": "4.12.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-xrhx-7g5j-rcj5",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.21",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-3hrh-pfw6-9m5x",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.21",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-f577-qrjj-4474",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.21",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-2gcr-mfcq-wcc3",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.21",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-458j-xx4x-4375",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.14",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.14",
+          "first_patched_version": "4.12.14",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-rv63-4mwf-qqc2",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.25",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-wgpf-jwqj-8h8p",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.25",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-88fw-hqm2-52qc",
+      "severity": "high",
+      "npm_affected_range": "<4.12.25",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-wwfh-h76j-fc44",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.25",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-j6c9-x7qj-28xf",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.25",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-xgm2-5f3f-mvvc",
+      "severity": "moderate",
+      "npm_affected_range": ">=4.3.3 <4.12.27",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.3.3, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-hvrm-45r6-mjfj",
+      "severity": "moderate",
+      "npm_affected_range": ">=4.11.8 <4.12.27",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.11.8, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-w62v-xxxg-mg59",
+      "severity": "moderate",
+      "npm_affected_range": ">=4.0.0 <4.12.27",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.0.0, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-8j4g-w8fx-2239",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.34",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-f23p-vx2j-j53r",
+      "severity": "moderate",
+      "npm_affected_range": ">=3.8.0 <4.12.34",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 3.8.0, < 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-79qm-7rj5-m7r9",
+      "severity": "low",
+      "npm_affected_range": ">=4.7.0 <4.12.34",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.7.0, < 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-gqvv-2mrq-wpjv",
+      "severity": "moderate",
+      "npm_affected_range": "<4.13.5",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-g6gw-c38x-mqfc",
+      "severity": "moderate",
+      "npm_affected_range": "<4.13.5",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-crvj-82cr-hjcx",
+      "severity": "moderate",
+      "npm_affected_range": "<4.13.5",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-26pp-8wgv-hjvm",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.12",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-hxh3-vqpv-xpqv",
+      "severity": "moderate",
+      "npm_affected_range": "<4.13.7",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.7",
+          "first_patched_version": "4.13.7",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "hono",
+      "advisory_id": "GHSA-v8w9-8mx6-g223",
+      "severity": "moderate",
+      "npm_affected_range": "<4.12.7",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.7",
+          "first_patched_version": "4.12.7",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "hono (dev declaration; SDK testing import)"
+        ],
+        [
+          "<plugin>",
+          "@get-bb/plugin-sdk",
+          "hono (optional peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/hono",
+          "baseline_version": "4.11.9",
+          "final_version": "4.13.14",
+          "final_flags": {
+            "devOptional": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "4.11.9",
+          "final": "4.13.14",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "markdown-it",
+      "advisory_id": "GHSA-vfgh-jcmw-g37q",
+      "severity": "low",
+      "npm_affected_range": "<14.3.3",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": "< 14.3.3",
+          "first_patched_version": "14.3.3",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 15.0.0, < 15.0.3",
+          "first_patched_version": "15.0.3",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "markdown-it"
+        ],
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "markdown-it"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/markdown-it",
+          "baseline_version": "14.3.2",
+          "final_version": "14.3.3",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "14.3.2",
+          "final": "14.3.3",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "markdown-it",
+      "advisory_id": "GHSA-gfr2-rv44-r23c",
+      "severity": "high",
+      "npm_affected_range": ">=14.1.0 <14.3.3",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 14.1.0, < 14.3.3",
+          "first_patched_version": "14.3.3",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 15.0.0, < 15.0.3",
+          "first_patched_version": "15.0.3",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "markdown-it"
+        ],
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "@a2ui/markdown-it",
+          "markdown-it"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/markdown-it",
+          "baseline_version": "14.3.2",
+          "final_version": "14.3.3",
+          "final_flags": {}
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "14.3.2",
+          "final": "14.3.3",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-4qv8-2p9j-2685",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.5.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-f72v-6w45-q472",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-xjj6-f33q-929c",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.23.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-4w7w-5xrc-9h26",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-2m5v-pch6-74hx",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.0.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-qrxm-fqhp-jwvm",
+      "severity": "high",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.2.1, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-9fm3-97px-rjf6",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 5.15.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "undici",
+      "advisory_id": "GHSA-55wc-3pg8-jfw6",
+      "severity": "moderate",
+      "npm_affected_range": ">=8.0.0 <8.12.2",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "@earendil-works/pi-coding-agent (dev)",
+          "undici"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/undici",
+          "baseline_version": "8.10.2",
+          "final_version": "8.12.2",
+          "final_flags": {
+            "dev": true
+          }
+        }
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed in this lock; final production lock and independently installed runtime need separate verification",
+      "range_crosscheck": [
+        {
+          "baseline": "8.10.2",
+          "final": "8.12.2",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike",
+      "dependency": "zod",
+      "advisory_id": "GHSA-mrhx-c7xc-m3w5",
+      "severity": "high",
+      "npm_affected_range": "<4.6.6",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "zod"
+          },
+          "vulnerable_version_range": "< 4.6.6",
+          "first_patched_version": "4.6.6",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "<plugin>",
+          "zod"
+        ],
+        [
+          "<plugin>",
+          "@a2ui/react",
+          "zod (dependency and peer ^3.25.76)"
+        ],
+        [
+          "<plugin>",
+          "@a2ui/web_core",
+          "zod (^3.25.76)"
+        ],
+        [
+          "<plugin>",
+          "@a2ui/web_core",
+          "zod-to-json-schema",
+          "zod (peer)"
+        ]
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/zod",
+          "baseline_version": "3.25.76",
+          "final_version": "3.25.76",
+          "final_flags": {}
+        }
+      ],
+      "status": "residual",
+      "release_classification": "legacy spike production dependency / new artifact inclusion and reachability not established",
+      "range_crosscheck": [
+        {
+          "baseline": "3.25.76",
+          "final": "3.25.76",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": true,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": true
+        }
+      ]
+    },
+    {
+      "package": "bb-plugin-exo-a2ui-spike/composition",
+      "dependency": "zod",
+      "advisory_id": "GHSA-mrhx-c7xc-m3w5",
+      "severity": "high",
+      "npm_affected_range": "<4.6.6",
+      "github_ranges_and_first_patches": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "zod"
+          },
+          "vulnerable_version_range": "< 4.6.6",
+          "first_patched_version": "4.6.6",
+          "vulnerable_functions": []
+        }
+      ],
+      "dependency_paths": [
+        [
+          "composition",
+          "zod (direct; 4.3.6 -> 4.6.7)"
+        ],
+        [
+          "composition",
+          "@json-render/core",
+          "zod (peer)"
+        ]
+      ],
+      "status": "fixed-compatible",
+      "release_classification": "fixed Zod4 without migrating legacy A2UI Zod3",
+      "range_crosscheck": [
+        {
+          "baseline": "4.3.6",
+          "final": "4.6.7",
+          "baseline_matches_npm_advisory": true,
+          "final_matches_npm_advisory": false,
+          "baseline_matches_github_advisory": true,
+          "final_matches_github_advisory": false
+        }
+      ],
+      "nodes": [
+        {
+          "lock_path": "node_modules/zod",
+          "baseline_version": "4.3.6",
+          "final_version": "4.6.7",
+          "final_flags": {}
+        }
+      ]
+    }
+  ]
+}

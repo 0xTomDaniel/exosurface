@@ -1,3 +1,4 @@
+import './isolation.ts';
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {validateOffer,mapSpec,fallbacks,COMMIT,recoverOffer,type Offer} from '../composition/contract.ts';
 import {offerParameters} from '../composition/tool-schema.ts';

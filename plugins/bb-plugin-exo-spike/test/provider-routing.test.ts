@@ -1,6 +1,7 @@
+import { canonicalFixture } from './isolation.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { primaryModelDefinition, EXO_MODELS, CANONICAL_PROFILE, mainModel } from '../src/state.ts';
+import { primaryModelDefinition, EXO_MODELS, CANONICAL_PROFILE, CANONICAL_HOME, mainModel } from '../src/state.ts';
 import { runtimeLaunch } from '../src/runtime.ts';
 import { local } from '../src/local-config.ts';
 import { homedir } from 'node:os';
@@ -15,6 +16,7 @@ test('primary Sol can use an explicit provider without changing the default regi
 });
 
 test('only canonical launch uses the primary agent directory and provider route', () => {
+  canonicalFixture(CANONICAL_HOME, CANONICAL_PROFILE);
   const launch = runtimeLaunch(CANONICAL_PROFILE, 'canonical', 'test-primary-routing');
   assert.equal(launch.env.PI_CODING_AGENT_DIR, local('primaryAgentDir') || join(homedir(), '.pi', 'agent'));
   assert.equal(launch.args[launch.args.indexOf('--provider') + 1], primaryModelDefinition(mainModel()).provider);

@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from'node:test';import assert from'node:assert/strict';
 import{applyDelta}from'../src/workspace.ts';
 import{EXO_CATALOG}from'../src/exo-catalog.ts';

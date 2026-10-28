@@ -1,3 +1,4 @@
+import './isolation.ts';
 import{nextObserver,observerSurface}from'../observer/mode.ts';
 import test from'node:test';import assert from'node:assert/strict';
 import{Provider}from'../composition/provider.ts';import{sourceSegments,bindSource}from'../observer/source.ts';

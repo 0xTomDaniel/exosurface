@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
 import{DIRECT_TOOLS,EXPERIMENTS_ENABLED,requirePresentationExperiment,restoredObserverMode}from'../src/generation-policy.ts';
 test('Owner-approved default is direct Exo→canvas (snapshot-format tools); historical observer modes never reactivate experiments',()=>{assert.equal(EXPERIMENTS_ENABLED,false);assert.deepEqual(DIRECT_TOOLS,['update_exosurface','read_exosurface']);for(const mode of [null,{id:'old',route:'sidecar',surfaceId:'old'},{id:'old',route:'direct',surfaceId:'old'}])assert.equal(restoredObserverMode(mode),null);assert.throws(()=>requirePresentationExperiment(),/archived by owner/);});

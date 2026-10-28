@@ -60,7 +60,8 @@ export function describePress(s:Snapshot,action:{surfaceId:string;sourceComponen
  const bindings=inputBindings(s,action.surfaceId),offered=button?.action?.event?.context??{},parts:string[]=[];
  for(const[key,v]of Object.entries(offered)){const path=(v as any)?.path;if(!path)continue;const input=bindings.get(path),value=action.context[key];if(!input)continue;
   let shown:string;if(input.component==='ChoicePicker')shown=(value as string[]).map(x=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'none';
-  else if(input.component==='CheckBox')shown=value?'yes':'no';else if(input.component==='TextField')shown=value?`“${cut(String(value),300)}”`:'(empty)';else shown=String(value);
+  else if(input.component==='CheckBox')shown=value?'yes':'no';else if(input.component==='TextField')shown=value?`“${String(value)}”`:'(empty)';else shown=String(value);
+  // TextField: whole value, never cut. What the person typed IS the message (#31); validateAction bounds it (MAX_TEXT/MAX_ACTION).
   parts.push(`${cut(plain(input.label),60)}: ${shown}`);}
  return `▸ ${surfaceTitle(nodes,action.surfaceId)} · ${label}${parts.length?' — '+parts.join(' · '):''}`;
 }
@@ -83,7 +84,8 @@ export function snapshotOutline(s:Snapshot,earlier:Earlier={count:0,recent:[]},l
  const history=earlier.count?[`Earlier pages in this conversation (${earlier.count}; kept by the system, nothing to manage; read_exosurface shows one, and editing or redrawing its ref brings it back):`,...past,...(earlier.count>past.length?[`…and ${earlier.count-past.length} more`]:[])]:[];
  let body=[...full,...(shelf.length?['Shelf (read_exosurface for a page in full):',...shelf]:[]),...history].join('\n');
  if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[]),...history].join('\n');
- return `${head}\n${cut(body,limit)}`;
+ // Over the bound, say so and where the rest is: a silent '…' reads like the end of what the person wrote (#31).
+ return `${head}\n${body.length>limit?`${body.slice(0,limit)}\n[outline cut at ${limit} of ${body.length} characters; read_exosurface ${focus??''} shows the page in full]`:body}`;
 }
 /** Page edits by the person since the last agent turn, as snapshot-style lines. */
 export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
@@ -93,7 +95,7 @@ export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
  for(const {surfaceId,path} of last.values()){
   if(!moduleIds(s).includes(surfaceId))continue;const input=inputBindings(s,surfaceId).get(path);if(!input)continue;const v=atPath(moduleData(s,surfaceId),path);
   const shown=input.component==='ChoicePicker'?(Array.isArray(v)?v:[v]).map((x:any)=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'(none)':input.component==='CheckBox'?(v?'checked':'unchecked'):String(v??'')||'(empty)';
-  out.push(`- ${surfaceId} · ${plain(literal(input.label))||input.id} [ref=${input.id}]: ${cut(shown,400)}`);
+  out.push(`- ${surfaceId} · ${plain(literal(input.label))||input.id} [ref=${input.id}]: ${shown}`); // whole value (#31)
  }
  return out;
 }
