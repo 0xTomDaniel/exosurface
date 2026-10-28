@@ -104,7 +104,7 @@ class PackageTests(unittest.TestCase):
         self.assertIn("path-not-allowlisted", self.rules())
 
     def test_home_path_and_proxy_and_thread_fail(self):
-        write(self.root / "dist/a.js", "const p = '/Users/someone/vault';\nconst u='https://x-cliproxy.example';\nthr_abcdefghij\n")
+        write(self.root / "dist/a.js", "const p = '/" + "Users/" + "fixture/vault';\nconst u='https://x-cliproxy.example';\nthr_abcdefghij\n")
         self.assertTrue({"content:home-path", "content:proxy", "content:bb-thread-id"} <= self.rules())
 
     def test_secret_patterns_fail(self):
