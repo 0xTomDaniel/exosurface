@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, symlinkSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -125,4 +125,19 @@ test('exact SemVer permits prereleases/build metadata but not ranges or invalid 
   assert.equal(compareVersions('1.2.3+build.1', '1.2.3+build.2'), 0);
   assert.equal(compareVersions('1.2.3-1', '1.2.3-alpha'), -1);
   const f = fixture(t, '0.1.0-dev'); assert.equal(verifyArtifact(f.artifact()).version, '0.1.0-dev');
+});
+
+
+test('copied CLI executes pack through a symlinked directory alias', t => {
+  const f = fixture(t), artifact = f.artifact();
+  const tool = join(f.root, 'copied-tool'), alias = join(f.root, 'alias');
+  cpSync(new URL('..', import.meta.url), tool, { recursive: true });
+  symlinkSync(tool, alias, 'dir');
+  const stdout = execFileSync(process.execPath, [join(alias, 'exo-release.mjs'), 'pack', '--artifact', artifact, '--out-dir', f.root], { encoding: 'utf8', env: sanitizedEnv() });
+  assert.ok(stdout.trim(), 'CLI must execute, not silently return success');
+  const report = JSON.parse(stdout);
+  assert.equal(report.tarball, join(f.root, 'exosurface-1.0.0.tar.gz'));
+  const archive = report.tarball;
+  assert.ok(existsSync(archive), 'pack command must create the requested archive');
+  assert.equal(verifyArtifact(unpackArtifact(archive, join(f.root, 'unpacked')).dir).version, '1.0.0');
 });

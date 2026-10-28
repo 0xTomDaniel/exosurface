@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Built-in-only release tooling. No command invokes launchctl or modifies BB.
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildArtifact, packArtifact, verifyArtifact, selftest } from './lib/artifact.mjs';
 import { install, update, rollback, uninstall, setModels } from './lib/lifecycle.mjs';
@@ -40,7 +41,7 @@ export function main(args) {
   }
   console.log(JSON.stringify(result, null, 2));
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(resolve(process.argv[1]))) {
   try { main(process.argv.slice(2)); }
   catch (e) { console.error(e.message); process.exitCode = e.exitCode ?? 1; }
 }
