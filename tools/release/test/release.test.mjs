@@ -32,7 +32,7 @@ test('relocated immutable artifact owner executes without node_modules/developer
 test('allowlist rejects auth, symlinks, private paths and bare owner imports', t => {
   const f = fixture(t); writeFileSync(join(f.pkg, 'src/auth.json'), '{}'); assert.throws(f.artifact, /denied/);
   removeTree(join(f.pkg, 'src/auth.json')); symlinkSync('/tmp', join(f.pkg, 'src/link')); assert.throws(f.artifact, /symlink/);
-  removeTree(join(f.pkg, 'src/link')); writeFileSync(join(f.pkg, 'src/extra.txt'), '/Users/example/private/'); assert.throws(f.artifact, /Privacy/);
+  removeTree(join(f.pkg, 'src/link')); writeFileSync(join(f.pkg, 'src/extra.txt'), ['', 'Users', 'fixture-owner', 'private', ''].join('/')); assert.throws(f.artifact, /Privacy/);
   removeTree(join(f.pkg, 'src/extra.txt')); writeFileSync(join(f.pkg, 'src/owner-service.ts'), 'import x from "missing-package";\nconsole.log("app.exosurface.owner");'); assert.throws(f.artifact, /bare import/);
 });
 test('tamper detection refuses extra files and modified bytes', t => {
