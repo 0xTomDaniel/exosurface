@@ -30,7 +30,7 @@ export function pagesFor(key: string): Page[] {
     { id: 'today', title: 'Today', body: ['Review draft', 'Prepare demo', 'Team check-in Fri 10:00 AM'], buttons: [{ id: 'done-run', label: 'Mark review done' }, { id: 'ask', label: 'Ask me something (needs input)' }] },
     { id: 'week', title: 'This week', body: ['MIT: ship staging layout spike', '3 tasks waiting on others'], buttons: [{ id: 'slot', label: 'Slot tasks' }] },
   ];
-  if (key === 'car') return [{ id: 'reg', title: 'Registration receipt', body: ['Plate FIXTURE-1', 'Total $0.00 (synthetic)'], buttons: [{ id: 'filed', label: 'Filed it' }] }];
+  if (key === 'car') return [{ id: 'reg', title: 'Registration receipt', body: ['Plate FIXTURE-1', 'Payment: synthetic example'], buttons: [{ id: 'filed', label: 'Filed it' }] }];
   if (key === 'taxes') return [{ id: 'status', title: 'Return status', body: ['Federal: accepted (synthetic)', 'State: accepted (synthetic)'], buttons: [{ id: 'archive', label: 'Archive surface' }] }];
   return [];
 }
