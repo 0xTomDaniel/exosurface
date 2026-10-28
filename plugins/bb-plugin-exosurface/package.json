@@ -1,0 +1,37 @@
+{
+  "name": "bb-plugin-exosurface",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0",
+    "bb": ">=0.45",
+    "bbPluginSdk": ">=0.6.15"
+  },
+  "scripts": {
+    "test": "node --experimental-transform-types --test test/*.test.ts",
+    "build": "bb plugin build && node build.mjs",
+    "build:owner": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "bb": {
+    "name": "Exosurface",
+    "description": "Fresh-owner Exo page-first shell (release candidate, gates open)",
+    "host": "./host.ts",
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "branding": {
+      "icon": "Bot"
+    }
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.15",
+    "zod": "4.6.6",
+    "react": "19.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0"
+  }
+}

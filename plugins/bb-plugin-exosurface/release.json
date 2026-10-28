@@ -1,0 +1,50 @@
+{
+  "contract": "exosurface-package/0",
+  "id": "exosurface",
+  "files": [
+    "package.json",
+    "release.json",
+    "src/**",
+    "host.ts",
+    "server.ts",
+    "app.tsx",
+    "package-lock.json",
+    "dist/*.js",
+    "dist/*.css",
+    "dist/*.json"
+  ],
+  "owner": {
+    "entry": "dist/owner-service.js",
+    "launchdLabel": "app.exosurface.owner",
+    "selftestArgs": [
+      "--release-selftest"
+    ]
+  },
+  "stateSchema": {
+    "writes": 1,
+    "reads": [
+      1
+    ]
+  },
+  "requires": {
+    "node": ">=22.19.0",
+    "bb": ">=0.45.0",
+    "tools": {
+      "required": [],
+      "recommended": []
+    }
+  },
+  "pins": {
+    "pi": {
+      "npm": "@earendil-works/pi-coding-agent",
+      "version": "1.1.0",
+      "nodeEngine": ">=22.19.0"
+    },
+    "optchat": {
+      "git": "https://github.com/jonaslsaa/pi-optchat.git",
+      "commit": "aae1caf7715830051d327f819fc776792211167a",
+      "version": "0.8.6"
+    }
+  },
+  "releaseReady": false
+}
