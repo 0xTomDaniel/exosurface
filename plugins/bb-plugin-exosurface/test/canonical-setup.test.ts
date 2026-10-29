@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { canonicalSetup, setupStatus, recoverSetupLock, type SetupRequest, type CanonicalSetupPorts } from '../legacy/primary/src/canonical-setup.ts';
 import { INITIALIZATION, freshCanonicalReceipt } from '../legacy/primary/src/canonical-fresh.ts';
-import { canonicalNativeAdapter, canonicalSystemPorts } from '../legacy/primary/src/canonical-system.ts';
+import { canonicalNativeAdapter, canonicalBBNativeAdapter, canonicalSystemPorts } from '../legacy/primary/src/canonical-system.ts';
 import { consumeCanonicalInitialization, initializationControl } from '../legacy/primary/src/canonical-control.ts';
 import { save } from '../src/store.ts';
 function fixture() {
@@ -112,5 +112,23 @@ test('valid configured runtime directories preserve state across normal setup an
     assert.deepEqual(['pi-config', 'setup-home', 'setup-tmp'].map(name => lstatSync(join(f.request.home, name)).ino), inodes);
     assert.equal(readFileSync(file, 'utf8'), 'owned state'); assert.equal(readFileSync(f.localConfig, 'utf8'), before);
     assert.deepEqual(f.count, { profiles: 1, userRecords: 1, spawns: 1, modelRequests: 0 });
+  } finally { f.close(); }
+});
+
+test('public BB native adapter remains denied by default; explicitly authorized adapter uses only initialization control', async () => {
+  const f = fixture(); let calls = 0;
+  const threads = { async spawn(input: any) { calls++; assert.deepEqual(input, { projectId: f.request.projectId, environment: { type: 'host', workspace: { type: 'unmanaged', path: f.request.vault } }, providerId: 'exo-spike', model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', title: 'Exo initialization', prompt: initializationControl(f.request.operationId) }); return { id: 'unit-thread' }; }, async get() { return { id: 'unit-thread', projectId: f.request.projectId, providerId: 'exo-spike' }; } };
+  try {
+    await assert.rejects(canonicalBBNativeAdapter(threads as any).spawnThread(f.request), /not approved/); assert.equal(calls, 0);
+    const authorized = canonicalBBNativeAdapter(threads as any, true);
+    assert.deepEqual(await authorized.spawnThread(f.request), { id: 'unit-thread' }); await authorized.verifyThread(f.request, 'unit-thread'); assert.equal(calls, 1);
+  } finally { f.close(); }
+});
+test('system configuration preserves an explicitly selected isolated owner supervisor label', async () => {
+  const f = systemFixture(); try {
+    const isolated = canonicalSystemPorts({ localConfig: f.localConfig, runtimeRoot: f.root, node: process.execPath, native: f.ports, ownerLabel: 'app.exosurface.owner.disposable' });
+    await isolated.configureLocal(f.request); const before = readFileSync(f.localConfig, 'utf8');
+    assert.equal(JSON.parse(before).ownerLabel, 'app.exosurface.owner.disposable');
+    await isolated.configureLocal(f.request); assert.equal(readFileSync(f.localConfig, 'utf8'), before);
   } finally { f.close(); }
 });

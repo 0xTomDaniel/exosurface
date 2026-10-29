@@ -1,0 +1,30 @@
+{
+  "id": "exosurface",
+  "version": "0.1.0-dev",
+  "enabled": true,
+  "status": "running",
+  "providerIds": [
+    "exo-spike"
+  ],
+  "services": [
+    {
+      "name": "workspace-stream",
+      "state": "running"
+    },
+    {
+      "name": "surface-stream-main",
+      "state": "running"
+    }
+  ],
+  "app": {
+    "jsBytes": 678671,
+    "hash": "37267c823727d21b",
+    "sdkMajor": 0,
+    "sdkVersion": "0.6.15",
+    "compatible": true
+  },
+  "nativeThreadCreated": false,
+  "ownerStarted": false,
+  "inference": false,
+  "releaseReady": false
+}

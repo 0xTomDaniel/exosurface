@@ -1,0 +1,20 @@
+// Public RPC registration/schema checks only. No native BB, profile, Pi or inference.
+import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const root = process.env.SPIKE_ROOT;
+assert.ok(root && process.env.HOME.startsWith(root + '/') && process.env.EXO_CONFIG.startsWith(root + '/'));
+const { default: register } = await import(pathToFileURL(join(resolve(process.argv[2]), 'legacy/primary/server.ts')));
+const { HOME, CANONICAL_HOME } = await import(pathToFileURL(join(resolve(process.argv[2]), 'legacy/primary/src/state.ts')));
+let handlers, calls = 0;
+const bb = { providers: { register() {} }, sdk: { threads: { async spawn() { calls++; throw Error('must not dispatch'); }, async get() { calls++; throw Error('must not read'); } }, projects: { async list() { return []; } } }, rpc: { register(_contract, value) { handlers = value; } }, experimental_hooks: { on() {} } };
+register(bb);
+const before = [existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)];
+const status = await handlers.canonical_setup_status();
+assert.equal(status.nativeDispatchAllowed, false); assert.equal(status.initializationAvailable, true); assert.equal(status.releaseReady, false);
+const input = { operationId: 'rpc-authorization-proof', projectId: 'project', vault: root + '/vault', piCli: '/not-used', optchat: '/not-used', authorizeInitialization: true };
+for (const authorizeInitialization of [false, undefined, 'true', 1, null]) await assert.rejects(handlers.canonical_setup({ ...input, authorizeInitialization, recoverDeadLock: true }));
+await assert.rejects(handlers.canonical_setup({ ...input, nativeDispatchAllowed: true }));
+assert.equal(calls, 0); assert.deepEqual([existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)], before);
+console.log(JSON.stringify({ passed: true, rejectedRequests: 6, nativeCalls: calls, initializationAvailable: true, defaultAdapterDenied: true, nativeBB: false, inference: false }));

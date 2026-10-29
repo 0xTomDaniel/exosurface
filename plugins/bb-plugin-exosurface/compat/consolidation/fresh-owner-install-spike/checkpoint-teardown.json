@@ -1,0 +1,32 @@
+{
+  "disposableRoot": "/private/tmp/exo-fresh.ZakOg7",
+  "desktopLaunched": false,
+  "loginInitiated": false,
+  "machineEnrolled": false,
+  "ownerStarted": false,
+  "nativeThreadCreated": false,
+  "inference": false,
+  "shutdown": [
+    {
+      "kind": "server",
+      "pid": 93886,
+      "before": "93886 93886 /opt/node/bin/node",
+      "signal": "SIGTERM owned process group",
+      "gone": true
+    },
+    {
+      "kind": "daemon",
+      "pid": 93937,
+      "before": "",
+      "gone": true
+    }
+  ],
+  "canonicalHomeExists": false,
+  "stateHomeExists": true,
+  "bbAuthFileExists": false,
+  "privatePortsClosed": {
+    "49203": true,
+    "49204": true
+  },
+  "stateFiles": []
+}

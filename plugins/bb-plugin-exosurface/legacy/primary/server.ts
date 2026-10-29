@@ -9,7 +9,7 @@ import { loadIf } from '../../src/store.ts';
 import { join } from 'node:path';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
-  canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
+  canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), initializationAvailable: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
   canonical_setup_projects: { input: z.null(), output: z.array(z.object({ id: z.string(), name: z.string() })) },
   canonical_setup: { input: setupInput, output: z.object({ threadId: z.string(), profile: z.string(), stage: z.string(), ownerReady: z.literal(false), releaseReady: z.literal(false) }) },
   overview: { input: z.null(), output: z.object({ threads: z.array(z.object({ id: z.string(), title: z.string().nullable(), status: z.string(), parentThreadId: z.string().nullable(), profile: z.string().nullable(), childId: z.string().nullable(), runtimeKind: z.enum(['offline', 'live', 'canonical']), commands: z.array(z.string()), feedback: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }), children: z.array(z.object({ id: z.string(), state: z.string(), report: z.string().nullable() })) })) }) },
@@ -17,8 +17,8 @@ export const rpcContract = defineRpcContract({
 });
 import { createOverview } from './src/overview.ts';
 export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc), setupPorts?: CanonicalSetupPorts) {
-  const native = canonicalBBNativeAdapter(bb.sdk.threads, false); // Separately gated: this code never dispatches real BB setup today.
-  const setup = setupPorts ?? canonicalSystemPorts({ localConfig: LOCAL_CONFIG, runtimeRoot: SOURCE, node: process.execPath, native });
+  const native = canonicalBBNativeAdapter(bb.sdk.threads, false); // Default deny; only the explicit initialization RPC below authorizes native creation.
+  const setup = setupPorts ?? canonicalSystemPorts({ localConfig: LOCAL_CONFIG, runtimeRoot: SOURCE, node: process.execPath, native, ownerLabel: local('ownerLabel') || undefined });
   const overview = createOverview(() => bb.sdk.threads.list({ limit: 50 }), id => bb.sdk.threads.get({ threadId: id }));
   bb.providers.register({
     id: 'exo-spike', displayName: 'Exo Pi / OptChat', icon: 'Bot', family: 'exo',
@@ -48,9 +48,18 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
   });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
   registerRpc(rpcContract, {
-    canonical_setup_status: async () => { const journal = setupStatus(HOME); return { stage: journal?.stage ?? 'unconfigured', operationId: journal?.request.operationId ?? null, projectId: journal?.request.projectId ?? null, threadId: journal?.threadId ?? null, nativeDispatchAllowed: setup.nativeDispatchAllowed, releaseReady: false as const, defaults: { vault: journal?.request.vault ?? local('vault'), piCli: journal?.request.piCli ?? local('piCli'), optchat: journal?.request.optchat ?? local('optchat') } }; },
+    canonical_setup_status: async () => { const journal = setupStatus(HOME); return { stage: journal?.stage ?? 'unconfigured', operationId: journal?.request.operationId ?? null, projectId: journal?.request.projectId ?? null, threadId: journal?.threadId ?? null, nativeDispatchAllowed: setup.nativeDispatchAllowed, initializationAvailable: setupPorts?.nativeDispatchAllowed ?? true, releaseReady: false as const, defaults: { vault: journal?.request.vault ?? local('vault'), piCli: journal?.request.piCli ?? local('piCli'), optchat: journal?.request.optchat ?? local('optchat') } }; },
     canonical_setup_projects: async () => (await bb.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name })),
-    canonical_setup: async input => { const { recoverDeadLock, ...values } = input; const request = { ...values, home: HOME, optchatHome: CANONICAL_HOME, profile: CANONICAL_PROFILE }; if (!setup.nativeDispatchAllowed) throw Error('Canonical native dispatch is separately gated; no setup changes made'); if (recoverDeadLock) recoverSetupLock(request); return canonicalSetup(request, setup); },
+    canonical_setup: async input => {
+      // Validate here as well as at BB's public RPC boundary. No environment flag,
+      // ordinary prompt or resume path can authorize first-run native creation.
+      const { recoverDeadLock, ...values } = setupInput.parse(input);
+      const request = { ...values, home: HOME, optchatHome: CANONICAL_HOME, profile: CANONICAL_PROFILE };
+      const authorizedSetup = setupPorts ?? canonicalSystemPorts({ localConfig: LOCAL_CONFIG, runtimeRoot: SOURCE, node: process.execPath, native: canonicalBBNativeAdapter(bb.sdk.threads, true), ownerLabel: local('ownerLabel') || undefined });
+      if (!authorizedSetup.nativeDispatchAllowed) throw Error('Canonical native dispatch is separately gated; no setup changes made');
+      if (recoverDeadLock) recoverSetupLock(request);
+      return canonicalSetup(request, authorizedSetup);
+    },
     overview,
     attach_child: async ({ threadId, childId }) => {
       const key = `${threadId}:${childId}`;
