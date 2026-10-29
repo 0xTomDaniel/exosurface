@@ -1,0 +1,34 @@
+(node:95255) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ canonical setup exact retry + committed native journal prefix preserves initialization identity (148.354834ms)
+✔ canonical setup native production gate makes zero writes/calls (2.197541ms)
+✔ unknown spawn fails closed across retry; no title/absence adoption (83.41575ms)
+✔ interrupted Pi append resumes same identity without second user record (185.791542ms)
+✔ interrupted verify/binding retries known native ID without dispatch (191.545875ms)
+✔ concurrent presses refuse while owner holds exclusive setup lock (170.517083ms)
+✔ foreign profile/home and existing owner pointer are never adopted or poisoned (40.790208ms)
+✔ different operation, project, workspace, or authorization refuses rebind (190.271834ms)
+✔ explicit dead-lock recovery refuses live PID and foreign operations (195.275875ms)
+✔ native adapter refuses foreign provider/project/id evidence (5.473708ms)
+✔ reserved controls are consumed idempotently; stale, mixed, unknown controls fail without forwarding (198.094667ms)
+✔ known partial binding files resume; missing commit marker never starts owner (951.853375ms)
+✔ commit-before-journal crash accepts validated immutable prefix after later native metadata (193.584291ms)
+✔ native journal tamper, binding/provider tamper and foreign marker fail closed (561.605708ms)
+✔ oversize and imported/pending native state refuse BEFORE any native spawn (289.998958ms)
+✔ long socket names fail before local/profile/session/native writes (3.555291ms)
+✔ exact platform socket boundary succeeds; one extra UTF-8 byte refuses with zero setup writes (162.436584ms)
+✔ symlink profile inputs and a concurrent recovery guard fail closed without native effects (108.100709ms)
+✔ foreign symlink and unknown-stage journals refuse before configuration or external effects (51.674042ms)
+✔ runtime leaf links, including dangling links, refuse fresh setup and matching-config retry before effects (419.275125ms)
+✔ runtime ancestor links and non-directory entries refuse before mkdir/config/env/child (191.63675ms)
+✔ valid configured runtime directories preserve state across normal setup and exact-operation retry (195.399041ms)
+✔ public BB native adapter remains denied by default; explicitly authorized adapter uses only initialization control (3.504208ms)
+✔ system configuration preserves an explicitly selected isolated owner supervisor label (39.872208ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4750.368958

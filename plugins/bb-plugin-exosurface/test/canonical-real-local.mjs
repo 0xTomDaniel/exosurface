@@ -37,7 +37,8 @@ const threads = {
 const beforeGate = [existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)];
 const gated = transport({ async spawn() { throw Error('Production native adapter must not dispatch'); }, async get() { throw Error('Production native adapter must not read'); } }); register(gated.bb);
 assert.equal((await gated.capture.handlers.canonical_setup_status()).nativeDispatchAllowed, false);
-await assert.rejects(gated.capture.handlers.canonical_setup({ ...input, recoverDeadLock: true }), /separately gated/);
+assert.equal((await gated.capture.handlers.canonical_setup_status()).initializationAvailable, true);
+for (const authorizeInitialization of [false, undefined, 'true']) await assert.rejects(gated.capture.handlers.canonical_setup({ ...input, authorizeInitialization, recoverDeadLock: true }));
 assert.deepEqual([existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)], beforeGate);
 const ports = canonicalSystemPorts({ localConfig: process.env.EXO_CONFIG, runtimeRoot: plugin, node: process.execPath, native: canonicalBBNativeAdapter(threads, true), instrumentEnvironment: env => ({ ...env, NODE_OPTIONS: process.env.NODE_OPTIONS, PROOF_ROOT: root, PROOF_ALLOW_PI: '1', PROOF_PI_CLI: process.env.PROOF_PI_CLI, PROOF_PROFILE_DIR: join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE) }) });
 real = transport(threads); register(real.bb, ports);

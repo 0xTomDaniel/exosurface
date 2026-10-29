@@ -1,0 +1,147 @@
+✔ canonical setup exact retry + committed native journal prefix preserves initialization identity (167.863417ms)
+✔ canonical setup native production gate makes zero writes/calls (3.245542ms)
+✔ unknown spawn fails closed across retry; no title/absence adoption (180.041209ms)
+✔ interrupted Pi append resumes same identity without second user record (266.417084ms)
+✔ interrupted verify/binding retries known native ID without dispatch (374.211ms)
+✔ concurrent presses refuse while owner holds exclusive setup lock (255.811ms)
+✔ foreign profile/home and existing owner pointer are never adopted or poisoned (72.528667ms)
+✔ different operation, project, workspace, or authorization refuses rebind (302.788042ms)
+✔ explicit dead-lock recovery refuses live PID and foreign operations (305.75275ms)
+✔ native adapter refuses foreign provider/project/id evidence (17.469375ms)
+✔ reserved controls are consumed idempotently; stale, mixed, unknown controls fail without forwarding (307.400166ms)
+✔ known partial binding files resume; missing commit marker never starts owner (1402.2455ms)
+✔ commit-before-journal crash accepts validated immutable prefix after later native metadata (373.156083ms)
+✔ native journal tamper, binding/provider tamper and foreign marker fail closed (853.316166ms)
+✔ oversize and imported/pending native state refuse BEFORE any native spawn (487.982167ms)
+✔ long socket names fail before local/profile/session/native writes (6.653709ms)
+✔ exact platform socket boundary succeeds; one extra UTF-8 byte refuses with zero setup writes (280.236667ms)
+✔ symlink profile inputs and a concurrent recovery guard fail closed without native effects (120.897667ms)
+✔ foreign symlink and unknown-stage journals refuse before configuration or external effects (109.294625ms)
+✔ runtime leaf links, including dangling links, refuse fresh setup and matching-config retry before effects (586.62825ms)
+✔ runtime ancestor links and non-directory entries refuse before mkdir/config/env/child (326.564042ms)
+✔ valid configured runtime directories preserve state across normal setup and exact-operation retry (310.362541ms)
+✔ public BB native adapter remains denied by default; explicitly authorized adapter uses only initialization control (3.303875ms)
+✔ system configuration preserves an explicitly selected isolated owner supervisor label (55.10575ms)
+✔ complete Unicode/multiline press description and native history replay are lossless (29.673791ms)
+✔ oversize atoms and whole owner commands reject before touching the original snapshot (1.70125ms)
+✔ prospective whole-workspace and historical restore validation reject without mutation (29.413084ms)
+✔ fresh + retry use one profile/thread; no active-memory fabricated; preserve vault (124.1185ms)
+ℹ {"fixtureCleanup":"exo-fr-AjKsOX","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ profile configured interrupted; retries without replacement (178.934375ms)
+ℹ {"fixtureCleanup":"exo-fr-wBgCgo","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ existing profile unclaimed or newer state refuses, zero overwrite (141.563583ms)
+ℹ {"fixtureCleanup":"exo-fr-y1Ha9O","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ durable lookup recovers BB-created thread before local receipt, never unrelated candidate (183.759417ms)
+ℹ {"fixtureCleanup":"exo-fr-Khgz50","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ uncertain BB creation before/after spawn fails closed, no second spawn (372.698791ms)
+ℹ {"fixtureCleanup":"exo-fr-Q4ZM74","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-luc3Lb","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ environment allowlist strips inherited live selectors and vendor credentials (0.391208ms)
+✖ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (193.921792ms)
+ℹ {"fixtureCleanup":"exo-fr-xR7hZx","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✖ real socket → mock Pi RPC → response page; full long input; wrong thread refused (110.825084ms)
+ℹ {"fixtureCleanup":"exo-fr-lZYyZ4","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated (211.70375ms)
+ℹ {"fixtureCleanup":"exo-fr-AUsAoX","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-UO0YrA","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ concrete BB receipt survives interruption before bootstrap local receipt (137.047125ms)
+ℹ {"fixtureCleanup":"exo-fr-bf5hsC","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✖ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (136.766958ms)
+ℹ {"fixtureCleanup":"exo-fr-Osrx3z","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text (262.279833ms)
+ℹ {"fixtureCleanup":"exo-fr-hupVcl","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it (64.330375ms)
+✖ test teardown reaps its owned child and verifies PID disappearance before root removal (86.475166ms)
+ℹ {"fixtureCleanup":"exo-cleanup-child-CRMMsC","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (2.64325ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (2.3745ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.995834ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.696167ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (1.587833ms)
+✔ extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime (7.939333ms)
+✔ durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite (400.663375ms)
+ℹ {"fixtureCleanup":"exo-pages-LZYHLz","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry (337.38825ms)
+ℹ {"fixtureCleanup":"exo-pages-POm4UO","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✖ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (198.274ms)
+ℹ {"fixtureCleanup":"exo-pages-vJl3cx","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps (107.278666ms)
+✔ unsupported persisted pages and interrupted mutation locks fail closed without overwrite (91.881625ms)
+ℹ {"fixtureCleanup":"exo-pages-PCgP68","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ tests 52
+ℹ suites 0
+ℹ pass 47
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10908.894458
+
+✖ failing tests:
+
+test at test/first-run.test.ts:76:1
+✖ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (193.921792ms)
+  Error: SETUP PROOF: network or subprocess forbidden
+      at deny (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:2:149)
+      at cp.spawnSync (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:26:1750)
+      at TestContext.<anonymous> (/work/exosurface/plugins/bb-plugin-exosurface/test/first-run.test.ts:84:20)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at test/first-run.test.ts:94:1
+✖ real socket → mock Pi RPC → response page; full long input; wrong thread refused (110.825084ms)
+  Error: SETUP PROOF: network or subprocess forbidden
+      at deny (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:2:149)
+      at cp.spawn (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:14:1388)
+      at new PiRpc (/work/exosurface/plugins/bb-plugin-exosurface/src/pi-rpc.ts:14:18)
+      at startOwner (/work/exosurface/plugins/bb-plugin-exosurface/src/owner-runtime.ts:25:14)
+      at TestContext.<anonymous> (/work/exosurface/plugins/bb-plugin-exosurface/test/first-run.test.ts:101:23)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+
+test at test/first-run.test.ts:170:1
+✖ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (136.766958ms)
+  Error: SETUP PROOF: network or subprocess forbidden
+      at deny (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:2:149)
+      at cp.spawn (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:14:1388)
+      at TestContext.<anonymous> (/work/exosurface/plugins/bb-plugin-exosurface/test/first-run.test.ts:176:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at test/fixture-cleanup.test.ts:27:1
+✖ test teardown reaps its owned child and verifies PID disappearance before root removal (86.475166ms)
+  Error: SETUP PROOF: network or subprocess forbidden
+      at deny (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:2:149)
+      at cp.spawn (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:14:1388)
+      at TestContext.<anonymous> (/work/exosurface/plugins/bb-plugin-exosurface/test/fixture-cleanup.test.ts:30:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+
+test at test/pages.test.ts:56:1
+✖ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (198.274ms)
+  Error: SETUP PROOF: network or subprocess forbidden
+      at deny (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:2:149)
+      at cp.spawn (/private/tmp/exo-fresh.ZakOg7/build-guard.cjs:14:1388)
+      at new PiRpc (/work/exosurface/plugins/bb-plugin-exosurface/src/pi-rpc.ts:14:18)
+      at startOwner (/work/exosurface/plugins/bb-plugin-exosurface/src/owner-runtime.ts:25:14)
+      at TestContext.<anonymous> (/work/exosurface/plugins/bb-plugin-exosurface/test/pages.test.ts:73:20)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)

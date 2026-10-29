@@ -1,22 +1,88 @@
 # Exosurface
 
-A shared, adaptive interface for you and your personal agent.
+A shared, adaptive interface for you and your personal agent: conversation and persistent, interactive pages in stock [BB](https://getbb.app), without a BB fork.
 
-Exosurface explores interfaces that materialize around your intent and context: a shared surface where you and your agent can organize information and act together across screens and, eventually, physical devices.
+## Install the current spike on macOS
 
-## Current implementation — October 2026
+**Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
-Vocabulary: [GLOSSARY.md](GLOSSARY.md). The working Exosurface lives in [`plugins/`](plugins/): stock [BB](https://getbb.app) plugins plus Pi extensions, no fork.
+The source build and local BB registration have been exercised. **A complete fresh-desktop initialization → real conversation → page action → reopen has not yet been demonstrated.** The setup code passed focused independent review (24 targeted tests); that is not an end-to-end installation claim.
 
-| Path | What it is |
+### What is included?
+
+| Component | Provided by this plugin? |
 |---|---|
-| [`plugins/bb-plugin-exo-spike`](plugins/bb-plugin-exo-spike) | Exo's daily entry point in BB: one growing OptChat session, independent per-user owner (launchd), attach/detach, journal replay |
-| [`plugins/bb-plugin-exo-a2ui-spike`](plugins/bb-plugin-exo-a2ui-spike) | The surface beside the chat, on an isolated clone of Exo: pages drawn in a readable snapshot format over a generic visual catalog, stage that follows the conversation, presentation guide, shared-state edits, context hygiene with upstream OptChat. Also a Pi package (`package.json` `pi` manifest). Start with its [README](plugins/bb-plugin-exo-a2ui-spike/README.md) and [PRESENTATION.md](plugins/bb-plugin-exo-a2ui-spike/PRESENTATION.md) |
+| BB conversation/pages interface, rendering and surface presentation instructions | Yes |
+| Pi/OptChat owner integration and explicit first-run initialization | Yes; runtime dependencies and local configuration are still required |
+| Your Exocortex identity, operating instructions and installed skills | **No** — provision your separate Exocortex workspace/vault |
+| Your memory notes, existing history and credentials | **No** — never bundled or automatically imported |
 
-Repo boundaries: **Exosurface** is the interface (BB plugins, Pi extensions, presentation guide); **[exocortex](https://github.com/0xTomDaniel/exocortex)** is the owner's agent instance (identity, policy, skills, profile config) and enables Exosurface — never the reverse; **[Exomachina](https://github.com/0xTomDaniel/Exomachina)** is the factory product. The memory vault is not in git.
+The complete experience needs **BB + this plugin + an Exocortex workspace + model authentication**. A fresh owner gets a generic OptChat profile, not a copy of another person's Exo. See [repo boundaries](#repo-boundaries).
 
-`evidence/`, `node_modules/` and `dist/` are not committed: evidence holds real conversations and stays local. Machine-specific locations (vault, Pi, OptChat checkouts, Playwright) come from a local `~/.config/exo/exosurface.json` (see `plugins/*/src/local-config.ts`), never from the repo.
+### 1. Prepare BB, Node and your workspace
 
+- Install and open the normal **BB desktop app** (tested: 0.45.0); complete whatever first-launch setup BB itself requests. Extra BB account login/manual machine enrollment is **not an established prerequisite for installing this plugin**. That requirement arose only in our separate headless test route.
+- Install Git and **Node 22.19 or newer** with npm (tested: Node 24.15.0). Keep Node available when running the owner.
+- Provision your own Exocortex workspace/vault separately, including its `AGENTS.md` and `.agents/skills/`. The plugin does not install these or your private memory. Select a normal BB project for that workspace.
+- Obtain **OptChat 0.8.6** from its [upstream repository](https://github.com/jonaslsaa/pi-optchat), pinned to `aae1caf7715830051d327f819fc776792211167a`, and install its locked dependencies. The plugin uses its public extension/profile API, not the incompatible Pi SDK-root import.
+
+### 2. Clone and install the locked plugin dependencies
+
+Requires access to this private repository. Choose a writable checkout; BB rebuilds local plugins from source.
+
+```sh
+git clone https://github.com/0xTomDaniel/exosurface.git
+cd exosurface
+export PLUGIN="$PWD/plugins/bb-plugin-exosurface"
+export NODE="$(command -v node)"
+# Standard macOS BB.app location; adjust if you installed it elsewhere.
+export BB_CLI="/Applications/BB.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb.js"
+
+cd "$PLUGIN"
+npm ci
+(cd legacy/surface && npm ci)
+```
+
+Both installs are needed: the root and surface keep separate lockfiles/dependency graphs. The root lock includes **Pi 1.1.0** and **BB plugin SDK 0.6.15**. `npm ci` can download packages and run lifecycle scripts; review/trust the source first. BB may also obtain its compiler toolchain during the build. The previous isolated test used populated caches; uncached fresh-machine downloads have not been demonstrated.
+
+### 3. Set the local paths before registration
+
+Create `~/.config/exo/exosurface.json` using the [configuration example and path rules](docs/release/first-run.md#local-configuration). Point it at your own vault, the installed Pi bundled CLI and the pinned OptChat checkout. Use **new, separate state and OptChat directories**, not another owner's state. Keep socket paths short; do not precreate the `pi-config` credentials directory.
+
+The default config location is read by BB and the owner. An `EXO_CONFIG` override must reach **both**, not just the installation command; changing an environment variable in a terminal does not configure an already-running desktop app.
+
+### 4. Build and register the one plugin
+
+From the same terminal/plugin directory as step 2, with BB running:
+
+```sh
+"$NODE" "$BB_CLI" plugin build "$PLUGIN"
+"$NODE" build.mjs
+"$NODE" build-runtime.mjs
+"$NODE" "$BB_CLI" plugin install "$PLUGIN" --yes --json
+```
+
+This registers **Exosurface** (`exosurface`, with provider `exo-spike`). Keep the checkout and dependencies available: local installation is not a self-contained binary bundle. Do not copy only `dist/` or install from a read-only archive. The normal desktop route does not require starting a second BB server.
+
+### 5. Initialize, authenticate and start Exo
+
+Open **Exosurface** in BB (plugin route `/plugins/exosurface/proof`). In **Initialize a fresh Exo owner**, select the workspace/project and paths, review the consent, then choose **Initialize Exo**. It authorizes one native conversation and a labelled initialization record **without model inference**. Do not start a second operation or delete recovery records to get around an uncertain result.
+
+Initialization and owner startup are separate. Once setup reports `bound`, authenticate the model provider in the **setup-created private Pi directory**, then start the retained owner in a separate terminal. The [step-by-step guide](docs/release/first-run.md#initialize-and-start-the-owner) supplies the environment and commands. A running BB view is not the owner process; automatic launchd provisioning is not included in this spike.
+
+**Test boundary:** this fresh-desktop step and real interactions are still unverified. Report an initialization error rather than inventing bindings or copying another instance's authentication. Do not perform the headless machine-enrollment procedure merely to install the desktop plugin.
+
+### 6. Check the actual experience
+
+With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. These are the pending acceptance steps, **not reported successes**.
+
+Known limits: textboxes/atoms are capped at **2,000 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
+
+## Repo boundaries
+
+**Exosurface** is the BB interface, runtime integration, Pi extensions and surface presentation guide. **[Exocortex](https://github.com/0xTomDaniel/exocortex)** is the separately provisioned agent setup (identity, policy, skills and profile configuration); its private memory vault is not in this repository. **[Exomachina](https://github.com/0xTomDaniel/Exomachina)** is the factory product. Installing Exosurface does not install or migrate an Exocortex instance.
+
+Vocabulary: [GLOSSARY.md](GLOSSARY.md). Historical implementations at `plugins/bb-plugin-exo-spike` and `plugins/bb-plugin-exo-a2ui-spike` remain for reference; the fresh-install target is the consolidated plugin above. Local paths belong in your local configuration. Sanitized test records live under the consolidated plugin's `compat/`; private raw conversations, credentials and machine evidence stay local. `node_modules/` and generated `dist/` are not committed.
 
 ## September 2026 research
 

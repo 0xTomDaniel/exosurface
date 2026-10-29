@@ -14,8 +14,8 @@ export interface NativeSetupApi {
   create(request: SetupRequest, prompt: string): Promise<{ id: string }>;
   get(id: string): Promise<{ id: string; providerId: string; projectId: string }>;
 }
-/** Gate cannot be enabled by an RPC field, environment variable or UI checkbox.
- * Production wiring passes false. Tests explicitly inject a mock API and true. */
+/** Default deny. The server authorizes only its validated explicit first-run
+ * initialization RPC; ordinary provider/resume paths never enable this adapter. */
 export function canonicalNativeAdapter(api: NativeSetupApi, dispatchAllowed = false) {
   return {
     nativeDispatchAllowed: dispatchAllowed,
@@ -35,6 +35,7 @@ export function canonicalBBNativeAdapter(threads: Pick<BbPluginApi['sdk']['threa
 export function canonicalSystemPorts(options: {
   localConfig: string; runtimeRoot: string; node: string;
   native: ReturnType<typeof canonicalNativeAdapter>;
+  ownerLabel?: string;
   instrumentEnvironment?: (env: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
 }): CanonicalSetupPorts {
   const environment = (r: SetupRequest) => {
@@ -57,7 +58,7 @@ export function canonicalSystemPorts(options: {
       const pkg = JSON.parse(readFileSync(join(r.optchat, 'package.json'), 'utf8'));
       const piRoot = resolvePiPackage(r.piCli), pi = JSON.parse(readFileSync(join(piRoot, 'package.json'), 'utf8'));
       if (pkg.name !== 'pi-optchat' || pkg.version !== '0.8.6' || pi.name !== '@earendil-works/pi-coding-agent' || pi.version !== '1.1.0') throw Error('Unsupported installed OptChat/Pi provenance; no dependency repair attempted');
-      const desired = { ownerLabel: 'app.exosurface.owner', primaryStateDir: r.home, primaryOptchatHome: r.optchatHome, primaryProfile: r.profile, primaryAgentDir: join(r.home, 'pi-config'), vault: r.vault, optchat: r.optchat, piCli: r.piCli };
+      const desired = { ownerLabel: options.ownerLabel ?? 'app.exosurface.owner', primaryStateDir: r.home, primaryOptchatHome: r.optchatHome, primaryProfile: r.profile, primaryAgentDir: join(r.home, 'pi-config'), vault: r.vault, optchat: r.optchat, piCli: r.piCli };
       const old = loadIf(options.localConfig);
       if (old && Object.entries(desired).some(([key, value]) => old[key] !== value)) throw Error('Existing local canonical configuration conflicts; refusing overwrite');
       if (!old) {

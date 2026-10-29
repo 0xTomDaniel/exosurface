@@ -1,0 +1,78 @@
+✔ canonical setup exact retry + committed native journal prefix preserves initialization identity (162.698834ms)
+✔ canonical setup native production gate makes zero writes/calls (3.409125ms)
+✔ unknown spawn fails closed across retry; no title/absence adoption (118.926708ms)
+✔ interrupted Pi append resumes same identity without second user record (280.968542ms)
+✔ interrupted verify/binding retries known native ID without dispatch (318.809ms)
+✔ concurrent presses refuse while owner holds exclusive setup lock (228.024875ms)
+✔ foreign profile/home and existing owner pointer are never adopted or poisoned (68.619ms)
+✔ different operation, project, workspace, or authorization refuses rebind (308.179542ms)
+✔ explicit dead-lock recovery refuses live PID and foreign operations (308.578083ms)
+✔ native adapter refuses foreign provider/project/id evidence (6.747167ms)
+✔ reserved controls are consumed idempotently; stale, mixed, unknown controls fail without forwarding (307.094708ms)
+✔ known partial binding files resume; missing commit marker never starts owner (1231.279291ms)
+✔ commit-before-journal crash accepts validated immutable prefix after later native metadata (290.576166ms)
+✔ native journal tamper, binding/provider tamper and foreign marker fail closed (886.859791ms)
+✔ oversize and imported/pending native state refuse BEFORE any native spawn (471.602667ms)
+✔ long socket names fail before local/profile/session/native writes (5.86925ms)
+✔ exact platform socket boundary succeeds; one extra UTF-8 byte refuses with zero setup writes (281.473542ms)
+✔ symlink profile inputs and a concurrent recovery guard fail closed without native effects (169.153625ms)
+✔ foreign symlink and unknown-stage journals refuse before configuration or external effects (50.577291ms)
+✔ runtime leaf links, including dangling links, refuse fresh setup and matching-config retry before effects (826.099917ms)
+✔ runtime ancestor links and non-directory entries refuse before mkdir/config/env/child (258.072666ms)
+✔ valid configured runtime directories preserve state across normal setup and exact-operation retry (368.904542ms)
+✔ public BB native adapter remains denied by default; explicitly authorized adapter uses only initialization control (2.5ms)
+✔ system configuration preserves an explicitly selected isolated owner supervisor label (72.870416ms)
+✔ complete Unicode/multiline press description and native history replay are lossless (22.923ms)
+✔ oversize atoms and whole owner commands reject before touching the original snapshot (1.533625ms)
+✔ prospective whole-workspace and historical restore validation reject without mutation (28.574584ms)
+✔ fresh + retry use one profile/thread; no active-memory fabricated; preserve vault (120.735375ms)
+ℹ {"fixtureCleanup":"exo-fr-EEIOq1","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ profile configured interrupted; retries without replacement (168.261417ms)
+ℹ {"fixtureCleanup":"exo-fr-E9TtIA","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ existing profile unclaimed or newer state refuses, zero overwrite (134.584583ms)
+ℹ {"fixtureCleanup":"exo-fr-xawDML","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ durable lookup recovers BB-created thread before local receipt, never unrelated candidate (200.689583ms)
+ℹ {"fixtureCleanup":"exo-fr-vkowt8","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ uncertain BB creation before/after spawn fails closed, no second spawn (357.622666ms)
+ℹ {"fixtureCleanup":"exo-fr-nXrl5l","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-gvlrB5","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ environment allowlist strips inherited live selectors and vendor credentials (3.8005ms)
+✔ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (425.6635ms)
+ℹ {"fixtureCleanup":"exo-fr-zzSk4C","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ real socket → mock Pi RPC → response page; full long input; wrong thread refused (777.072625ms)
+ℹ {"fixtureCleanup":"exo-fr-tzxc01","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[95043,95042]}
+✔ concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated (208.946292ms)
+ℹ {"fixtureCleanup":"exo-fr-FMraVV","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-5WKX4P","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ concrete BB receipt survives interruption before bootstrap local receipt (142.14375ms)
+ℹ {"fixtureCleanup":"exo-fr-2syP9q","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (331.258583ms)
+ℹ {"fixtureCleanup":"exo-fr-K051wf","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[95046]}
+✔ initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text (127.40975ms)
+ℹ {"fixtureCleanup":"exo-fr-2GFLKZ","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it (55.297584ms)
+✔ test teardown reaps its owned child and verifies PID disappearance before root removal (84.716083ms)
+ℹ {"fixtureCleanup":"exo-cleanup-child-kxiNhU","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[95048]}
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (2.717292ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (2.317375ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (1.219833ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.999083ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (3.3875ms)
+✔ extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime (5.770417ms)
+✔ durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite (325.678083ms)
+ℹ {"fixtureCleanup":"exo-pages-PzSfoc","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry (314.953209ms)
+ℹ {"fixtureCleanup":"exo-pages-1xxWo1","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (546.329ms)
+ℹ {"fixtureCleanup":"exo-pages-4muaop","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[95051]}
+✔ built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps (1.873583ms)
+✔ unsupported persisted pages and interrupted mutation locks fail closed without overwrite (99.521334ms)
+ℹ {"fixtureCleanup":"exo-pages-EXMzfw","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ tests 52
+ℹ suites 0
+ℹ pass 52
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11987.864875
