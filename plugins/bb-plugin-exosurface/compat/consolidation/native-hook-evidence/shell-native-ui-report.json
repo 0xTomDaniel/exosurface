@@ -1,0 +1,45 @@
+{
+  "base": "http://127.0.0.1:49173",
+  "providerDispatch": false,
+  "releaseReady": false,
+  "blocked": [],
+  "errors": [],
+  "app": {
+    "status": 200,
+    "bytes": 675533,
+    "contentType": "text/javascript; charset=utf-8",
+    "sha256": "ed0316dc8b3ae19a2f28eb917c75dfc45ad7bcbbe864c1d191ea1874166eef47"
+  },
+  "css": {
+    "status": 200,
+    "bytes": 26845,
+    "contentType": "text/css; charset=utf-8",
+    "sha256": "af87fa733b360c04b99ae1a69a4e3f90d98b732d33f27cf2d658d92dcbcb2239"
+  },
+  "initial": {
+    "url": "http://127.0.0.1:49173/plugins/exosurface/surface",
+    "title": "Exosurface",
+    "text": "New thread\nPlugins\nSkills\nAutomations\nExo\nExosurface\nMore\nThreads\n\nNo threads\n\nSettings\nMobile apps\nProvider usage\nReport a bug\nMore\n\nExosurface\n\nExosurface\n\nRevision 0\n\nExo is detached or starting.\n\nTalk with Exo in the conversation. When a picture helps, a page appears here.\n\nExo’s conversation is not attached yet.\n\nToggle Sidebar",
+    "appRuntime": true,
+    "canvas": true,
+    "styles": [
+      "http://127.0.0.1:49173/assets/index-COFpNF6Y.css",
+      "http://127.0.0.1:49173/assets/markdown-preview-DZqXX2zZ.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/abe003e28e5d3708/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/808a5c920402ede8/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/d90bfc26e10db47b/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/5f1bf5abeaba7917/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/b5fbbe00ebaf39c0/app.css"
+    ]
+  },
+  "reopened": {
+    "url": "http://127.0.0.1:49173/plugins/exosurface/surface",
+    "text": "New thread\nPlugins\nSkills\nAutomations\nExo\nExosurface\nMore\nThreads\n\nNo threads\n\nSettings\nMobile apps\nProvider usage\nReport a bug\nMore\n\nExosurface\n\nExosurface\n\nRevision 0\n\nExo is detached or starting.\n\nTalk with Exo in the conversation. When a picture helps, a page appears here.\n\nExo’s conversation is not attached yet.\n\nToggle Sidebar",
+    "canvas": true,
+    "runtime": true
+  },
+  "browserExit": {
+    "code": 0,
+    "signal": null
+  }
+}

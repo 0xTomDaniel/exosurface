@@ -1,0 +1,12 @@
+✘ [ERROR] Could not resolve "./legacy/primary/app"
+
+    app.tsx:3:20:
+      3 │ import primary from './legacy/primary/app';
+        ╵                     ~~~~~~~~~~~~~~~~~~~~~~
+
+✘ [ERROR] Could not resolve "./legacy/surface/app"
+
+    app.tsx:4:20:
+      4 │ import surface from './legacy/surface/app';
+        ╵                     ~~~~~~~~~~~~~~~~~~~~~~
+

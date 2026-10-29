@@ -1,0 +1,286 @@
+202635:   }
+202636:   function sourceKind(source) {
+202637:     try {
+202638:       return parsePluginSource(source).kind;
+202639:     } catch {
+202640:       return "path";
+202641:     }
+202642:   }
+202643:   function isPackagedBuiltinEntry(args) {
+202644:     const entry = {
+202645:       app: args.manifest.appEntry,
+202646:       server: args.manifest.serverEntry,
+202647:       host: args.manifest.hostEntry
+202648:     }[args.artifact];
+202649:     return args.kind === "builtin" && entry === resolve14(args.rootDir, "dist", `${args.artifact}.js`);
+202650:   }
+202651:   async function packagedBuiltinArtifactProblem(row, manifest) {
+202652:     const kind = sourceKind(row.source);
+202653:     if (!isPackagedBuiltinEntry({
+202654:       kind,
+202655:       manifest,
+202656:       rootDir: row.rootDir,
+202657:       artifact: "server"
+202658:     })) {
+202659:       return null;
+202660:     }
+202661:     async function validate2(artifact) {
+202662:       let raw2;
+202663:       try {
+202664:         raw2 = await readFile20(
+202665:           join34(row.rootDir, "dist", `${artifact}.meta.json`),
+202666:           "utf8"
+202667:         );
+202668:       } catch {
+202669:         return `${artifact} artifact for plugin "${manifest.id}" is missing dist/${artifact}.meta.json`;
+202670:       }
+202671:       return validatePluginArtifactMeta({
+202672:         artifact,
+202673:         raw: raw2,
+202674:         pluginId: manifest.id,
+202675:         pluginVersion: manifest.version
+202676:       });
+202677:     }
+202678:     const serverProblem = await validate2("server");
+202679:     if (serverProblem !== null) return serverProblem;
+202680:     if (isPackagedBuiltinEntry({
+202681:       kind,
+202682:       manifest,
+202683:       rootDir: row.rootDir,
+202684:       artifact: "app"
+202685:     })) {
+202686:       const appProblem = await validate2("app");
+202687:       if (appProblem !== null) return appProblem;
+202688:     }
+202689:     if (isPackagedBuiltinEntry({
+202690:       kind,
+202691:       manifest,
+202692:       rootDir: row.rootDir,
+202693:       artifact: "host"
+202694:     })) {
+202695:       return validate2("host");
+202696:     }
+202697:     return null;
+202698:   }
+202699:   function isBuiltinPluginId(id3) {
+202700:     const row = getInstalledPlugin(deps.db, id3);
+202701:     return row !== void 0 && row.provenance === "builtin";
+202702:   }
+202703:   function isPrebuiltServerSdkCompatible(meta3) {
+202704:     if (meta3 === null) return false;
+202705:     if (meta3.sdkMajor !== PLUGIN_SDK_MAJOR) return false;
+202706:     if (PLUGIN_SDK_MAJOR === 0) return meta3.sdkVersion === PLUGIN_SDK_VERSION;
+202707:     return true;
+202708:   }
+202709:   async function isMutableAppBundleStale(rootDir) {
+202710:     let artifactMtimeMs;
+202711:     try {
+202712:       artifactMtimeMs = (await stat12(join34(rootDir, "dist", "app.js"))).mtimeMs;
+202713:     } catch {
+202714:       return true;
+202715:     }
+202716:     const pendingDirectories = [""];
+202717:     while (pendingDirectories.length > 0) {
+202718:       const relativeDirectory = pendingDirectories.pop();
+202719:       if (relativeDirectory === void 0) break;
+202720:       const directory = join34(rootDir, relativeDirectory);
+202721:       let entries;
+202722:       try {
+202723:         const directoryStats = await stat12(directory);
+202724:         if (directoryStats.mtimeMs > artifactMtimeMs) return true;
+202725:         entries = await readdir5(directory, { withFileTypes: true });
+202726:       } catch {
+202727:         return true;
+202728:       }
+202729:       for (const entry of entries) {
+202730:         const relativePath = join34(relativeDirectory, entry.name);
+202731:         if (isIgnoredPluginDevPath(relativePath)) continue;
+202732:         try {
+202733:           const entryStats = await stat12(join34(rootDir, relativePath));
+202734:           if (entryStats.mtimeMs > artifactMtimeMs) return true;
+202735:         } catch {
+202736:           return true;
+202737:         }
+202738:         if (entry.isDirectory()) pendingDirectories.push(relativePath);
+202739:       }
+202740:     }
+202741:     return false;
+202742:   }
+202743:   async function packageScopeIsEsm(entryPath, rootDir) {
+202744:     const directories = [dirname17(entryPath), rootDir];
+202745:     for (const directory of new Set(directories)) {
+202746:       try {
+202747:         const parsed = JSON.parse(
+202748:           await readFile20(join34(directory, "package.json"), "utf8")
+202749:         );
+202750:         if (typeof parsed !== "object" || parsed === null) return false;
+202751:         if ("type" in parsed) return Reflect.get(parsed, "type") === "module";
+202752:       } catch {
+202753:       }
+202754:     }
+202755:     return false;
+202756:   }
+202757:   async function resolveServerEntry(row, manifest) {
+202758:     async function buildSource(serverEntry = manifest.serverEntry) {
+202759:       const built = await withArtifactLock(
+202760:         `server:${row.id}`,
+202761:         async () => buildCachedPluginServer({
+202762:           rootDir: row.rootDir,
+202763:           dataDir: deps.dataDir,
+202764:           pluginId: row.id,
+202765:           sdkVersion: PLUGIN_SDK_VERSION,
+202766:           bbVersion: deps.appVersion,
+202767:           validatedConfig: {
+202768:             serverEntry,
+202769:             packageName: manifest.packageName,
+202770:             pluginVersion: manifest.version
+202771:           },
+202772:           toolchain: () => getPluginBuildToolchain(deps),
+202773:           runtimeImports: {
+202774:             [PLUGIN_SDK_SPECIFIER]: {
+202775:               path: pluginSdkRuntimeEntry
+202776:             },
+202777:             [LEGACY_PLUGIN_SDK_SPECIFIER2]: {
+202778:               path: pluginSdkRuntimeEntry
+202779:             },
+202780:             "better-sqlite3": {
+202781:               path: runtimeRequire.resolve("better-sqlite3"),
+202782:               external: true
+202783:             }
+202784:           },
+202785:           fallbackResolve: (specifier) => {
+202786:             try {
+202787:               const resolved = import.meta.resolve(specifier);
+202788:               return resolved.startsWith("file:") ? fileURLToPath4(resolved) : resolved;
+202789:             } catch {
+202790:             }
+202791:             try {
+202792:               return runtimeRequire.resolve(specifier);
+202793:             } catch {
+202794:               return void 0;
+202795:             }
+202796:           }
+202797:         })
+202798:       );
+202799:       return { ...built, loader: "cjs" };
+202800:     }
+202801:     if (row.sourceKind === "path") return buildSource();
+202802:     if (row.sourceKind === "builtin" && !isPackagedBuiltinEntry({
+202803:       kind: row.sourceKind,
+202804:       manifest,
+202805:       rootDir: row.rootDir,
+202806:       artifact: "server"
+202807:     })) {
+202808:       if (initializedSourceBuiltinIds.has(row.id)) return buildSource();
+202809:       initializedSourceBuiltinIds.add(row.id);
+202810:       const { digest: digest3 } = await hashFile2(manifest.serverEntry);
+202811:       return { path: manifest.serverEntry, digest: digest3, loader: "esm" };
+202812:     }
+202813:     const distJsPath = join34(row.rootDir, "dist", "server.js");
+202814:     try {
+202815:       await stat12(distJsPath);
+202816:     } catch {
+202817:       return buildSource();
+202818:     }
+202819:     let meta3 = null;
+202820:     try {
+202821:       meta3 = parsePluginAppBundleMeta(
+202822:         await readFile20(join34(row.rootDir, "dist", "server.meta.json"), "utf8")
+202823:       );
+202824:     } catch {
+202825:     }
+202826:     if (!isPrebuiltServerSdkCompatible(meta3)) {
+202827:       logger2.warn(
+202828:         `plugin ${row.id}: ignoring prebuilt dist/server.js (built with SDK ${meta3?.sdkVersion ?? "unknown"}, running SDK is ${PLUGIN_SDK_VERSION}) \u2014 loading from source`
+202829:       );
+202830:       return buildSource();
+202831:     }
+202832:     const { digest: digest2 } = await hashFile2(distJsPath);
+202833:     if (await packageScopeIsEsm(distJsPath, row.rootDir)) {
+202834:       return { path: distJsPath, digest: digest2, loader: "esm" };
+202835:     }
+202836:     return buildSource(distJsPath);
+202837:   }
+202838:   async function loadAppBundleCandidate(row, manifest) {
+202839:     if (manifest.appEntry === void 0) {
+202840:       return {
+202841:         snapshot: { state: { hasApp: false, bundle: null }, assets: null },
+202842:         problem: null
+202843:       };
+202844:     }
+202845:     const kind = row.sourceKind;
+202846:     if ((kind === "path" || kind === "builtin") && !isPackagedBuiltinEntry({
+202847:       kind,
+202848:       manifest,
+202849:       rootDir: row.rootDir,
+202850:       artifact: "app"
+202851:     })) {
+202852:       const meta3 = await readPluginAppBundleMeta(row.rootDir);
+202853:       const sdkChanged = meta3?.sdkVersion !== PLUGIN_SDK_VERSION;
+202854:       const sourceChanged = !sdkChanged && await isMutableAppBundleStale(row.rootDir);
+202855:       if (sdkChanged || sourceChanged) {
+202856:         const reason = sdkChanged ? `built with SDK ${meta3?.sdkVersion ?? "unknown"}, running SDK is ${PLUGIN_SDK_VERSION}` : "plugin source is newer than dist/app.js";
+202857:         logger2.info(`plugin ${row.id}: rebuilding frontend bundle (${reason})`);
+202858:         try {
+202859:           await buildPluginApp(
+202860:             row.rootDir,
+202861:             deps.appVersion,
+202862:             await getPluginBuildToolchain(deps)
+202863:           );
+202864:           setDevBuildProblem(row.id, "frontend", null);
+202865:         } catch (error3) {
+202866:           const message2 = error3 instanceof Error ? error3.message : String(error3);
+202867:           logger2.warn(
+202868:             `plugin ${row.id}: frontend bundle rebuild failed: ${message2}`
+202869:           );
+202870:           return {
+202871:             snapshot: { state: { hasApp: true, bundle: null }, assets: null },
+202872:             problem: `frontend bundle rebuild failed: ${message2}`
+202873:           };
+202874:         }
+202875:       }
+202876:     }
+202877:     return {
+202878:       snapshot: await loadPluginAppBundle(row.id, row.rootDir),
+202879:       problem: null
+202880:     };
+202881:   }
+202882:   async function loadHostArtifactCandidate(row, manifest) {
+202883:     if (manifest.hostEntry === void 0) return null;
+202884:     const kind = row.sourceKind;
+202885:     if ((kind === "path" || kind === "builtin") && !isPackagedBuiltinEntry({
+202886:       kind,
+202887:       manifest,
+202888:       rootDir: row.rootDir,
+202889:       artifact: "host"
+202890:     })) {
+202891:       await buildPluginHost(
+202892:         row.rootDir,
+202893:         deps.appVersion,
+202894:         await getPluginBuildToolchain(deps)
+202895:       );
+202896:       setDevBuildProblem(row.id, "host", null);
+202897:     }
+202898:     const jsPath = join34(row.rootDir, "dist", "host.js");
+202899:     const metaPath = join34(row.rootDir, "dist", "host.meta.json");
+202900:     const artifactStats = await stat12(jsPath).catch((error3) => {
+202901:       throw new Error(
+202902:         `host artifact for plugin "${manifest.id}" is missing or unreadable: ${error3 instanceof Error ? error3.message : String(error3)}`
+202903:       );
+202904:     });
+202905:     if (artifactStats.size > HOST_ARTIFACT_MAX_BYTES) {
+202906:       throw new Error(
+202907:         `host artifact for plugin "${manifest.id}" exceeds the ${HOST_ARTIFACT_MAX_BYTES} byte limit`
+202908:       );
+202909:     }
+202910:     const [artifact, rawMeta] = await Promise.all([
+202911:       hashFile2(jsPath),
+202912:       readFile20(metaPath, "utf8")
+202913:     ]).catch((error3) => {
+202914:       throw new Error(
+202915:         `host artifact for plugin "${manifest.id}" is missing or unreadable: ${error3 instanceof Error ? error3.message : String(error3)}`
+202916:       );
+202917:     });
+202918:     if (artifact.byteLength > HOST_ARTIFACT_MAX_BYTES) {
+202919:       throw new Error(
+202920:         `host artifact for plugin "${manifest.id}" exceeds the ${HOST_ARTIFACT_MAX_BYTES} byte limit`

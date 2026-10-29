@@ -1,0 +1,54 @@
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: zod-to-json-schema@3.25.2
+npm warn Found: zod@3.25.76+exosurface.1
+npm warn legacy/surface/node_modules/zod
+npm warn   zod@"file:vendor/zod3/zod-3.25.76-exosurface.1.tgz" from @exosurface/surface-runtime@0.1.0
+npm warn   legacy/surface
+npm warn     @exosurface/surface-runtime@0.1.0
+npm warn     node_modules/@exosurface/surface-runtime
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer overridden zod@"file:vendor/zod3/zod-3.25.76-exosurface.1.tgz" (was "^3.25.28 || ^4") from zod-to-json-schema@3.25.2
+npm warn legacy/surface/node_modules/zod-to-json-schema
+npm warn   zod-to-json-schema@"3.25.2" from @exosurface/surface-runtime@0.1.0
+npm warn   legacy/surface
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: @a2ui/web_core@0.13.0
+npm error Found: zod@3.25.76+exosurface.1
+npm error node_modules/zod
+npm error   overridden zod@"file:vendor/zod3/zod-3.25.76-exosurface.1.tgz" (was "^3.25.76") from @a2ui/web_core@0.13.0
+npm error   node_modules/@a2ui/web_core
+npm error     peer @a2ui/web_core@"^0.13.0" from @a2ui/markdown-it@0.2.1
+npm error     node_modules/@a2ui/markdown-it
+npm error       @a2ui/markdown-it@"0.2.1" from @exosurface/surface-runtime@0.1.0
+npm error       legacy/surface
+npm error         @exosurface/surface-runtime@0.1.0
+npm error         node_modules/@exosurface/surface-runtime
+npm error       1 more (@a2ui/react)
+npm error     @a2ui/web_core@"0.13.0" from @exosurface/surface-runtime@0.1.0
+npm error     legacy/surface
+npm error       @exosurface/surface-runtime@0.1.0
+npm error       node_modules/@exosurface/surface-runtime
+npm error         workspace legacy/surface from the root project
+npm error     1 more (@a2ui/react)
+npm error
+npm error Could not resolve dependency:
+npm error peer overridden zod@"file:vendor/zod3/zod-3.25.76-exosurface.1.tgz" (was "^3.25.28 || ^4") from zod-to-json-schema@3.25.2
+npm error node_modules/zod-to-json-schema
+npm error   zod-to-json-schema@"^3.25.2" from @a2ui/web_core@0.13.0
+npm error   node_modules/@a2ui/web_core
+npm error     peer @a2ui/web_core@"^0.13.0" from @a2ui/markdown-it@0.2.1
+npm error     node_modules/@a2ui/markdown-it
+npm error       @a2ui/markdown-it@"0.2.1" from @exosurface/surface-runtime@0.1.0
+npm error       legacy/surface
+npm error       1 more (@a2ui/react)
+npm error     2 more (@exosurface/surface-runtime, @a2ui/react)
+npm error
+npm error Fix the upstream dependency conflict, or retry this command with --no-strict-peer-deps, --force, or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /tmp/exo-consolidation.tio5eJ/cache/_logs/2026-10-29T02_15_27_008Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /tmp/exo-consolidation.tio5eJ/cache/_logs/2026-10-29T02_15_27_008Z-debug-0.log

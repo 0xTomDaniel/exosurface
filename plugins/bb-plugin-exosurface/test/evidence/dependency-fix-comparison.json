@@ -1,0 +1,149 @@
+{
+  "classification": "mechanism-comparison-only; advisory-remediation-undetermined",
+  "shippingPatch": false,
+  "source": "zod@3.25.76/v3/types.js",
+  "sourceSha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+  "candidateSha256": "7b994f7652ae24855e9fe3066de3463f9bfd1083ca7d56d22434942fcddfbffe",
+  "converterParity": {
+    "identical": true,
+    "sha256": "f3834428be2590189f6b405110acd59d1f1688007fd80acd5ae3fb34ff786ce0",
+    "scope": "valid catalog-shaped fixture and actual v0.9 message schema only; not full catalog/UI parity"
+  },
+  "results": {
+    "pristine": {
+      "legacyChoice65Accepted": true,
+      "boundedVisits": 2048,
+      "boundedRefinements": 1,
+      "boundedIssues": 2049,
+      "unboundedVisits": 2048,
+      "unboundedIssues": 2048,
+      "asyncVisits": 3,
+      "actualA2uiIssues": 2055,
+      "reconstructedMessageIssues": null,
+      "nestedIssues": 512,
+      "recursiveIssues": 243,
+      "gatedVisits": 9,
+      "exactIssues": 1,
+      "setIssues": 4,
+      "validSyncAsyncFixture": true
+    },
+    "candidate": {
+      "legacyChoice65Accepted": true,
+      "boundedVisits": 0,
+      "boundedRefinements": 0,
+      "boundedIssues": 1,
+      "unboundedVisits": 2048,
+      "unboundedIssues": 2048,
+      "asyncVisits": 0,
+      "actualA2uiIssues": 2055,
+      "reconstructedMessageIssues": null,
+      "nestedIssues": 512,
+      "recursiveIssues": 243,
+      "gatedVisits": 0,
+      "exactIssues": 1,
+      "setIssues": 1,
+      "validSyncAsyncFixture": true
+    },
+    "publishedZod4": {
+      "legacyChoice65Accepted": null,
+      "boundedVisits": 0,
+      "boundedRefinements": 0,
+      "boundedIssues": 1,
+      "unboundedVisits": 2048,
+      "unboundedIssues": 2048,
+      "asyncVisits": 0,
+      "actualA2uiIssues": null,
+      "reconstructedMessageIssues": 2048,
+      "nestedIssues": 512,
+      "recursiveIssues": 243,
+      "gatedVisits": 0,
+      "exactIssues": 1,
+      "setIssues": 1,
+      "validSyncAsyncFixture": true
+    }
+  },
+  "conclusion": "Constrained-container early rejection prevents child parsing and async child dispatch in these probes. Unbounded/nested/recursive probes retain their error reporting at one fixed input size. These counts do not establish an exploit, superlinear resource amplification, admitted-app vulnerability, or vulnerability of published Zod4. No production patch or complete UI/schema parity is established.",
+  "provenance": {
+    "repositoryCheckpoint": "8cb1f3b815f383bcfb1428acd5b3cbdbf6974bd4",
+    "node": "24.15.0",
+    "packages": [
+      {
+        "name": "@a2ui/web_core",
+        "version": "0.13.0",
+        "tarball": "https://registry.npmjs.org/@a2ui/web_core/-/web_core-0.13.0.tgz",
+        "integrity": "sha512-4Clpksne0RY9KAheQoPoTwVDJ+6XI0Es2yqVME/PN0aWQ1321Wih69SEr8Nkc+7uKMyV5FlK32o88uoyM7ZBCw==",
+        "verified": true,
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "@a2ui/react",
+        "version": "0.13.0",
+        "tarball": "https://registry.npmjs.org/@a2ui/react/-/react-0.13.0.tgz",
+        "integrity": "sha512-875ZrJeOKVpzfmxjTMIXflE+LG91rmaP5r/rRccZxVEGpCxjRPVoY9BVVayKAN39UbopU3qAEzln1Fhb+LfksA==",
+        "verified": true,
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "zod",
+        "version": "3.25.76",
+        "tarball": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+        "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
+        "verified": true,
+        "license": "MIT"
+      },
+      {
+        "name": "zod-to-json-schema",
+        "version": "3.25.2",
+        "tarball": "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.25.2.tgz",
+        "integrity": "sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==",
+        "verified": true,
+        "license": "ISC"
+      }
+    ],
+    "publishedZod4": {
+      "version": "4.6.6",
+      "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==",
+      "source": "existing disposable npm-ci copy of production-plugin lock"
+    },
+    "upstream": {
+      "commit": "a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+      "pullRequest": "https://github.com/colinhacks/zod/pull/6652",
+      "merged": true,
+      "unmergedAlternative": "https://github.com/colinhacks/zod/pull/6475",
+      "mechanism": "Reject oversized explicitly constrained array/set/map before child parsing. Unbounded containers intentionally unchanged. Candidate is a three-site ESM mechanism probe, not a complete source/CJS/ESM distribution."
+    },
+    "advisory": {
+      "description": "Zod schema-validation library through 4.6.5 contains an uncontrolled resource consumption vulnerability that allows attackers to exhaust memory by submitting a large array to an application using an array schema without a length constraint. Attackers can exploit the handleArrayResult parse logic in $ZodArray, which accumulates every validation issue for each failing element with no cap or early termination, causing the process to allocate excessive issue objects and crash due to out-of-memory conditions.",
+      "ghsa_id": "GHSA-mrhx-c7xc-m3w5",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2023-54404",
+        "https://github.com/colinhacks/zod/issues/1872",
+        "https://github.com/colinhacks/zod/pull/6475",
+        "https://www.vulncheck.com/advisories/zod-uncontrolled-resource-consumption-via-array-validation",
+        "https://github.com/colinhacks/zod/pull/6652",
+        "https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+        "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5"
+      ],
+      "summary": "Zod can exhaust memory while validating oversized constrained collections",
+      "vulnerabilities": [
+        {
+          "first_patched_version": "4.6.6",
+          "package": {
+            "ecosystem": "npm",
+            "name": "zod"
+          },
+          "vulnerable_functions": [],
+          "vulnerable_version_range": "< 4.6.6"
+        }
+      ]
+    },
+    "licenseDisposition": "No third-party runtime source shipped here. Any future patch/reuse must preserve Zod MIT, A2UI Apache-2.0, converter ISC, and applicable renderer markdown notices."
+  },
+  "boundaries": {
+    "actualA2uiProbe": "Actual published v0.9 A2uiMessageSchema with invalid component values; NOT the complete app admission pipeline. Counts include union wrapper issues. No RSS, timing, crash, exploit or scaling measurement.",
+    "publishedZod4Probe": "Uses published parser with a reconstructed analogous message schema, NOT a working A2UI/Zod4 migration.",
+    "recursiveProbe": "Synthetic parser-only recursive schema. Legacy workspace.inspect rejects FunctionCall keys and nesting over 20 before its main A2UI parse. This is not evidence of admitted recursive FunctionCall exposure.",
+    "compatibility": "Actual ChoicePicker schema accepts 65 options before and after candidate. A new blanket 64-option cap would change that compatibility. Existing valid fixture and sampled converter parity are not full visual/schema parity.",
+    "runtime": "No installed dependency, live BB/config/state, provider or browser execution changed."
+  }
+}

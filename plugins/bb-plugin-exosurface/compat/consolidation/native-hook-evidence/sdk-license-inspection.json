@@ -1,0 +1,22 @@
+{
+  "name": "@get-bb/plugin-sdk",
+  "version": "0.6.15",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/get-bb/bb.git",
+    "directory": "packages/plugin-sdk"
+  },
+  "homepage": "https://github.com/get-bb/bb#readme",
+  "license": null,
+  "author": null,
+  "packagePath": "/tmp/exo-packaging-repair.GLh4R1/committed/plugins/bb-plugin-exosurface/node_modules/@get-bb/plugin-sdk",
+  "packageJSONSHA256": "696662cbc1f3e2c967fbaf3e953aa026a50c745b3853fdcc63a590c5d2f4b33b",
+  "topLevelFiles": [
+    "dist",
+    "bundled-types",
+    "node_modules",
+    "README.md",
+    "package.json"
+  ],
+  "qualification": "No license field or LICENSE/NOTICE found in this exact installed tarball. Not proof of permission or prohibition; rights unresolved. No new fetch or terms invented."
+}

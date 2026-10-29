@@ -1,0 +1,2 @@
+54195     1 54172 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -B /tmp/exo-native-consolidated.QPR6vW/launch.py /tmp/exo-native-consolidated.QPR6vW
+54328 54198 54198 /private/tmp/exo-native-consolidated.QPR6vW/bb-data/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@esbuild/darwin-arm64/bin/esbuild --service=0.28.1 --ping

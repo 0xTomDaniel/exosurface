@@ -1,0 +1,14 @@
+import {existsSync,readFileSync,writeFileSync} from 'node:fs';
+const {SessionManager}=await import(process.argv[2]);
+const r=process.env.PROOF_ROOT;
+const s=SessionManager.create(r+'/vault',r+'/sessions');
+const file=s.getSessionFile(), id=s.getSessionId();
+if(existsSync(file))throw Error('Unexpected eager persistence');
+const text='Exosurface disposable setup initialization. User-authorized session creation only; no inference requested.';
+s.appendMessage({role:'user',content:[{type:'text',text}],timestamp:Date.now()});
+if(!existsSync(file))throw Error('User initialization did not persist');
+const reopened=SessionManager.open(file);
+if(reopened.getSessionId()!==id)throw Error('Identity changed');
+const entries=reopened.getEntries();
+if(entries.filter(x=>x.type==='message').length!==1||entries.find(x=>x.type==='message').message.role!=='user')throw Error('Unexpected conversation');
+console.log(JSON.stringify({ok:true,id,file,persisted:true,reopened:true,messages:entries.filter(x=>x.type==='message'),inference:false,networkAndSubprocessForbidden:true}));

@@ -1,0 +1,81 @@
+{
+  "applicationDirectMarkdownImport": true,
+  "actualMarkdownDependencyDOMPurify": "3.4.17",
+  "advisoryRangeChecks": [
+    {
+      "id": "GHSA-55q2-fjhq-7xh7",
+      "range": "<= 3.4.12",
+      "fixedVersionExcluded": true
+    },
+    {
+      "id": "GHSA-c2j3-45gr-mqc4",
+      "range": "<= 3.4.11",
+      "fixedVersionExcluded": true
+    },
+    {
+      "id": "GHSA-6688-9rhm-gjv2",
+      "range": "<= 3.4.15",
+      "fixedVersionExcluded": true
+    },
+    {
+      "id": "GHSA-cg2g-xh64-v4q7",
+      "range": ">= 3.4.4, <= 3.4.16",
+      "fixedVersionExcluded": true
+    },
+    {
+      "id": "GHSA-mrv2-3pqr-j5jr",
+      "range": "<= 3.4.16",
+      "fixedVersionExcluded": true
+    },
+    {
+      "id": "GHSA-c6gr-qvv4-5v3f",
+      "range": "<= 3.4.16",
+      "fixedVersionExcluded": true
+    }
+  ],
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36",
+  "patchedVersion": "3.4.17",
+  "baselineVersion": "3.4.11",
+  "nonDefaultAdvisoryTestsAreNotApplicationReachabilityProof": true,
+  "tests": [
+    {
+      "name": "Actual browser ESM sanitizer versions",
+      "pass": true
+    },
+    {
+      "name": "Default markdown output/accepted formatting/classes equal old sanitizer and actual Node raw renderer",
+      "pass": true
+    },
+    {
+      "name": "Actual default sanitizer rejects unsafe attributes/protocols; ordinary formatting retained",
+      "pass": true
+    },
+    {
+      "name": "GHSA-55q2-fjhq-7xh7: hook-detached descendants neutralized",
+      "pass": true
+    },
+    {
+      "name": "GHSA-c2j3-45gr-mqc4: allowed custom elements pass afterSanitizeElements policy",
+      "pass": true
+    },
+    {
+      "name": "GHSA-6688-9rhm-gjv2: rawtext root fails closed or returns non-reparseable output",
+      "pass": true,
+      "details": {
+        "outcome": "Fail-closed TypeError; original dirty input is not a sanitizer result and must not be rendered"
+      }
+    },
+    {
+      "name": "GHSA-cg2g-xh64-v4q7: shadow-root split template fragments scrubbed",
+      "pass": true
+    },
+    {
+      "name": "GHSA-mrv2-3pqr-j5jr: hook-removed parent/sibling neutralized",
+      "pass": true
+    },
+    {
+      "name": "GHSA-c6gr-qvv4-5v3f: XHTML SMIL href attributeName guard",
+      "pass": true
+    }
+  ]
+}

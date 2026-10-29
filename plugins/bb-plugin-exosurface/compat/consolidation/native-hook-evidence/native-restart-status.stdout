@@ -1,0 +1,1740 @@
+{
+  "plugins": [
+    {
+      "id": "account-pool",
+      "source": "builtin:account-pool",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/account-pool",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · account-pool",
+      "updateState": {},
+      "enabled": false,
+      "description": "Routes Claude and Codex API traffic across provider account pools.",
+      "name": "Account Pooler [Experimental]",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Layers",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "account-pool",
+          "label": "account-pool",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "agent-annotations",
+      "source": "builtin:agent-annotations",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/agent-annotations",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · agent-annotations",
+      "updateState": {},
+      "enabled": false,
+      "description": "Select elements in a Browser tab, comment on them, and add them to the prompt.",
+      "name": "Agent Annotations",
+      "screenshots": [],
+      "collections": [],
+      "icon": "MessageSquarePlus",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "agent-annotations",
+          "label": "agent-annotations",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "ask-user-question",
+      "source": "builtin:ask-user-question",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/ask-user-question",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · ask-user-question",
+      "updateState": {},
+      "enabled": false,
+      "description": "Let any provider ask the user a multiple-choice question, the way Claude Code's AskUserQuestion does natively.",
+      "name": "Ask User Question",
+      "screenshots": [],
+      "collections": [],
+      "icon": "MessageQuestion",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "automations",
+      "source": "builtin:automations",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/automations",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · automations",
+      "updateState": {},
+      "enabled": true,
+      "description": "Schedule recurring and one-shot agent or script work.",
+      "name": "Automations",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Repeat",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "automation-sweep",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "automation",
+        "summary": "Inspect and manage automations (scheduled agent/script runs)"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "automations",
+          "label": "automations",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/20887193dd026536/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/20887193dd026536/app.css",
+          "jsBytes": 139216,
+          "hash": "20887193dd026536",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "bb--provider-usage",
+      "source": "builtin:provider-usage",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-usage",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · bb--provider-usage",
+      "updateState": {},
+      "enabled": true,
+      "description": "View provider usage in plugin settings and an optional sidebar footer card.",
+      "name": "Provider usage",
+      "screenshots": [],
+      "collections": [],
+      "icon": "ChartColumn",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/abe003e28e5d3708/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/abe003e28e5d3708/app.css",
+          "jsBytes": 222218,
+          "hash": "abe003e28e5d3708",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "bb-account",
+      "source": "builtin:bb-account",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/bb-account",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · bb-account",
+      "updateState": {},
+      "enabled": true,
+      "description": "Signs this bb in to your getbb.app account and holds its server credential for remote access and hosted services.",
+      "name": "bb account",
+      "screenshots": [],
+      "collections": [],
+      "icon": "UserRound",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 2,
+        "totalMs": 0.9021250000001828,
+        "maxMs": 0.7358749999999645,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "profile-refresh",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "account",
+        "summary": "Sign this bb in to your getbb.app account"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "bb-account",
+          "label": "bb-account",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/930ed8b4cbaf49fa/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/930ed8b4cbaf49fa/app.css",
+          "jsBytes": 229042,
+          "hash": "930ed8b4cbaf49fa",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "bb-ai",
+      "source": "builtin:bb-ai",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/bb-ai",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · bb-ai",
+      "updateState": {},
+      "enabled": true,
+      "description": "Thread titles, commit messages, and voice input from bb cloud, included with your bb account.",
+      "name": "bb cloud AI",
+      "screenshots": [],
+      "collections": [],
+      "icon": "AiBrain01",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": {
+        "name": "ai",
+        "summary": "Manage bb cloud AI for titles, commit messages, and voice input"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "bb-cloud-ai",
+          "label": "bb-cloud-ai",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "bb-guide",
+      "source": "builtin:bb-guide",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/bb-guide",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · bb-guide",
+      "updateState": {},
+      "enabled": true,
+      "description": "Control the BB introduction and bundled agent skills.",
+      "name": "BB guide",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Explore",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "bb-cli",
+          "label": "bb-cli",
+          "detail": "Skill this plugin adds to your agents"
+        },
+        {
+          "kind": "skill",
+          "id": "bb-plugin-authoring",
+          "label": "bb-plugin-authoring",
+          "detail": "Skill this plugin adds to your agents"
+        },
+        {
+          "kind": "skill",
+          "id": "skill-creator",
+          "label": "skill-creator",
+          "detail": "Skill this plugin adds to your agents"
+        },
+        {
+          "kind": "skill",
+          "id": "submit-a-plugin",
+          "label": "submit-a-plugin",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/e7a17ae607e8ec5b/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/e7a17ae607e8ec5b/app.css",
+          "jsBytes": 1978,
+          "hash": "e7a17ae607e8ec5b",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "concurrency-limit",
+      "source": "builtin:concurrency-limit",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/concurrency-limit",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · concurrency-limit",
+      "updateState": {},
+      "enabled": true,
+      "description": "Control the number of concurrent threads that are running in bb",
+      "name": "Concurrency limit",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Limitation",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "capacity-detector",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "concurrency-limit",
+        "summary": "Configure global and per-host thread limits"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "concurrency-limit",
+          "label": "concurrency-limit",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/321a27a614a21666/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/321a27a614a21666/app.css",
+          "jsBytes": 8554,
+          "hash": "321a27a614a21666",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "connect",
+      "source": "builtin:connect",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/connect",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · connect",
+      "updateState": {},
+      "enabled": true,
+      "description": "Remote access via getbb.app — this bb becomes reachable at https://<handle>.getbb.app. Disable to cut off all remote access.",
+      "name": "bb connect",
+      "screenshots": [],
+      "collections": [],
+      "icon": "ComputerCloud",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 2,
+        "totalMs": 0.5340409999989788,
+        "maxMs": 0.4444160000002739,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "tunnel",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "connect",
+        "summary": "Expose this bb at https://<handle>.getbb.app once it is signed in to your bb account"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "share-server-links",
+          "label": "share-server-links",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/ee59299ce5ea4b3e/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/ee59299ce5ea4b3e/app.css",
+          "jsBytes": 268817,
+          "hash": "ee59299ce5ea4b3e",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "custom-instructions",
+      "source": "builtin:custom-instructions",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/custom-instructions",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · custom-instructions",
+      "updateState": {},
+      "enabled": true,
+      "description": "Add persistent custom instructions to agent tasks on this bb host.",
+      "name": "Custom instructions",
+      "screenshots": [],
+      "collections": [],
+      "icon": "EditFile",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": {
+        "name": "instructions",
+        "summary": "Read and update the custom instructions injected into agents"
+      },
+      "capabilities": [],
+      "hasSettings": true,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "drafts",
+      "source": "builtin:drafts",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/drafts",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · drafts",
+      "updateState": {},
+      "enabled": true,
+      "description": "Save a composer draft as a manually sent queued message.",
+      "name": "Drafts",
+      "screenshots": [],
+      "collections": [],
+      "icon": "EditFile",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/7e6eaf1fc2f1a2c7/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/7e6eaf1fc2f1a2c7/app.css",
+          "jsBytes": 2309,
+          "hash": "7e6eaf1fc2f1a2c7",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "environment-git-worktree",
+      "source": "builtin:environment-git-worktree",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/environment-git-worktree",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · environment-git-worktree",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run a thread in a fresh git worktree on an enrolled machine",
+      "name": "Worktree",
+      "screenshots": [],
+      "collections": [],
+      "icon": "FolderGit",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/310f15713006e2cb/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/310f15713006e2cb/app.css",
+          "jsBytes": 33471,
+          "hash": "310f15713006e2cb",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "environment-personal-workspace",
+      "source": "builtin:environment-personal-workspace",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/environment-personal-workspace",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · environment-personal-workspace",
+      "updateState": {},
+      "enabled": true,
+      "description": "Give every thread without a project its own personal workspace on the machine",
+      "name": "Personal workspace",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Folder",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "environment-project-checkout",
+      "source": "builtin:environment-project-checkout",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/environment-project-checkout",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · environment-project-checkout",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run a thread in the project's own checkout on an enrolled machine, on the branch you choose",
+      "name": "Project checkout",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Laptop",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/f1130c24e8b18986/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/f1130c24e8b18986/app.css",
+          "jsBytes": 35866,
+          "hash": "f1130c24e8b18986",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "exosurface",
+      "source": "path:/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source",
+      "rootDir": "/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source",
+      "version": "0.1.0-dev",
+      "provenance": "direct",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": null,
+      "sourceDisplay": "path · ~/Library/Application Support/Exosurface/bb-source",
+      "updateState": {},
+      "enabled": true,
+      "description": "Existing primary Exo/OptChat and A2UI experience, consolidated; releaseReady remains false",
+      "name": "Exosurface",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Bot",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "workspace-stream",
+          "state": "running"
+        },
+        {
+          "name": "surface-stream-main",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "thread-integration",
+          "id": "mention:surface",
+          "label": "Pages",
+          "detail": "Mentions with @"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/808a5c920402ede8/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/808a5c920402ede8/app.css",
+          "jsBytes": 675533,
+          "hash": "808a5c920402ede8",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [
+        "exo-spike"
+      ],
+      "icons": {}
+    },
+    {
+      "id": "inline-vis",
+      "source": "builtin:inline-vis",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/inline-vis",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · inline-vis",
+      "updateState": {},
+      "enabled": true,
+      "description": "Render workspace or thread-storage HTML visualizations and Markdown documents inline in assistant messages.",
+      "name": "Inline visualizations",
+      "screenshots": [],
+      "collections": [],
+      "icon": "AppWindow",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "inline-vis",
+          "label": "inline-vis",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/f3758de507a4977c/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/f3758de507a4977c/app.css",
+          "jsBytes": 8278,
+          "hash": "f3758de507a4977c",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "keep-awake",
+      "source": "builtin:keep-awake",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/keep-awake",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · keep-awake",
+      "updateState": {},
+      "enabled": true,
+      "description": "Keeps selected macOS and Windows hosts awake while bb is running.",
+      "name": "Keep Awake",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Coffee",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "desired-state-reconciler",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "keep-awake",
+        "summary": "Configure idle-sleep prevention"
+      },
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/6ee37847734d0f53/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/6ee37847734d0f53/app.css",
+          "jsBytes": 31889,
+          "hash": "6ee37847734d0f53",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "monaco-editor",
+      "source": "builtin:monaco-editor",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/monaco-editor",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · monaco-editor",
+      "updateState": {},
+      "enabled": false,
+      "description": "Edit files in BB with the Monaco editor instead of the read-only preview.",
+      "name": "File Editor",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Code",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "navigation",
+      "source": "builtin:navigation",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/navigation",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · navigation",
+      "updateState": {},
+      "enabled": true,
+      "description": "bb's sidebar navigation: New thread, Search, Plugins, Skills, and plugin panels.",
+      "name": "Navigation",
+      "screenshots": [],
+      "collections": [],
+      "icon": "PanelLeft",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/d90bfc26e10db47b/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/d90bfc26e10db47b/app.css",
+          "jsBytes": 96105,
+          "hash": "d90bfc26e10db47b",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "pdf-preview",
+      "source": "builtin:pdf-preview",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/pdf-preview",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · pdf-preview",
+      "updateState": {},
+      "enabled": true,
+      "description": "Preview PDF files with the browser's built-in viewer.",
+      "name": "PDF preview",
+      "screenshots": [],
+      "collections": [],
+      "icon": "FileText",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/86644dd7ce2204f3/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/86644dd7ce2204f3/app.css",
+          "jsBytes": 5896,
+          "hash": "86644dd7ce2204f3",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "plugin-api-docs",
+      "source": "builtin:plugin-api-docs",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/plugin-api-docs",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · plugin-api-docs",
+      "updateState": {},
+      "enabled": false,
+      "description": "Browse the bb plugin API as an annotated map of the product.",
+      "name": "Plugin Guide",
+      "screenshots": [],
+      "collections": [],
+      "icon": "./icons/ai-generative.svg",
+      "iconUrl": "/api/v1/plugins/plugin-api-docs/assets/icon?h=4e87ef6283a4c264",
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "plugin-api-tester",
+      "source": "builtin:plugin-api-tester",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/plugin-api-tester",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · plugin-api-tester",
+      "updateState": {},
+      "enabled": false,
+      "description": "Exercise and inspect bb plugin API surfaces during development.",
+      "name": "Plugin API Tester",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Beaker",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "provider-acp",
+      "source": "builtin:provider-acp",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-acp",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · provider-acp",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run bb threads with ACP agents (supports Cursor, opencode, omp and more).",
+      "name": "ACP providers",
+      "screenshots": [],
+      "collections": [],
+      "icon": "./icons/acp.svg",
+      "iconUrl": "/api/v1/plugins/provider-acp/assets/icon?h=8e6031f899b688db",
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "acp-capability-probe",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "acp-provider",
+          "label": "acp-provider",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [
+        "acp-cursor",
+        "acp-opencode",
+        "acp-omp",
+        "acp-grok",
+        "acp-hermes-agent"
+      ],
+      "icons": {
+        "cursor": "/api/v1/plugins/provider-acp/assets/icons/cursor.svg?h=54518fbba151af1d",
+        "opencode": "/api/v1/plugins/provider-acp/assets/icons/opencode.svg?h=7e411ab06762c1eb",
+        "omp": "/api/v1/plugins/provider-acp/assets/icons/omp.svg?h=f90290c0c2e2858a",
+        "grok": "/api/v1/plugins/provider-acp/assets/icons/grok.svg?h=3ac2309e881f3a6f",
+        "hermes-agent": "/api/v1/plugins/provider-acp/assets/icons/hermes-agent.svg?h=067571f33ff25ee2"
+      }
+    },
+    {
+      "id": "provider-claude-code",
+      "source": "builtin:provider-claude-code",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-claude-code",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · provider-claude-code",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run bb threads with Claude Code.",
+      "name": "Claude Code provider",
+      "screenshots": [],
+      "collections": [],
+      "icon": "./icons/claude-code.svg",
+      "iconUrl": "/api/v1/plugins/provider-claude-code/assets/icon?h=138a999a87258575",
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "claude-code-provider",
+          "label": "claude-code-provider",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [
+        "claude-code"
+      ],
+      "icons": {}
+    },
+    {
+      "id": "provider-codex",
+      "source": "builtin:provider-codex",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-codex",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · provider-codex",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run bb threads with Codex.",
+      "name": "Codex provider",
+      "screenshots": [],
+      "collections": [],
+      "icon": "./icons/codex.svg",
+      "iconUrl": "/api/v1/plugins/provider-codex/assets/icon?h=688b78b75ffe1a5c",
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "codex-provider",
+          "label": "codex-provider",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [
+        "codex"
+      ],
+      "icons": {}
+    },
+    {
+      "id": "provider-pi",
+      "source": "builtin:provider-pi",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-pi",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · provider-pi",
+      "updateState": {},
+      "enabled": true,
+      "description": "Run bb threads with Pi.",
+      "name": "Pi provider",
+      "screenshots": [],
+      "collections": [],
+      "icon": "./icons/pi.svg",
+      "iconUrl": "/api/v1/plugins/provider-pi/assets/icon?h=16cd38b27b481945",
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "pi-provider",
+          "label": "pi-provider",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/2baa420b12a323f6/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/2baa420b12a323f6/app.css",
+          "jsBytes": 211374,
+          "hash": "2baa420b12a323f6",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [
+        "pi"
+      ],
+      "icons": {}
+    },
+    {
+      "id": "provider-retry",
+      "source": "builtin:provider-retry",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/provider-retry",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · provider-retry",
+      "updateState": {},
+      "enabled": true,
+      "description": "Retry turns after transient provider overloads and subscription limits reset.",
+      "name": "Provider retry",
+      "screenshots": [],
+      "collections": [],
+      "icon": "ArrowReloadHorizontal",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": {
+        "name": "provider-retry",
+        "summary": "Manage pending automatic provider retries"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "provider-retry",
+          "label": "provider-retry",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": true,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "push-notifications",
+      "source": "builtin:push-notifications",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/push-notifications",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · push-notifications",
+      "updateState": {},
+      "enabled": true,
+      "description": "Notifications for threads that need attention on mobile, web, and desktop",
+      "name": "Push notifications",
+      "screenshots": [],
+      "collections": [],
+      "icon": "BellDot",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [
+        {
+          "name": "push-sender",
+          "state": "running"
+        }
+      ],
+      "schedules": [],
+      "cliCommand": {
+        "name": "push-notifications",
+        "summary": "Manage mobile, web, and desktop notifications"
+      },
+      "capabilities": [],
+      "hasSettings": true,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/b5fbbe00ebaf39c0/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/b5fbbe00ebaf39c0/app.css",
+          "jsBytes": 199790,
+          "hash": "b5fbbe00ebaf39c0",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "scheduled-send",
+      "source": "builtin:scheduled-send",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/scheduled-send",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · scheduled-send",
+      "updateState": {},
+      "enabled": true,
+      "description": "Schedule the current composer draft to send at a later time.",
+      "name": "Send later",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Calendar",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/f0912000f6d5d4fa/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/f0912000f6d5d4fa/app.css",
+          "jsBytes": 41697,
+          "hash": "f0912000f6d5d4fa",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "secrets",
+      "source": "builtin:secrets",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/secrets",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · secrets",
+      "updateState": {},
+      "enabled": true,
+      "description": "Securely request credentials from a user and reconcile them into dotenv files.",
+      "name": "Secrets",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Lock",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": {
+        "name": "secret",
+        "summary": "Securely request credentials and write them to a dotenv file."
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "secrets",
+          "label": "secrets",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/0f7b45cd7f7266ba/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/0f7b45cd7f7266ba/app.css",
+          "jsBytes": 210266,
+          "hash": "0f7b45cd7f7266ba",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "side-chat",
+      "source": "builtin:side-chat",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/side-chat",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · side-chat",
+      "updateState": {},
+      "enabled": true,
+      "description": "Reply to messages in hidden side-chat forks rendered in a thread panel.",
+      "name": "Side chat",
+      "screenshots": [],
+      "collections": [],
+      "icon": "SideChat",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [
+        {
+          "name": "empty-fork-cleanup",
+          "cron": "13 * * * *",
+          "nextRunAt": 1793247180000,
+          "lastRunAt": null,
+          "lastStatus": null,
+          "lastError": null
+        }
+      ],
+      "cliCommand": null,
+      "capabilities": [],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/da1e9878d1567547/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/da1e9878d1567547/app.css",
+          "jsBytes": 7153,
+          "hash": "da1e9878d1567547",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "thread-list",
+      "source": "builtin:thread-list",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/thread-list",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · thread-list",
+      "updateState": {},
+      "enabled": true,
+      "description": "bb's sidebar thread list: pinned threads, custom sections, projects, machines, and nested threads.",
+      "name": "Thread list",
+      "screenshots": [],
+      "collections": [],
+      "icon": "ListView",
+      "iconUrl": null,
+      "status": "running",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": {
+        "name": "thread-list",
+        "summary": "Inspect and change the sidebar thread list's layout preferences"
+      },
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "thread-list",
+          "label": "thread-list",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": true,
+        "bundle": {
+          "jsUrl": "/api/v1/plugin-app-assets/5f1bf5abeaba7917/app.js",
+          "cssUrl": "/api/v1/plugin-app-assets/5f1bf5abeaba7917/app.css",
+          "jsBytes": 471451,
+          "hash": "5f1bf5abeaba7917",
+          "sdkMajor": 0,
+          "sdkVersion": "0.6.15",
+          "compatible": true
+        }
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    },
+    {
+      "id": "workflows",
+      "source": "builtin:workflows",
+      "rootDir": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins/workflows",
+      "version": "0.1.0",
+      "provenance": "builtin",
+      "isOrphanedBuiltin": false,
+      "publisherLabel": "BB Official",
+      "sourceDisplay": "builtin · workflows",
+      "updateState": {},
+      "enabled": false,
+      "description": "Run durable, provider-independent agent workflows.",
+      "name": "Workflows",
+      "screenshots": [],
+      "collections": [],
+      "icon": "Workflow",
+      "iconUrl": null,
+      "status": "disabled",
+      "statusDetail": null,
+      "handlerStats": {
+        "count": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "errorCount": 0
+      },
+      "services": [],
+      "schedules": [],
+      "cliCommand": null,
+      "capabilities": [
+        {
+          "kind": "skill",
+          "id": "workflows",
+          "label": "workflows",
+          "detail": "Skill this plugin adds to your agents"
+        }
+      ],
+      "hasSettings": false,
+      "app": {
+        "hasApp": false,
+        "bundle": null
+      },
+      "logoUrl": null,
+      "logoDarkUrl": null,
+      "providerIds": [],
+      "icons": {}
+    }
+  ]
+}

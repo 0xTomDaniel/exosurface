@@ -1,0 +1,9 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: {"error":"Error: {\"exceptionId\":1,\"text\":\"Uncaught\",\"lineNumber\":0,\"columnNumber\":21,\"scriptId\":\"12\",\"stackTrace\":{\"callFrames\":[{\"functionName\":\"\",\"scriptId\":\"12\",\"url\":\"\",\"lineNumber\":0,\"columnNumber\":21}]},\"exception\":{\"type\":\"object\",\"subtype\":\"error\",\"className\":\"TypeError\",\"description\":\"TypeError: Cannot read properties of null (reading 'innerText')\\n    at <anonymous>:1:22\",\"objectId\":\"6309535002053874490.2.2\"}}","closeRequested":false,"phase":"window.__fixture?.ready && document.querySelector(\"textarea\") && [...document.querySelectorAll(\"button\")].some(b=>b.textContent===\"Send\")","events":[{"method":"Runtime.executionContextCreated","params":{"context":{"id":1,"origin":"://","name":"","uniqueId":"-3377443657830897356.4594598022712937846","auxData":{"isDefault":true,"type":"default","frameId":"5C60044F327514AE41BABCB2EEAECCA4"}}}},{"method":"Runtime.executionContextsCleared","params":{}},{"method":"Runtime.executionContextCreated","params":{"context":{"id":2,"origin":"http://127.0.0.1:56222","name":"","uniqueId":"3433521640812115480.8403721375287350828","auxData":{"isDefault":true,"type":"default","frameId":"5C60044F327514AE41BABCB2EEAECCA4"}}}}],"stderr":"\nDevTools listening on ws://127.0.0.1:56225/devtools/browser/303ce4cf-410d-4771-8fa6-514d609a6c7b\n"}
+    at interactiveChromium (file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/chromium-control.mjs:38:35)
+    at async file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:88:14
+
+Node.js v24.15.0

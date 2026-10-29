@@ -1,0 +1,37 @@
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: zod-to-json-schema@3.25.2
+npm error Found: zod@3.25.76+exosurface.1
+npm error legacy/surface/node_modules/zod
+npm error   zod@"file:vendor/zod3/zod-3.25.76-exosurface.1.tgz" from @exosurface/surface-runtime@0.1.0
+npm error   legacy/surface
+npm error     @exosurface/surface-runtime@0.1.0
+npm error     node_modules/@exosurface/surface-runtime
+npm error       workspace legacy/surface from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer overridden zod@"4.6.6" (was "^3.25.28 || ^4") from zod-to-json-schema@3.25.2
+npm error legacy/surface/node_modules/zod-to-json-schema
+npm error   zod-to-json-schema@"3.25.2" from @exosurface/surface-runtime@0.1.0
+npm error   legacy/surface
+npm error     @exosurface/surface-runtime@0.1.0
+npm error     node_modules/@exosurface/surface-runtime
+npm error       workspace legacy/surface from the root project
+npm error
+npm error Conflicting peer dependency: zod@4.6.6
+npm error node_modules/zod
+npm error   peer overridden zod@"4.6.6" (was "^3.25.28 || ^4") from zod-to-json-schema@3.25.2
+npm error   legacy/surface/node_modules/zod-to-json-schema
+npm error     zod-to-json-schema@"3.25.2" from @exosurface/surface-runtime@0.1.0
+npm error     legacy/surface
+npm error       @exosurface/surface-runtime@0.1.0
+npm error       node_modules/@exosurface/surface-runtime
+npm error         workspace legacy/surface from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry this command with --no-strict-peer-deps, --force, or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /tmp/exo-consolidation.tio5eJ/cache/_logs/2026-10-29T02_11_40_205Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /tmp/exo-consolidation.tio5eJ/cache/_logs/2026-10-29T02_11_40_205Z-debug-0.log

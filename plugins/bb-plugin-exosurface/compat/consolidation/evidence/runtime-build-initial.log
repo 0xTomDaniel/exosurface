@@ -1,0 +1,29 @@
+✘ [ERROR] Could not resolve "@earendil-works/pi-ai"
+
+    legacy/primary/src/fixture.ts:4:145:
+      4 │ ...ptContext, type SimpleStreamOptions } from '@earendil-works/pi-ai';
+        ╵                                               ~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "@earendil-works/pi-ai" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:1467
+  let error = new Error(text);
+              ^
+
+Error: Build failed with 1 error:
+legacy/primary/src/fixture.ts:4:145: ERROR: Could not resolve "@earendil-works/pi-ai"
+    at failureErrorWithLog (/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:1467:15)
+    at /private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:926:25
+    at /private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:924:7)
+    at /private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/private/tmp/exo-consolidation.tio5eJ/package/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Node.js v24.15.0

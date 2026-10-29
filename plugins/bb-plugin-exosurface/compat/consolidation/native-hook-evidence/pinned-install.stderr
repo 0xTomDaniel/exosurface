@@ -1,0 +1,4 @@
+Offline npm ci failed in .; activation stopped. Retained owned preparation /tmp/exo-native-source.RVkor2/home/Library/Application Support/Exosurface/.bb-source-yUXZAz. npm error DISPOSABLE TRIPWIRE: filesystem-write {"name":"mkdir","path":"/tmp/exo-native-source.RVkor2/cache"}
+npm error Log files were not written due to an error writing to the directory: /tmp/exo-native-source.RVkor2/cache/_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+

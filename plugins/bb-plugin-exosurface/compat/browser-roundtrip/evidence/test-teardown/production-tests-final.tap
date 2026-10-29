@@ -1,0 +1,59 @@
+(node:31219) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ fresh + retry use one profile/thread; no active-memory fabricated; preserve vault (169.659583ms)
+ℹ {"fixtureCleanup":"exo-fr-yPrVbt","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ profile configured interrupted; retries without replacement (125.844666ms)
+ℹ {"fixtureCleanup":"exo-fr-vWNKsV","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ existing profile unclaimed or newer state refuses, zero overwrite (97.768833ms)
+ℹ {"fixtureCleanup":"exo-fr-rUaiKY","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ durable lookup recovers BB-created thread before local receipt, never unrelated candidate (230.607167ms)
+ℹ {"fixtureCleanup":"exo-fr-aaB2hH","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ uncertain BB creation before/after spawn fails closed, no second spawn (255.463709ms)
+ℹ {"fixtureCleanup":"exo-fr-jYeOKe","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-mEzNiv","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ environment allowlist strips inherited live selectors and vendor credentials (0.265541ms)
+✔ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (349.170542ms)
+ℹ {"fixtureCleanup":"exo-fr-7bcmui","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ real socket → mock Pi RPC → response page; full long input; wrong thread refused (758.045542ms)
+ℹ {"fixtureCleanup":"exo-fr-FH49pn","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[31235,31234]}
+✔ concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated (216.253458ms)
+ℹ {"fixtureCleanup":"exo-fr-K27g57","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ {"fixtureCleanup":"exo-fr-TpeIDP","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ concrete BB receipt survives interruption before bootstrap local receipt (155.098291ms)
+ℹ {"fixtureCleanup":"exo-fr-h0HUEf","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (309.779292ms)
+ℹ {"fixtureCleanup":"exo-fr-sDVHUg","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[31239]}
+✔ initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text (151.390459ms)
+ℹ {"fixtureCleanup":"exo-fr-fAeHOv","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+(node:31220) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it (60.739ms)
+✔ test teardown reaps its owned child and verifies PID disappearance before root removal (55.983208ms)
+ℹ {"fixtureCleanup":"exo-cleanup-child-A9EgLC","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[31224]}
+(node:31221) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (1.166958ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (0.890042ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.25375ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.442ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (2.023583ms)
+(node:31222) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime (2.746167ms)
+✔ durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite (255.712209ms)
+ℹ {"fixtureCleanup":"exo-pages-3YMyL1","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry (235.765084ms)
+ℹ {"fixtureCleanup":"exo-pages-ATXRKf","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+✔ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (531.034166ms)
+ℹ {"fixtureCleanup":"exo-pages-HbGzdw","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[31227]}
+✔ built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps (1.125ms)
+✔ unsupported persisted pages and interrupted mutation locks fail closed without overwrite (94.474833ms)
+ℹ {"fixtureCleanup":"exo-pages-KBaYBw","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4558.093417

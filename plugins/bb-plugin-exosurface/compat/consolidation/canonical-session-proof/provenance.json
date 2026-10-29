@@ -1,0 +1,166 @@
+{
+  "baseline": {
+    "producer": "387acf93138976559881b89b1d0a886f3cebb00b",
+    "tooling": "36816b2d711e5a2f7463c3428f9a51b2f46a0db0",
+    "review": "c70add5b79a7eadb5222464ef0762c4f8323c07a"
+  },
+  "pi": {
+    "version": "1.1.0",
+    "publicEntry": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "codemodeDependency": "^1.1.0",
+    "lock": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.1.0.tgz",
+      "integrity": "sha512-SeEi/4hdcHNgA9UWlefZl7ZZpm3dzi2OoxNjDHsBJ9o298LNOtbL4DGKgitlEj6uCTccvtw6f2hlCkTPVJ2RXg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@earendil-works/chord": "^1.1.0",
+        "@earendil-works/pi-agent-core": "^1.1.0",
+        "@earendil-works/pi-ai": "^1.1.0",
+        "@earendil-works/pi-codemode": "^1.1.0",
+        "@earendil-works/pi-mcp": "^1.1.0",
+        "@earendil-works/pi-tui": "^1.1.0",
+        "@silvia-odwyer/photon-node": "0.3.4",
+        "brace-expansion": "5.0.12",
+        "chalk": "6.0.0",
+        "cross-spawn": "7.0.6",
+        "diff": "8.0.4",
+        "grok-mermaid": "0.2.3",
+        "highlight.js": "10.7.3",
+        "hosted-git-info": "9.0.3",
+        "ignore": "7.0.8",
+        "jiti": "2.7.0",
+        "minimatch": "10.2.6",
+        "proper-lockfile": "4.1.2",
+        "quickjs-wasi": "3.6.2",
+        "semver": "7.8.5",
+        "typebox": "1.3.27",
+        "undici": "8.10.2",
+        "yaml": "2.9.0"
+      },
+      "bin": {
+        "pi": "dist/bundle/cli.js"
+      },
+      "engines": {
+        "node": ">=22.19.0"
+      }
+    }
+  },
+  "codemode": {
+    "installedVersion": "1.4.0",
+    "declarationsExport": {
+      "source": "./src/declarations.ts",
+      "types": "./dist/declarations.d.ts",
+      "import": "./dist/declarations.js"
+    },
+    "lock": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/@earendil-works/pi-codemode/-/pi-codemode-1.4.0.tgz",
+      "integrity": "sha512-23CNAXpS9DuLzPMyYuvrXVVio46x4YhffCgCqaWmF7F5H8PooqjrQvX4ucF6M0BhUd+x2tV6r1J0dv8cCME4Cg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "quickjs-wasi": "3.6.2"
+      },
+      "engines": {
+        "node": ">=22.19.0"
+      }
+    }
+  },
+  "hashes": {
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/package.json": "c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/index.js": "5482298b995db935f7b96f5d6056fa1c36ac6fc80456be594ef65b83c62b0d30",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/extensions/codemode/tool.js": "42c0a5a763ec2faad495dd2f953b28e93af7bbca634333ebbbfa3dd4be50eea9",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js": "e79626f2dd6f94aa45d30f3fa63cd84319a6eefcd150b353cfaf274366926774",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli-runtime.js": "c30fd8f7f1a50fdf4860b87613fc6e906d04cc1d4646360826e001abbd1f2152",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/rpc-entry.js": "c8114525a78e7d1123a23ae522eb8f5b6f17f556ff746bbeabaaec9c8cd6dff4",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-UH5J7I7X.js": "dcb80a5a86fec4ec6e28e7bcb9a00f93985e23477c2321cb60011581d67baa9b",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-codemode/package.json": "fd9ffde93569732ab626529ca689a0e8ee5c549d449a6ce8e9f0748ab8df3242",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-codemode/dist/declarations.js": "00ab54f850a7412d029f8d9699fcb51b1346f3cb2c58e47b63f9189292ec260c",
+    "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/package-lock.json": "25a4379eb98ece425fb3e1df253ae73b5a1b94b7d8ecbab4c954cb5842ac5517"
+  },
+  "sdkImport": {
+    "sourceExit": 1,
+    "installedBbSourceExit": 1,
+    "error": "MCP_TYPESCRIPT_PREAMBLE export missing",
+    "cacheDrift": false,
+    "status": "unresolved SDK compatibility issue"
+  },
+  "cli": {
+    "helpExit": 0,
+    "path": "/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js",
+    "usesBundledDeclarations": true,
+    "newSessionAPI": "ExtensionCommandContext.newSession({setup(manager)}) + manager.appendMessage(user)",
+    "identity": {
+      "id": "01a187e5-b933-7378-a89c-20738f6a47df",
+      "file": "/tmp/exo-canonical-proof.syqeus/sessions/2026-10-29T13-42-21-747Z_01a187e5-b933-7378-a89c-20738f6a47df.jsonl",
+      "entries": [
+        {
+          "type": "thinking_level_change",
+          "id": "23b67f50",
+          "parentId": null,
+          "timestamp": "2026-10-29T13:42:21.756Z",
+          "thinkingLevel": "off"
+        },
+        {
+          "type": "message",
+          "id": "74a86f24",
+          "parentId": "23b67f50",
+          "timestamp": "2026-10-29T13:42:21.756Z",
+          "message": {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Exosurface disposable setup initialization. User-authorized session creation only; no inference requested."
+              }
+            ],
+            "timestamp": 1793281341756
+          }
+        }
+      ]
+    },
+    "reopened": {
+      "model": {
+        "id": "unknown",
+        "name": "unknown",
+        "api": "unknown",
+        "provider": "unknown",
+        "baseUrl": "",
+        "reasoning": false,
+        "input": [],
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "contextWindow": 0,
+        "maxTokens": 0
+      },
+      "thinkingLevel": "off",
+      "isStreaming": false,
+      "isCompacting": false,
+      "steeringMode": "one-at-a-time",
+      "followUpMode": "one-at-a-time",
+      "sessionFile": "/tmp/exo-canonical-proof.syqeus/sessions/2026-10-29T13-42-21-747Z_01a187e5-b933-7378-a89c-20738f6a47df.jsonl",
+      "sessionId": "01a187e5-b933-7378-a89c-20738f6a47df",
+      "autoCompactionEnabled": true,
+      "messageCount": 1,
+      "pendingMessageCount": 0
+    },
+    "exactUserRecordEqual": true,
+    "beforeProviderRequestsObserved": 0,
+    "nativeBbDispatch": false,
+    "ownerBindingProven": false,
+    "authUsed": false,
+    "networkAndChildProcessDenied": true,
+    "stopExit": 143,
+    "reopenStopExit": 143
+  },
+  "releaseReady": false
+}

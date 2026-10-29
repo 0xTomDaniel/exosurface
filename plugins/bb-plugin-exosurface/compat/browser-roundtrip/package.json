@@ -1,0 +1,1 @@
+{"name":"@exosurface/isolated-browser-roundtrip","version":"0.1.0","private":true,"type":"module","description":"Disposable test-only bundler; not a production/plugin dependency","devDependencies":{"esbuild":"0.25.12"}}

@@ -1,0 +1,358 @@
+{
+  "fixtureOnly": true,
+  "nativeOwner": false,
+  "providerDispatch": false,
+  "current": {
+    "revision": 2,
+    "messages": [
+      {
+        "version": "v0.9.1",
+        "createSurface": {
+          "surfaceId": "page",
+          "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateComponents": {
+          "surfaceId": "page",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "page__title",
+                "entry",
+                "send"
+              ]
+            },
+            {
+              "id": "page__title",
+              "component": "Text",
+              "text": "Full input fixture",
+              "variant": "h2"
+            },
+            {
+              "id": "entry",
+              "component": "TextField",
+              "label": "Full input",
+              "value": {
+                "path": "/entry"
+              },
+              "variant": "longText"
+            },
+            {
+              "id": "send__label",
+              "component": "Text",
+              "text": "Send"
+            },
+            {
+              "id": "send",
+              "component": "Button",
+              "child": "send__label",
+              "variant": "default",
+              "action": {
+                "event": {
+                  "name": "submit",
+                  "context": {
+                    "entry": {
+                      "path": "/entry"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateDataModel": {
+          "surfaceId": "page",
+          "path": "/",
+          "value": {
+            "entry": "Line α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\n"
+          }
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "createSurface": {
+          "surfaceId": "earlier",
+          "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateComponents": {
+          "surfaceId": "earlier",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "h1",
+                "t2"
+              ]
+            },
+            {
+              "id": "h1",
+              "component": "Text",
+              "text": "Earlier fixture",
+              "variant": "h2"
+            },
+            {
+              "id": "t2",
+              "component": "Text",
+              "text": "Preserved shelf page, no provider"
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateDataModel": {
+          "surfaceId": "earlier",
+          "path": "/",
+          "value": {}
+        }
+      }
+    ],
+    "layout": {
+      "focus": "page"
+    },
+    "incremental": true,
+    "incomplete": false
+  },
+  "history": [
+    {
+      "revision": 1,
+      "at": "2000-01-01T00:00:00.000Z",
+      "surface": "page",
+      "title": "Full input fixture",
+      "action": "drew",
+      "messages": [
+        {
+          "version": "v0.9.1",
+          "createSurface": {
+            "surfaceId": "page",
+            "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateComponents": {
+            "surfaceId": "page",
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "page__title",
+                  "entry",
+                  "send"
+                ]
+              },
+              {
+                "id": "page__title",
+                "component": "Text",
+                "text": "Full input fixture",
+                "variant": "h2"
+              },
+              {
+                "id": "entry",
+                "component": "TextField",
+                "label": "Full input",
+                "value": {
+                  "path": "/entry"
+                },
+                "variant": "longText"
+              },
+              {
+                "id": "send__label",
+                "component": "Text",
+                "text": "Send"
+              },
+              {
+                "id": "send",
+                "component": "Button",
+                "child": "send__label",
+                "variant": "default",
+                "action": {
+                  "event": {
+                    "name": "submit",
+                    "context": {
+                      "entry": {
+                        "path": "/entry"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateDataModel": {
+            "surfaceId": "page",
+            "path": "/",
+            "value": {
+              "entry": "initial"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "at": "2000-01-01T00:00:00.000Z",
+      "surface": "earlier",
+      "title": "Earlier fixture",
+      "action": "drew",
+      "messages": [
+        {
+          "version": "v0.9.1",
+          "createSurface": {
+            "surfaceId": "earlier",
+            "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateComponents": {
+            "surfaceId": "earlier",
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "h1",
+                  "t2"
+                ]
+              },
+              {
+                "id": "h1",
+                "component": "Text",
+                "text": "Earlier fixture",
+                "variant": "h2"
+              },
+              {
+                "id": "t2",
+                "component": "Text",
+                "text": "Preserved shelf page, no provider"
+              }
+            ]
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateDataModel": {
+            "surfaceId": "earlier",
+            "path": "/",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
+      "revision": 2,
+      "at": "2000-01-01T00:00:01.000Z",
+      "surface": "page",
+      "title": "Full input fixture",
+      "action": "changed",
+      "messages": [
+        {
+          "version": "v0.9.1",
+          "createSurface": {
+            "surfaceId": "page",
+            "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateComponents": {
+            "surfaceId": "page",
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "page__title",
+                  "entry",
+                  "send"
+                ]
+              },
+              {
+                "id": "page__title",
+                "component": "Text",
+                "text": "Full input fixture",
+                "variant": "h2"
+              },
+              {
+                "id": "entry",
+                "component": "TextField",
+                "label": "Full input",
+                "value": {
+                  "path": "/entry"
+                },
+                "variant": "longText"
+              },
+              {
+                "id": "send__label",
+                "component": "Text",
+                "text": "Send"
+              },
+              {
+                "id": "send",
+                "component": "Button",
+                "child": "send__label",
+                "variant": "default",
+                "action": {
+                  "event": {
+                    "name": "submit",
+                    "context": {
+                      "entry": {
+                        "path": "/entry"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateDataModel": {
+            "surfaceId": "page",
+            "path": "/",
+            "value": {
+              "entry": "Line α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\n"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "id": "868317fa-a2ce-4173-902e-063a472d3cc8",
+      "type": "canvas-data",
+      "threadId": "fixture-no-dispatch",
+      "request": {
+        "revision": 1,
+        "surfaceId": "page",
+        "updates": [
+          {
+            "path": "/entry",
+            "value": "Line α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\n"
+          }
+        ],
+        "mutationId": "868317fa-a2ce-4173-902e-063a472d3cc8",
+        "source": "edit"
+      }
+    }
+  ],
+  "rejections": []
+}

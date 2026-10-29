@@ -1,0 +1,24 @@
+// Verbatim command from bb-plugin-exo-a2ui-spike at f4a0c05; retained historical lexical closure.
+ pi.registerCommand('workspace-compose',{description:'Archived experiment: native candidate composition',handler:async(args,ctx)=>{requirePresentationExperiment();
+  if(!ctx.isIdle()||controller||!offer)throw Error('Idle configured clone required');
+  const request:CompositionRequest=JSON.parse(args);
+  if(!/^[0-9a-f-]{36}$/.test(request.runId)||!['jev','haiku','haiku-both'].includes(request.mode)||typeof request.prompt!=='string'||request.prompt.length>1600||request.baseRevision!==(current?.revision??0))throw Error('Invalid/stale composition request');
+  if(ctx.sessionManager.getBranch().some(e=>e.type==='custom'&&e.customType===RUN&&(e.data as any)?.runId===request.runId))throw Error('Run already attempted; inspect retained native evidence before explicitly retrying');
+  const context=syntheticConversation(ctx.sessionManager.getBranch()),base=current,generation=epoch,contract=offer,token=new AbortController();controller=token;
+  let resume:any;
+  if(request.resumeRunId){
+   const entries=ctx.sessionManager.getBranch().filter(e=>e.type==='custom'&&e.customType===RUN).map(e=>(e as any).data),start=entries.find(e=>e.runId===request.resumeRunId&&e.summary?.status==='started'),failed=entries.find(e=>e.runId===request.resumeRunId&&e.summary?.status==='failed');
+   if(!start||!failed?.partial?.spec||start.request.mode!==request.mode||start.request.prompt!==request.prompt||start.request.baseRevision!==request.baseRevision||JSON.stringify(start.context)!==JSON.stringify(context)||start.contractSha256!==createHash('sha256').update(JSON.stringify(contract)).digest('hex')||(failed.partial.stopReason!=='finish'&&!(request.mode==='jev'&&failed.error.startsWith('Provider did not complete bounded output')))){controller=null;throw Error('Exact completed composition with failed copy and unchanged native base/context/contract required');}
+   resume={spec:failed.partial.spec,copy:failed.partial.copy,received:failed.partial.received};
+  }
+  pi.appendEntry(RUN,{runId:request.runId,summary:{id:request.runId,mode:request.mode,status:'started'},request,context,contractSha256:createHash('sha256').update(JSON.stringify(contract)).digest('hex')});materialize(ctx);
+  try{
+   const result=await compose({offer:contract,current:base,context,request,signal:token.signal,resume,fresh:()=>controller===token&&epoch===generation&&current===base&&offer===contract,preview:messages=>save(previewFile,{sessionId:ctx.sessionManager.getSessionId(),epoch,toolCallId:request.runId,baseRevision:request.baseRevision,messages})});
+   if(controller!==token||token.signal.aborted||epoch!==generation||current!==base||offer!==contract)throw Error('Obsolete composition result');
+   const next=applyDelta(current,result.delta);
+   pi.appendEntry(COMMIT,{runId:request.runId,delta:result.delta});current=next;updates.push(result.delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();
+   lastRun={id:request.runId,mode:request.mode,status:'complete',elapsedMs:result.elapsedMs,calls:result.calls.length,costUsd:result.calls.every(c=>c.costUsd!==null)?result.calls.reduce((n,c)=>n+c.costUsd!,0):null};
+   pi.appendEntry(RUN,{runId:request.runId,summary:lastRun,...result});ctx.ui.notify('Synthetic composition committed; no extra Exo model call.','info');
+  }catch(e){token.abort();lastRun={id:request.runId,mode:request.mode,status:'failed'};pi.appendEntry(RUN,{runId:request.runId,summary:lastRun,error:e instanceof Error?e.message:'Composition failed',partial:(e as any)?.partial});ctx.ui.notify('Composition failed; previous committed UI retained. Native diagnostic preserved; no automatic retry.','error');}
+  finally{if(controller===token)controller=null;if(existsSync(previewFile)&&JSON.parse(requireReadPreview()).toolCallId===request.runId)rmSync(previewFile,{force:true});materialize(ctx);}
+ }});

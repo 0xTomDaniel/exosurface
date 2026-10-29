@@ -1,0 +1,40 @@
+(node:41424) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ complete Unicode/multiline press description and native history replay are lossless (7.975458ms)
+✔ oversize atoms and whole owner commands reject before touching the original snapshot (1.294833ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 291.401875
+
+✖ failing tests:
+
+test at test/consolidation-input.test.ts:14:1
+✖ complete Unicode/multiline press description and native history replay are lossless (7.975458ms)
+  Error [ZodError]: [
+    {
+      "code": "invalid_type",
+      "expected": "string",
+      "received": "undefined",
+      "path": [
+        "timestamp"
+      ],
+      "message": "Required"
+    }
+  ]
+      at get error (file:///private/tmp/exo-consolidation.tio5eJ/package/legacy/surface/node_modules/zod/v3/types.js:39:31)
+      at ZodObject.parse (file:///private/tmp/exo-consolidation.tio5eJ/package/legacy/surface/node_modules/zod/v3/types.js:114:22)
+      at validateAction (/private/tmp/exo-consolidation.tio5eJ/package/legacy/surface/src/workspace.ts:139:23)
+      at TestContext.<anonymous> (/private/tmp/exo-consolidation.tio5eJ/package/test/consolidation-input.test.ts:15:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    issues: [ { code: 'invalid_type', expected: 'string', received: 'undefined', path: [Array], message: 'Required' } ],
+    [errors]: [ { code: 'invalid_type', expected: 'string', received: 'undefined', path: [Array], message: 'Required' } ]
+  }

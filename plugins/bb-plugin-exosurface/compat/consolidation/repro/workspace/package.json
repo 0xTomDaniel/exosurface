@@ -1,0 +1,17 @@
+{
+  "name": "exo-workspace-override-repro",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "surface"
+  ],
+  "dependencies": {
+    "zod": "4.6.6"
+  },
+  "overrides": {
+    "@a2ui/markdown-it": {
+      ".": "0.2.1",
+      "dompurify": "3.4.17"
+    }
+  }
+}

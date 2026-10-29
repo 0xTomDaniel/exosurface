@@ -1,0 +1,6 @@
+103:       if (!v) add('bb-app', 'warn', `${bbApp} present; version unreadable`);
+104:       else if (need && !satisfies(v, need)) add('bb-app', 'fail', `BB ${v} is older than ${need}`, 'Update BB');
+105:       else add('bb-app', 'ok', `BB ${v}`);
+106:     }
+107:     add('bb-plugin-source', 'unsupported', `Whether BB has ${join(prefix, 'current', 'plugin')} registered as a plugin source is not checked: reading BB's database or settings is out of bounds`, 'In BB, add that folder as a local plugin source once');
+108:     add('model-auth', 'unsupported', "The owner's own Pi login is not inspected; credential files are never read", 'Sign in through the first-run flow');

@@ -1,0 +1,5 @@
+{
+  "error": "Error: {\"error\":\"TimeoutError: The operation was aborted due to timeout\",\"closeRequested\":false,\"phase\":\"startup\",\"stderr\":\"\\nDevTools listening on ws://127.0.0.1:57282/devtools/browser/16ea7d79-5b2c-4e74-b1de-7c3a02ecad77\\n\"}",
+  "stack": "Error: {\"error\":\"TimeoutError: The operation was aborted due to timeout\",\"closeRequested\":false,\"phase\":\"startup\",\"stderr\":\"\\nDevTools listening on ws://127.0.0.1:57282/devtools/browser/16ea7d79-5b2c-4e74-b1de-7c3a02ecad77\\n\"}\n    at interactiveChromium (file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/chromium-control.mjs:38:35)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:107:17",
+  "ownerStderr": ""
+}

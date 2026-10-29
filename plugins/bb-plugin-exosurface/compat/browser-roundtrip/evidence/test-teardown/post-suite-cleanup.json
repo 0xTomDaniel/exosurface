@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "rootReceipts": 18,
+  "ownedPidsGone": [
+    30047,
+    30046,
+    30050,
+    30021,
+    30040
+  ],
+  "dedicatedTmpdirEmpty": true,
+  "scope": "test fixtures only; not production lifecycle or sanitizer-runner clearance"
+}

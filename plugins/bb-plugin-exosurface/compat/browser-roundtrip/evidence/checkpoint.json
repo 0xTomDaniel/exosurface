@@ -1,0 +1,43 @@
+{
+  "schema": "exosurface-existing-ui-checkpoint/0",
+  "base": "5cab0d1dc97c9b5f3fd283d8080e339c5cf39bd7",
+  "releaseReady": false,
+  "independentDOMFixReviewReportedByUser": "acceptance PR52 1828c34; first shutdown deadline failure then one unmodified 9/9 retry; old runner unchanged",
+  "finalBrowserRuns": [
+    14,
+    15
+  ],
+  "checks": {
+    "adapterTests": {
+      "passed": 5,
+      "failed": 0
+    },
+    "productionTests": {
+      "passed": 23,
+      "failed": 0
+    },
+    "productionTypecheckExit": 0,
+    "strictAdapterUnitTypecheckExit": 0,
+    "fixtureClientTypecheckExit": 0,
+    "toolOfflineCiExit": 0,
+    "toolNpmLsExit": 0
+  },
+  "invariants": {
+    "package-lock.json": "fb0eb9b9c7f3a99f49dc9575437f700c3c316c95705ed3a1d087baa96eab6ec9",
+    "app.tsx": "5ac3835a3c41791d36baa6bbc3d58423911ea19506811f09e0b7eff3b1219497",
+    "compat/zod3/zod-3.25.76-exosurface.1.tgz": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+    "compat/zod3/artifact.json": "e088ca7cbaadf5faa79acdedbd4fee17abf6e3c9b4a9667c33ddcf8c6520d4ff",
+    "compat/zod3/backport.patch": "d508c6a32209136be0077f1a5e29d8c759180ff7fd97fed647f682e6cb30bb76",
+    "compat/zod3/NOTICE.md": "42104642a830029ec3db91f26be17d7a8ab8f15753614bf30f712b485612b2a7"
+  },
+  "scope": "Isolated existing UI, production RPC and independent owner, MOCK Pi manually registering compiled tools, durable fresh-browser reopen; NOT native BB/actual Pi loader/inference",
+  "sources": {
+    "src/page-renderer-adapter.ts": "b8cd22d4fd33d5c6c54a14c32c62b12ec9aab5e69d5f7e6b55e6d8e36966ebb5",
+    "test/page-renderer-adapter.test.ts": "2ac33d2512833eea63ab4db624661a6ca4b81132e2813656bd9013e3ad6c73b7",
+    "compat/browser-roundtrip/client.tsx": "3b76754268832c1e6a47c8adac7068213f529ce18994bf8b76a7a224e53ef2e0",
+    "compat/browser-roundtrip/chromium-control.mjs": "e19d180fe8c9a9f438fdc3146d8b286d02705d02977c1243b3d0c1858eca12dc",
+    "compat/browser-roundtrip/roundtrip.mjs": "0e72c411063c451e00d5cfa17bb0d307f5ed8713e4fcec0b495d49ec6794f38a",
+    "compat/browser-roundtrip/package.json": "350bafebc6ee9c2027cabf8766d00dd113c62ff9e9a408ed181ba73ad5b7b18f",
+    "compat/browser-roundtrip/package-lock.json": "186ab30cbaad49100e63272b953d4b88134f2ec36c605719ea6ce8ea9095c9c6"
+  }
+}

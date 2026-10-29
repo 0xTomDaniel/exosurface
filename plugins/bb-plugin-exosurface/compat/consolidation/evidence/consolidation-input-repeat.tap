@@ -1,0 +1,12 @@
+(node:41588) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ complete Unicode/multiline press description and native history replay are lossless (19.969584ms)
+✔ oversize atoms and whole owner commands reject before touching the original snapshot (1.303625ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 284.238792

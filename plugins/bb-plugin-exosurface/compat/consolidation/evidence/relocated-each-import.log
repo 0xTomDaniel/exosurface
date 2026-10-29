@@ -1,0 +1,4 @@
+{"entry":"workspace-extension","imported":false,"code":"MODULE_NOT_FOUND","message":"Cannot find module '@a2ui/react/v0_9'\nRequire stack:\n- /private/tmp/exo-consolidation.tio5eJ/relocated-artifact/dist/workspace-extension.js"}
+{"entry":"workspace-frame","imported":true,"registered":false,"executed":false}
+{"entry":"live","imported":true,"registered":false,"executed":false}
+{"entry":"fixture","imported":true,"registered":false,"executed":false}

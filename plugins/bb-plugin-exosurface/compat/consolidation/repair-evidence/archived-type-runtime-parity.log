@@ -1,0 +1,36 @@
+{
+  "rows": [
+    {
+      "file": "composition/client.ts",
+      "byteIdentical": false,
+      "transpiledRuntimeIdentical": true,
+      "sha256": "60d07ce641e45b205ee7ab7f8eae65fbf112a44f417341ea4f1c86bb5564a06c"
+    },
+    {
+      "file": "composition/contract.ts",
+      "byteIdentical": false,
+      "transpiledRuntimeIdentical": true,
+      "sha256": "6beef091c1821a2a2580f8dfd98a5524b1668df5c68862c9e40f7c6be5c3dde9"
+    },
+    {
+      "file": "composition/provider.ts",
+      "byteIdentical": false,
+      "transpiledRuntimeIdentical": true,
+      "sha256": "bc5ca8f000d68f1ef613186fce72c3189d40770d23eb106c575441868c0573c8"
+    },
+    {
+      "file": "composition/engine.ts",
+      "byteIdentical": true,
+      "transpiledRuntimeIdentical": true,
+      "sha256": "99c34f072a9d1a40e28528298f811c0dbf7b20616f2b4270ab28fe503db5fe88"
+    },
+    {
+      "file": "composition/archived-workspace-compose.ts.txt",
+      "byteIdentical": true,
+      "transpiledRuntimeIdentical": true,
+      "sha256": "4ffbd327173d4fb8a9441a1fd051af77f6556124f02c79f59db57ab03a10d8bb"
+    }
+  ],
+  "experimentalDependencyAdded": false,
+  "strictConfigurationChanged": false
+}

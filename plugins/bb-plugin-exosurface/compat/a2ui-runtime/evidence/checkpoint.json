@@ -1,0 +1,101 @@
+{
+  "schema": "exosurface-zod3-shipping-candidate/1",
+  "observedAt": "2026-10-29T00:25:53.231669+00:00",
+  "releaseReady": false,
+  "scope": "Separate compatibility candidate; production plugin lock/renderer/provider unchanged",
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "freshInstall": {
+    "command": "npm ci --ignore-scripts --strict-peer-deps --omit=peer --no-fund --no-audit",
+    "exitCode": 0,
+    "packagesAdded": 44,
+    "peerConflictWarnings": 0,
+    "environment": "env -i, disposable HOME/TMPDIR/cache, npm user config /dev/null"
+  },
+  "reproducibility": {
+    "upstreamIntegrityVerified": true,
+    "freshDirectoryArtifactAndManifestByteIdentical": true,
+    "artifactSha256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+    "lockSha256": "7aa75a7a2748ce7256814551505efcf9fc19e075e0837d3bdebbc2ce80e6be8f"
+  },
+  "tests": {
+    "candidate": {
+      "passed": 19,
+      "failed": 0
+    },
+    "unmodifiedLegacy": {
+      "upstream": 36,
+      "patched": 36,
+      "failed": 0,
+      "suites": [
+        "workspace",
+        "snapshot-format",
+        "stage",
+        "incremental"
+      ]
+    },
+    "entrypoints": [
+      "ESM root",
+      "ESM /v3",
+      "CJS root",
+      "CJS /v3",
+      "TS source root",
+      "TS source /v3"
+    ],
+    "typechecks": [
+      "default declarations",
+      "@zod/source condition (actual src/v3/types.ts verified)"
+    ],
+    "parity": [
+      "sampled accepted sync/async outputs; preprocessing and union fallback",
+      "below-bound and unconstrained diagnostics",
+      "full official basic and Exo catalog JSON/child-reference maps",
+      "all basic component converter output and diagnostics",
+      "accepted existing workspace and 65-option ChoicePicker workspace"
+    ]
+  },
+  "resolutions": {
+    "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it": "0.2.1",
+    "node_modules/@get-bb/plugin-sdk/node_modules/zod": "4.6.6",
+    "node_modules/dompurify": "3.4.11",
+    "node_modules/zod": "3.25.76+exosurface.1"
+  },
+  "audit": {
+    "command": "npm audit --omit=dev --json",
+    "exitCode": 1,
+    "counts": {
+      "high": 4,
+      "critical": 1,
+      "total": 5
+    },
+    "zod": "Local 3.25.76-derived version remains scanner-flagged; upstream first patched version is 4.6.6. Local provenance/regressions require independent disposition.",
+    "separateFinding": "DOMPurify3.4.11 via preserved markdown-it0.2.1 is scanner-flagged by six advisories; separate finding, not Zod-patch failure or demonstrated renderer exposure. No fix/risk acceptance in this checkpoint."
+  },
+  "notProven": [
+    "browser renderer execution/interaction/reopen",
+    "real Pi/authenticated provider inference",
+    "release acceptance",
+    "universal resource-exhaustion safety",
+    "admitted-app exploit or vulnerability reachability"
+  ],
+  "narrativeCorrection": {
+    "originalCheckpoint": "c22ba24eac4a529a049f7f69af83607afac8b74e",
+    "incorrectProseVersion": "3.4.16",
+    "actualLockedAndInstalledVersion": "3.4.11",
+    "reason": "Advisory affected upper bound was incorrectly used as installed version in prose. Existing resolutions map, lock and raw audit were already correct.",
+    "artifactLockAndRawAuditUnchanged": true
+  },
+  "portableOfflineReview": {
+    "commands": "Revised compat/README.md shell block executed verbatim with explicitly configured absolute Node/npm/upstream-cache paths",
+    "exitCode": 0,
+    "network": false,
+    "cache": "Copied populated cache; no shared cache writes",
+    "strictPeerOfflineInstallPackages": 44,
+    "artifactAndManifestByteIdentical": true,
+    "candidateTestsPassed": 19,
+    "unmodifiedLegacyTestsPassedPerGraph": 36,
+    "bothTypechecksPassed": true,
+    "sourceConditionVerified": true,
+    "note": "This rerun does not change dependencies or test the proposed DOMPurify3.4.17 update."
+  }
+}

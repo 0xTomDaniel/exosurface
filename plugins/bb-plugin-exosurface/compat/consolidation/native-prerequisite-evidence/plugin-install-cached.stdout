@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "error": {
+    "code": "http_422",
+    "message": "HTTP 422: install failed: frontend bundle build for \"exosurface\" failed: EACCES: permission denied, mkdtemp '/tmp/exo-native-consolidated.QPR6vW/plugin/dist/.stage-FydbsK'"
+  }
+}

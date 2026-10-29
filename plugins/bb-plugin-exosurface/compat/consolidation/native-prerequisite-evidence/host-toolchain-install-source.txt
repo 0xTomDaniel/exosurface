@@ -1,0 +1,126 @@
+Installed BB0.45.0 /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js
+SHA256 db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228
+
+194731:   "const require = __createRequire(import.meta.url);",
+194732:   "var __filename = __fileURLToPath(import.meta.url);",
+194733:   "var __dirname = __pathDirname(__filename);"
+194734: ].join("\n");
+194735: var PLUGIN_TOOLCHAIN_PINS = {
+194736:   esbuild: "0.28.1",
+194737:   "@tailwindcss/node": "4.3.0",
+194738:   "@tailwindcss/oxide": "4.3.0",
+194739:   tailwindcss: "4.3.0"
+194740: };
+194741: function pinKey() {
+194742:   return Object.entries(PLUGIN_TOOLCHAIN_PINS).map(([name2, version4]) => `${name2}@${version4}`).sort().join(",");
+194743: }
+194744: function toolchainCacheDir(baseDir) {
+194745:   const key = Object.values(PLUGIN_TOOLCHAIN_PINS).join("-");
+194815:   }
+194816:   return toolchainFrom(createRequire3(join19(dir, "noop.js"))) !== null;
+194817: }
+194818: async function resolvePluginBuildToolchain(baseDir, options2) {
+194819:   if (options2?.ignoreLocal !== true) {
+194820:     const local = resolveLocalToolchain();
+194821:     if (local !== null) return local;
+194822:   }
+194823:   const dir = toolchainCacheDir(baseDir);
+194824:   if (await isInstalled(dir)) {
+194825:     const cached2 = toolchainFrom(createRequire3(join19(dir, "noop.js")));
+194826:     if (cached2 !== null) return cached2;
+194827:   }
+194828:   options2?.onFetchStart?.();
+194829:   const startedAt = Date.now();
+194830:   const staging = `${dir}.staging-${randomUUID11()}`;
+194831:   try {
+194832:     await mkdir7(staging, { recursive: true });
+194833:     await writeFile6(
+194834:       join19(staging, "package.json"),
+194835:       `${JSON.stringify({ name: "bb-plugin-toolchain", private: true, version: "0.0.0" }, null, 2)}
+194836: `
+194837:     );
+194838:     await run(
+194839:       process.execPath,
+194840:       [
+194841:         resolveBundledNpmCli(),
+194842:         "install",
+194843:         "--prefix",
+194844:         staging,
+194845:         "--ignore-scripts",
+194846:         "--no-audit",
+194847:         "--no-fund",
+194848:         "--no-package-lock",
+194849:         ...Object.entries(PLUGIN_TOOLCHAIN_PINS).map(
+194850:           ([name2, version4]) => `${name2}@${version4}`
+194851:         )
+194852:       ],
+194853:       {
+194854:         maxBuffer: 1024 * 1024 * 16,
+194855:         env: omitNpmScriptPolicyEnv(process.env)
+194856:       }
+194857:     );
+194858:     const staged = toolchainFrom(createRequire3(join19(staging, "noop.js")));
+194859:     if (staged === null) {
+194860:       throw new Error(
+194861:         "the downloaded plugin build toolchain is incomplete or misversioned"
+194862:       );
+194863:     }
+194864:     await writeFile6(
+194865:       join19(staging, ".bb-toolchain.json"),
+194866:       `${JSON.stringify({ pins: pinKey() }, null, 2)}
+194867: `
+194868:     );
+194869:     await mkdir7(dirname10(dir), { recursive: true });
+194870:     try {
+194871:       await rename4(staging, dir);
+194872:     } catch {
+194873:       if (!await isInstalled(dir)) throw new Error(errorPromoting(dir));
+194874:     }
+194875:   } finally {
+194876:     await rm5(staging, { recursive: true, force: true });
+194877:   }
+194878:   const promoted = toolchainFrom(createRequire3(join19(dir, "noop.js")));
+194879:   if (promoted === null) throw new Error(errorPromoting(dir));
+194880:   options2?.onFetchDone?.(Date.now() - startedAt);
+194881:   return promoted;
+194882: }
+194883: function errorPromoting(dir) {
+194884:   return `could not install the plugin build toolchain into ${dir}`;
+194885: }
+199575:     return manifest;
+199576:   }
+199577:   async function validateInstallDir(args) {
+199578:     const manifest = await validateManifestOnly(args);
+199579:     const kind = sourceKind(args.source);
+199580:     const managed = kind === "git" || kind === "npm";
+199581:     if (kind === "git") {
+199582:       await installGitDependencies(args.rootDir);
+199583:     }
+199584:     if (manifest.appEntry !== void 0) {
+199585:       if (kind === "npm") {
+199586:         const jsPresent = await stat10(join31(args.rootDir, "dist", "app.js")).then(() => true).catch(() => false);
+199587:         if (!jsPresent) {
+199588:           throw new Error(
+199589:             `install refused: npm plugins with a frontend (bb.app) must publish a prebuilt bundle \u2014 "${manifest.id}" is missing dist/app.js + dist/app.meta.json`
+199590:           );
+199591:         }
+199592:       } else if (!isPackagedBuiltinEntry({
+199593:         kind,
+199594:         manifest,
+199595:         rootDir: args.rootDir,
+199596:         artifact: "app"
+199597:       })) {
+199598:         try {
+199599:           await buildPluginApp(
+199600:             args.rootDir,
+199601:             deps.appVersion,
+199602:             await getPluginBuildToolchain(deps)
+199603:           );
+199604:         } catch (error3) {
+199605:           throw new Error(
+199606:             `install failed: frontend bundle build for "${manifest.id}" failed: ${error3 instanceof Error ? error3.message : String(error3)}`
+199607:           );
+199608:         }
+199609:       }
+199610:     }
+199611:     if (kind === "git") {

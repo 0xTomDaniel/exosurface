@@ -1,0 +1,21 @@
+130: 
+131: // ---- activation -----------------------------------------------------------------------------
+132: function copyRelease(artifactDir, prefix, manifest) {
+133:   const dest = join(prefix, 'releases', manifest.version);
+134:   if (existsSync(dest)) {
+135:     const have = verifyArtifact(dest);
+136:     if (sha256(JSON.stringify(have.files)) !== sha256(JSON.stringify(manifest.files))) fail(`${dest} exists with different content; release versions are immutable. Bump the version.`);
+137:     return dest; // identical: idempotent
+138:   }
+139:   const staging = join(prefix, 'releases', `.${manifest.version}.${process.pid}`);
+140:   removeTree(staging);
+141:   for (const e of walk(artifactDir)) {
+142:     const to = join(staging, e.rel);
+143:     if (e.kind === 'dir') mkdirSync(to, { recursive: true });
+144:     else if (e.kind === 'file') { mkdirSync(dirname(to), { recursive: true }); copyFileSync(e.abs, to); }
+145:     else fail(`${e.rel}: unexpected ${e.kind} in artifact`);
+146:   }
+147:   setReadOnly(staging);
+148:   verifyArtifact(staging);
+149:   renameSync(staging, dest);
+150:   return dest;

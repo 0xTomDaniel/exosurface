@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "$NODE_PREFIX/bin/node",
+    "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/index.js"
+  ],
+  "cwd": "/tmp/exo-native-source.RVkor2",
+  "env": {
+    "HOME": "/tmp/exo-native-source.RVkor2/home",
+    "TMPDIR": "/tmp/exo-native-source.RVkor2/tmp",
+    "PATH": "$NODE_PREFIX/bin:/usr/bin:/bin",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "NODE_OPTIONS": "--require=/tmp/exo-native-source.RVkor2/tripwire.cjs",
+    "EXO_NATIVE_ROOT": "/tmp/exo-native-source.RVkor2",
+    "BB_DATA_DIR": "/tmp/exo-native-source.RVkor2/bb-data",
+    "BB_SERVER_BIND_HOST": "127.0.0.1",
+    "BB_SERVER_PORT": "49173",
+    "BB_HOST_DAEMON_PORT": "49174",
+    "BB_SERVER_URL": "http://127.0.0.1:49173",
+    "BB_MARKETPLACE_URL": "http://127.0.0.1:49173/fixture-empty-catalog",
+    "BB_TELEMETRY": "false",
+    "NODE_ENV": "production",
+    "BB_HOST_DAEMON_AUTO_UPDATE": "false"
+  }
+}

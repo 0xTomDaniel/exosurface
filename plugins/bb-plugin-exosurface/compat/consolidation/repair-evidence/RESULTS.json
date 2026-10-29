@@ -1,0 +1,48 @@
+{
+  "producerSHA": "dcff5cb346138247f019c5602e09d11790f322c1",
+  "toolingSHA": "55a85b2f146a05b682fb165313c0d5bd608bf44e",
+  "artifact": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev",
+  "manifestSHA256": "ea25fb27a999f91ab1f5006e748260e8e51e6669833ac1720943be09492b0036",
+  "manifestChecksumSHA256": "fad0cfda0acf65a6f1dd33b3198e7139e861bbf332d3c40a9a0ff93a89605b29",
+  "source": {
+    "commit": "dcff5cb346138247f019c5602e09d11790f322c1",
+    "clean": true
+  },
+  "node": "24.15.0",
+  "npm": "11.12.1",
+  "resources": 312,
+  "entrypointImports": [
+    {
+      "entry": "owner-service",
+      "exit": 0,
+      "stdout": "{\"ok\":true,\"contract\":\"exosurface-package/0\",\"runtimeImplemented\":true,\"implementation\":\"existing-primary-owner\",\"releaseReady\":false}\n{\"entry\":\"owner-service\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "live",
+      "exit": 0,
+      "stdout": "{\"entry\":\"live\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "fixture",
+      "exit": 0,
+      "stdout": "{\"entry\":\"fixture\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "workspace-extension",
+      "exit": 0,
+      "stdout": "{\"entry\":\"workspace-extension\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "workspace-frame",
+      "exit": 0,
+      "stdout": "{\"entry\":\"workspace-frame\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    }
+  ],
+  "security": "No fresh advisory/network audit; historical narrow parser audit is not blanket clearance",
+  "nativeProductAcceptance": "NOT RUN at this checkpoint",
+  "independentlyReviewed": "Producer checks reported by author, not independently reviewed. Parent independently reports tooling20/20 only.",
+  "readiness": {
+    "exit": 2,
+    "ready": false
+  }
+}

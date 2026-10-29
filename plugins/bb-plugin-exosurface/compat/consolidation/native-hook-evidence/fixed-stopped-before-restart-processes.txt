@@ -1,0 +1,9 @@
+64632 /bin/bash -c R=$(cat /tmp/exo-native-source-path); /usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/python3 -B - <<'PY'
+from pathlib import Path
+r=Path('/tmp/exo-native-source.RVkor2');
+for name in ['native-server-invocation.json','native-server.stdout','native-server.stderr','native-server.exit','launcher.stdout','launcher.stderr']:
+ p=r/'evidence'/name
+ if p.exists():p.rename(p.with_name('loaded-run-'+name))
+PY
+/usr/bin/pgrep -fal "$R" | cut -c1-240 > "$R/evidence/fixed-stopped-before-restart-processes.txt";
+/usr/bin/env -i HOME="$R/fixed-home" TMPDIR="$R/tmp" PATH=/usr/bin:/bin /usr/bin/python3 -B "$R/launch-fixed.py" "$R" > "$R/evidence/launcher.stdout" 2> "$R/evidence/launcher.stderr" & echo $! > "$R/launcher.pid"

@@ -1,0 +1,9 @@
+64837 /bin/bash -c R=$(cat /tmp/exo-native-source-path); sleep 3; /usr/bin/pgrep -fal "$R" | cut -c1-240 > "$R/evidence/final-processes.txt"; /usr/sbin/lsof -nP -iTCP:49173 -sTCP:LISTEN > "$R/evidence/final-listener.txt" 2> "$R/evidence/fin
+from pathlib import Path
+import json
+r=Path('/tmp/exo-native-source.RVkor2')
+for d in ['pinned-artifacts','fixed-artifacts']:
+ m=json.loads((r/d/'exosurface-0.1.0-dev/MANIFEST.json').read_text());print(d,list(m),len(m['files']),list(m['files'])[:2] if isinstance(m['files'],dict) else m['files'][:2]);print('dist',[(x.get('path') if isinstance(x,dict) else x) for x 
+p=json.loads((r/'evidence/native-restart-workspace.json').read_text());s=p['body']['result'];print('restart',p['status'],s['revision'],s['threadId'],s['delivery']['checkpoint'] is not None)
+print('evidence files',sum(p.is_file() for p in (r/'evidence').iterdir()))
+PY

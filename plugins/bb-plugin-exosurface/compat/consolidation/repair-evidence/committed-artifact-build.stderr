@@ -1,0 +1,1 @@
+Refusing to build from /tmp/exo-packaging-repair.GLh4R1/committed/plugins/bb-plugin-exosurface: uncommitted changes in package. Commit first, or pass --allow-dirty (recorded in the manifest as clean:false).

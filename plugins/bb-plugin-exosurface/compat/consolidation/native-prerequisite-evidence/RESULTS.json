@@ -1,0 +1,19 @@
+{
+  "artifactSource": "dcff5cb346138247f019c5602e09d11790f322c1",
+  "tooling": "55a85b2f146a05b682fb165313c0d5bd608bf44e",
+  "manifestSHA256": "ea25fb27a999f91ab1f5006e748260e8e51e6669833ac1720943be09492b0036",
+  "installedBB": "0.45.0",
+  "nativeServerHealth": true,
+  "nativeExosurfaceRegistered": false,
+  "providerCalled": false,
+  "nativeProductAcceptance": "BLOCKED BEFORE REGISTRATION: supported local-path route rebuilds app.tsx and omitted legacy imports cannot resolve",
+  "teardown": {
+    "serverExit": 0,
+    "earlierHealthyServerExit": 0,
+    "forced": false,
+    "processGroupGone": true,
+    "postTeardownCurlExit": 7
+  },
+  "cachedToolchain": "complete existing disposable cache copied, no installation/fetch",
+  "correction": "awaiting read-only host/release route trace; no production source/package change"
+}

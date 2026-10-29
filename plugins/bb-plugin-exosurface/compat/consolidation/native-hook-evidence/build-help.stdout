@@ -1,0 +1,11 @@
+Usage: bb plugin build [options] [path]
+
+Compile the plugin into dist/: the bb.server backend bundle (server.js,
+server.meta.json), plus, when declared, the bb.app frontend bundle (app.js,
+app.css, app.meta.json) and the self-contained bb.host daemon bundle (host.js,
+host.js.map, host.meta.json) — which carries the plugin's host RPC entry, its
+provider bridge, or both; each *.meta.json stamps SDK/identity metadata; no
+server required
+
+Options:
+  -h, --help  display help for command

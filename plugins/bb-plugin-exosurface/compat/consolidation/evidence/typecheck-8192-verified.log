@@ -1,0 +1,19 @@
+legacy/surface/composition/contract.ts(3,57): error TS2307: Cannot find module '@json-render/core' or its corresponding type declarations.
+legacy/surface/composition/contract.ts(49,219): error TS7006: Parameter 'value' implicitly has an 'any' type.
+legacy/surface/composition/contract.ts(54,108): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(55,46): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(59,38): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(59,51): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(60,11): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(61,6): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(61,25): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(61,65): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(61,82): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(61,102): error TS7006: Parameter 'k' implicitly has an 'any' type.
+legacy/surface/composition/contract.ts(62,11): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(63,11): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(64,11): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/contract.ts(65,11): error TS18046: 'e' is of type 'unknown'.
+legacy/surface/composition/engine.ts(1,50): error TS2307: Cannot find module '@json-render/core' or its corresponding type declarations.
+legacy/surface/composition/provider.ts(5,82): error TS2307: Cannot find module '@json-render/core' or its corresponding type declarations.
+legacy/surface/composition/provider.ts(74,16): error TS7006: Parameter 'request' implicitly has an 'any' type.

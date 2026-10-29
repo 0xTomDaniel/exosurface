@@ -1,0 +1,90 @@
+(node:26391) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26394) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ fresh + retry use one profile/thread; no active-memory fabricated; preserve vault (124.288375ms)
+✔ profile configured interrupted; retries without replacement (106.173417ms)
+✔ existing profile unclaimed or newer state refuses, zero overwrite (54.681583ms)
+✔ durable lookup recovers BB-created thread before local receipt, never unrelated candidate (145.133042ms)
+✔ uncertain BB creation before/after spawn fails closed, no second spawn (461.774667ms)
+✔ environment allowlist strips inherited live selectors and vendor credentials (0.473458ms)
+✔ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (389.027958ms)
+✖ real socket → mock Pi RPC → response page; full long input; wrong thread refused (206.811958ms)
+✔ concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated (53.181583ms)
+✔ concrete BB receipt survives interruption before bootstrap local receipt (29.91225ms)
+✖ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (1128.50325ms)
+✔ initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text (86.993125ms)
+(node:26395) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (3.32375ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (0.450542ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.378541ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.531166ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (8.540166ms)
+(node:26396) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime (2.885959ms)
+✔ durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite (248.242042ms)
+✔ press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry (302.583292ms)
+✔ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (751.073875ms)
+✔ built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps (1.078542ms)
+✔ unsupported persisted pages and interrupted mutation locks fail closed without overwrite (48.988417ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 21
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4639.5505
+
+✖ failing tests:
+
+test at test/first-run.test.ts:93:1
+✖ real socket → mock Pi RPC → response page; full long input; wrong thread refused (206.811958ms)
+  AssertionError [ERR_ASSERTION]: Run isolated bb plugin build before this integration test
+      at TestContext.<anonymous> ($FIXTURE/backend-typecheck/test/first-run.test.ts:111:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/first-run.test.ts:167:1
+✖ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (1128.50325ms)
+  AssertionError [ERR_ASSERTION]: node:internal/modules/esm/resolve:271
+      throw new ERR_MODULE_NOT_FOUND(
+            ^
+  
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '$FIXTURE/backend-typecheck/dist/host.js' imported from $FIXTURE/tmp/exo-fr-L1vLUB/vault/[eval1]
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:861:10)
+      at defaultResolve (node:internal/modules/esm/resolve:988:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:697:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:714:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:746:52)
+      at #resolve (node:internal/modules/esm/loader:679:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:599:35)
+      at node:internal/modules/esm/loader:628:32
+      at TracingChannel.tracePromise (node:diagnostics_channel:362:14) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file://$FIXTURE/backend-typecheck/dist/host.js'
+  }
+  
+  Node.js v24.15.0
+  
+      at TestContext.<anonymous> ($FIXTURE/backend-typecheck/test/first-run.test.ts:183:10)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /turn.boundary/,
+    operator: 'match',
+    diff: 'simple'
+  }

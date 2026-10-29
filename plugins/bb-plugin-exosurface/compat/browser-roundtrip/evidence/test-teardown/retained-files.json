@@ -1,0 +1,90 @@
+{
+  "schema": "exosurface-retained-test-teardown/0",
+  "base": "57fc59feee7dde391e8708a1afa618c327a01042",
+  "releaseReady": false,
+  "normalization": "Text path prefixes only; raw originals retained in owned cleanup fixture evidence root",
+  "files": [
+    {
+      "path": "cleanup-final-typecheck.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "cleanup-typecheck.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "post-suite-cleanup-final.json",
+      "originalSha256": "a25fd74324d4292bd4b2811e1c3730ee7beb99893e3d0d9ca49a1dd7f813ed96",
+      "committedSha256": "a25fd74324d4292bd4b2811e1c3730ee7beb99893e3d0d9ca49a1dd7f813ed96",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "post-suite-cleanup-fresh-repeat.json",
+      "originalSha256": "a64a660f812f8b33ef3513ce62200a19bac6686989a8729e4d22b2ef0616060c",
+      "committedSha256": "a64a660f812f8b33ef3513ce62200a19bac6686989a8729e4d22b2ef0616060c",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "post-suite-cleanup-repeat-failure.exit",
+      "originalSha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "committedSha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "post-suite-cleanup-repeat-failure.log",
+      "originalSha256": "238e14c946af2dba5ef4b0ac4499cd720b25103bb5b5bdcff0dd2aa440231bed",
+      "committedSha256": "ac4eee5a9920babde6ebeb486c14b1a5a6a288669844bfa6f19560db2b7a030f",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "post-suite-cleanup-repeat.json",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "post-suite-cleanup.json",
+      "originalSha256": "a8d96985939a89b8735f65e8e4a66e981127f00cef951e2b499d517c53310e81",
+      "committedSha256": "a8d96985939a89b8735f65e8e4a66e981127f00cef951e2b499d517c53310e81",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "production-tests-final.tap",
+      "originalSha256": "aa2af07afacccd95146cdecc12e34cc4904437e26e77bd255213f8e91d326b59",
+      "committedSha256": "aa2af07afacccd95146cdecc12e34cc4904437e26e77bd255213f8e91d326b59",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "production-tests-fresh-repeat.tap",
+      "originalSha256": "d62933a6776b9becb0e85c7fe0e0b7420547b790f242577d9302cfe3c3dd1792",
+      "committedSha256": "d62933a6776b9becb0e85c7fe0e0b7420547b790f242577d9302cfe3c3dd1792",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "production-tests-repeat.tap",
+      "originalSha256": "cc58cd0ab0430dbc8e3c2542e7e051f4581a33188ae79a5d3d2c66f294273e48",
+      "committedSha256": "cc58cd0ab0430dbc8e3c2542e7e051f4581a33188ae79a5d3d2c66f294273e48",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "production-tests.tap",
+      "originalSha256": "c35478e3383498440636caf233c046b39486ce2f3c2581c27ee95ee0e8b756e2",
+      "committedSha256": "c35478e3383498440636caf233c046b39486ce2f3c2581c27ee95ee0e8b756e2",
+      "pathPrefixesNormalized": false
+    }
+  ],
+  "productionChanged": false,
+  "finalSuitePassed": 25,
+  "finalSuiteFailed": 0,
+  "finalExternalRootReceipts": 18,
+  "finalOwnedChildPidsGone": 5,
+  "finalDedicatedTmpdirEmpty": true,
+  "newStrictTypecheckExit": 0,
+  "pinnedBrowserSampleUtf16Units": 901,
+  "pinnedBrowserSampleBytes": 925,
+  "pinnedBrowserOver1000Acceptance": false
+}

@@ -1,0 +1,13 @@
+/private/tmp/exo-native-source.RVkor2/npm-tripwire.cjs:3
+function deny(kind,details){append(log,JSON.stringify({pid:process.pid,kind,details})+'\n');throw Error('DISPOSABLE TRIPWIRE: '+kind+' '+JSON.stringify(details));}
+                                                                                                  ^
+
+Error: DISPOSABLE TRIPWIRE: child-process {"name":"spawnSync","args":["$NODE_PREFIX/bin/node",["--input-type=module","-e","const m=await import(\"file:///tmp/exo-native-source.RVkor2/fixed-artifacts/exosurface-0.1.0-dev/plugin/dist/owner-service.js\");console.log(JSON.stringify({entry:\"owner-service\",imported:true,registered:false,providerCalled:false}));","--","--release-selftest"]],"cwd":"/tmp/exo-native-source.RVkor2/fixed-artifacts/exosurface-0.1.0-dev/plugin"}
+    at deny (/private/tmp/exo-native-source.RVkor2/npm-tripwire.cjs:3:99)
+    at cp.<computed> (/private/tmp/exo-native-source.RVkor2/npm-tripwire.cjs:6:1157)
+    at file:///private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/test/consolidation-relocated.mjs:15:15
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.15.0

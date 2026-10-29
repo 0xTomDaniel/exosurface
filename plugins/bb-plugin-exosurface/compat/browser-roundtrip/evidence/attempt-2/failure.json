@@ -1,0 +1,5 @@
+{
+  "error": "Error: ENOENT: no such file or directory, open '$HOME/Documents$FIXTURE/tmp/exo-roundtrip-ukIM1B/client/legacy/src/exo-catalog.ts'",
+  "stack": "Error: ENOENT: no such file or directory, open '$HOME/Documents$FIXTURE/tmp/exo-roundtrip-ukIM1B/client/legacy/src/exo-catalog.ts'\n    at Object.openSync (node:fs:561:18)\n    at readFileSync (node:fs:445:35)\n    at file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:85:182\n    at Array.map (<anonymous>)\n    at file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:85:62\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)",
+  "ownerStderr": ""
+}

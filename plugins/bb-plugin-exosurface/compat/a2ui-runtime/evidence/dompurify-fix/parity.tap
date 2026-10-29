@@ -1,0 +1,128 @@
+TAP version 13
+# upstream unmodified legacy fixtures: \# tests 36; \# pass 36; \# fail 0
+# patched unmodified legacy fixtures: \# tests 36; \# pass 36; \# fail 0
+# (node:20777) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: ESM root: constrained rejection before child parsing, refinements and async dispatch
+ok 1 - ESM root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 5.8635
+  type: 'test'
+  ...
+# Subtest: ESM root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 2 - ESM root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 1252.828917
+  type: 'test'
+  ...
+# Subtest: ESM /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 3 - ESM /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.92075
+  type: 'test'
+  ...
+# Subtest: ESM /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 4 - ESM /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 563.096209
+  type: 'test'
+  ...
+# Subtest: CJS root: constrained rejection before child parsing, refinements and async dispatch
+ok 5 - CJS root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 2.354125
+  type: 'test'
+  ...
+# Subtest: CJS root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 6 - CJS root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 2.708833
+  type: 'test'
+  ...
+# Subtest: CJS /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 7 - CJS /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.380125
+  type: 'test'
+  ...
+# Subtest: CJS /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 8 - CJS /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 1.014625
+  type: 'test'
+  ...
+# Subtest: TS source root: constrained rejection before child parsing, refinements and async dispatch
+ok 9 - TS source root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 2.299083
+  type: 'test'
+  ...
+# Subtest: TS source root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 10 - TS source root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 2.337292
+  type: 'test'
+  ...
+# Subtest: TS source /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 11 - TS source /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.439459
+  type: 'test'
+  ...
+# Subtest: TS source /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 12 - TS source /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 0.990333
+  type: 'test'
+  ...
+# Subtest: Finite upstream control demonstrates pre-child mechanism gap, not an application exploit
+ok 13 - Finite upstream control demonstrates pre-child mechanism gap, not an application exploit
+  ---
+  duration_ms: 0.285042
+  type: 'test'
+  ...
+# Subtest: Artifact identity: only three implementations, version and notice differ; license/API/type files unchanged
+ok 14 - Artifact identity: only three implementations, version and notice differ; license/API/type files unchanged
+  ---
+  duration_ms: 3578.154583
+  type: 'test'
+  ...
+# Subtest: Actual renderer/core/converter resolve patched v3; SDK independently resolves pinned Zod4
+ok 15 - Actual renderer/core/converter resolve patched v3; SDK independently resolves pinned Zod4
+  ---
+  duration_ms: 843.931042
+  type: 'test'
+  ...
+# Subtest: Unchanged official basic catalog schema, child refs, converter and >64 ChoicePicker options
+ok 16 - Unchanged official basic catalog schema, child refs, converter and >64 ChoicePicker options
+  ---
+  duration_ms: 27.542292
+  type: 'test'
+  ...
+# Subtest: Existing Exo catalog schema/refs and accepted workspace including 65 options preserve output
+ok 17 - Existing Exo catalog schema/refs and accepted workspace including 65 options preserve output
+  ---
+  duration_ms: 103.718834
+  type: 'test'
+  ...
+# Subtest: Unmodified legacy upstream snapshot/workspace/stage/incremental fixture suite
+ok 18 - Unmodified legacy upstream snapshot/workspace/stage/incremental fixture suite
+  ---
+  duration_ms: 747.763709
+  type: 'test'
+  ...
+# Subtest: Unmodified legacy patched snapshot/workspace/stage/incremental fixture suite
+ok 19 - Unmodified legacy patched snapshot/workspace/stage/incremental fixture suite
+  ---
+  duration_ms: 730.144458
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16429.597917

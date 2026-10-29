@@ -1,0 +1,148 @@
+{
+  "schema": "exosurface-existing-ui-roundtrip/0",
+  "releaseReady": false,
+  "passed": true,
+  "first": {
+    "inputMethod": "CDP Input.insertText + actual pointer press",
+    "revision": 4,
+    "fullTextPreserved": true,
+    "updatedHeadingVisible": true,
+    "browser": "Chrome/131.0.6778.204",
+    "lifecycle": {
+      "deadlineMs": 20000,
+      "closeRequested": true,
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "forced": false,
+      "processGroupGone": true
+    }
+  },
+  "reopened": {
+    "freshBrowserProfile": true,
+    "revision": 4,
+    "fullTextPreserved": true,
+    "updatedHeadingVisible": true,
+    "browser": "Chrome/131.0.6778.204",
+    "lifecycle": {
+      "deadlineMs": 20000,
+      "closeRequested": true,
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "forced": false,
+      "processGroupGone": true
+    }
+  },
+  "fullText": {
+    "characters": 901,
+    "bytes": 925,
+    "sha256": "bedd00ae68e3f299e402b9977f0cd925b43af494ead30242d7e4158c59ead80b"
+  },
+  "graph": {
+    "react": "19.2.4",
+    "a2ui": "0.13.0",
+    "markdown": "0.2.1",
+    "dompurify": "3.4.17",
+    "rendererZod": "3.25.76+exosurface.1",
+    "backendZod": "4.6.6"
+  },
+  "reused": [
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/exo-catalog.ts",
+      "sha256": "f28549b2d98313d4481053d2e9a57f78a0719f93f5a3f5e803eac715e4a5c292"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/stage.ts",
+      "sha256": "abb7660ca39d89ffa0815b583b178472ddf6daa0eebfdf18a322c092a25416c9"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/workspace.ts",
+      "sha256": "2d238b180e0e5174c219df92a5829af5ffdf001858a0f53eafa3a0cc91f5d6ff"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/drafts.ts",
+      "sha256": "ebb3c2f3516e60ba7fb72919aa22abf18778ae670c881c3110d8faa3f70d0ac8"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/workspace-view.ts",
+      "sha256": "af14d03f93ad5671c840881d936c4fd93fdb59ed06ba0c5ef8394e6c26439088"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/src/exo-components.tsx",
+      "sha256": "991777a1f5785f634f4c70eda0703a4b7ca2180cd3daebade33eb85b0a86305e"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/lib/document-style.ts",
+      "sha256": "c781a5b403cd6ce070e0ee20e336008dd5a0dedf301853c4124c76b93e9491a2"
+    },
+    {
+      "path": "bb-plugin-exo-a2ui-spike/lib/exo-theme.ts",
+      "sha256": "82b1bb03613af2310c6359f33895011a91dc702753f135606b7f71bf1e17bac0"
+    }
+  ],
+  "backendBundleSha256": "52a7a078f69be79afde6da2cd2f070fcd360eb3e8f9d539acfc49987a313edb9",
+  "browserBundleSha256": "545adfb8891e6e7323b8f818bd5f431f068a5b967c75fe6d2c0f61085c9f6970",
+  "calls": [
+    {
+      "method": "pageEdit",
+      "input": {
+        "threadId": "primary",
+        "baseRevision": 1,
+        "mutationId": "38358b0b-331e-4476-8635-083b1445da23",
+        "surfaceId": "page",
+        "ref": "entry",
+        "value": "  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  FINAL COMPLETE VALUE  \n"
+      },
+      "result": {
+        "revision": 2,
+        "duplicate": false
+      }
+    },
+    {
+      "method": "pagePress",
+      "input": {
+        "threadId": "primary",
+        "baseRevision": 2,
+        "mutationId": "63d62045-98b5-4de5-b26a-e48a80419bf1",
+        "surfaceId": "page",
+        "ref": "send",
+        "values": {
+          "entry": "  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  leading whitespace\n🧪 Unicode & <script>literal textbox value</script>\n  FINAL COMPLETE VALUE  \n"
+        }
+      },
+      "result": {
+        "revision": 3,
+        "duplicate": false
+      }
+    }
+  ],
+  "owner": {
+    "independentProcess": true,
+    "ownerPid": 27050,
+    "piPid": 27052,
+    "promptCount": 1,
+    "compiledPageTools": true,
+    "dispatch": "sent",
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "processGroupGone": true
+  },
+  "persistedPageSha256": "46604af63220c03b705f69c950464617c5b2889a335067c8bbdf7ca62308d1c3",
+  "limitations": [
+    "Mock Pi, manually registered compiled tools, synthetic auth artifact; NOT actual Pi extension loader, inference or authentication proof",
+    "Loopback stand-in for BB transport; no native BB/ThreadChat/product integration proof",
+    "Existing isolated candidate graph, not adoption into production plugin lock",
+    "Single-page browser milestone; not minimum-Node/platform/layout/release acceptance",
+    "Same-account scrubbed HOME isolation, not an OS sandbox"
+  ],
+  "cleanup": {
+    "fixtureRemoved": true,
+    "httpServerClosed": true,
+    "forbiddenServiceAttempts": 0
+  }
+}

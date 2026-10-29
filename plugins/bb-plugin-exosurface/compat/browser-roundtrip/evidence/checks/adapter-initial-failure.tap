@@ -1,0 +1,25 @@
+(node:26006) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (1.130041ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (0.320333ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.154042ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.344292ms)
+✖ adapter rejects a concurrent second press and never sends a press after failed edit (0.226083ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97.887834
+
+✖ failing tests:
+
+test at plugins/bb-plugin-exosurface/test/page-renderer-adapter.test.ts:41:1
+✖ adapter rejects a concurrent second press and never sends a press after failed edit (0.226083ms)
+  TypeError: release is not a function
+      at TestContext.<anonymous> ($WORKTREE/plugins/bb-plugin-exosurface/test/page-renderer-adapter.test.ts:45:64)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)

@@ -1,0 +1,1 @@
+200 {"ok":true,"result":{"threadId":null,"ready":false,"streaming":false,"revision":0,"delivery":{"epoch":"legacy","checkpoint":null,"updates":[],"preview":null},"composition":{"configured":false,"surfaceId":null,"candidateCount":0,"running":false,"lastRun":null},"observer":null}}

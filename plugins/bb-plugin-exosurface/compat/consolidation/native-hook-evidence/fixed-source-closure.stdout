@@ -1,0 +1,145 @@
+{
+  "format": "exosurface-source-closure/0",
+  "entries": [
+    "app.tsx",
+    "host.ts",
+    "server.ts"
+  ],
+  "files": [
+    "app.tsx",
+    "host.ts",
+    "legacy/primary/app.tsx",
+    "legacy/primary/host.ts",
+    "legacy/primary/server.ts",
+    "legacy/primary/src/local-config.ts",
+    "legacy/primary/src/model-selection.ts",
+    "legacy/primary/src/overview.ts",
+    "legacy/primary/src/owner-client.ts",
+    "legacy/primary/src/pi-rpc.ts",
+    "legacy/primary/src/runtime.ts",
+    "legacy/primary/src/state.ts",
+    "legacy/surface/app.tsx",
+    "legacy/surface/composition/client.ts",
+    "legacy/surface/lib/document-style.ts",
+    "legacy/surface/lib/exo-theme.ts",
+    "legacy/surface/observer/client.ts",
+    "legacy/surface/server.ts",
+    "legacy/surface/src/canvas-client.ts",
+    "legacy/surface/src/canvas-history.ts",
+    "legacy/surface/src/canvas-input.ts",
+    "legacy/surface/src/canvas-memory.ts",
+    "legacy/surface/src/delivery.ts",
+    "legacy/surface/src/drafts.ts",
+    "legacy/surface/src/exo-catalog.ts",
+    "legacy/surface/src/exo-components.tsx",
+    "legacy/surface/src/local-config.ts",
+    "legacy/surface/src/rewind-store.ts",
+    "legacy/surface/src/snapshot-format.ts",
+    "legacy/surface/src/stage.ts",
+    "legacy/surface/src/state.ts",
+    "legacy/surface/src/workspace-view.ts",
+    "legacy/surface/src/workspace.ts",
+    "server.ts",
+    "src/input.ts"
+  ],
+  "addedLegacySources": [
+    "legacy/primary/app.tsx",
+    "legacy/primary/host.ts",
+    "legacy/primary/server.ts",
+    "legacy/primary/src/local-config.ts",
+    "legacy/primary/src/model-selection.ts",
+    "legacy/primary/src/overview.ts",
+    "legacy/primary/src/owner-client.ts",
+    "legacy/primary/src/pi-rpc.ts",
+    "legacy/primary/src/runtime.ts",
+    "legacy/primary/src/state.ts",
+    "legacy/surface/app.tsx",
+    "legacy/surface/composition/client.ts",
+    "legacy/surface/lib/document-style.ts",
+    "legacy/surface/lib/exo-theme.ts",
+    "legacy/surface/observer/client.ts",
+    "legacy/surface/server.ts",
+    "legacy/surface/src/canvas-client.ts",
+    "legacy/surface/src/canvas-history.ts",
+    "legacy/surface/src/canvas-input.ts",
+    "legacy/surface/src/canvas-memory.ts",
+    "legacy/surface/src/delivery.ts",
+    "legacy/surface/src/drafts.ts",
+    "legacy/surface/src/exo-catalog.ts",
+    "legacy/surface/src/exo-components.tsx",
+    "legacy/surface/src/local-config.ts",
+    "legacy/surface/src/rewind-store.ts",
+    "legacy/surface/src/snapshot-format.ts",
+    "legacy/surface/src/stage.ts",
+    "legacy/surface/src/state.ts",
+    "legacy/surface/src/workspace-view.ts",
+    "legacy/surface/src/workspace.ts"
+  ],
+  "dependencyInputs": [
+    "legacy/surface/package.json",
+    "legacy/surface/package-lock.json",
+    "legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz"
+  ],
+  "dependencyDirectories": [
+    ".",
+    "legacy/surface"
+  ],
+  "bareImports": {
+    "@a2ui/markdown-it": [
+      "legacy/surface/app.tsx"
+    ],
+    "@a2ui/react/v0_9": [
+      "legacy/surface/app.tsx",
+      "legacy/surface/src/exo-components.tsx"
+    ],
+    "@a2ui/web_core/v0_9": [
+      "legacy/surface/src/exo-catalog.ts",
+      "legacy/surface/src/workspace-view.ts",
+      "legacy/surface/src/workspace.ts"
+    ],
+    "@a2ui/web_core/v0_9/basic_catalog": [
+      "legacy/surface/app.tsx",
+      "legacy/surface/src/exo-catalog.ts",
+      "legacy/surface/src/workspace-view.ts",
+      "legacy/surface/src/workspace.ts"
+    ],
+    "@get-bb/plugin-sdk": [
+      "legacy/primary/server.ts",
+      "legacy/surface/server.ts",
+      "server.ts"
+    ],
+    "@get-bb/plugin-sdk/app": [
+      "app.tsx",
+      "legacy/primary/app.tsx",
+      "legacy/surface/app.tsx"
+    ],
+    "@get-bb/plugin-sdk/provider-bridge": [
+      "legacy/primary/host.ts"
+    ],
+    "react": [
+      "legacy/primary/app.tsx",
+      "legacy/surface/app.tsx",
+      "legacy/surface/src/exo-components.tsx",
+      "legacy/surface/src/rewind-store.ts"
+    ],
+    "react/jsx-runtime": [
+      "legacy/primary/app.tsx",
+      "legacy/surface/app.tsx",
+      "legacy/surface/src/exo-components.tsx"
+    ],
+    "zod": [
+      "legacy/primary/server.ts",
+      "legacy/surface/server.ts",
+      "legacy/surface/src/delivery.ts",
+      "legacy/surface/src/exo-catalog.ts",
+      "legacy/surface/src/workspace.ts"
+    ]
+  },
+  "patchedTarSHA256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+  "patchedLockEntries": 1,
+  "resources": 312,
+  "negativeAllowlistChecks": 2,
+  "sdkLicense": "0.6.15 upstream package has no license metadata/file; rights acceptance unresolved",
+  "nativeAcceptance": "NOT PROVEN BY THIS STATIC TEST",
+  "releaseReady": false
+}

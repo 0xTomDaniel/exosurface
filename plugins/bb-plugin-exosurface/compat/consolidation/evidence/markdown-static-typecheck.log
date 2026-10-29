@@ -1,0 +1,5 @@
+../../../../../../../tmp/exo-consolidation.tio5eJ/markdown-static-probe/document.ts(18,17): error TS2531: Object is possibly 'null'.
+../../../../../../../tmp/exo-consolidation.tio5eJ/markdown-static-probe/document.ts(18,65): error TS2531: Object is possibly 'null'.
+../../../../../../../tmp/exo-consolidation.tio5eJ/markdown-static-probe/document.ts(20,28): error TS18047: 'token.map' is possibly 'null'.
+../../../../../../../tmp/exo-consolidation.tio5eJ/markdown-static-probe/document.ts(20,45): error TS2531: Object is possibly 'null'.
+../../../../../../../tmp/exo-consolidation.tio5eJ/markdown-static-probe/document.ts(28,100): error TS18047: 't.map' is possibly 'null'.

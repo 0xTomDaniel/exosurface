@@ -1,0 +1,110 @@
+[
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      194345,
+      194535
+    ],
+    "extract": "trace-host.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      194900,
+      195060
+    ],
+    "extract": "trace-server-build.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      195414,
+      195460
+    ],
+    "extract": "trace-host-build.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      196410,
+      196460
+    ],
+    "extract": "trace-sources.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      196775,
+      196810
+    ],
+    "extract": "trace-manifest.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      199575,
+      199670
+    ],
+    "extract": "trace-install.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      201940,
+      201975
+    ],
+    "extract": "trace-cached-server.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      202635,
+      202920
+    ],
+    "extract": "trace-runtime-route.txt"
+  },
+  {
+    "file": "/tmp/exo-packaging-repair.GLh4R1/tooling-55a85b2/tools/release/lib/artifact.mjs",
+    "sha256": "995a52f9837b13b11db62a068d8447853c5f972706b821fa5fa070ae59f8a4b6",
+    "lines": [
+      20,
+      70
+    ],
+    "extract": "trace-artifact.txt"
+  },
+  {
+    "file": "/tmp/exo-packaging-repair.GLh4R1/tooling-55a85b2/tools/release/lib/lifecycle.mjs",
+    "sha256": "b2e02461b06ce8e42626e3dcdf7bc7437ed258748d4ee6eaa60036ccc8586247",
+    "lines": [
+      130,
+      150
+    ],
+    "extract": "trace-lifecycle.txt"
+  },
+  {
+    "file": "/tmp/exo-packaging-repair.GLh4R1/tooling-55a85b2/tools/release/lib/doctor.mjs",
+    "sha256": "25f19cf894d3b55cd0227749beea99e11ad32fd6889f62e0307a09dc90a70357",
+    "lines": [
+      103,
+      108
+    ],
+    "extract": "trace-doctor.txt"
+  },
+  {
+    "file": "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/start-server.js",
+    "sha256": "db0cad113c6ef945a900b958bb0d836e2501d674f925c13f8e8b5e43e2a45228",
+    "lines": [
+      203827,
+      203853
+    ],
+    "extract": "trace-path-install.txt"
+  }
+]

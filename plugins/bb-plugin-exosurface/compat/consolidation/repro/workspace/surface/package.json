@@ -1,0 +1,10 @@
+{
+  "name": "exo-private-surface-repro",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@a2ui/markdown-it": "0.2.1",
+    "@a2ui/web_core": "0.13.0",
+    "zod": "file:vendor/zod3/zod-3.25.76-exosurface.1.tgz"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "path": "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+  "sha256": "fe97296e7e928104d77efb8b274f3bd6bac79e2250dec15551879e652cd5bb69",
+  "args": [
+    "--headless=new",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-sync",
+    "--disable-breakpad",
+    "--proxy-server=http://127.0.0.1:9",
+    "--proxy-bypass-list=127.0.0.1;localhost",
+    "--host-resolver-rules=MAP * ~NOTFOUND,EXCLUDE localhost,EXCLUDE 127.0.0.1",
+    "--remote-debugging-port=0",
+    "--user-data-dir=/tmp/exo-native-source.RVkor2/chromium-profile-2",
+    "about:blank",
+    "--disable-default-apps",
+    "--disable-extensions",
+    "--disable-crash-reporter",
+    "--password-store=basic",
+    "--use-mock-keychain",
+    "--metrics-recording-only",
+    "--disable-features=BraveRewards,BraveWallet,OptimizationHints,MediaRouter,Translate"
+  ],
+  "networkPolicy": "private fresh profile; deny proxy for external URLs + resolver exclusions limited to localhost, CDP Fetch aborts any non-loopback request before app navigation; instrumentation not OS sandbox"
+}

@@ -1,0 +1,9 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: {"error":"Error: Browser hard 20s deadline (including shutdown); run FAILED","closeRequested":false,"stderr":"\nDevTools listening on ws://127.0.0.1:56077/devtools/browser/eadbbb95-2a6d-46ae-9485-b2c6a0398754\n"}
+    at interactiveChromium (file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/chromium-control.mjs:38:35)
+    at async file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:88:14
+
+Node.js v24.15.0

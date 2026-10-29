@@ -1,0 +1,12 @@
+{
+  "fixtureOnly": true,
+  "providerDispatch": false,
+  "nativeOwner": false,
+  "uiIssuedOwnerCommands": 1,
+  "ownerCommandExact": true,
+  "persistedProjectionExact": true,
+  "reopenedExact": true,
+  "utf16Units": 1170,
+  "codePoints": 1080,
+  "valueSha256": "4113a62bbd5c9e6bb09401058957a3557a20e4021f4a93a17f23f0db82221a3a"
+}

@@ -1,0 +1,24 @@
+{
+  "base": "http://127.0.0.1:49173",
+  "providerDispatch": false,
+  "releaseReady": false,
+  "blocked": [],
+  "errors": [],
+  "app": {
+    "status": 200,
+    "bytes": 675533,
+    "contentType": "text/javascript; charset=utf-8",
+    "sha256": "ed0316dc8b3ae19a2f28eb917c75dfc45ad7bcbbe864c1d191ea1874166eef47"
+  },
+  "css": {
+    "status": 200,
+    "bytes": 26845,
+    "contentType": "text/css; charset=utf-8",
+    "sha256": "af87fa733b360c04b99ae1a69a4e3f90d98b732d33f27cf2d658d92dcbcb2239"
+  },
+  "error": "Error: No private Chromium DevTools endpoint",
+  "browserExit": {
+    "code": null,
+    "signal": null
+  }
+}

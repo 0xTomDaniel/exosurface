@@ -1,0 +1,51 @@
+20: 
+21: export function buildArtifact({ packageDir, outDir, version, allowDirty = false, denyPatterns }) {
+22:   packageDir = resolve(packageDir); outDir = resolve(outDir);
+23:   const contract = loadContract(packageDir);
+24:   const pkg = readJson(join(packageDir, 'package.json'));
+25:   if (version && version !== pkg.version) fail(`--version ${version} does not match package.json version ${pkg.version}`);
+26:   version = pkg.version;
+27:   if (!isExactVersion(version)) fail(`Version ${version} is not exact semver`);
+28:   const source = sourceInfo(packageDir);
+29:   if (!source.clean && !allowDirty) fail(`Refusing to build from ${packageDir}: ${source.note}. Commit first, or pass --allow-dirty (recorded in the manifest as clean:false).`);
+30: 
+31:   const files = selectFiles(packageDir, contract);
+32:   const rels = files.map(f => f.rel);
+33:   if (!rels.some(p => p.startsWith('dist/'))) fail('Prebuilt dist/ is missing from the package allowlist; run the BB build before packaging');
+34:   const extra = loadDenyPatterns(denyPatterns);
+35:   const leaks = files.flatMap(f => scanContent(f.rel, readFileSync(f.abs), extra));
+36:   if (leaks.length) fail(`Privacy scan refused ${leaks.length} finding(s):\n  - ${leaks.join('\n  - ')}`);
+37:   checkResources(packageDir, contract, rels);
+38:   const projects = dependencyProjects(packageDir, contract, rels);
+39:   const graph = ownerGraph(packageDir, contract.owner.entry, rels);
+40:   checkLabel(packageDir, rels, contract.owner.launchdLabel);
+41: 
+42:   const name = `${contract.id}-${version}`;
+43:   const target = join(outDir, name);
+44:   if (existsSync(target)) fail(`${target} already exists; artifacts are immutable. Bump the version or remove the old build deliberately.`);
+45:   mkdirSync(outDir, { recursive: true });
+46:   const staging = mkdtempSync(join(outDir, `.${name}.`));
+47:   try {
+48:     const entries = [];
+49:     for (const f of files) {
+50:       const dest = join(staging, 'plugin', f.rel);
+51:       mkdirSync(dirname(dest), { recursive: true });
+52:       copyFileSync(f.abs, dest);
+53:       entries.push({ path: `plugin/${f.rel}`, sha256: sha256File(dest), size: f.size });
+54:     }
+55:     const manifest = {
+56:       format: ARTIFACT_FORMAT, id: contract.id, version, builtAt: new Date().toISOString(),
+57:       builtWith: { node: process.versions.node, platform: process.platform },
+58:       source: { ...source, ...(allowDirty && !source.clean ? { allowDirty: true } : {}) },
+59:       contract,
+60:       dependencies: { ...dependencyManifest(packageDir, contract), projects },
+61:       owner: { entry: `plugin/${contract.owner.entry}`, graph: graph.map(g => `plugin/${g}`), coverage: 'heuristic-owner-static-and-literal-imports-only;extensions-and-arbitrary-dynamic-resolution-unverified' },
+62:       files: entries,
+63:     };
+64:     writeJsonAtomic(join(staging, 'MANIFEST.json'), manifest);
+65:     writeFileSync(join(staging, 'MANIFEST.sha256'), `${sha256File(join(staging, 'MANIFEST.json'))}  MANIFEST.json\n`);
+66:     setReadOnly(staging);
+67:     renameSync(staging, target);
+68:     return { dir: target, manifest };
+69:   } catch (e) { removeTree(staging); throw e; }
+70: }

@@ -1,0 +1,5 @@
+node_modules
+dist/
+
+# Generated, byte-hashed release resources; never raw fixture evidence.
+resources/
