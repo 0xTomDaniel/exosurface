@@ -41,4 +41,4 @@ Second attempt: **Stage: bound**. One native thread `Exo initialization`, generi
 
 ## Not demonstrated
 
-Provider login, retained owner start, conversation, page action and reopen (waiting on a human provider login in the isolated owner's own Pi directory). Physical fresh Mac, uncached downloads, the desktop GUI window itself (the browser served the same frontend), lifecycle/reboot, distribution and SDK rights remain open. `releaseReady: false`.
+Provider login, retained owner start, conversation, page action and reopen (a ChatGPT sign-in in the isolated owner's own Pi directory reports `openai` ready by `pi auth check --no-refresh`, metadata only; real inference awaits explicit test consent). The project-host preflight matches exact source path and a unique host ID, not this-Mac identity; spike scope is a locally created project. Physical fresh Mac, uncached downloads, the desktop GUI window itself (the browser served the same frontend), lifecycle/reboot, distribution and SDK rights remain open. `releaseReady: false`.

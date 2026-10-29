@@ -10,7 +10,7 @@ The first-run source checkpoint `57819800fd466cdd270cfc25ba630d21d5778db7` passe
 
 **Demonstrated 2026-10-29 (branch `spike/desktop-install`):** in an [isolated instance](#isolated-test-instance) of BB 0.45's own server and host daemon, run under the BB.app binary exactly as the desktop app runs them, the plugin built, registered, and the real **Initialize Exo** button reached `bound`: one native BB conversation, a generic OptChat profile and Pi session, no inference. That run found and fixed four setup defects (runtime root, Electron child processes, host selection, copied host artifact; see the [check record](../../plugins/bb-plugin-exosurface/compat/consolidation/desktop-install-spike/README.md)).
 
-**Not yet demonstrated:** authenticated retained-owner startup, conversation, page action and persisted reopen (waiting on provider login), and an install on a physically fresh Mac.
+**Not yet demonstrated:** authenticated retained-owner startup, conversation, page action and persisted reopen (a ChatGPT sign-in reports ready via a credential check only; real inference awaits explicit test consent), and an install on a physically fresh Mac.
 
 **Superseded diagnosis:** the earlier isolated test failed with `Missing host bootstrap material` because it started `bb-server` and `bb-host-daemon` separately. BB's `bb-app` launcher (what BB.app and `npx bb-app` use) requests a local-host enrollment key from its own server automatically. No BB account login or manual machine enrollment is involved.
 
@@ -154,7 +154,7 @@ Open `http://127.0.0.1:49411` in a browser. Point the CLI at it with `env -i HOM
 | Missing local path/config | Check the actual config read by BB and the owner; all source/vault/CLI paths must exist |
 | Long socket path, symlink or foreign-state refusal | Correct the new instance's paths; do not weaken recovery guards or adopt another owner's files |
 | Setup is `bound` but conversation cannot attach | Confirm model auth and that `dist/owner-service.js` is running with the same config |
-| `Select a BB project whose source on this Mac is exactly the workspace path` | Pick (or add) the project for the vault folder; nothing was changed |
+| `Select a BB project whose source on this Mac is exactly the workspace path` | Pick (or add) the project for the vault folder; nothing was changed. The check matches the project's exact source path and a single machine ID; it does not separately verify that machine is this Mac, so use a project created locally for this spike |
 | `Missing host bootstrap material` | `bb-server` and `bb-host-daemon` were started separately; use BB.app or the `bb-app` launcher, which enrolls the local host itself |
 | `Sign in to your bb account to use bb connect` | Only for adding a remote/manual machine; not needed for this plugin |
 | Input too large | Atom/textbox cap 2,000 UTF-16 units; workspace 40 KiB and serialized owner command 12,000 UTF-16 units; refusal is atomic, not silent truncation |

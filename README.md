@@ -6,7 +6,7 @@ A shared, adaptive interface for you and your personal agent: conversation and p
 
 **Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
-The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. **A real conversation → page action → reopen has not yet been demonstrated**; it is waiting on model-provider login. This is a working-spike claim, not an end-to-end installation guarantee.
+The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. **A real conversation → page action → reopen has not yet been demonstrated**: a provider sign-in reports ready (credential check only), and the test awaits explicit consent to run real inference. This is a working-spike claim, not an end-to-end installation guarantee.
 
 ### What is included?
 
