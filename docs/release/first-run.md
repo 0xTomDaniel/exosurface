@@ -10,6 +10,24 @@ The first-run source checkpoint `57819800fd466cdd270cfc25ba630d21d5778db7` passe
 
 **Not yet demonstrated together:** normal fresh desktop installation, real native initialization/binding, authenticated retained-owner startup, conversation, page action and persisted reopen. The isolated test stopped before native setup because its separate headless server lacked an execution host. That is **not evidence that desktop plugin installation requires extra BB account login or manual machine enrollment**.
 
+## What the retained owner loads
+
+Verified in a disposable fixture with generic marker instructions/skills: real OptChat 0.8.6 profile API and setup journal, Pi 1.1.0 CLI and the unmodified `dist/owner-service.js`; only BB's thread API was mocked. No inference: a local test provider recorded which markers reached the model request. Reproduce with `plugins/bb-plugin-exosurface/test/context-loading-real.mjs` (usage in its header; variants `plain`, `shadow`, `ancestor`).
+
+The owner starts Pi with **working directory = the configured `vault`**, `--approve` (project trust for that run), the packaged Exosurface/OptChat extensions and `--skill <plugin>/resources/skills/exosurface`. Its environment is an allowlist: the owner's `HOME`, `PATH` and `TMPDIR`, plus `PI_CODING_AGENT_DIR=<primaryStateDir>/pi-config` and `OPTCHAT_HOME=<primaryOptchatHome>`. Inherited `PI_*`/`OPTCHAT_*`/`EXO_*` variables and API keys are not passed. The model request contains, in order: OptChat's preamble (replacing Pi's default base prompt), `AGENTS.md` context, the skill list, Exosurface's presentation guide, then the OptChat profile's `AGENTS.md`.
+
+| Source | Loaded by the retained owner? |
+|---|---|
+| `<vault>/AGENTS.md`, plus `AGENTS.md` in the vault's parent directories | Yes |
+| `<vault>/.agents/skills/` (and parent `.agents/skills/`, up to a Git root if there is one) | Yes, as project skills, because of `--approve` |
+| `<vault>/.pi/` settings, extensions, MCP config | Trusted by `--approve` (not fixture-tested); extensions there run inside the owner |
+| `~/.agents/skills/` of the owner's `HOME` | Yes, as user skills |
+| Packaged `exosurface` skill | Yes, **unless** a workspace or user skill is also named `exosurface`: that copy wins and the packaged one is silently dropped |
+| `~/.pi/agent` (skills, `AGENTS.md`, settings, auth) | No; the owner uses the setup-created `pi-config` |
+| OptChat profile `AGENTS.md` | Yes, last. Setup writes OptChat's generic template. It adds nothing personal and does not replace the vault's instructions |
+
+So put Exocortex identity and policy in the vault's `AGENTS.md` and its skills in `<vault>/.agents/skills/`. Don't keep a skill named `exosurface` there unless you intend to override the packaged one. Anything in the vault's parent directories, such as your home folder, also loads. Starting the owner with your real `HOME` loads your `~/.agents/skills`; that is intended on your own Mac, but a second test instance on the same account is not context-isolated. Initialization runs with skills and context files disabled, so these sources apply only to the retained owner.
+
 ## Dependencies
 
 - macOS with normal BB desktop installed and running (tested BB 0.45.0).
