@@ -1,0 +1,93 @@
+{
+  "schema": "exosurface-independent-zod3-candidate/0",
+  "producer": "c22ba24eac4a529a049f7f69af83607afac8b74e",
+  "availability": "Local clean commit reviewed; producer reports push blocked by publish guard. Not treated as published artifact.",
+  "source_status": "",
+  "environment": "env allowlist from empty object; absolute Node24.15.0; disposable HOME/TMPDIR/BB_DATA_DIR/cache; npm offline; no shared-cache writes or scripts/services/provider calls",
+  "artifact_sha256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+  "artifact_bytes": 584883,
+  "lock_sha256": "7aa75a7a2748ce7256814551505efcf9fc19e075e0837d3bdebbc2ce80e6be8f",
+  "checks": [
+    {
+      "check": "deterministic-build",
+      "exit": 0
+    },
+    {
+      "check": "offline-strict-peer-ci",
+      "exit": 0
+    },
+    {
+      "check": "candidate-tests",
+      "exit": 0
+    },
+    {
+      "check": "default-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "source-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "source-list",
+      "exit": 0
+    },
+    {
+      "check": "npm-ls-all",
+      "exit": 0
+    }
+  ],
+  "determinism": {
+    "upstream_sha512_verified": true,
+    "artifact_and_manifest_byte_identical_to_commit": true,
+    "committed_patch_applies_and_matches_three_rebuilt_implementations": true,
+    "other_file_identity_and_license_notice": true
+  },
+  "install": "Fresh fixture npm ci --offline --ignore-scripts --strict-peer-deps --omit=peer --no-fund --no-audit, copied integrity-addressed cache,44 packages; npm ls --all exit0; committed lock unchanged",
+  "tests": {
+    "candidate": 19,
+    "legacy_upstream": 36,
+    "legacy_patched": 36,
+    "extra_async_upper_bound_cases": 8,
+    "extra_child_calls": 0,
+    "entrypoints": [
+      "ESM root",
+      "ESM /v3",
+      "CJS root",
+      "CJS /v3",
+      "compiled actual TS source root",
+      "compiled actual TS source /v3"
+    ],
+    "typechecks": [
+      "default declarations",
+      "@zod/source conditions; actual src/v3/types.ts listed"
+    ],
+    "parity": [
+      "sampled accepted sync/async behavior",
+      "unconstrained and below-bound diagnostics",
+      "preprocess and union fallback",
+      "official basic/Exo catalog JSON and child-ref maps",
+      "all basic component converter output/warnings",
+      "65-option ChoicePicker and workspace"
+    ]
+  },
+  "resolution": {
+    "a2ui_react": "0.13.0, patched v3 resolution inspected; browser entry not executed",
+    "a2ui_web_core": "0.13.0, patched v3 actual schemas executed",
+    "zod_to_json_schema": "3.25.2, patched v3 actual converter executed",
+    "sdk": "0.6.15, separate Zod4.6.6 actual SDK contract executed",
+    "markdown_it": "0.2.1 compatibility pin, no incompatible peer override",
+    "dompurify": "3.4.11 locked/installed; README and audit narrative incorrectly say3.4.16, which is an advisory range endpoint"
+  },
+  "mechanism": "Supplied cached GitHub commit a0ebf970f2d752e5f58527cd2942ff48be4f46bd inspected: v4 capSize leading upper-size abort before element parsing, applied v3 array/set with no invented Map bounds. No independent online retrieval.",
+  "bounds": [
+    "Specific local upper-constrained array/set pre-child abort mechanism confirmed; no invented Map bounds",
+    "Intentional fewer child issues/outer refinement execution on already-invalid oversized constrained input",
+    "Not an upstream fixed-version release or scanner clearance; local3.25.76-derived package remains flagged",
+    "No refreshed online audit; committed audit reviewed",
+    "No universal resource safety, admitted-application exploitability/reachability, browser, UI, inference or release/security disposition",
+    "Old bundled v4 exports untouched and outside approved consumed graph",
+    "Production plugin lock/UI unchanged; no security disposition or scope/dependency/UI edits made"
+  ],
+  "external_evidence_pointer": "/tmp/exo-zod-independent-latest"
+}

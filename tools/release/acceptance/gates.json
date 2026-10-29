@@ -180,7 +180,7 @@
       "id": "production-visual-dependency-security",
       "kind": "decision",
       "spec": "release-pins",
-      "proof": "OPEN: parser-only dependency-free extraction does not implement visuals. A2UI0.13/0.14 visual graph peers Zod3, affected by GHSA-mrhx-c7xc-m3w5; no compatible published patched route found. Late caps/.max are not advisory mitigation. Require reviewed migration/backport or explicit owner residual-risk disposition plus demonstrated guards before introducing that graph; preserve licenses."
+      "proof": "OPEN disposition/integration: localc22ba24e narrow Zod3 upper-constrained array/set backport independently reproducible,19 candidate+36 legacy/graph pass, strict-peer offline lock and actual patched-v3/SDK4 resolutions verified. Not upstream scanner clearance/universal safety/browser acceptance. DOMPurify3.4.11 separately flagged; README3.4.16 version narrative corrected in acceptance evidence. No security acceptance or production dependency/UI change."
     }
   ]
 }
