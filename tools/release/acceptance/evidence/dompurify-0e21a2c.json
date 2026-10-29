@@ -1,0 +1,89 @@
+{
+  "schema": "exosurface-independent-dompurify-delta/0",
+  "producer": "0e21a2c28bacfca6369fdd4d74a2f5435516d64b",
+  "baseline": "c22ba24eac4a529a049f7f69af83607afac8b74e",
+  "source_status": "",
+  "scope": "Read-only local correction/triage delta; no proposed dependency fix implemented or installed; no publication-guard bypass",
+  "unchanged_files_sha256": {
+    "zod3/zod-3.25.76-exosurface.1.tgz": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+    "zod3/build.mjs": "0da39a45b8d526dc731f3bca963d342188e1f052364b3ecc6c13089e088269fa",
+    "zod3/LICENSE.upstream": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
+    "zod3/backport.patch": "d508c6a32209136be0077f1a5e29d8c759180ff7fd97fed647f682e6cb30bb76",
+    "zod3/upstream.json": "87d422ce431a1660b669fe3b35629f8aeab7c709413ddd7b3101dd00f1e7f6c3",
+    "zod3/NOTICE.md": "42104642a830029ec3db91f26be17d7a8ab8f15753614bf30f712b485612b2a7",
+    "zod3/artifact.json": "e088ca7cbaadf5faa79acdedbd4fee17abf6e3c9b4a9667c33ddcf8c6520d4ff",
+    "a2ui-runtime/test/candidate.test.mjs": "b1b524a1e1ca914bbe186dd84822c37684dca574714d726296d7a4e4911fb60f",
+    "a2ui-runtime/fixtures/schema-contracts.ts": "e52f33e2d31106b1b007f489e1f71ad63d12fb20f55db6c943b4700f69375363",
+    "a2ui-runtime/package.json": "132fa6bfeee075ab6697cf940d5415193c8bd54cbb57b0c10d76d44c06beaf00",
+    "a2ui-runtime/package-lock.json": "7aa75a7a2748ce7256814551505efcf9fc19e075e0837d3bdebbc2ce80e6be8f",
+    "a2ui-runtime/evidence/npm-audit.json": "ed5e7846ee0bb3d233a6ce7972b1471a0c23fc3ea4b379d4fa09f4aeade3693d",
+    "a2ui-runtime/evidence/parity.tap": "f4a47f7b9b93055a2da9ec7dd35f651834a4e736d3413ff0c0282449a8640300",
+    "a2ui-runtime/evidence/fresh-install.log": "ca71b6aa72a43a48fef1e91bfcba42d08cfadeea52c0474eb4b7a090cff93cca",
+    "a2ui-runtime/legacy-fixtures.json": "e3e13d2c396e0cc382624ecfc495ecca8e4f292ac2f938a84defddee9c27cfa5"
+  },
+  "portable_readme": {
+    "independent_exit": 0,
+    "execution_adjustments": [
+      "set -eu fail-fast wrapper",
+      "explicit fixture BB_DATA_DIR added to run allowlist"
+    ],
+    "offline_locked_fresh_fixture_packages": 44,
+    "candidate_pass": 19,
+    "legacy_pass_per_graph": 36,
+    "default_and_source_typechecks": "pass",
+    "artifact_and_manifest_byte_identical": true,
+    "environment": "Empty-object allowlist, configured real Node24/npm, fixture HOME/TMPDIR/BB_DATA_DIR and copied cache; offline, ignore-scripts; no services/provider calls"
+  },
+  "installed": "DOMPurify3.4.11, corrected in README/checkpoint/triage; no dependency changes",
+  "six_advisories": {
+    "ids": [
+      "GHSA-55q2-fjhq-7xh7",
+      "GHSA-c2j3-45gr-mqc4",
+      "GHSA-6688-9rhm-gjv2",
+      "GHSA-cg2g-xh64-v4q7",
+      "GHSA-mrv2-3pqr-j5jr",
+      "GHSA-c6gr-qvv4-5v3f"
+    ],
+    "prior55_ranges_first_patched_and_update_timestamps_match": true,
+    "committed_audit_ids_match": true,
+    "npm_semver_independent_range_checks": "All six include3.4.11; none includes3.4.17",
+    "online_metadata_or_audit_refreshed": false
+  },
+  "runtime_review": {
+    "installed_markdown_and_sanitizer_hashes_match_triage": true,
+    "default_path": "raw markdown rendered to HTML string; sanitize(html) one argument/default options",
+    "bounded_source_scan": {
+      "files": 31,
+      "mode_config_matches": []
+    },
+    "actual_nested_markdown_sanitizer_module_imported": true,
+    "sanitizer_invoked": false,
+    "root_markdown_import": "MODULE_NOT_FOUND independently reproduced; existing app directly imports @a2ui/markdown-it",
+    "integration_requirement": "Explicitly declare/resolve existing markdown0.2.1 at consuming application boundary; do not rely on nested transitive hoisting; inspect final built import graph",
+    "browser_or_exploit_executed": false,
+    "unreachability_proven": false
+  },
+  "proposal_only": {
+    "override": {
+      "@a2ui/markdown-it": {
+        ".": "0.2.1",
+        "dompurify": "3.4.17"
+      }
+    },
+    "assessment": "Narrowest supplied metadata-supported route covering all six first-patched thresholds, retaining A2UI0.13 and compatible markdown0.2.1/core^0.13 peer. Overrides exact vulnerable dependency, not a peer. No broad renderer/core upgrade required by this metadata. Not proof of runtime compatibility.",
+    "prior55_commit": "52db1f334314e9872d2b2c53b6b2764de21981b4",
+    "prior55_scoped_override_and_locked3_4_17_tarball_integrity_match": true,
+    "prior55_108_tests_and_typechecks": "Committed prior evidence reviewed, not independently rerun in this delta",
+    "proposed_candidate_graph_installed_or_modified": false,
+    "remaining": [
+      "Authorized proposed-graph locked strict-peer install/npm ls and intended-diff review",
+      "Candidate19 and legacy36 per graph/typechecks on proposed3.4.17 graph",
+      "Real-DOM default markdown formatting and unsafe-input regression",
+      "Separate bounded upstream-style tests for six non-default advisory configurations",
+      "Separately authorized fresh audit/final renderer graph/license review",
+      "Actual rendered textbox/press/owner/persisted-update/reopen and all existing release gates"
+    ]
+  },
+  "diagnostic": "Initial independent inspection helper attempted unexported dompurify/package.json subpath; corrected to reading package manifest beside resolved dist entry. This was a helper-path error, not candidate failure; retained in external logs.",
+  "external_evidence_pointer": "/tmp/exo-dompurify-delta-latest"
+}
