@@ -115,13 +115,15 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
     if (childId) {
       if (!runs(profile).some(r => r.id === childId)) throw new Error('No native OptChat child with that identity');
     } else {
-      const launch = runtimeLaunch(profile, runtimeKind, threadId, old?.sessionFile);
+      // The canonical owner is a separate process that validates/launches its own runtime; BB's copied host
+      // artifact has no packaged runtime beside it, so only non-canonical kinds launch Pi here.
+      const launch = runtimeKind === 'canonical' ? undefined : runtimeLaunch(profile, runtimeKind, threadId, old?.sessionFile);
       const lost = (error: Error) => {
         if (!s.closing) { audit(s, 'unexpected-exit'); io.send({ jsonrpc: '2.0', method: 'error', params: { threadId, message: error.message } }); if (s.open) settle(s, 'failed'); }
       };
       s.rpc = runtimeKind === 'canonical'
         ? await OwnerClient.open(threadId, e => event(s, e), lost)
-        : new PiRpc(PI_CLI, launch.args, cwd, launch.env, e => event(s, e), lost);
+        : new PiRpc(PI_CLI, launch!.args, cwd, launch!.env, e => event(s, e), lost);
       const state = await s.rpc.send('get_state');
       const commands = await s.rpc.send('get_commands');
       await assertNativeOwner(profile, runtimeKind, s.rpc.pid);

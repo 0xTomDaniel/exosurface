@@ -4,8 +4,16 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 export const HOME = local('primaryStateDir') || join(homedir(), '.exo-bb-spike');
-// The plugin root, wherever it is checked out (symlinked install paths resolve to the real location).
-export const SOURCE = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
+// The plugin root, wherever it is checked out (symlinked install paths resolve to the real location). BB loads
+// this module from legacy/primary/src (server) or a copied host artifact, so find the consolidated package root
+// rather than assuming a fixed depth; keep the historical parent for unconsolidated copies.
+function pluginRoot(start: string) {
+  for (let dir = start, i = 0; i < 6; i++, dir = join(dir, '..')) {
+    try { if (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name === 'bb-plugin-exosurface') return dir; } catch {}
+  }
+  return join(start, '..');
+}
+export const SOURCE = pluginRoot(fileURLToPath(new URL('.', import.meta.url))).replace(/\/$/, '');
 export const PI_CLI = local('piCli');
 export const OPTCHAT = local('optchat');
 export const FAST = local('piFast');
