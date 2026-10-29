@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "cases": 16,
+  "registrations": 1,
+  "actualRetainedHandlers": true,
+  "providerDispatch": false,
+  "ownerRequests": 1,
+  "releaseReady": false
+}

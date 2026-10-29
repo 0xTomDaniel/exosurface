@@ -1,0 +1,64 @@
+[21:56:53] INFO: [server] Server listening {"bindHost":"127.0.0.1","port":49173,"dataDir":"/tmp/exo-native-source.RVkor2/bb-data"}
+[21:56:53] WARN: [server] periodic bb-community catalog refresh failed: marketplace requests require an https URL
+[21:56:53] INFO: [server] plugin automations@0.1.0 loaded
+[21:56:53] INFO: [server] plugin bb--provider-usage@0.1.0 loaded
+[21:56:53] INFO: [server] plugin bb-account@0.1.0 loaded
+[21:56:53] INFO: [server] plugin bb-ai@0.1.0 loaded
+[21:56:53] INFO: [server] plugin bb-guide@0.1.0 loaded
+[21:56:53] INFO: [server] plugin concurrency-limit@0.1.0 loaded
+[21:56:53] INFO: [server] plugin connect@0.1.0 loaded
+[21:56:53] INFO: [server] plugin custom-instructions@0.1.0 loaded
+[21:56:53] INFO: [server] plugin drafts@0.1.0 loaded
+[21:56:53] INFO: [server] plugin environment-git-worktree@0.1.0 loaded
+[21:56:53] INFO: [server] plugin environment-personal-workspace@0.1.0 loaded
+[21:56:53] INFO: [server] plugin environment-project-checkout@0.1.0 loaded
+[21:56:54] WARN: [server] plugin exosurface failed to load: a "message.dispatch" hook handler is already registered by this plugin
+[21:56:54] INFO: [server] plugin inline-vis@0.1.0 loaded
+[21:56:54] INFO: [server] plugin keep-awake@0.1.0 loaded
+[21:56:54] INFO: [server] plugin navigation@0.1.0 loaded
+[21:56:54] INFO: [server] plugin pdf-preview@0.1.0 loaded
+[21:56:54] INFO: [server] plugin provider-acp@0.1.0 loaded
+[21:56:54] INFO: [server] plugin provider-claude-code@0.1.0 loaded
+[21:56:54] INFO: [server] plugin provider-codex@0.1.0 loaded
+[21:56:54] INFO: [server] plugin provider-pi@0.1.0 loaded
+[21:56:54] INFO: [server] plugin provider-retry@0.1.0 loaded
+[21:56:54] INFO: [server] plugin push-notifications@0.1.0 loaded
+[21:56:54] INFO: [server] plugin scheduled-send@0.1.0 loaded
+[21:56:54] INFO: [server] plugin secrets@0.1.0 loaded
+[21:56:54] INFO: [server] plugin side-chat@0.1.0 loaded
+[21:56:54] INFO: [server] plugin thread-list@0.1.0 loaded
+[21:57:07] INFO: [server] plugin exosurface@0.1.0-dev loaded
+[21:57:07] INFO: [server] plugin exosurface source moved from path:/tmp/exo-native-source.RVkor2/home/Library/Application Support/Exosurface/bb-source to path:/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source; settings, secrets, and schedules were kept
+[22:03:18] WARN: [server] npm latest lookup failed {"url":"https://registry.npmjs.org/bb-app/latest"}
+    error: "DISPOSABLE TRIPWIRE: fetch \"https://registry.npmjs.org/bb-app/latest\""
+[22:03:18] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:03:18] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:03:26] WARN: [server] npm latest lookup failed {"url":"https://registry.npmjs.org/bb-app/latest"}
+    error: "DISPOSABLE TRIPWIRE: fetch \"https://registry.npmjs.org/bb-app/latest\""
+[22:03:26] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:03:26] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] npm latest lookup failed {"url":"https://registry.npmjs.org/bb-app/latest"}
+    error: "DISPOSABLE TRIPWIRE: fetch \"https://registry.npmjs.org/bb-app/latest\""
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] npm latest lookup failed {"url":"https://registry.npmjs.org/bb-app/latest"}
+    error: "DISPOSABLE TRIPWIRE: fetch \"https://registry.npmjs.org/bb-app/latest\""
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:07:55] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:08:06] WARN: [server] [plugin:exosurface] rpc edit failed: [
+  {
+    "code": "too_big",
+    "maximum": 2000,
+    "type": "string",
+    "inclusive": true,
+    "exact": false,
+    "message": "String must contain at most 2000 character(s)",
+    "path": []
+  }
+]
+[22:08:07] WARN: [server] npm latest lookup failed {"url":"https://registry.npmjs.org/bb-app/latest"}
+    error: "DISPOSABLE TRIPWIRE: fetch \"https://registry.npmjs.org/bb-app/latest\""
+[22:08:07] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}
+[22:08:07] WARN: [server] Failed to resolve host for provider discovery {"errorCode":"host_unavailable","errorMessage":"Local host daemon is not initialized","errorStatus":502}

@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "plugin": {
+    "id": "exosurface",
+    "source": "path:/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source",
+    "rootDir": "/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source",
+    "version": "0.1.0-dev",
+    "provenance": "direct",
+    "isOrphanedBuiltin": false,
+    "publisherLabel": null,
+    "sourceDisplay": "path · ~/Library/Application Support/Exosurface/bb-source",
+    "updateState": {},
+    "enabled": true,
+    "description": "Existing primary Exo/OptChat and A2UI experience, consolidated; releaseReady remains false",
+    "name": "Exosurface",
+    "screenshots": [],
+    "collections": [],
+    "icon": "Bot",
+    "iconUrl": null,
+    "status": "running",
+    "statusDetail": null,
+    "handlerStats": {
+      "count": 0,
+      "totalMs": 0,
+      "maxMs": 0,
+      "errorCount": 0
+    },
+    "services": [
+      {
+        "name": "workspace-stream",
+        "state": "running"
+      },
+      {
+        "name": "surface-stream-main",
+        "state": "running"
+      }
+    ],
+    "schedules": [],
+    "cliCommand": null,
+    "capabilities": [
+      {
+        "kind": "thread-integration",
+        "id": "mention:surface",
+        "label": "Pages",
+        "detail": "Mentions with @"
+      }
+    ],
+    "hasSettings": false,
+    "app": {
+      "hasApp": true,
+      "bundle": {
+        "jsUrl": "/api/v1/plugin-app-assets/808a5c920402ede8/app.js",
+        "cssUrl": "/api/v1/plugin-app-assets/808a5c920402ede8/app.css",
+        "jsBytes": 675533,
+        "hash": "808a5c920402ede8",
+        "sdkMajor": 0,
+        "sdkVersion": "0.6.15",
+        "compatible": true
+      }
+    },
+    "logoUrl": null,
+    "logoDarkUrl": null,
+    "providerIds": [
+      "exo-spike"
+    ],
+    "icons": {}
+  }
+}

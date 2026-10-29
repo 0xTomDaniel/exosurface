@@ -1,0 +1,72 @@
+Usage: bb thread spawn|create [options]
+
+Spawn a new thread; omitted execution flags use remembered project defaults,
+then the target provider catalog default
+
+Options:
+  --prompt <prompt>              Initial prompt for the thread (required unless
+                                 --prompt-file is given)
+  --prompt-file <path>           Read the initial prompt from a file instead of
+                                 --prompt; use - to read stdin. Prefer this for
+                                 multi-line text: inside double quotes the shell
+                                 runs `backticks` and $(...) before bb sees them
+  --lifecycle-owner-thread <id>  Archive/delete this thread with its lifecycle
+                                 owner
+  --json                         Print machine-readable JSON output
+  --project <id>                 Project ID
+  --environment <id-or-path>     Existing environment ID or unmanaged workspace
+                                 path
+  --new-environment <kind>       Create a fresh environment of the given kind
+                                 (personal or worktree)
+  --base-branch <branch>         Exact Git ref; omit for bb's project default
+                                 (use origin/<branch> for a remote ref)
+  --machine <id-or-name>         Execution machine ID or unambiguous name
+  --host <id-or-name>            Alias for --machine
+  --new-machine <provider-id>    Create the thread on a new machine from this
+                                 machine provider
+  --machine-inputs <json>        Persisted non-secret inputs for --new-machine
+                                 or a composed --environment-provider; store
+                                 credentials in plugin settings
+  --parent-thread <id>           Parent thread ID for worker thread links
+  --parent-self                  Parent the new thread to BB_THREAD_ID
+  --provider <id>                Provider ID for the thread. Omit to use the
+                                 project's remembered provider choice
+  --model <model>                Model ID for the thread. Omit to use the
+                                 project's remembered default for the resolved
+                                 provider
+  --reasoning-level <level>      Reasoning level: low, medium, high, xhigh, max
+                                 (provider-dependent)
+  --title <title>                Thread title
+  --service-tier <tier>          Service tier id the provider lists for the
+                                 model, such as default or fast (see `bb
+                                 provider models`)
+  --permission-mode <mode>       Permission mode: accept-edits, auto, or full
+  --plan                         Send the message as the provider's /plan action
+                                 so the agent proposes a plan for approval
+                                 before executing
+  --file <path>                  Upload an absolute path or file: URL from this
+                                 CLI machine or pass an uploaded attachment path
+                                 (repeatable) (default: [])
+  --image <path>                 Upload an absolute path or file: URL from this
+                                 CLI machine or pass an uploaded attachment path
+                                 (repeatable) (default: [])
+  --section <id>                 Create the thread in a section
+  --pinned                       Create the thread in Pinned
+  --visibility <visibility>      Thread visibility: visible or hidden (a child
+                                 inherits its parent)
+  --environment-provider <id>    Run on an environment provider by id (list them
+                                 with `bb environment providers`)
+  --environment-inputs <json>    JSON value for an --environment-provider that
+                                 declares inputs (`bb environment providers
+                                 --json` shows the schema)
+  --send-at <when>               Dispatch at an ISO 8601 timestamp
+                                 (2026-08-25T09:00) or a duration from now (30s,
+                                 10m, 2h, 7d)
+  --origin-kind <kind>           Thread origin: fork
+  --source-thread <id>           Source thread for a fork
+  --source-seq-end <seq>         Fork after the source turn containing this
+                                 event sequence
+  -h, --help                     display help for command
+
+JSON (--json): the created thread: {id, status, title, projectId, environmentId, ...}
+Errors with --json: {"ok": false, "error": {code, message, hint?}} on stdout. Run `bb guide json` for every shape.

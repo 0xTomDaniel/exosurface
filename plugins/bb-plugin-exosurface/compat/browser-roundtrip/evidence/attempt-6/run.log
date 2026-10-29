@@ -1,0 +1,9 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: {"error":"Error: Browser hard 20s deadline (including shutdown); run FAILED","closeRequested":false,"phase":"window.__fixture?.ready && document.querySelector(\"textarea\") && [...document.querySelectorAll(\"button\")].some(b=>b.textContent===\"Send\")","lastState":{"text":"Exosurface\n\nRevision 1\n\nReview\nFull text\n\nSend","error":"","ready":true,"viewError":"","revision":1},"events":[{"method":"Runtime.executionContextCreated","params":{"context":{"id":1,"origin":"://","name":"","uniqueId":"-9165582093268101737.-6533296187080526641","auxData":{"isDefault":true,"type":"default","frameId":"148B5BF4EA02B80AFA8480737CA2C9EB"}}}},{"method":"Runtime.executionContextsCleared","params":{}},{"method":"Runtime.executionContextCreated","params":{"context":{"id":2,"origin":"http://127.0.0.1:56426","name":"","uniqueId":"4436696597592223688.6256473717950546330","auxData":{"isDefault":true,"type":"default","frameId":"148B5BF4EA02B80AFA8480737CA2C9EB"}}}},{"method":"Runtime.executionContextCreated","params":{"context":{"id":3,"origin":"chrome://cosmetic_filters","name":"","uniqueId":"3062749186256646324.-2262045170085180485","auxData":{"isDefault":false,"type":"isolated","frameId":"148B5BF4EA02B80AFA8480737CA2C9EB"}}}},{"method":"Log.entryAdded","params":{"entry":{"source":"network","level":"error","text":"Failed to load resource: the server responded with a status of 404 (Not Found)","timestamp":1793235971689.379,"url":"http://127.0.0.1:56426/favicon.ico","networkRequestId":"25349.5"}}}],"stderr":"\nDevTools listening on ws://127.0.0.1:56429/devtools/browser/89f1664f-3801-4b81-8617-ee2d20ad4f22\n"}
+    at interactiveChromium (file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/chromium-control.mjs:38:35)
+    at async file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:88:14
+
+Node.js v24.15.0

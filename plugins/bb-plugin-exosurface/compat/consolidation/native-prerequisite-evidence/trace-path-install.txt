@@ -1,0 +1,27 @@
+203827:   async function installPathSource(path14, selection) {
+203828:     const checkoutDir = resolve15(path14);
+203829:     const subdirectory = await resolveSelectedSubdirectory({
+203830:       checkoutDir,
+203831:       selection,
+203832:       sourceLabel: checkoutDir
+203833:     });
+203834:     const rootDir = subdirectory === null ? checkoutDir : await realPathInside(
+203835:       checkoutDir,
+203836:       pluginRootDir(checkoutDir, subdirectory),
+203837:       "plugin subdirectory"
+203838:     );
+203839:     if (isBbManagedWorkspacePath({ dataDir: deps.dataDir, path: rootDir }) || findProviderEnvironmentContainingPath(deps.db, rootDir) !== null) {
+203840:       logger2.warn(
+203841:         `plugin "${rootDir}" is installed from inside a bb-managed workspace; its source will be deleted when that environment is destroyed (e.g. when the owning thread is archived). Reinstall from a stable path outside the managed workspace to avoid losing it.`
+203842:       );
+203843:     }
+203844:     return registerInstalled({
+203845:       rootDir,
+203846:       source: `path:${rootDir}`,
+203847:       provenance: { kind: "direct" },
+203848:       sourceIntent: { kind: "path", canonicalPath: rootDir },
+203849:       exactResolution: { kind: "path" },
+203850:       refuseEngineMismatch: false,
+203851:       validated: false
+203852:     });
+203853:   }

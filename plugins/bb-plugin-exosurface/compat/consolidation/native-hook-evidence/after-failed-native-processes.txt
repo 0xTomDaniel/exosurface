@@ -1,0 +1,2 @@
+60456 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python -B /tmp/exo-native-source.RVkor2/launch.py /tmp/exo-native-source.RVkor2
+60559 /private/tmp/exo-native-source.RVkor2/bb-data/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@esbuild/darwin-arm64/bin/esbuild --service=0.28.1 --ping

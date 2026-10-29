@@ -1,0 +1,21 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Build failed with 1 error:
+../../../../../../..$FIXTURE/tmp/exo-roundtrip-DHi9to/client/client.tsx:5:27: ERROR: Could not resolve "@a2ui/react/v0_9/basic_catalog"
+    at failureErrorWithLog ($FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:1467:15)
+    at $FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:926:25
+    at $FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult ($FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:924:7)
+    at $FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> ($FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket ($FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout ($FIXTURE/browser-tools/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+Node.js v24.15.0

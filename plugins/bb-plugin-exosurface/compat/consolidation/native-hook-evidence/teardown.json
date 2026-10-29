@@ -1,0 +1,13 @@
+{
+  "fixtureRuntimeProcesses": [],
+  "serverPidsChecked": [
+    "64640"
+  ],
+  "browserPidChecked": "64371",
+  "nativeServerExit": 0,
+  "loadedRunExit": 0,
+  "serverHealthAfterStopExit": 7,
+  "serverListenCheckExit": 1,
+  "ownerSocketExists": false,
+  "note": "Same-account instrumentation and read-only process/listener checks, not OS sandbox. Calling shells may appear in raw pgrep snapshots."
+}

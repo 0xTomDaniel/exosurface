@@ -1,0 +1,19 @@
+Usage: bb plugin install [options] <source>
+
+Install a catalog entry by name or <entry>@<marketplace>, a Git repository URL,
+a local path, builtin:<name>, git:<url>[@<ref|semver-range>], or
+npm:<name>@<version>. A catalog entry from a third-party marketplace is not
+reviewed by BB, so its confirmation names the marketplace, the author, and the
+exact resolved source (managed sources validate engines ranges and build
+artifacts; bundled plugin ids are reserved)
+
+Options:
+  --subdirectory <path>  Install one plugin directory of a multi-plugin
+                         git:/path: repository
+  --plugin <name>        Install the .bb/plugins.json entry with this name
+                         (git:/path: repositories)
+  --tag-prefix <prefix>  Resolve a git: semver range over <prefix>vX.Y.Z tags
+                         (monorepo tagging)
+  --yes                  Skip the confirmation prompt
+  --json                 Output JSON
+  -h, --help             display help for command

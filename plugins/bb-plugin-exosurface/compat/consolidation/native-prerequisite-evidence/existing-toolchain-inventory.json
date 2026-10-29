@@ -1,0 +1,61 @@
+{
+  "nodePlatform": "darwin",
+  "nodeArch": "arm64",
+  "source": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0",
+  "inventory": [
+    {
+      "package": "esbuild",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/esbuild/package.json",
+      "exists": true,
+      "version": "0.28.1",
+      "sha256": "d55d1d19fcc5b6079e4a71dd4111340c79c682bc36835ac7058a0c364c7db58a"
+    },
+    {
+      "package": "@tailwindcss/node",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@tailwindcss/node/package.json",
+      "exists": true,
+      "version": "4.3.0",
+      "sha256": "455ecf713a3a328510aa954ce3b9417e393ea3e40587618701cd2d82259aa703"
+    },
+    {
+      "package": "@tailwindcss/oxide",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@tailwindcss/oxide/package.json",
+      "exists": true,
+      "version": "4.3.0",
+      "sha256": "4a9b55be481705a64f0551278368bd54c6c8cb1d1a7421c381898f6af75da371"
+    },
+    {
+      "package": "tailwindcss",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/tailwindcss/package.json",
+      "exists": true,
+      "version": "4.3.0",
+      "sha256": "3e87bf49f863a5b83b473e1e10212561b406c69e6101423e757340c876f374ee"
+    },
+    {
+      "package": "@esbuild/darwin-arm64",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@esbuild/darwin-arm64/package.json",
+      "exists": true,
+      "version": "0.28.1",
+      "sha256": "4741fe8d75953474f275402d367368cf49c242b2bc04b85e25bad14bfd26eaad"
+    },
+    {
+      "package": "@tailwindcss/oxide-darwin-arm64",
+      "path": "/tmp/exo-packaging-repair.GLh4R1/home/.bb/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0/node_modules/@tailwindcss/oxide-darwin-arm64/package.json",
+      "exists": true,
+      "version": "4.3.0",
+      "sha256": "77fbc2eb07bd975749f481cee6cbd99997a4c13125f5866d21f3ffba643a6620"
+    },
+    {
+      "binary": "@esbuild/darwin-arm64/bin/esbuild",
+      "exists": true,
+      "bytes": 10573778,
+      "sha256": "e2dc9a52440a2a34f09434a2f4843cb1e30f84e40dcf238976ec61ef8cd7f36a"
+    },
+    {
+      "binary": "@tailwindcss/oxide-darwin-arm64/tailwindcss-oxide.darwin-arm64.node",
+      "exists": true,
+      "bytes": 2889840,
+      "sha256": "7b8e5446c3cbbc4710baa1f931ef20551091b2940d701708e8e35393d00fa90c"
+    }
+  ]
+}

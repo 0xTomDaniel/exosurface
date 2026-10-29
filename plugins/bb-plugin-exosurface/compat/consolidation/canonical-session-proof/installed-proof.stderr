@@ -1,0 +1,10 @@
+file:///private/tmp/exo-native-source.RVkor2/fixed-home/Library/Application%20Support/Exosurface/bb-source/node_modules/@earendil-works/pi-coding-agent/dist/extensions/codemode/tool.js:24
+import { MCP_TYPESCRIPT_PREAMBLE, mcpStructuredContentSchema, renderToolOutputType, renderToolSample, toCodemodeIdentifier, } from "@earendil-works/pi-codemode/declarations";
+         ^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '@earendil-works/pi-codemode/declarations' does not provide an export named 'MCP_TYPESCRIPT_PREAMBLE'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:326:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:429:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async file:///private/tmp/exo-canonical-proof.syqeus/proof.mjs:2:24
+
+Node.js v24.15.0

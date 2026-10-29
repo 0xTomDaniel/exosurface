@@ -1,0 +1,33 @@
+{
+  "format": "exosurface-relocated-imports/0",
+  "artifact": "/tmp/exo-native-source.RVkor2/fixed-artifacts/exosurface-0.1.0-dev/plugin",
+  "results": [
+    {
+      "entry": "owner-service",
+      "exit": 0,
+      "stdout": "{\"ok\":true,\"contract\":\"exosurface-package/0\",\"runtimeImplemented\":true,\"implementation\":\"existing-primary-owner\",\"releaseReady\":false}\n{\"entry\":\"owner-service\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "live",
+      "exit": 0,
+      "stdout": "{\"entry\":\"live\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "fixture",
+      "exit": 0,
+      "stdout": "{\"entry\":\"fixture\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "workspace-extension",
+      "exit": 0,
+      "stdout": "{\"entry\":\"workspace-extension\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    },
+    {
+      "entry": "workspace-frame",
+      "exit": 0,
+      "stdout": "{\"entry\":\"workspace-frame\",\"imported\":true,\"registered\":false,\"providerCalled\":false}"
+    }
+  ],
+  "nativeAcceptance": "NOT RUN",
+  "releaseReady": false
+}

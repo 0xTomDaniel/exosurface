@@ -1,0 +1,64 @@
+{
+  "format": "exosurface-native-consolidation/1",
+  "releaseReady": false,
+  "fixture": "/tmp/exo-native-source.RVkor2",
+  "producer": "387acf93138976559881b89b1d0a886f3cebb00b",
+  "producerClean": true,
+  "previousProducer": "5007e44a2cace8bb38204a37127967972b44e801",
+  "tooling": "36816b2d711e5a2f7463c3428f9a51b2f46a0db0",
+  "artifact": "/tmp/exo-native-source.RVkor2/fixed-artifacts/exosurface-0.1.0-dev",
+  "manifestSha256": "44cb01561bddda5b9ac1bc64e5f7330c31249b8123152c7fc67c08213781e91f",
+  "payloadFiles": 411,
+  "changedPayloadPathsSince5007e44": [
+    "plugin/dist/server.js",
+    "plugin/server.ts"
+  ],
+  "bbSourceDir": "/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/bb-source",
+  "sameVersionReleaseNotOverwritten": true,
+  "nativeStatus": "running",
+  "statusDetail": null,
+  "appHasApp": true,
+  "appHash": "808a5c920402ede8",
+  "providerIds": [
+    "exo-spike"
+  ],
+  "streams": [
+    "workspace-stream",
+    "surface-stream-main"
+  ],
+  "nativePiOptChatOwner": false,
+  "realProviderDispatch": false,
+  "nativeConversation": false,
+  "fullUiBringBack": false,
+  "restartStatus": "running",
+  "restartPersistedRevision": 2,
+  "existingAtomLimitUtf16": 2000,
+  "inputEquality": {
+    "fixtureOnly": true,
+    "providerDispatch": false,
+    "nativeOwner": false,
+    "uiIssuedOwnerCommands": 1,
+    "ownerCommandExact": true,
+    "persistedProjectionExact": true,
+    "reopenedExact": true,
+    "utf16Units": 1170,
+    "codePoints": 1080,
+    "valueSha256": "4113a62bbd5c9e6bb09401058957a3557a20e4021f4a93a17f23f0db82221a3a"
+  },
+  "rights": "SDK0.6.15 missing license terms remains unresolved; repository metadata is not a grant. Patched Zod qualifications preserved.",
+  "advisories": "No fresh online audit; offline unavailability is not security clearance.",
+  "isolation": "Same-account instrumentation, not OS sandbox; fresh private browser profile, deny proxy/DNS policy, CDP fail-closed non-loopback requests before navigation; pinned browser/esbuild and inspected strict offline npm child commands only.",
+  "teardown": {
+    "fixtureRuntimeProcesses": [],
+    "serverPidsChecked": [
+      "64640"
+    ],
+    "browserPidChecked": "64371",
+    "nativeServerExit": 0,
+    "loadedRunExit": 0,
+    "serverHealthAfterStopExit": 7,
+    "serverListenCheckExit": 1,
+    "ownerSocketExists": false,
+    "note": "Same-account instrumentation and read-only process/listener checks, not OS sandbox. Calling shells may appear in raw pgrep snapshots."
+  }
+}

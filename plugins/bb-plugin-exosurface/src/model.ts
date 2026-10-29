@@ -1,0 +1,1 @@
+export const MODEL = { id: 'exo', model: 'exo', displayName: 'Exo', description: 'Explicit configured Exo route', isDefault: true, supportedReasoningEfforts: [{ reasoningEffort: 'medium' as const, description: 'Route is configured by owner, not overridden here' }], defaultReasoningEffort: 'medium' as const };

@@ -1,0 +1,45 @@
+{
+  "schema": "exosurface-zod3-backport/1",
+  "name": "zod",
+  "version": "3.25.76+exosurface.1",
+  "artifact": "zod-3.25.76-exosurface.1.tgz",
+  "sha256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+  "integrity": "sha512-U6xUzLy0K0NnH8MQmpNh93a85Xj3WvrFqazfECHnzSw+SbffyJGTgak+2ewumoQJrCZJ2qrewocNa3I4VCvwtA==",
+  "bytes": 584883,
+  "upstream": {
+    "name": "zod",
+    "version": "3.25.76",
+    "license": "MIT",
+    "gitHead": "50606616c0d291caf3210a7521da51271b918333",
+    "tarball": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+    "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==",
+    "localVersion": "3.25.76+exosurface.1",
+    "upstreamFix": "https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+    "upstreamPullRequest": "https://github.com/colinhacks/zod/pull/6652",
+    "advisory": "GHSA-mrhx-c7xc-m3w5"
+  },
+  "changes": [
+    {
+      "path": "package/v3/types.cjs",
+      "upstreamSha256": "06487cc05ed45c5dd29789bf0aa75734d1ce06592a7f2665ba4ca90a68e8a3e1",
+      "patchedSha256": "674e29beb1bafb0ac61ad688431322e9397ab9b91272173f19dcf11e310f8e3a"
+    },
+    {
+      "path": "package/v3/types.js",
+      "upstreamSha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+      "patchedSha256": "7b994f7652ae24855e9fe3066de3463f9bfd1083ca7d56d22434942fcddfbffe"
+    },
+    {
+      "path": "package/package.json",
+      "upstreamSha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+      "patchedSha256": "43a6011549003eb4831a0d4c461dc4e9a0f0fe1ea8e79516fd59090104c91233"
+    },
+    {
+      "path": "package/src/v3/types.ts",
+      "upstreamSha256": "70309a0877c35d036842e291fe7c8a4439d5db49411d233f8a22bf8a59c41419",
+      "patchedSha256": "43e7d808270d2521f9969d81fcddce1df165618483454b72d0c19df98f6e61f3"
+    }
+  ],
+  "notice": "package/EXOSURFACE_BACKPORT.md",
+  "scope": "Only v3 constrained-container mechanism backport. Existing v4 subpaths are unchanged and outside this candidate's approved consumed graph. No upstream fixed-version or scanner-clearance claim."
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "exosurface-dompurify-fix/1",
+  "observedAt": "2026-10-29T00:46:18.638754+00:00",
+  "previousReviewedCheckpoint": "0e21a2c28bacfca6369fdd4d74a2f5435516d64b",
+  "releaseReady": false,
+  "strictPeerCi": {
+    "exitCode": 0,
+    "installedPackages": 44,
+    "ignoreScripts": true,
+    "omitPeer": true,
+    "disposableHomeTmpAndCopiedCache": true
+  },
+  "npmLsExitCode": 0,
+  "rootApplicationMarkdown": "node_modules/@a2ui/markdown-it/src/markdown.js",
+  "markdownVersion": "0.2.1",
+  "markdownPeerCore": "^0.13.0",
+  "actualCoreVersion": "0.13.0",
+  "actualMarkdownSanitizerVersion": "3.4.17",
+  "candidateTests": {
+    "passed": 19,
+    "failed": 0
+  },
+  "unmodifiedLegacyPerGraph": {
+    "upstream": 36,
+    "patched": 36
+  },
+  "typechecks": {
+    "defaultExitCode": 0,
+    "sourceConditionExitCode": 0,
+    "actualDirectMarkdownImportIncluded": true
+  },
+  "browserTests": {
+    "passed": 9,
+    "failed": 0,
+    "engine": "Headless Chromium131/Brave",
+    "baselineSanitizerVersion": "3.4.11",
+    "nodeAndBrowserRawMarkdownCompared": true,
+    "rawtextResult": "fail-closed TypeError; dirty original is not a sanitizer result",
+    "nonDefaultConfigurationsAreTestOnly": true,
+    "notApplicationExploitProof": true
+  },
+  "audit": {
+    "exitCode": 1,
+    "dompurifyEntryPresent": false,
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 4,
+      "critical": 0,
+      "total": 4
+    },
+    "remaining": "Four propagated Zod high package entries; local backport is not upstream/scanner clearance or advisory acceptance"
+  },
+  "artifactAndNoticesUnchanged": {
+    "artifact.json": "e088ca7cbaadf5faa79acdedbd4fee17abf6e3c9b4a9667c33ddcf8c6520d4ff",
+    "zod-3.25.76-exosurface.1.tgz": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+    "backport.patch": "d508c6a32209136be0077f1a5e29d8c759180ff7fd97fed647f682e6cb30bb76",
+    "NOTICE.md": "42104642a830029ec3db91f26be17d7a8ab8f15753614bf30f712b485612b2a7",
+    "LICENSE.upstream": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
+  },
+  "installedDOMPurifyNotices": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "LICENSE-MPL": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85"
+  },
+  "logicalLockChanges": [
+    "Root explicit @a2ui/markdown-it0.2.1 declaration",
+    "Unchanged markdown0.2.1 moved from nested React node_modules to root",
+    "DOMPurify3.4.11->3.4.17 version/resolved/integrity only"
+  ],
+  "lockSha256": "4bc4e10c0e57d9ea6b35e02aca285f62e3ac6fb855419f798aa79df155c3b04b",
+  "evidenceSha256": {
+    "npm-audit.json": "41b6fe306af870bb02592e892258e9881e2d1089718799843208286b987ea89d",
+    "typechecks.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "parity.tap": "2c07e2417a75c9fdae1477f35a1d9cabb6f1b699cb04dc79a3ec8855b11e3a8f",
+    "install.log": "fa049348664d767e6b6da0f568d812d846837b9e90877285f3a0d978500b8884",
+    "npm-ls.json": "154e00614e1908a71fbcfd0a6c8f2e504e075fd8f40852000207888fd2618be8",
+    "browser.json": "d9bdb5d86a589ec02355beaeee874db234f81a0a9a17724fc4ecabe36697f028"
+  }
+}

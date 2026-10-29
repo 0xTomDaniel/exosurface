@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "error": {
+    "code": "http_422",
+    "message": "HTTP 422: install failed: frontend bundle build for \"exosurface\" failed: DISPOSABLE TRIPWIRE: child-process {\"name\":\"execFile\",\"args\":[\"$NODE_PREFIX/bin/node\",[\"/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/npm/bin/npm-cli.js\",\"install\",\"--prefix\",\"/tmp/exo-native-consolidated.QPR6vW/bb-data/plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0.staging-8afeade2-a777-4b77-97b5-c7e038cb7051\",\"--ignore-scripts\",\"--no-audit\",\"--no-fund\",\"--no-package-lock\",\"esbuild@0.28.1\",\"@tailwindcss/node@4.3.0\",\"@tailwindcss/oxide@4.3.0\",\"tailwindcss@4.3.0\"]]}"
+  }
+}

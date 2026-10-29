@@ -1,0 +1,27 @@
+{
+  "exe": "$NODE_PREFIX/bin/node",
+  "args": [
+    "$NODE_PREFIX/lib/node_modules/npm/bin/npm-cli.js",
+    "ci",
+    "--offline",
+    "--strict-peer-deps",
+    "--no-fund"
+  ],
+  "cwd": "/tmp/exo-native-source.RVkor2/fixed-home/Library/Application Support/Exosurface/.bb-source-wZY1VB",
+  "env": {
+    "PATH": "$NODE_PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/tmp/exo-native-source.RVkor2/tmp/exo-bb-build-PMyQkj",
+    "TMPDIR": "/tmp/exo-native-source.RVkor2/tmp/exo-bb-build-PMyQkj",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "npm_config_offline": "true",
+    "npm_config_cache": "/tmp/exo-native-source.RVkor2/cache",
+    "npm_config_userconfig": "/tmp/exo-native-source.RVkor2/tmp/exo-bb-build-PMyQkj/user.npmrc",
+    "npm_config_globalconfig": "/tmp/exo-native-source.RVkor2/tmp/exo-bb-build-PMyQkj/global.npmrc",
+    "npm_config_update_notifier": "false",
+    "NODE_OPTIONS": "--require=/private/tmp/exo-native-source.RVkor2/installer-tripwire.cjs",
+    "EXO_NATIVE_ROOT": "/private/tmp/exo-native-source.RVkor2"
+  },
+  "status": 0,
+  "stdout": "\nadded 272 packages, and audited 274 packages in 7s\n\nfound 0 vulnerabilities\n",
+  "stderr": "npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\nnpm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n"
+}

@@ -1,0 +1,1 @@
+Error: HTTP 422: install failed: frontend bundle build for "exosurface" failed: Build failed with 2 errors: app.tsx:3:20: ERROR: Could not resolve "./legacy/primary/app" app.tsx:4:20: ERROR: Could not resolve "./legacy/surface/app"

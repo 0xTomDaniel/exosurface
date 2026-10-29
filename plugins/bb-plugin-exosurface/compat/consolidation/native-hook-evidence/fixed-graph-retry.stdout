@@ -1,0 +1,97 @@
+{
+  "format": "exosurface-consumer-graph/0",
+  "consumers": [
+    {
+      "consumer": "surface",
+      "mode": "cjs",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "surface",
+      "mode": "esm",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "@a2ui/web_core/v0_9",
+      "mode": "cjs",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "@a2ui/web_core/v0_9",
+      "mode": "esm",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "@a2ui/react/v0_9",
+      "mode": "cjs",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "@a2ui/react/v0_9",
+      "mode": "esm",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "zod-to-json-schema",
+      "mode": "cjs",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "zod-to-json-schema",
+      "mode": "esm",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/zod/index.cjs",
+      "version": "3.25.76+exosurface.1",
+      "oversizeChildVisits": 0
+    },
+    {
+      "consumer": "primary",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/zod/index.cjs",
+      "version": "4.6.6"
+    },
+    {
+      "consumer": "primary SDK",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/node_modules/zod/index.cjs",
+      "version": "4.6.6"
+    },
+    {
+      "consumer": "surface SDK",
+      "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/@get-bb/plugin-sdk/node_modules/zod/index.cjs",
+      "version": "4.6.6"
+    }
+  ],
+  "markdown": {
+    "entry": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/@a2ui/markdown-it/src/markdown.js",
+    "declaredDOMPurify": "3.4.11",
+    "resolvedDOMPurify": "/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/legacy/surface/node_modules/@a2ui/markdown-it/node_modules/dompurify/dist/purify.cjs.js",
+    "version": "3.4.17",
+    "surfaceScopedOverride": {
+      ".": "0.2.1",
+      "dompurify": "3.4.17"
+    }
+  },
+  "npmLs": [
+    {
+      "project": ".",
+      "exit": 0
+    },
+    {
+      "project": "legacy/surface",
+      "exit": 0
+    }
+  ]
+}
+{"format":"exosurface-artifact-graph/0","artifact":"/tmp/exo-native-source.RVkor2/fixed-artifacts/exosurface-0.1.0-dev/plugin","provenanceSHA256":"df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5","runtimeEntries":["owner-service","live","fixture","workspace-extension","workspace-frame"],"staticImportsBuiltinOnly":true,"dynamicRequireResolutionNotCovered":true,"relocatedImports":"separate required test/consolidation-relocated.mjs","archivedEngineAbsent":true,"actualBBServerZod4":"4.6.6","actualBBServerZod3":"patched3.25.76; mapped input and installed file hashes","actualBBAppDOMPurify":"3.4.17","actualBBAppArraySetEarlyReturnPresent":true,"releaseReady":false,"nativeProductAcceptance":"NOT RUN; graph/static assertions are not UI behavior proof"}

@@ -1,0 +1,291 @@
+{
+  "schema": "exosurface-dompurify-readonly-triage/1",
+  "observedAt": "2026-10-29T00:34:37.286370+00:00",
+  "candidateCommit": "c22ba24eac4a529a049f7f69af83607afac8b74e",
+  "releaseReady": false,
+  "scope": "Read-only exact-six-advisory/lock/import/availability/prior-evidence triage; no dependency or renderer changes",
+  "correction": {
+    "incorrectProseInstalledVersion": "3.4.16",
+    "actualLockedInstalledAndMarkdownDeclaredVersion": "3.4.11",
+    "rawAuditArtifactAndLockUnchanged": true
+  },
+  "lockSha256": "7aa75a7a2748ce7256814551505efcf9fc19e075e0837d3bdebbc2ce80e6be8f",
+  "lockEntries": {
+    "node_modules/@a2ui/react": {
+      "version": "0.13.0",
+      "resolved": "https://registry.npmjs.org/@a2ui/react/-/react-0.13.0.tgz",
+      "integrity": "sha512-875ZrJeOKVpzfmxjTMIXflE+LG91rmaP5r/rRccZxVEGpCxjRPVoY9BVVayKAN39UbopU3qAEzln1Fhb+LfksA==",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@a2ui/markdown-it": "^0.2.1",
+        "@a2ui/web_core": "^0.13.0",
+        "clsx": "^2.1.1",
+        "markdown-it": "^14.2.0",
+        "zod": "^3.25.76"
+      },
+      "engines": {
+        "node": ">=18.0.0"
+      },
+      "peerDependencies": {
+        "react": "^18.0.0 || ^19.0.0",
+        "react-dom": "^18.0.0 || ^19.0.0",
+        "zod": "^3.25.76"
+      }
+    },
+    "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it": {
+      "version": "0.2.1",
+      "resolved": "https://registry.npmjs.org/@a2ui/markdown-it/-/markdown-it-0.2.1.tgz",
+      "integrity": "sha512-5a84+BICiX/knoXw99cM/J618pgz+W1Vwd92F7LL7ISlbUpa2VCB1u8wkDE62tyBgTQGT28JNJ5aK078e4V/FA==",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "dompurify": "3.4.11",
+        "markdown-it": "^14.2.0"
+      },
+      "peerDependencies": {
+        "@a2ui/web_core": "^0.13.0"
+      }
+    },
+    "node_modules/dompurify": {
+      "version": "3.4.11",
+      "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.11.tgz",
+      "integrity": "sha512-zhlUV12GsaRzMsf9q5M254YhA4+VuF0fG+QFqu6aYpoGlKtz+w8//jBcGVYBgQkR5GHjUomejY84AV+/uPbWdw==",
+      "license": "(MPL-2.0 OR Apache-2.0)",
+      "optionalDependencies": {
+        "@types/trusted-types": "^2.0.7"
+      }
+    }
+  },
+  "installed": {
+    "node_modules/@a2ui/react": "0.13.0",
+    "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it": "0.2.1",
+    "node_modules/dompurify": "3.4.11"
+  },
+  "runtime": {
+    "sourceHashes": {
+      "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it/src/markdown.js": "b9dec1ee84c375089ab8bfd7be6fed571e2b5610b31172fdaabb116bc38fa615",
+      "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it/src/sanitizer.js": "7ae395146ce1e5b7e03e52a118ac55c8cda57357ed1529a8861e9cb5dcc14319",
+      "node_modules/@a2ui/react/node_modules/@a2ui/markdown-it/src/raw-markdown.js": "cbd7a1f5a46d3e80f1808923064c29291b3f51c727f4b6b836460ad4aab9fc7a",
+      "node_modules/dompurify/dist/purify.es.mjs": "8a40d0a0f66c217879826a4e97bca5ef88f1b751fe813d27cf4195165aa3778f",
+      "node_modules/dompurify/dist/purify.cjs.js": "224b36fe28ca43787ad2c53dc65b37adf72aa572c423d7cf56d17439ddd2826a"
+    },
+    "sanitizer": "purify.sanitize(html), HTML-string input, one argument/default options",
+    "esmEntry": "node_modules/dompurify/dist/purify.es.mjs",
+    "cjsEntry": "node_modules/dompurify/dist/purify.cjs.js",
+    "boundedSourceScan": "Existing spike app.tsx/src/lib: no custom DOMPurify config/hooks or six advisory-specific mode selectors found",
+    "applicationRootMarkdownImport": "MODULE_NOT_FOUND in candidate harness: markdown package nested under React; existing renderer direct import needs explicit resolution at integration",
+    "browserExecuted": false,
+    "specificExploitConditionsEstablished": false,
+    "generalUnreachabilityProven": false
+  },
+  "advisories": [
+    {
+      "id": "GHSA-55q2-fjhq-7xh7",
+      "range": "<= 3.4.12",
+      "firstPatched": "3.4.13",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "medium",
+      "cve_id": null,
+      "summary": "DOMPurify: IN_PLACE hook removal leaves a detached subtree executable, causing XSS",
+      "url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7",
+      "updated_at": "2026-08-07T15:30:48Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.12",
+          "first_patched_version": "3.4.13",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    },
+    {
+      "id": "GHSA-c2j3-45gr-mqc4",
+      "range": "<= 3.4.11",
+      "firstPatched": "3.4.12",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "low",
+      "cve_id": "CVE-2026-66010",
+      "summary": "DOMPurify: `CUSTOM_ELEMENT_HANDLING` bypasses `afterSanitizeElements` for allowed custom elements.",
+      "url": "https://github.com/advisories/GHSA-c2j3-45gr-mqc4",
+      "updated_at": "2026-10-02T22:43:23Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.11",
+          "first_patched_version": "3.4.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    },
+    {
+      "id": "GHSA-6688-9rhm-gjv2",
+      "range": "<= 3.4.15",
+      "firstPatched": "3.4.16",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "low",
+      "cve_id": null,
+      "summary": "DOMPurify: IN_PLACE returns a force-removed rawtext root whose text carries attacker markup \u2014 pure HTML reparse executes",
+      "url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2",
+      "updated_at": "2026-10-05T23:43:54Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.15",
+          "first_patched_version": "3.4.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    },
+    {
+      "id": "GHSA-cg2g-xh64-v4q7",
+      "range": ">= 3.4.4, <= 3.4.16",
+      "firstPatched": "3.4.17",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "critical",
+      "cve_id": null,
+      "summary": "DOMPurify SAFE_FOR_TEMPLATES bypass: split template expressions survive in attached shadow root content on DOM output modes",
+      "url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7",
+      "updated_at": "2026-10-22T16:25:32Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": ">= 3.4.4, <= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    },
+    {
+      "id": "GHSA-mrv2-3pqr-j5jr",
+      "range": "<= 3.4.16",
+      "firstPatched": "3.4.17",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "high",
+      "cve_id": null,
+      "summary": "DOMPurify IN_PLACE: hook that removes a parent or sibling leaves the detached subtree's event handlers armed (incomplete fix for GHSA-p98j-92pf-mc4p)",
+      "url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr",
+      "updated_at": "2026-10-22T16:24:53Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    },
+    {
+      "id": "GHSA-c6gr-qvv4-5v3f",
+      "range": "<= 3.4.16",
+      "firstPatched": "3.4.17",
+      "installed3_4_11": true,
+      "proposed3_4_17": false,
+      "severity": "low",
+      "cve_id": null,
+      "summary": "DOMPurify: SMIL attributeName=href guard is skipped when PARSER_MEDIA_TYPE is application/xhtml+xml",
+      "url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f",
+      "updated_at": "2026-10-22T16:24:24Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "matchesPrior55RangesFixAndUpdatedAt": true
+    }
+  ],
+  "rangeChecks": "npm bundled semver; GitHub comma separators normalized to spaces; every range includes3.4.11 and excludes3.4.17",
+  "availableProposal": {
+    "package": "dompurify",
+    "version": "3.4.17",
+    "distTags": {
+      "latest": "3.4.17"
+    },
+    "published": "2026-10-12T12:41:28.880Z",
+    "dist": {
+      "tarball": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.17.tgz",
+      "integrity": "sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==",
+      "shasum": "074bbb24eaa419535ac19ffe7f663104b0e1543d"
+    },
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/purify.es.d.mts",
+          "default": "./dist/purify.es.mjs"
+        },
+        "default": {
+          "types": "./dist/purify.cjs.d.ts",
+          "default": "./dist/purify.cjs.js"
+        }
+      },
+      "./purify.js": "./dist/purify.js",
+      "./purify.min.js": "./dist/purify.min.js",
+      "./dist/purify.js": "./dist/purify.js",
+      "./dist/purify.min.js": "./dist/purify.min.js"
+    },
+    "dependencies": {
+      "@types/trusted-types": "^2.0.7"
+    },
+    "peerDependencies": null,
+    "engines": null,
+    "artifactDownloaded": false,
+    "installedOrChanged": false,
+    "scopedOverride": {
+      "@a2ui/markdown-it": {
+        ".": "0.2.1",
+        "dompurify": "3.4.17"
+      }
+    },
+    "strictPeersAssessment": "No DOMPurify peer/engine restriction; markdown0.2.1 peer core^0.13.0 remains satisfied. Proposed-graph fresh strict-peer install not run in read-only triage."
+  },
+  "prior55": {
+    "commit": "52db1f334314e9872d2b2c53b6b2764de21981b4",
+    "url": "https://github.com/0xTomDaniel/exosurface/pull/55",
+    "sameSixAdvisoryRecords": true,
+    "fix": "Scoped @a2ui/markdown-it -> dompurify3.4.17, preserved A2UI0.13; current candidate did not inherit it",
+    "recordedTests": "A2UI108 pass; primary28 pass+1 real-binary skip; both typechecks pass; A2UI audit4 propagated Zod high/0 critical",
+    "notClaimed": "Browser exploit tests/final production bundle/real-Mac acceptance"
+  },
+  "proposalTests": [
+    "Fresh disposable copied-cache offline strict-peer npm ci/npm ls; intended DOM/dependency lock diff only; actual sanitizer3.4.17 and SDK4.6.6 resolution",
+    "Candidate19 + legacy36 per graph + both typechecks; Zod artifact/manifest unchanged",
+    "Isolated real-DOM default-markdown accepted/unsafe-input regression; six separate bounded upstream-style non-default advisory-mode tests",
+    "Separately authorized fresh audit: no DOMPurify findings; local patched Zod3 scanner disposition remains open; final renderer bundle/notice review"
+  ],
+  "releaseGatesOpen": [
+    "existing reused browser textbox/press/owner/persisted-update/reopen",
+    "real authenticated inference",
+    "clean-Mac install",
+    "lifecycle/reboot/minimum-Node",
+    "release/advisory disposition"
+  ]
+}

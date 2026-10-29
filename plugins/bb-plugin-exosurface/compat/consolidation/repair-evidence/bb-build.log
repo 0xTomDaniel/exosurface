@@ -1,0 +1,12 @@
+Downloading the plugin build toolchain (one time)…
+  esbuild@0.28.1, @tailwindcss/node@4.3.0, @tailwindcss/oxide@4.3.0, tailwindcss@4.3.0
+Toolchain ready (3.9s)
+dist/server.js
+dist/server.js.map
+dist/server.meta.json
+dist/app.js
+dist/app.css
+dist/app.meta.json
+dist/host.js
+dist/host.js.map
+dist/host.meta.json

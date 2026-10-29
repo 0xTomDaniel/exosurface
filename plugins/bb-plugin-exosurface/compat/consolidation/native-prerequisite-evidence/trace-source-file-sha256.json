@@ -1,0 +1,142 @@
+[
+  {
+    "path": "app.tsx",
+    "sha256": "4184b6cca838119149400b91d4a562747b898a45f6ff1a9a0ad388a509de2455"
+  },
+  {
+    "path": "host.ts",
+    "sha256": "d3bbf3976c1a9855059727898223c4f38e6e37ee999c5cb12fecb58ab32b9f1a"
+  },
+  {
+    "path": "legacy/primary/app.tsx",
+    "sha256": "ed9c9fd4eef74702f1ea2a5d04d1f6ebf15e0334903bfe9042d1ff837ac69601"
+  },
+  {
+    "path": "legacy/primary/host.ts",
+    "sha256": "f7c85273f60489f65e87f2c4393e65fae3acb6a2d0feaebf196dd3e90fb42bcc"
+  },
+  {
+    "path": "legacy/primary/server.ts",
+    "sha256": "42ac565fa520602dbc7b33fef4c1950bee2ff53923738fd33b178b691e34aaaf"
+  },
+  {
+    "path": "legacy/primary/src/local-config.ts",
+    "sha256": "c141bf4b762e909c228cf03b4727351d13f90a07bdd9d7913971150f053f96fa"
+  },
+  {
+    "path": "legacy/primary/src/model-selection.ts",
+    "sha256": "bbf9987fac4ddae6941ce400f1de2fdc442b5fb3bf3c73f4ef7640c583ee64c7"
+  },
+  {
+    "path": "legacy/primary/src/overview.ts",
+    "sha256": "94229017b0ca5613dd12e6e7e9995bf8dd458ebde08804e14261b5d75af4524c"
+  },
+  {
+    "path": "legacy/primary/src/owner-client.ts",
+    "sha256": "e314f44262aaa257bd6e678f1a1bb5f1050c9b7ea0006936d318156a5cd2c77b"
+  },
+  {
+    "path": "legacy/primary/src/pi-rpc.ts",
+    "sha256": "ebb346569a3d42025c2dd54a95b5357f415d95bef266e5df19ed223983324c3a"
+  },
+  {
+    "path": "legacy/primary/src/runtime.ts",
+    "sha256": "5bfa59dbb29581c6359ed88bfcbf3ebe0d51d155502c6055e84b95e0b5ceb6ef"
+  },
+  {
+    "path": "legacy/primary/src/state.ts",
+    "sha256": "1e9550692df9a47ad3da877a1894c7ec60ced25b29b0050cb733707fba7bacf3"
+  },
+  {
+    "path": "legacy/surface/app.tsx",
+    "sha256": "1981449c7282ca557382c0f6a6dbb31ae7ef769424fc700d5724210c07ea09c0"
+  },
+  {
+    "path": "legacy/surface/composition/client.ts",
+    "sha256": "60d07ce641e45b205ee7ab7f8eae65fbf112a44f417341ea4f1c86bb5564a06c"
+  },
+  {
+    "path": "legacy/surface/lib/document-style.ts",
+    "sha256": "c781a5b403cd6ce070e0ee20e336008dd5a0dedf301853c4124c76b93e9491a2"
+  },
+  {
+    "path": "legacy/surface/lib/exo-theme.ts",
+    "sha256": "82b1bb03613af2310c6359f33895011a91dc702753f135606b7f71bf1e17bac0"
+  },
+  {
+    "path": "legacy/surface/observer/client.ts",
+    "sha256": "66c082225e811414fedeab4f2eb8b28dff250892682d99c93d30eb2ef279e3b0"
+  },
+  {
+    "path": "legacy/surface/server.ts",
+    "sha256": "8e9bd91264cf0a32499cb565cd7a54599b9d89022048f2925361d1c828516342"
+  },
+  {
+    "path": "legacy/surface/src/canvas-client.ts",
+    "sha256": "ac4f78824add533d75840cf92af0923de4f84feefc013f9ac8cb2d21ac45d379"
+  },
+  {
+    "path": "legacy/surface/src/canvas-history.ts",
+    "sha256": "7fe65594da26a21730eb1eb3cde79b6a523d683c7c09fb4bcbe4481d4f5c3295"
+  },
+  {
+    "path": "legacy/surface/src/canvas-input.ts",
+    "sha256": "da0788234e8007bc5d29d565fcba38388be2f81c0b204c4811c3e2601d29d0d3"
+  },
+  {
+    "path": "legacy/surface/src/canvas-memory.ts",
+    "sha256": "fadb4d9f47123a75068f5d145b364029f5f12a0a5d8fb6e2c6537068c9e2e141"
+  },
+  {
+    "path": "legacy/surface/src/delivery.ts",
+    "sha256": "c99a9bb0db96db8b61644181518d0f2b85a4cda3ff3a525ba670f6cef41477f7"
+  },
+  {
+    "path": "legacy/surface/src/drafts.ts",
+    "sha256": "ebb3c2f3516e60ba7fb72919aa22abf18778ae670c881c3110d8faa3f70d0ac8"
+  },
+  {
+    "path": "legacy/surface/src/exo-catalog.ts",
+    "sha256": "f28549b2d98313d4481053d2e9a57f78a0719f93f5a3f5e803eac715e4a5c292"
+  },
+  {
+    "path": "legacy/surface/src/exo-components.tsx",
+    "sha256": "991777a1f5785f634f4c70eda0703a4b7ca2180cd3daebade33eb85b0a86305e"
+  },
+  {
+    "path": "legacy/surface/src/local-config.ts",
+    "sha256": "f7b76bb3b48dd437bcf27b6883c7d4be7cd1d44b7ad4ac241ad7ece4eabe04b7"
+  },
+  {
+    "path": "legacy/surface/src/rewind-store.ts",
+    "sha256": "d5a3a678e14a14a9b3e16fe4ee48fea5b41210d984cc89fbd68f0351e13cd25a"
+  },
+  {
+    "path": "legacy/surface/src/snapshot-format.ts",
+    "sha256": "8e50a8e2ac31491e9a15bf50db6338f8aaffd9d14a78d7aab78b53dc5ef420dd"
+  },
+  {
+    "path": "legacy/surface/src/stage.ts",
+    "sha256": "abb7660ca39d89ffa0815b583b178472ddf6daa0eebfdf18a322c092a25416c9"
+  },
+  {
+    "path": "legacy/surface/src/state.ts",
+    "sha256": "8b4a23c71884377f559b6dec119d0858e4bc544723fa7d3066d85cc50d3e2b72"
+  },
+  {
+    "path": "legacy/surface/src/workspace-view.ts",
+    "sha256": "af14d03f93ad5671c840881d936c4fd93fdb59ed06ba0c5ef8394e6c26439088"
+  },
+  {
+    "path": "legacy/surface/src/workspace.ts",
+    "sha256": "2d238b180e0e5174c219df92a5829af5ffdf001858a0f53eafa3a0cc91f5d6ff"
+  },
+  {
+    "path": "server.ts",
+    "sha256": "365b96e89022640daba8f76418d0c13138a87e6052d051baacb2955621704048"
+  },
+  {
+    "path": "src/input.ts",
+    "sha256": "9cb6ded5c679863c12331b83926db06d6a33aea8150432959d3db73853fa640a"
+  }
+]

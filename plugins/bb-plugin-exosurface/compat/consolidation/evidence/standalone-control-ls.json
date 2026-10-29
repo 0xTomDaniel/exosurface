@@ -1,0 +1,192 @@
+{
+  "version": "0.0.0",
+  "name": "exo-standalone-override-control",
+  "dependencies": {
+    "@a2ui/markdown-it": {
+      "version": "0.2.1",
+      "resolved": "https://registry.npmjs.org/@a2ui/markdown-it/-/markdown-it-0.2.1.tgz",
+      "overridden": true,
+      "dependencies": {
+        "@a2ui/web_core": {
+          "version": "0.13.0"
+        },
+        "dompurify": {
+          "version": "3.4.17",
+          "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.17.tgz",
+          "overridden": true,
+          "dependencies": {
+            "@types/trusted-types": {
+              "version": "2.0.7",
+              "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
+              "overridden": false
+            }
+          }
+        },
+        "markdown-it": {
+          "version": "14.3.3",
+          "resolved": "https://registry.npmjs.org/markdown-it/-/markdown-it-14.3.3.tgz",
+          "overridden": false,
+          "dependencies": {
+            "argparse": {
+              "version": "2.0.1",
+              "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+              "overridden": false
+            },
+            "entities": {
+              "version": "4.5.0",
+              "resolved": "https://registry.npmjs.org/entities/-/entities-4.5.0.tgz",
+              "overridden": false
+            },
+            "linkify-it": {
+              "version": "5.0.2",
+              "resolved": "https://registry.npmjs.org/linkify-it/-/linkify-it-5.0.2.tgz",
+              "overridden": false,
+              "dependencies": {
+                "uc.micro": {
+                  "version": "2.1.0"
+                }
+              }
+            },
+            "mdurl": {
+              "version": "2.1.0",
+              "resolved": "https://registry.npmjs.org/mdurl/-/mdurl-2.1.0.tgz",
+              "overridden": false
+            },
+            "punycode.js": {
+              "version": "2.3.1",
+              "resolved": "https://registry.npmjs.org/punycode.js/-/punycode.js-2.3.1.tgz",
+              "overridden": false
+            },
+            "uc.micro": {
+              "version": "2.1.0",
+              "resolved": "https://registry.npmjs.org/uc.micro/-/uc.micro-2.1.0.tgz",
+              "overridden": false
+            }
+          }
+        }
+      }
+    },
+    "@a2ui/web_core": {
+      "version": "0.13.0",
+      "resolved": "https://registry.npmjs.org/@a2ui/web_core/-/web_core-0.13.0.tgz",
+      "overridden": false,
+      "dependencies": {
+        "@lit/context": {
+          "version": "1.1.6",
+          "resolved": "https://registry.npmjs.org/@lit/context/-/context-1.1.6.tgz",
+          "overridden": false,
+          "dependencies": {
+            "@lit/reactive-element": {
+              "version": "2.1.2",
+              "resolved": "https://registry.npmjs.org/@lit/reactive-element/-/reactive-element-2.1.2.tgz",
+              "overridden": false,
+              "dependencies": {
+                "@lit-labs/ssr-dom-shim": {
+                  "version": "1.6.0",
+                  "resolved": "https://registry.npmjs.org/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.6.0.tgz",
+                  "overridden": false
+                }
+              }
+            }
+          }
+        },
+        "@preact/signals-core": {
+          "version": "1.14.5",
+          "resolved": "https://registry.npmjs.org/@preact/signals-core/-/signals-core-1.14.5.tgz",
+          "overridden": false
+        },
+        "lit": {
+          "version": "3.3.3",
+          "resolved": "https://registry.npmjs.org/lit/-/lit-3.3.3.tgz",
+          "overridden": false,
+          "dependencies": {
+            "@lit/reactive-element": {
+              "version": "2.1.2",
+              "resolved": "https://registry.npmjs.org/@lit/reactive-element/-/reactive-element-2.1.2.tgz",
+              "overridden": false,
+              "dependencies": {
+                "@lit-labs/ssr-dom-shim": {
+                  "version": "1.6.0",
+                  "resolved": "https://registry.npmjs.org/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.6.0.tgz",
+                  "overridden": false
+                }
+              }
+            },
+            "lit-element": {
+              "version": "4.2.2",
+              "resolved": "https://registry.npmjs.org/lit-element/-/lit-element-4.2.2.tgz",
+              "overridden": false,
+              "dependencies": {
+                "@lit-labs/ssr-dom-shim": {
+                  "version": "1.6.0",
+                  "resolved": "https://registry.npmjs.org/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.6.0.tgz",
+                  "overridden": false
+                },
+                "@lit/reactive-element": {
+                  "version": "2.1.2"
+                },
+                "lit-html": {
+                  "version": "3.3.3"
+                }
+              }
+            },
+            "lit-html": {
+              "version": "3.3.3",
+              "resolved": "https://registry.npmjs.org/lit-html/-/lit-html-3.3.3.tgz",
+              "overridden": false,
+              "dependencies": {
+                "@types/trusted-types": {
+                  "version": "2.0.7",
+                  "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
+                  "overridden": false
+                }
+              }
+            }
+          }
+        },
+        "redos-detector": {
+          "version": "6.1.4",
+          "resolved": "https://registry.npmjs.org/redos-detector/-/redos-detector-6.1.4.tgz",
+          "overridden": false,
+          "dependencies": {
+            "regjsparser": {
+              "version": "0.13.0",
+              "resolved": "https://registry.npmjs.org/regjsparser/-/regjsparser-0.13.0.tgz",
+              "overridden": false,
+              "dependencies": {
+                "jsesc": {
+                  "version": "3.1.0",
+                  "resolved": "https://registry.npmjs.org/jsesc/-/jsesc-3.1.0.tgz",
+                  "overridden": false
+                }
+              }
+            }
+          }
+        },
+        "validate-color": {
+          "version": "2.2.4",
+          "resolved": "https://registry.npmjs.org/validate-color/-/validate-color-2.2.4.tgz",
+          "overridden": false
+        },
+        "zod-to-json-schema": {
+          "version": "3.25.2",
+          "resolved": "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.25.2.tgz",
+          "overridden": false,
+          "dependencies": {
+            "zod": {
+              "version": "3.25.76+exosurface.1"
+            }
+          }
+        },
+        "zod": {
+          "version": "3.25.76+exosurface.1"
+        }
+      }
+    },
+    "zod": {
+      "version": "3.25.76+exosurface.1",
+      "resolved": "file:/private/tmp/exo-consolidation.tio5eJ/standalone-control/vendor/zod3/zod-3.25.76-exosurface.1.tgz",
+      "overridden": false
+    }
+  }
+}

@@ -1,0 +1,138 @@
+11.12.1
+{
+  "artifact": "zod-3.25.76-exosurface.1.tgz",
+  "integrity": "sha512-U6xUzLy0K0NnH8MQmpNh93a85Xj3WvrFqazfECHnzSw+SbffyJGTgak+2ewumoQJrCZJ2qrewocNa3I4VCvwtA==",
+  "sha256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+  "bytes": 584883
+}
+
+added 44 packages in 2s
+TAP version 13
+# upstream unmodified legacy fixtures: \# tests 36; \# pass 36; \# fail 0
+# patched unmodified legacy fixtures: \# tests 36; \# pass 36; \# fail 0
+# (node:18911) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: ESM root: constrained rejection before child parsing, refinements and async dispatch
+ok 1 - ESM root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 2.337541
+  type: 'test'
+  ...
+# Subtest: ESM root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 2 - ESM root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 792.69225
+  type: 'test'
+  ...
+# Subtest: ESM /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 3 - ESM /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.443125
+  type: 'test'
+  ...
+# Subtest: ESM /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 4 - ESM /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 108.974583
+  type: 'test'
+  ...
+# Subtest: CJS root: constrained rejection before child parsing, refinements and async dispatch
+ok 5 - CJS root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 1.679
+  type: 'test'
+  ...
+# Subtest: CJS root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 6 - CJS root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 1.752834
+  type: 'test'
+  ...
+# Subtest: CJS /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 7 - CJS /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.336333
+  type: 'test'
+  ...
+# Subtest: CJS /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 8 - CJS /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 0.868709
+  type: 'test'
+  ...
+# Subtest: TS source root: constrained rejection before child parsing, refinements and async dispatch
+ok 9 - TS source root: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 1.644416
+  type: 'test'
+  ...
+# Subtest: TS source root: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 10 - TS source root: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 1.845458
+  type: 'test'
+  ...
+# Subtest: TS source /v3: constrained rejection before child parsing, refinements and async dispatch
+ok 11 - TS source /v3: constrained rejection before child parsing, refinements and async dispatch
+  ---
+  duration_ms: 0.299042
+  type: 'test'
+  ...
+# Subtest: TS source /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+ok 12 - TS source /v3: accepted output, below-bound issues and unconstrained behavior match upstream
+  ---
+  duration_ms: 0.761
+  type: 'test'
+  ...
+# Subtest: Finite upstream control demonstrates pre-child mechanism gap, not an application exploit
+ok 13 - Finite upstream control demonstrates pre-child mechanism gap, not an application exploit
+  ---
+  duration_ms: 0.388416
+  type: 'test'
+  ...
+# Subtest: Artifact identity: only three implementations, version and notice differ; license/API/type files unchanged
+ok 14 - Artifact identity: only three implementations, version and notice differ; license/API/type files unchanged
+  ---
+  duration_ms: 256.898084
+  type: 'test'
+  ...
+# Subtest: Actual renderer/core/converter resolve patched v3; SDK independently resolves pinned Zod4
+ok 15 - Actual renderer/core/converter resolve patched v3; SDK independently resolves pinned Zod4
+  ---
+  duration_ms: 99.36675
+  type: 'test'
+  ...
+# Subtest: Unchanged official basic catalog schema, child refs, converter and >64 ChoicePicker options
+ok 16 - Unchanged official basic catalog schema, child refs, converter and >64 ChoicePicker options
+  ---
+  duration_ms: 25.076584
+  type: 'test'
+  ...
+# Subtest: Existing Exo catalog schema/refs and accepted workspace including 65 options preserve output
+ok 17 - Existing Exo catalog schema/refs and accepted workspace including 65 options preserve output
+  ---
+  duration_ms: 83.01775
+  type: 'test'
+  ...
+# Subtest: Unmodified legacy upstream snapshot/workspace/stage/incremental fixture suite
+ok 18 - Unmodified legacy upstream snapshot/workspace/stage/incremental fixture suite
+  ---
+  duration_ms: 793.641625
+  type: 'test'
+  ...
+# Subtest: Unmodified legacy patched snapshot/workspace/stage/incremental fixture suite
+ok 19 - Unmodified legacy patched snapshot/workspace/stage/incremental fixture suite
+  ---
+  duration_ms: 756.619458
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4787.445583
+/private/tmp/exo-zod3-independent.Uy6l53/compat/a2ui-runtime/node_modules/zod/src/v3/types.ts

@@ -1,0 +1,50 @@
+{
+  "schema": "exosurface-unit-teardown-observation/0",
+  "directories": [
+    {
+      "directory": "exo-fr-MnpGfM",
+      "onlyFile": "state/owner/state.json",
+      "contents": {
+        "ready": false,
+        "status": "failed",
+        "busy": false,
+        "error": "stopped"
+      },
+      "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534"
+    },
+    {
+      "directory": "exo-fr-wtbSsr",
+      "onlyFile": "state/owner/state.json",
+      "contents": {
+        "ready": false,
+        "status": "failed",
+        "busy": false,
+        "error": "stopped"
+      },
+      "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534"
+    },
+    {
+      "directory": "exo-pages-N6URr4",
+      "onlyFile": "state/owner/state.json",
+      "contents": {
+        "ready": false,
+        "status": "failed",
+        "busy": false,
+        "error": "stopped"
+      },
+      "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534"
+    },
+    {
+      "directory": "exo-pages-x1pFHG",
+      "onlyFile": "state/owner/state.json",
+      "contents": {
+        "ready": false,
+        "status": "failed",
+        "busy": false,
+        "error": "stopped"
+      },
+      "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534"
+    }
+  ],
+  "observation": "Four state-only directories remained after the two production-suite invocations; explicit removal only after this capture. Existing fixture removal hook is registered before owner.close hook; close writes stopped state. No production or existing-test teardown changes made. No process leak demonstrated. New interactive fixture separately asserts process-group exit before directory removal."
+}

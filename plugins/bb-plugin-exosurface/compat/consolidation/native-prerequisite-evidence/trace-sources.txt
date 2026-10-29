@@ -1,0 +1,51 @@
+196410:   if (import_semver.default.valid(requestedSpec) !== null) {
+196411:     return { kind: "npm", name: name2, spec: requestedSpec, specKind: "exact" };
+196412:   }
+196413:   if (import_semver.default.validRange(requestedSpec) !== null) {
+196414:     return { kind: "npm", name: name2, spec: requestedSpec, specKind: "range" };
+196415:   }
+196416:   if (/^[a-zA-Z][a-zA-Z0-9._-]*$/.test(requestedSpec)) {
+196417:     return { kind: "npm", name: name2, spec: requestedSpec, specKind: "tag" };
+196418:   }
+196419:   throw new Error(`invalid npm version, range, or dist-tag "${requestedSpec}"`);
+196420: }
+196421: function parseBuiltinSource(spec) {
+196422:   if (!BUILTIN_NAME_PATTERN.test(spec)) {
+196423:     throw new Error(
+196424:       `invalid builtin plugin name "${spec}" \u2014 use lowercase letters, digits, and dashes`
+196425:     );
+196426:   }
+196427:   return { kind: "builtin", name: spec };
+196428: }
+196429: function parsePluginSource(source) {
+196430:   if (source.startsWith("builtin:")) return parseBuiltinSource(source.slice(8));
+196431:   if (source.startsWith("git:")) return parseGitSource(source.slice(4));
+196432:   if (source.startsWith("npm:")) return parseNpmSource(source.slice(4));
+196433:   if (/^https?:\/\//iu.test(source)) return parseGitSource(source);
+196434:   const path14 = source.startsWith("path:") ? source.slice(5) : source;
+196435:   if (path14.length === 0) throw new Error("install source path is empty");
+196436:   return { kind: "path", path: path14 };
+196437: }
+196438: function normalizePluginSubdirectory(value) {
+196439:   const trimmed = value.startsWith("./") ? value.slice(2) : value;
+196440:   if (trimmed.length === 0 || trimmed.startsWith("/") || trimmed.includes("\\") || /^[a-zA-Z]:/.test(trimmed)) {
+196441:     throw new Error(`invalid plugin subdirectory "${value}"`);
+196442:   }
+196443:   assertSafeSegments(trimmed, "plugin subdirectory");
+196444:   if (trimmed.split("/").includes(".git")) {
+196445:     throw new Error(`invalid plugin subdirectory "${value}"`);
+196446:   }
+196447:   return trimmed;
+196448: }
+196449: function nestedPluginRoots(root, paths2) {
+196450:   const relatives = paths2.map((path14) => relative4(root, path14)).filter(
+196451:     (path14) => path14.length > 0 && path14 !== ".." && !path14.startsWith(`..${sep3}`)
+196452:   ).sort((left, right) => left.length - right.length);
+196453:   const kept = [];
+196454:   for (const candidate of relatives) {
+196455:     if (kept.includes(candidate)) continue;
+196456:     if (kept.some((parent) => candidate.startsWith(`${parent}${sep3}`))) {
+196457:       continue;
+196458:     }
+196459:     kept.push(candidate);
+196460:   }

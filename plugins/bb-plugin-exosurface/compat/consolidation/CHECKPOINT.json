@@ -1,0 +1,69 @@
+{
+  "format": "exosurface-consolidation-diagnostics/0",
+  "baseCommit": "f4a0c05e60047d9e8c8d9deb7d7fce00fff126ff",
+  "releaseReady": false,
+  "nativeProductAcceptance": "not run",
+  "toolchain": {
+    "node": "v24.15.0",
+    "npm": "11.12.1",
+    "BB": "0.45.0",
+    "SDK": "0.6.15"
+  },
+  "locks": {
+    "package-lock.json": "29281510f70832a4e95ba989988cfec722decceb2245f977e4a3e0098bce1d66",
+    "compat/consolidation/repro/workspace/package-lock.json": "34f0d961854eef52de360f8814ed871ac8325958560fe5c8f155bcb15ca19d97",
+    "compat/consolidation/repro/standalone/package-lock.json": "b5c48bd1a7c7438a18d4aedcfa8a332e6c73cbb77a3d24f47e9a0ac89bd47af1",
+    "compat/consolidation/repro/markdown/package-lock.json": "21118447339c2ce1f374ab2054503fb53f28b4ba4a9556867b4c266c3297dca6"
+  },
+  "gates": {
+    "finalStrictNestedCI": 0,
+    "ordinaryRootNpmLs": "FAIL: ELSPROBLEMS DOMPurify3.4.17 vs declared3.4.11; scoped override reporting false",
+    "strictTsc8192MiB": {
+      "exit": 2,
+      "diagnostics": 19,
+      "oom": false
+    },
+    "strictTscDefaultCurrent": {
+      "exit": 2,
+      "diagnostics": 19,
+      "oom": false
+    },
+    "originalDefaultHeapOOM": "retained failure",
+    "relocatedWorkspaceExtensionImport": "FAIL: dynamic @a2ui/react/v0_9 -> markdown-it resolution",
+    "relocatedOwnerSelftest": 0,
+    "relocatedReadiness": 2,
+    "unitTests": {
+      "pass": 28,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "optionProbes": {
+    "minimalWorkspace": {
+      "strictCI": 0,
+      "npmLs": 1
+    },
+    "standaloneControl": {
+      "strictCI": 0,
+      "npmLs": 0,
+      "fullSurfaceRouteProven": false
+    },
+    "staticMarkdown": {
+      "adopted": false,
+      "version": "14.3.3",
+      "types": "14.1.2",
+      "APIComparisons": 60,
+      "documentRoundtrips": 15,
+      "matchingRejections": 3,
+      "strictTypecheckAfterMappedGuards": 0,
+      "narrowProductionAuditVulnerabilities": 0,
+      "blanketSecurityClearance": false
+    }
+  },
+  "sourceOwnership": {
+    "primary": "copied from plugins/bb-plugin-exo-spike; original untouched",
+    "surface": "copied from plugins/bb-plugin-exo-a2ui-spike; original untouched",
+    "candidate": "preserved in src/first-run-shell-*",
+    "siblingReleaseTools": "read-only inspection at 0ca0f671518274b6d6afbb5781fbae8afcd186a3"
+  }
+}

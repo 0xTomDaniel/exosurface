@@ -1,0 +1,59 @@
+[
+  {
+    "entry": "owner-service",
+    "argv": [
+      "$NODE_PREFIX/bin/node",
+      "--input-type=module",
+      "-e",
+      "const m=await import(\"file:///tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin/dist/owner-service.js\");console.log(JSON.stringify({entry:\"owner-service\",imported:true,registered:false,providerCalled:false}));",
+      "--",
+      "--release-selftest"
+    ],
+    "cwd": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin",
+    "exit": 0
+  },
+  {
+    "entry": "live",
+    "argv": [
+      "$NODE_PREFIX/bin/node",
+      "--input-type=module",
+      "-e",
+      "const m=await import(\"file:///tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin/dist/live.js\");if(typeof m.default!=='function')throw Error('Missing extension default export');console.log(JSON.stringify({entry:\"live\",imported:true,registered:false,providerCalled:false}));"
+    ],
+    "cwd": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin",
+    "exit": 0
+  },
+  {
+    "entry": "fixture",
+    "argv": [
+      "$NODE_PREFIX/bin/node",
+      "--input-type=module",
+      "-e",
+      "const m=await import(\"file:///tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin/dist/fixture.js\");if(typeof m.default!=='function')throw Error('Missing extension default export');console.log(JSON.stringify({entry:\"fixture\",imported:true,registered:false,providerCalled:false}));"
+    ],
+    "cwd": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin",
+    "exit": 0
+  },
+  {
+    "entry": "workspace-extension",
+    "argv": [
+      "$NODE_PREFIX/bin/node",
+      "--input-type=module",
+      "-e",
+      "const m=await import(\"file:///tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin/dist/workspace-extension.js\");if(typeof m.default!=='function')throw Error('Missing extension default export');console.log(JSON.stringify({entry:\"workspace-extension\",imported:true,registered:false,providerCalled:false}));"
+    ],
+    "cwd": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin",
+    "exit": 0
+  },
+  {
+    "entry": "workspace-frame",
+    "argv": [
+      "$NODE_PREFIX/bin/node",
+      "--input-type=module",
+      "-e",
+      "const m=await import(\"file:///tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin/dist/workspace-frame.js\");if(typeof m.default!=='function')throw Error('Missing extension default export');console.log(JSON.stringify({entry:\"workspace-frame\",imported:true,registered:false,providerCalled:false}));"
+    ],
+    "cwd": "/tmp/exo-packaging-repair.GLh4R1/committed-artifacts-repeat/exosurface-0.1.0-dev/plugin",
+    "exit": 0
+  }
+]

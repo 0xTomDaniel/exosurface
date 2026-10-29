@@ -1,0 +1,161 @@
+194900: var BARE_PACKAGE_FILTER = /^[^./]|^@[^/]+\/[^/]+/;
+194901: var FILE_IMPORT_FILTER = /^(?:\.{1,2}\/|\/)/;
+194902: async function readPluginServerConfig(rootDir) {
+194903:   const packageJsonPath = join20(rootDir, "package.json");
+194904:   const json2 = await readPluginPackageJsonFile(packageJsonPath);
+194905:   if (!isRecord4(json2) || !isRecord4(json2.bb) || json2.bb.server === void 0) {
+194906:     throw new Error(
+194907:       `no server entry: ${packageJsonPath} has no "bb": { "server": "./server.ts" } field`
+194908:     );
+194909:   }
+194910:   const manifest = await validatePluginBuildManifest(
+194911:     json2,
+194912:     rootDir,
+194913:     packageJsonPath
+194914:   );
+194915:   const serverEntry = await resolveManifestEntryFile(
+194916:     rootDir,
+194917:     manifest.bb.server,
+194918:     "bb.server"
+194919:   );
+194920:   return {
+194921:     serverEntry,
+194922:     packageName: manifest.name,
+194923:     pluginVersion: manifest.version
+194924:   };
+194925: }
+194926: async function transformSourceModuleLocation(esbuild, path14) {
+194927:   const sourceUrl = pathToFileURL2(path14).href;
+194928:   const transformed = await esbuild.transform(await readFile10(path14, "utf8"), {
+194929:     loader: loaderForSourcePath(path14),
+194930:     target: "node22",
+194931:     sourcefile: path14,
+194932:     define: {
+194933:       "import.meta.url": JSON.stringify(sourceUrl),
+194934:       "import.meta.dirname": JSON.stringify(dirname11(path14)),
+194935:       "import.meta.filename": JSON.stringify(path14),
+194936:       __dirname: JSON.stringify(dirname11(path14)),
+194937:       __filename: JSON.stringify(path14)
+194938:     }
+194939:   });
+194940:   await init2;
+194941:   const [imports] = parse5(transformed.code);
+194942:   let code2 = transformed.code;
+194943:   for (const entry of [...imports].reverse()) {
+194944:     if (entry.d < 0 || entry.n !== void 0) continue;
+194945:     const expression = code2.slice(entry.s, entry.e);
+194946:     const resolved = `((specifier) => typeof specifier === "string" && (specifier.startsWith("./") || specifier.startsWith("../")) ? new URL(specifier, ${JSON.stringify(sourceUrl)}).href : specifier)(${expression})`;
+194947:     code2 = `${code2.slice(0, entry.s)}${resolved}${code2.slice(entry.e)}`;
+194948:   }
+194949:   return code2;
+194950: }
+194951: function loaderForSourcePath(path14) {
+194952:   const extension2 = extname3(path14);
+194953:   if (extension2 === ".ts" || extension2 === ".mts" || extension2 === ".cts") {
+194954:     return "ts";
+194955:   }
+194956:   if (extension2 === ".tsx") return "tsx";
+194957:   if (extension2 === ".jsx") return "jsx";
+194958:   return "js";
+194959: }
+194960: async function buildPluginServer(rootDir, bbVersion, toolchain, options2 = {}) {
+194961:   const { serverEntry, packageName, pluginVersion } = options2.validatedConfig ?? await readPluginServerConfig(rootDir);
+194962:   const format = options2.format ?? "esm";
+194963:   const sourceRoot = await realpath3(rootDir);
+194964:   const distDir = options2.outDir ?? join20(rootDir, "dist");
+194965:   await mkdir8(distDir, { recursive: true });
+194966:   const fileName = format === "esm" ? "server.js" : "server.cjs";
+194967:   const jsPath = join20(distDir, fileName);
+194968:   const mapPath = join20(distDir, `${fileName}.map`);
+194969:   const metaPath = join20(distDir, "server.meta.json");
+194970:   const stageDir = await mkdtemp2(join20(distDir, ".stage-"));
+194971:   try {
+194972:     const stagedJsPath = join20(stageDir, fileName);
+194973:     const stagedMetaPath = join20(stageDir, "server.meta.json");
+194974:     const esbuild = await import(toolchain.esbuild);
+194975:     const runtimeImports = options2.runtimeImports ?? {};
+194976:     await esbuild.build({
+194977:       entryPoints: [serverEntry],
+194978:       outfile: stagedJsPath,
+194979:       bundle: true,
+194980:       format,
+194981:       platform: "node",
+194982:       target: "node22",
+194983:       sourcemap: true,
+194984:       sourcesContent: false,
+194985:       ...format === "esm" ? { banner: { js: NODE_ESM_REQUIRE_BANNER } } : {},
+194986:       external: PLUGIN_SERVER_EXTERNALS.filter(
+194987:         (specifier) => !PLUGIN_SDK_ROOT_FILTER.test(specifier) && runtimeImports[specifier] === void 0
+194988:       ).concat(
+194989:         Object.values(runtimeImports).filter((entry) => entry.external === true).map((entry) => entry.path)
+194990:       ),
+194991:       minify: true,
+194992:       keepNames: true,
+194993:       plugins: [
+194994:         zodResolutionPlugin("server", {
+194995:           hostProvidedBareZod: options2.hostProvidedZod,
+194996:           fallbackResolve: options2.fallbackResolve
+194997:         }),
+194998:         zodLocaleStubPlugin(),
+194999:         ...options2.preserveSourceModuleLocation === true ? [
+195000:           {
+195001:             name: "bb-plugin-source-url",
+195002:             setup(build) {
+195003:               build.onLoad(
+195004:                 { filter: /\.(?:[cm]?[jt]s|[jt]sx)$/ },
+195005:                 async (args) => ({
+195006:                   contents: await transformSourceModuleLocation(
+195007:                     esbuild,
+195008:                     args.path
+195009:                   ),
+195010:                   loader: "js",
+195011:                   pluginData: args.pluginData
+195012:                 })
+195013:               );
+195014:             }
+195015:           }
+195016:         ] : [],
+195017:         {
+195018:           name: "bb-plugin-sdk-resolution",
+195019:           setup(build) {
+195020:             for (const [specifier, entry] of Object.entries(runtimeImports)) {
+195021:               const escaped = specifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+195022:               build.onResolve({ filter: new RegExp(`^${escaped}$`) }, () => ({
+195023:                 path: entry.path,
+195024:                 external: entry.external === true,
+195025:                 pluginData: PLUGIN_BUNDLED_DEPENDENCY_MARK
+195026:               }));
+195027:             }
+195028:             build.onResolve({ filter: PLUGIN_SDK_ROOT_FILTER }, (args) => ({
+195029:               path: args.path,
+195030:               external: true
+195031:             }));
+195032:             build.onResolve(
+195033:               { filter: PLUGIN_SDK_SUBPATH_FILTER },
+195034:               async (args) => {
+195035:                 if (args.pluginData === PLUGIN_SDK_SUBPATH_RESOLVE_MARK) {
+195036:                   return void 0;
+195037:                 }
+195038:                 const installed = await build.resolve(args.path, {
+195039:                   resolveDir: args.resolveDir,
+195040:                   kind: args.kind,
+195041:                   importer: args.importer,
+195042:                   pluginData: PLUGIN_SDK_SUBPATH_RESOLVE_MARK
+195043:                 });
+195044:                 if (installed.errors.length === 0 && installed.path !== "") {
+195045:                   return {
+195046:                     path: installed.path,
+195047:                     pluginData: PLUGIN_BUNDLED_DEPENDENCY_MARK
+195048:                   };
+195049:                 }
+195050:                 return {
+195051:                   errors: [
+195052:                     {
+195053:                       text: await describeUnresolvedSdkImport({
+195054:                         specifier: args.path,
+195055:                         resolveDir: args.resolveDir,
+195056:                         need: `a server entry's "${args.path}" import is bundled from the plugin's own SDK install (bb serves only the bare "${PLUGIN_SDK_PACKAGE_NAME}" at load time), so the plugin needs`,
+195057:                         esbuildErrors: installed.errors
+195058:                       })
+195059:                     }
+195060:                   ]

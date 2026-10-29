@@ -1,0 +1,14 @@
+node:path:1257
+      validateString(path, `paths[${i}]`);
+      ^
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+    at resolve (node:path:1257:7)
+    at file:///private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface/test/consolidation-dispatch.mjs:8:14
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+
+Node.js v24.15.0

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "$NODE_PREFIX/bin/node",
+    "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/index.js"
+  ],
+  "cwd": "/tmp/exo-native-consolidated.QPR6vW",
+  "env": {
+    "HOME": "/tmp/exo-native-consolidated.QPR6vW/home",
+    "TMPDIR": "/tmp/exo-native-consolidated.QPR6vW/tmp",
+    "PATH": "$NODE_PREFIX/bin:/usr/bin:/bin",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "NODE_OPTIONS": "--require=/tmp/exo-native-consolidated.QPR6vW/tripwire.cjs",
+    "EXO_NATIVE_ROOT": "/tmp/exo-native-consolidated.QPR6vW",
+    "BB_DATA_DIR": "/tmp/exo-native-consolidated.QPR6vW/bb-data",
+    "BB_SERVER_BIND_HOST": "127.0.0.1",
+    "BB_SERVER_PORT": "60803",
+    "BB_HOST_DAEMON_PORT": "60804",
+    "BB_SERVER_URL": "http://127.0.0.1:60803",
+    "BB_MARKETPLACE_URL": "http://127.0.0.1:60803/fixture-empty-catalog",
+    "BB_TELEMETRY": "false",
+    "NODE_ENV": "production",
+    "BB_HOST_DAEMON_AUTO_UPDATE": "false"
+  }
+}

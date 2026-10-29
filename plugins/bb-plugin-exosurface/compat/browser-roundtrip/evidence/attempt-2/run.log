@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: ENOENT: no such file or directory, open '$HOME/Documents$FIXTURE/tmp/exo-roundtrip-ukIM1B/client/legacy/src/exo-catalog.ts'
+    at Object.openSync (node:fs:561:18)
+    at readFileSync (node:fs:445:35)
+    at file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:85:182
+    at Array.map (<anonymous>)
+    at file://$WORKTREE/plugins/bb-plugin-exosurface/compat/browser-roundtrip/roundtrip.mjs:85:62
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '$HOME/Documents$FIXTURE/tmp/exo-roundtrip-ukIM1B/client/legacy/src/exo-catalog.ts'
+}
+
+Node.js v24.15.0

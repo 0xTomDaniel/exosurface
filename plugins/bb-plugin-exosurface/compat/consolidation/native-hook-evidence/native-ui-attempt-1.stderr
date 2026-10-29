@@ -1,0 +1,11 @@
+/private/tmp/exo-native-source.RVkor2/ui-tripwire.cjs:3
+function deny(kind,details){append(log,JSON.stringify({pid:process.pid,kind,details})+'\n');throw Error('DISPOSABLE TRIPWIRE: '+kind+' '+JSON.stringify(details));}
+                                                                                                  ^
+
+Error: DISPOSABLE TRIPWIRE: child-process {"name":"spawn","args":["/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--disable-breakpad","--disable-features=MediaRouter,OptimizationHints","--proxy-server=http://127.0.0.1:9","--proxy-bypass-list=127.0.0.1;localhost","--host-resolver-rules=MAP * ~NOTFOUND,EXCLUDE localhost,EXCLUDE 127.0.0.1","--remote-debugging-port=0","--user-data-dir=/tmp/exo-native-source.RVkor2/chromium-profile","about:blank"]]}
+    at deny (/private/tmp/exo-native-source.RVkor2/ui-tripwire.cjs:3:99)
+    at cp.<computed> (/private/tmp/exo-native-source.RVkor2/ui-tripwire.cjs:6:737)
+    at file:///private/tmp/exo-native-source.RVkor2/ui-smoke.mjs:4:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.15.0

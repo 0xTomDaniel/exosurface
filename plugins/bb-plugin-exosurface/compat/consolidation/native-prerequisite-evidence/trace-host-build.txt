@@ -1,0 +1,47 @@
+195414: async function buildPluginHost(rootDir, bbVersion, toolchain) {
+195415:   const { hostEntry, packageName, pluginVersion } = await readPluginHostConfig(rootDir);
+195416:   const workingDir = await realpath4(rootDir);
+195417:   const distDir = join21(rootDir, "dist");
+195418:   await mkdir9(distDir, { recursive: true });
+195419:   const jsPath = join21(distDir, "host.js");
+195420:   const mapPath = join21(distDir, "host.js.map");
+195421:   const metaPath = join21(distDir, "host.meta.json");
+195422:   await removeStaleHostStageDirectories(distDir);
+195423:   const stageDir = await mkdtemp3(join21(distDir, HOST_STAGE_DIRECTORY_PREFIX));
+195424:   try {
+195425:     const stagedJsPath = join21(stageDir, "host.js");
+195426:     const stagedMetaPath = join21(stageDir, "host.meta.json");
+195427:     const esbuild = await import(toolchain.esbuild);
+195428:     const packageNameByDirectory = /* @__PURE__ */ new Map();
+195429:     const sourceImports = /* @__PURE__ */ new Map();
+195430:     const bundle = await esbuild.build({
+195431:       absWorkingDir: workingDir,
+195432:       metafile: true,
+195433:       entryPoints: [hostEntry],
+195434:       outfile: stagedJsPath,
+195435:       bundle: true,
+195436:       format: "esm",
+195437:       platform: "node",
+195438:       minify: true,
+195439:       keepNames: true,
+195440:       plugins: [
+195441:         zodResolutionPlugin("host"),
+195442:         zodLocaleStubPlugin(),
+195443:         {
+195444:           name: "provide-public-host-sdk-runtime",
+195445:           setup(build) {
+195446:             const rootFilter = new RegExp(
+195447:               `^${escapeRegex2(PLUGIN_SDK_PACKAGE_NAME)}$`
+195448:             );
+195449:             build.onResolve({ filter: rootFilter }, (args) => ({
+195450:               path: args.path,
+195451:               namespace: PLUGIN_SDK_HOST_RUNTIME_NAMESPACE
+195452:             }));
+195453:             build.onLoad(
+195454:               { filter: /.*/, namespace: PLUGIN_SDK_HOST_RUNTIME_NAMESPACE },
+195455:               () => ({ contents: PLUGIN_SDK_ROOT_RUNTIME, loader: "js" })
+195456:             );
+195457:             const hostFilter = new RegExp(
+195458:               `^${escapeRegex2(PLUGIN_SDK_HOST_FALLBACK_SPECIFIER)}$`
+195459:             );
+195460:             build.onResolve({ filter: hostFilter }, async (args) => {

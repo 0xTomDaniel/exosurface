@@ -1,0 +1,203 @@
+{
+  "base": "http://127.0.0.1:49173",
+  "providerDispatch": false,
+  "releaseReady": false,
+  "blocked": [],
+  "errors": [],
+  "app": {
+    "status": 200,
+    "bytes": 675533,
+    "contentType": "text/javascript; charset=utf-8",
+    "sha256": "ed0316dc8b3ae19a2f28eb917c75dfc45ad7bcbbe864c1d191ea1874166eef47"
+  },
+  "css": {
+    "status": 200,
+    "bytes": 26845,
+    "contentType": "text/css; charset=utf-8",
+    "sha256": "af87fa733b360c04b99ae1a69a4e3f90d98b732d33f27cf2d658d92dcbcb2239"
+  },
+  "fixtureOnly": true,
+  "nativeConversation": false,
+  "initial": {
+    "url": "http://127.0.0.1:49173/plugins/exosurface/surface",
+    "title": "Exosurface",
+    "text": "New thread\nPlugins\nSkills\nAutomations\nExo\nExosurface\nMore\nThreads\n\nNo threads\n\nSettings\nMobile apps\nProvider usage\nReport a bug\nMore\n\nExosurface\n\nExosurface\n\nRevision 1\n\nEarlier\nEarlier fixture\nFull input fixture\nFull input\n\nSend\n\nThis thread is no longer available.\nToggle Sidebar",
+    "appRuntime": true,
+    "canvas": true,
+    "styles": [
+      "http://127.0.0.1:49173/assets/index-COFpNF6Y.css",
+      "http://127.0.0.1:49173/assets/markdown-preview-DZqXX2zZ.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/abe003e28e5d3708/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/d90bfc26e10db47b/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/5f1bf5abeaba7917/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/b5fbbe00ebaf39c0/app.css",
+      "http://127.0.0.1:49173/api/v1/plugin-app-assets/808a5c920402ede8/app.css"
+    ]
+  },
+  "pages": {
+    "shelf": true,
+    "clicked": true,
+    "field": true
+  },
+  "shelfFocus": "earlier",
+  "currentFocus": "page",
+  "input": {
+    "utf16Units": 1170,
+    "codePoints": 1080,
+    "field": true,
+    "ownerRequests": 1,
+    "persistedExact": true,
+    "uiExact": true
+  },
+  "oversize": {
+    "status": 500,
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "handler_error",
+        "message": "[\n  {\n    \"code\": \"too_big\",\n    \"maximum\": 2000,\n    \"type\": \"string\",\n    \"inclusive\": true,\n    \"exact\": false,\n    \"message\": \"String must contain at most 2000 character(s)\",\n    \"path\": []\n  }\n]"
+      }
+    },
+    "stateUnchanged": true,
+    "noOwnerCommand": true
+  },
+  "history": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "result": {
+        "surface": "page",
+        "revision": 1,
+        "title": "Full input fixture",
+        "at": "2000-01-01T00:00:00.000Z",
+        "action": "drew",
+        "current": false,
+        "onStage": false,
+        "panel": "surface",
+        "snapshot": {
+          "revision": 1,
+          "messages": [
+            {
+              "version": "v0.9.1",
+              "createSurface": {
+                "surfaceId": "page",
+                "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+              }
+            },
+            {
+              "version": "v0.9.1",
+              "updateComponents": {
+                "surfaceId": "page",
+                "components": [
+                  {
+                    "id": "root",
+                    "component": "Column",
+                    "children": [
+                      "page__title",
+                      "entry",
+                      "send"
+                    ]
+                  },
+                  {
+                    "id": "page__title",
+                    "component": "Text",
+                    "text": "Full input fixture",
+                    "variant": "h2"
+                  },
+                  {
+                    "id": "entry",
+                    "component": "TextField",
+                    "label": "Full input",
+                    "value": {
+                      "path": "/entry"
+                    },
+                    "variant": "longText"
+                  },
+                  {
+                    "id": "send__label",
+                    "component": "Text",
+                    "text": "Send"
+                  },
+                  {
+                    "id": "send",
+                    "component": "Button",
+                    "child": "send__label",
+                    "variant": "default",
+                    "action": {
+                      "event": {
+                        "name": "submit",
+                        "context": {
+                          "entry": {
+                            "path": "/entry"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "version": "v0.9.1",
+              "updateDataModel": {
+                "surfaceId": "page",
+                "path": "/",
+                "value": {
+                  "entry": "initial"
+                }
+              }
+            }
+          ],
+          "incremental": true,
+          "incomplete": false
+        }
+      }
+    }
+  },
+  "pending": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "result": {
+        "deployment": "main",
+        "threadId": "fixture-no-dispatch",
+        "surface": "page",
+        "revision": 1,
+        "title": "Full input fixture",
+        "at": "2000-01-01T00:00:00.000Z",
+        "updates": []
+      }
+    }
+  },
+  "pendingAfterSet": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "result": {
+        "deployment": "main",
+        "threadId": "fixture-no-dispatch",
+        "surface": "page",
+        "revision": 1,
+        "title": "Full input fixture",
+        "at": "2000-01-01T00:00:00.000Z",
+        "updates": []
+      }
+    }
+  },
+  "pendingAfterClear": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "result": null
+    }
+  },
+  "nativeConversationBoundary": "Synthetic id is intentionally not a native conversation. Native create requires nonempty input/dispatch (or an existing fork source). No prompt/CLI thread creation attempted; no valid action button pressed. History/pending RPC checks do not prove composer/card bring-back or real owner semantics.",
+  "reopened": {
+    "url": "http://127.0.0.1:49173/plugins/exosurface/surface",
+    "text": "New thread\nPlugins\nSkills\nAutomations\nExo\nExosurface\nMore\nThreads\n\nNo threads\n\nSettings\nMobile apps\nProvider usage\nReport a bug\nMore\n\nExosurface\n\nExosurface\n\nRevision 2\n\nEarlier\nEarlier fixture\nFull input fixture\nFull input\n\nSend\n\nThis thread is no longer available.\nToggle Sidebar",
+    "canvas": true,
+    "runtime": true,
+    "value": "Line α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\nLine α 🧪 é\n",
+    "exact": true
+  }
+}

@@ -1,0 +1,14 @@
+/private/tmp/exo-native-consolidated.QPR6vW/tripwire.cjs:3
+function deny(kind,details){append(log,JSON.stringify({pid:process.pid,kind,details})+'\n');throw Error('DISPOSABLE TRIPWIRE: '+kind+' '+JSON.stringify(details));}
+                                                                                                  ^
+
+Error: DISPOSABLE TRIPWIRE: filesystem-write {"name":"mkdirSync","path":"/tmp/exo-native-consolidated.QPR6vW/bb-data/logs"}
+    at deny (/private/tmp/exo-native-consolidated.QPR6vW/tripwire.cjs:3:99)
+    at target.<computed> (/private/tmp/exo-native-consolidated.QPR6vW/tripwire.cjs:9:401)
+    at installSafeProcessDiagnostics (file:///Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/index.js:13802:3)
+    at file:///Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/index.js:13856:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.15.0

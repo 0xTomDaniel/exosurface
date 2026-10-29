@@ -1,0 +1,200 @@
+TAP version 13
+# (node:41956) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: complete Unicode/multiline press description and native history replay are lossless
+ok 1 - complete Unicode/multiline press description and native history replay are lossless
+  ---
+  duration_ms: 13.699833
+  type: 'test'
+  ...
+# Subtest: oversize atoms and whole owner commands reject before touching the original snapshot
+ok 2 - oversize atoms and whole owner commands reject before touching the original snapshot
+  ---
+  duration_ms: 1.191667
+  type: 'test'
+  ...
+# (node:41957) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fresh + retry use one profile/thread; no active-memory fabricated; preserve vault
+ok 3 - fresh + retry use one profile/thread; no active-memory fabricated; preserve vault
+  ---
+  duration_ms: 170.310125
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-wIAT9Y","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: profile configured interrupted; retries without replacement
+ok 4 - profile configured interrupted; retries without replacement
+  ---
+  duration_ms: 148.963958
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-bPOEW8","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: existing profile unclaimed or newer state refuses, zero overwrite
+ok 5 - existing profile unclaimed or newer state refuses, zero overwrite
+  ---
+  duration_ms: 118.701
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-67hP8w","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: durable lookup recovers BB-created thread before local receipt, never unrelated candidate
+ok 6 - durable lookup recovers BB-created thread before local receipt, never unrelated candidate
+  ---
+  duration_ms: 181.791417
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-3Dj7JT","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: uncertain BB creation before/after spawn fails closed, no second spawn
+ok 7 - uncertain BB creation before/after spawn fails closed, no second spawn
+  ---
+  duration_ms: 363.289208
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-cIEBxm","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# {"fixtureCleanup":"exo-fr-ZTw6XR","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: environment allowlist strips inherited live selectors and vendor credentials
+ok 8 - environment allowlist strips inherited live selectors and vendor credentials
+  ---
+  duration_ms: 0.255833
+  type: 'test'
+  ...
+# Subtest: relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails
+ok 9 - relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails
+  ---
+  duration_ms: 538.968417
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-VJFpGj","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: real socket → mock Pi RPC → response page; full long input; wrong thread refused
+ok 10 - real socket → mock Pi RPC → response page; full long input; wrong thread refused
+  ---
+  duration_ms: 813.445625
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-ls88LJ","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[41972,41971]}
+# Subtest: concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated
+ok 11 - concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated
+  ---
+  duration_ms: 229.872334
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-wSw7Hv","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# {"fixtureCleanup":"exo-fr-i2B0zU","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: concrete BB receipt survives interruption before bootstrap local receipt
+ok 12 - concrete BB receipt survives interruption before bootstrap local receipt
+  ---
+  duration_ms: 151.783083
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-yxmy0d","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: BB nonempty initialization input settles locally without Pi, auth, binding or launchctl
+ok 13 - BB nonempty initialization input settles locally without Pi, auth, binding or launchctl
+  ---
+  duration_ms: 314.778625
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-WLRWAv","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[41975]}
+# Subtest: initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text
+ok 14 - initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text
+  ---
+  duration_ms: 143.014583
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-fr-kEasdI","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# (node:41958) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it
+ok 15 - test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it
+  ---
+  duration_ms: 72.027958
+  type: 'test'
+  ...
+# Subtest: test teardown reaps its owned child and verifies PID disappearance before root removal
+ok 16 - test teardown reaps its owned child and verifies PID disappearance before root removal
+  ---
+  duration_ms: 57.633416
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-cleanup-child-HiehPd","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[41962]}
+# (node:41959) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds
+ok 17 - adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds
+  ---
+  duration_ms: 3.705541
+  type: 'test'
+  ...
+# Subtest: adapter saves edits before press and forwards offered ref/context without inventing action authority
+ok 18 - adapter saves edits before press and forwards offered ref/context without inventing action authority
+  ---
+  duration_ms: 0.405791
+  type: 'test'
+  ...
+# Subtest: adapter does not acknowledge newer drafts with an older edit response
+ok 19 - adapter does not acknowledge newer drafts with an older edit response
+  ---
+  duration_ms: 0.164584
+  type: 'test'
+  ...
+# Subtest: adapter never automatically retries an uncertain press, even with a new mutation ID
+ok 20 - adapter never automatically retries an uncertain press, even with a new mutation ID
+  ---
+  duration_ms: 0.399458
+  type: 'test'
+  ...
+# Subtest: adapter rejects a concurrent second press and never sends a press after failed edit
+ok 21 - adapter rejects a concurrent second press and never sends a press after failed edit
+  ---
+  duration_ms: 3.04825
+  type: 'test'
+  ...
+# (node:41960) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime
+ok 22 - extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime
+  ---
+  duration_ms: 3.707625
+  type: 'test'
+  ...
+# Subtest: durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite
+ok 23 - durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite
+  ---
+  duration_ms: 291.083709
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-pages-4O4XCa","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry
+ok 24 - press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry
+  ---
+  duration_ms: 265.158875
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-pages-iLBtXA","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+# Subtest: production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking
+ok 25 - production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking
+  ---
+  duration_ms: 853.04625
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-pages-kLyczd","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[41964]}
+# Subtest: built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps
+ok 26 - built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps
+  ---
+  duration_ms: 3.194958
+  type: 'test'
+  ...
+# Subtest: unsupported persisted pages and interrupted mutation locks fail closed without overwrite
+ok 27 - unsupported persisted pages and interrupted mutation locks fail closed without overwrite
+  ---
+  duration_ms: 114.713584
+  type: 'test'
+  ...
+# {"fixtureCleanup":"exo-pages-SbEaBL","rootAbsentAfterShutdown":true,"observationMs":50,"ownedPidsGone":[]}
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4920.418834

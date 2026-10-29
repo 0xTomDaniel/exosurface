@@ -1,0 +1,259 @@
+{
+  "fixtureOnly": true,
+  "nativeOwner": false,
+  "providerDispatch": false,
+  "current": {
+    "revision": 1,
+    "messages": [
+      {
+        "version": "v0.9.1",
+        "createSurface": {
+          "surfaceId": "page",
+          "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateComponents": {
+          "surfaceId": "page",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "page__title",
+                "entry",
+                "send"
+              ]
+            },
+            {
+              "id": "page__title",
+              "component": "Text",
+              "text": "Full input fixture",
+              "variant": "h2"
+            },
+            {
+              "id": "entry",
+              "component": "TextField",
+              "label": "Full input",
+              "value": {
+                "path": "/entry"
+              },
+              "variant": "longText"
+            },
+            {
+              "id": "send__label",
+              "component": "Text",
+              "text": "Send"
+            },
+            {
+              "id": "send",
+              "component": "Button",
+              "child": "send__label",
+              "variant": "default",
+              "action": {
+                "event": {
+                  "name": "submit",
+                  "context": {
+                    "entry": {
+                      "path": "/entry"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateDataModel": {
+          "surfaceId": "page",
+          "path": "/",
+          "value": {
+            "entry": "initial"
+          }
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "createSurface": {
+          "surfaceId": "earlier",
+          "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateComponents": {
+          "surfaceId": "earlier",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "h1",
+                "t2"
+              ]
+            },
+            {
+              "id": "h1",
+              "component": "Text",
+              "text": "Earlier fixture",
+              "variant": "h2"
+            },
+            {
+              "id": "t2",
+              "component": "Text",
+              "text": "Preserved shelf page, no provider"
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9.1",
+        "updateDataModel": {
+          "surfaceId": "earlier",
+          "path": "/",
+          "value": {}
+        }
+      }
+    ],
+    "layout": {
+      "focus": "page"
+    }
+  },
+  "history": [
+    {
+      "revision": 1,
+      "at": "2000-01-01T00:00:00.000Z",
+      "surface": "page",
+      "title": "Full input fixture",
+      "action": "drew",
+      "messages": [
+        {
+          "version": "v0.9.1",
+          "createSurface": {
+            "surfaceId": "page",
+            "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateComponents": {
+            "surfaceId": "page",
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "page__title",
+                  "entry",
+                  "send"
+                ]
+              },
+              {
+                "id": "page__title",
+                "component": "Text",
+                "text": "Full input fixture",
+                "variant": "h2"
+              },
+              {
+                "id": "entry",
+                "component": "TextField",
+                "label": "Full input",
+                "value": {
+                  "path": "/entry"
+                },
+                "variant": "longText"
+              },
+              {
+                "id": "send__label",
+                "component": "Text",
+                "text": "Send"
+              },
+              {
+                "id": "send",
+                "component": "Button",
+                "child": "send__label",
+                "variant": "default",
+                "action": {
+                  "event": {
+                    "name": "submit",
+                    "context": {
+                      "entry": {
+                        "path": "/entry"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateDataModel": {
+            "surfaceId": "page",
+            "path": "/",
+            "value": {
+              "entry": "initial"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "at": "2000-01-01T00:00:00.000Z",
+      "surface": "earlier",
+      "title": "Earlier fixture",
+      "action": "drew",
+      "messages": [
+        {
+          "version": "v0.9.1",
+          "createSurface": {
+            "surfaceId": "earlier",
+            "catalogId": "urn:exosurface:catalog:exo-visual:v1"
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateComponents": {
+            "surfaceId": "earlier",
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "h1",
+                  "t2"
+                ]
+              },
+              {
+                "id": "h1",
+                "component": "Text",
+                "text": "Earlier fixture",
+                "variant": "h2"
+              },
+              {
+                "id": "t2",
+                "component": "Text",
+                "text": "Preserved shelf page, no provider"
+              }
+            ]
+          }
+        },
+        {
+          "version": "v0.9.1",
+          "updateDataModel": {
+            "surfaceId": "earlier",
+            "path": "/",
+            "value": {}
+          }
+        }
+      ]
+    }
+  ],
+  "requests": [],
+  "rejections": []
+}

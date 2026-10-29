@@ -1,0 +1,96 @@
+199575:     return manifest;
+199576:   }
+199577:   async function validateInstallDir(args) {
+199578:     const manifest = await validateManifestOnly(args);
+199579:     const kind = sourceKind(args.source);
+199580:     const managed = kind === "git" || kind === "npm";
+199581:     if (kind === "git") {
+199582:       await installGitDependencies(args.rootDir);
+199583:     }
+199584:     if (manifest.appEntry !== void 0) {
+199585:       if (kind === "npm") {
+199586:         const jsPresent = await stat10(join31(args.rootDir, "dist", "app.js")).then(() => true).catch(() => false);
+199587:         if (!jsPresent) {
+199588:           throw new Error(
+199589:             `install refused: npm plugins with a frontend (bb.app) must publish a prebuilt bundle \u2014 "${manifest.id}" is missing dist/app.js + dist/app.meta.json`
+199590:           );
+199591:         }
+199592:       } else if (!isPackagedBuiltinEntry({
+199593:         kind,
+199594:         manifest,
+199595:         rootDir: args.rootDir,
+199596:         artifact: "app"
+199597:       })) {
+199598:         try {
+199599:           await buildPluginApp(
+199600:             args.rootDir,
+199601:             deps.appVersion,
+199602:             await getPluginBuildToolchain(deps)
+199603:           );
+199604:         } catch (error3) {
+199605:           throw new Error(
+199606:             `install failed: frontend bundle build for "${manifest.id}" failed: ${error3 instanceof Error ? error3.message : String(error3)}`
+199607:           );
+199608:         }
+199609:       }
+199610:     }
+199611:     if (kind === "git") {
+199612:       try {
+199613:         await buildPluginServer(
+199614:           args.rootDir,
+199615:           deps.appVersion,
+199616:           await getPluginBuildToolchain(deps)
+199617:         );
+199618:       } catch (error3) {
+199619:         throw new Error(
+199620:           `install failed: server bundle build for "${manifest.id}" failed: ${error3 instanceof Error ? error3.message : String(error3)}`
+199621:         );
+199622:       }
+199623:       if (manifest.hostEntry !== void 0) {
+199624:         try {
+199625:           await buildPluginHost(
+199626:             args.rootDir,
+199627:             deps.appVersion,
+199628:             await getPluginBuildToolchain(deps)
+199629:           );
+199630:         } catch (error3) {
+199631:           throw new Error(
+199632:             `install failed: host bundle build for "${manifest.id}" failed: ${error3 instanceof Error ? error3.message : String(error3)}`
+199633:           );
+199634:         }
+199635:       }
+199636:     }
+199637:     async function validateArtifact(artifact, required2) {
+199638:       const metaPath = join31(args.rootDir, "dist", `${artifact}.meta.json`);
+199639:       let raw2;
+199640:       try {
+199641:         raw2 = await readFile18(metaPath, "utf8");
+199642:       } catch {
+199643:         if (required2) {
+199644:           throw new Error(
+199645:             `install refused: ${artifact} artifact for plugin "${manifest.id}" is missing dist/${artifact}.meta.json`
+199646:           );
+199647:         }
+199648:         return;
+199649:       }
+199650:       const problem = validatePluginArtifactMeta({
+199651:         artifact,
+199652:         raw: raw2,
+199653:         pluginId: manifest.id,
+199654:         pluginVersion: manifest.version
+199655:       });
+199656:       if (problem !== null) {
+199657:         throw new Error(`install refused: ${problem}`);
+199658:       }
+199659:     }
+199660:     if (managed) {
+199661:       await validateArtifact("server", kind === "git");
+199662:       if (manifest.appEntry !== void 0) {
+199663:         await validateArtifact("app", kind === "npm");
+199664:       }
+199665:       if (manifest.hostEntry !== void 0) {
+199666:         await validateArtifact("host", true);
+199667:       }
+199668:     }
+199669:     return manifest;
+199670:   }

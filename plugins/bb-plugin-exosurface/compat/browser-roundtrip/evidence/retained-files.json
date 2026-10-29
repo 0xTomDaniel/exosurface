@@ -1,0 +1,318 @@
+{
+  "schema": "exosurface-retained-fixture-evidence/0",
+  "normalization": "Text-only worktree/temp/home path prefixes; original bytes retained outside git in disposable evidence root; binary screenshots unchanged",
+  "files": [
+    {
+      "path": "attempt-1/failure.json",
+      "originalSha256": "a9fb186ad0b6053bc35d0af6a26e5ef7ee0e10eecc919d3389fef9822cd1cb4c",
+      "committedSha256": "cd75ff9d5cfa7f3005250b87042e255eabbf3f7e9f2ab2c31522bf3325dda8f5",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-1/run.log",
+      "originalSha256": "d39ec3b6ef6e1dee18240dfd634ee5deb87ec78f92077938790a83b9e3088ca1",
+      "committedSha256": "1e0bac2642ba2d7cc22e0b3c57d0af86dcce677b023589ac6d98cf3659a1d444",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-10/reopened-page.png",
+      "originalSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "committedSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-10/roundtrip.json",
+      "originalSha256": "6d1ac26142a0a6b893a3fe5c8d7a38f28dadb1cceb5cca716455f338cef690aa",
+      "committedSha256": "6d1ac26142a0a6b893a3fe5c8d7a38f28dadb1cceb5cca716455f338cef690aa",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-10/run.log",
+      "originalSha256": "6d1ac26142a0a6b893a3fe5c8d7a38f28dadb1cceb5cca716455f338cef690aa",
+      "committedSha256": "6d1ac26142a0a6b893a3fe5c8d7a38f28dadb1cceb5cca716455f338cef690aa",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-10/updated-page.png",
+      "originalSha256": "03c8bbca0a5221dedc6493efd4df52df0f6179e7bf0ab5076f65f7458b69cfd0",
+      "committedSha256": "03c8bbca0a5221dedc6493efd4df52df0f6179e7bf0ab5076f65f7458b69cfd0",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-11/reopened-page.png",
+      "originalSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "committedSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-11/roundtrip.json",
+      "originalSha256": "aa329a67cca0535964646319706a4e4bacabac713c34ed2b55e7cc4d68fc49bf",
+      "committedSha256": "aa329a67cca0535964646319706a4e4bacabac713c34ed2b55e7cc4d68fc49bf",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-11/run.log",
+      "originalSha256": "aa329a67cca0535964646319706a4e4bacabac713c34ed2b55e7cc4d68fc49bf",
+      "committedSha256": "aa329a67cca0535964646319706a4e4bacabac713c34ed2b55e7cc4d68fc49bf",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-11/updated-page.png",
+      "originalSha256": "7b7dd99d6a121013f05d99536ee242218395eee999ee05830cf172a6ef5a8221",
+      "committedSha256": "7b7dd99d6a121013f05d99536ee242218395eee999ee05830cf172a6ef5a8221",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-12/reopened-page.png",
+      "originalSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "committedSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-12/roundtrip.json",
+      "originalSha256": "7e73b7771da7f5a00199a2dbdd30bb7f3090d1477f63440223f06102db7db3c8",
+      "committedSha256": "7e73b7771da7f5a00199a2dbdd30bb7f3090d1477f63440223f06102db7db3c8",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-12/run.log",
+      "originalSha256": "7e73b7771da7f5a00199a2dbdd30bb7f3090d1477f63440223f06102db7db3c8",
+      "committedSha256": "7e73b7771da7f5a00199a2dbdd30bb7f3090d1477f63440223f06102db7db3c8",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-12/updated-page.png",
+      "originalSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "committedSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-13/reopened-page.png",
+      "originalSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "committedSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-13/roundtrip.json",
+      "originalSha256": "022138fde9fa2ebaa6d19c7a942b1c1503dfa9cac673d255d30d33c68cb8083f",
+      "committedSha256": "022138fde9fa2ebaa6d19c7a942b1c1503dfa9cac673d255d30d33c68cb8083f",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-13/run.log",
+      "originalSha256": "022138fde9fa2ebaa6d19c7a942b1c1503dfa9cac673d255d30d33c68cb8083f",
+      "committedSha256": "022138fde9fa2ebaa6d19c7a942b1c1503dfa9cac673d255d30d33c68cb8083f",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-13/updated-page.png",
+      "originalSha256": "3fbd3462c6d557f975d801f9af87eacc91a01e6a86b07d34c09cb56be102de6f",
+      "committedSha256": "3fbd3462c6d557f975d801f9af87eacc91a01e6a86b07d34c09cb56be102de6f",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-14/reopened-page.png",
+      "originalSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "committedSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-14/roundtrip.json",
+      "originalSha256": "f5793c08c5e3f64b10f28672a108b305dd49f886849bad057a20053e27e09470",
+      "committedSha256": "f5793c08c5e3f64b10f28672a108b305dd49f886849bad057a20053e27e09470",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-14/run.log",
+      "originalSha256": "f5793c08c5e3f64b10f28672a108b305dd49f886849bad057a20053e27e09470",
+      "committedSha256": "f5793c08c5e3f64b10f28672a108b305dd49f886849bad057a20053e27e09470",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-14/updated-page.png",
+      "originalSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "committedSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-15/reopened-page.png",
+      "originalSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "committedSha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-15/roundtrip.json",
+      "originalSha256": "72a3667fe25c8d1d26207585a786b79891c2ddb7d409fcfcac90e005bf69ddf1",
+      "committedSha256": "72a3667fe25c8d1d26207585a786b79891c2ddb7d409fcfcac90e005bf69ddf1",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-15/run.log",
+      "originalSha256": "72a3667fe25c8d1d26207585a786b79891c2ddb7d409fcfcac90e005bf69ddf1",
+      "committedSha256": "72a3667fe25c8d1d26207585a786b79891c2ddb7d409fcfcac90e005bf69ddf1",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-15/updated-page.png",
+      "originalSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "committedSha256": "2e5e44559432dc2dd32e5d33bad5e5df914b9e731a9e6f4c4fd1748e4e6b2822",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-2/failure.json",
+      "originalSha256": "93eeadac6434d04358f88e9615408ff47e67d269806b5ea91e6ada78123a0b54",
+      "committedSha256": "99b93e5b7e81dccbbb610f6338a9c631f4b34e9aad7bdc4b9306a7da328f7305",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-2/run.log",
+      "originalSha256": "025fb714cb3e939d61351a037d8f04e9d54de105ca0a23cf462a95c09478c058",
+      "committedSha256": "874fb43ed4c199aea2b7c2a8a4bbcd81bb1d4e3d5d5046f11bb1eb1611c4b820",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-3/failure.json",
+      "originalSha256": "ca4e8ddf5defb49ac465f96221c56d2ecda02a3250bcae4fbd87f8f0674dd05b",
+      "committedSha256": "1eda8d29f04ee705e5db5b3d6158702a7596f7e21ac85144cfed588f6a852525",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-3/run.log",
+      "originalSha256": "8bdfdca42a883f42c9a9a92883d5fedd4f2e3b4ca6b2686f15648f8870d70229",
+      "committedSha256": "43492f73a47dcd9d9fd059c5bed8ec09ab088230ab0815d4397dac92843f8c5a",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-4/failure.json",
+      "originalSha256": "598b1554659f18d6d44faeb2f18f55af36fa1f1909dbf49e5811b766dc3a0a7d",
+      "committedSha256": "791a3de10c6e6c9ae60d47be3e9566e55964b5674496723d3feffbf3ae91e771",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-4/run.log",
+      "originalSha256": "86a77e64d97cbcfa16c739b5ff095456a3fb70df69f6cf95e5c819b1517646a9",
+      "committedSha256": "5302cc473b60c19cabedb24b93611b6f46b1ccbb60fcdbb97b997fa66f540067",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-5/failure.json",
+      "originalSha256": "c2f910abe596a5fc373e5d0f0b1138d62907682c4d8a0a98b9ef8dba6b33da23",
+      "committedSha256": "324e62242f49218f86dca4844e050744794ddc9be722e04fa1a3c04acac29d2e",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-5/run.log",
+      "originalSha256": "df3f170a2e3c4e83e4468ec4e05cff67a7cfe7f644ec87f0129bf1ebf9180481",
+      "committedSha256": "0039fed41a51716977fb4b033e9b2e98a2585997f74dd880a823a779483bb555",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-6/failure.json",
+      "originalSha256": "fcd049562572a8685746bf3b27b28cd925d0c95306a6548ea2af9f2aea31a1f3",
+      "committedSha256": "8c05dcbe4e3e86db9895b6593e179ed6571c05454d8f58fbdca2da1ad19f2eea",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-6/run.log",
+      "originalSha256": "9c4637e505f93d50d57787cd293e0d3856e277c2e02eddf1dd12771ebb166dcc",
+      "committedSha256": "b3fb3b35173588448c24f081ee0e1dfc20ff957678826a5e6a330cc840a6d83e",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-7/failure.json",
+      "originalSha256": "7a239e6fae1965858f7690a17ee1e2b865363dde2395debfb62a68123bf02199",
+      "committedSha256": "131718a37dd7473ce6846a03d3d4eaf8f40392c4a98ccfa421f6b0218d910c4e",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-7/run.log",
+      "originalSha256": "f3820fd32bebbf5358b08f1690f50c0d1f5fa7a7a596c1038a3bb4af5ba7c696",
+      "committedSha256": "e9e3955340642ccda41b4901593b07ef7545165de13a2a960dfb464da0b1eba5",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-8/reopened-page.png",
+      "originalSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "committedSha256": "a1f265be472feac93b9babfb868b01126036b7f52c883139679ae889efaf25f4",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-8/roundtrip.json",
+      "originalSha256": "b3ebc503d11191f745e44faec01e02f1e0236d25fca6311c542abf1f6b8a1900",
+      "committedSha256": "b3ebc503d11191f745e44faec01e02f1e0236d25fca6311c542abf1f6b8a1900",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-8/run.log",
+      "originalSha256": "b3ebc503d11191f745e44faec01e02f1e0236d25fca6311c542abf1f6b8a1900",
+      "committedSha256": "b3ebc503d11191f745e44faec01e02f1e0236d25fca6311c542abf1f6b8a1900",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-8/updated-page.png",
+      "originalSha256": "a9080a99e460b1ab5f6128cda3bc7f195031e0e94b8eea98cf2deb8c9445209c",
+      "committedSha256": "a9080a99e460b1ab5f6128cda3bc7f195031e0e94b8eea98cf2deb8c9445209c",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "attempt-9/failure.json",
+      "originalSha256": "8663071e1dd93033c8393f5efbb548de88c71057f7ff32e4444303e74e0073cc",
+      "committedSha256": "18c07a27540058fe2529caa8f1b11ea22a27b7a4d5e9ff5ac84faf5cb4331c51",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-9/run.log",
+      "originalSha256": "08226fe58acb6979327c1d5ebf93a2cd3007de6ca6e71adebf2ba040514d71b1",
+      "committedSha256": "317c2b997192f72f54ab2a655e686ade1b8228309aedc175266f884c7cd91e2f",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "attempt-9/updated-page.png",
+      "originalSha256": "5d6aa69b13ce9639934801cad42f02c7f61f9fd127b3cca7c015e69ae6a32e20",
+      "committedSha256": "5d6aa69b13ce9639934801cad42f02c7f61f9fd127b3cca7c015e69ae6a32e20",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "checks/adapter-initial-failure.tap",
+      "originalSha256": "22995d96c0bcd0dc87c046ffcb742e705f14a2c20394d8ebb431366b70a195f2",
+      "committedSha256": "41734087afbd4de36d50cc3ac52a97c630ce03d815d0a43d1100d85fa8098b46",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "checks/adapter.tap",
+      "originalSha256": "61c98c069b9e5d772917e3359ac585ca365f7e9d6b5a9b0fc14efb22a0d1d38f",
+      "committedSha256": "61c98c069b9e5d772917e3359ac585ca365f7e9d6b5a9b0fc14efb22a0d1d38f",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "checks/client-typecheck.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "checks/production-tests-incomplete-fixture-failure.tap",
+      "originalSha256": "cbe575fa0bbec29cbe124ee9e3c91e2007b04c69e77341e0e1c164ab1101e119",
+      "committedSha256": "87fe4287070659c74415f34b932c45ebde405dd26a209f94a3dcf3282f44a1e7",
+      "pathPrefixesNormalized": true
+    },
+    {
+      "path": "checks/production-tests.tap",
+      "originalSha256": "19149c3c552fe1b0dce94324ab9ced78c71649ca19aadd4d10f9f9d138875d94",
+      "committedSha256": "19149c3c552fe1b0dce94324ab9ced78c71649ca19aadd4d10f9f9d138875d94",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "checks/production-typecheck.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "committedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pathPrefixesNormalized": false
+    },
+    {
+      "path": "checks/tools-offline-install.log",
+      "originalSha256": "567a3fe8e98a757fee2c9e0e3307ed2d34d340990647df133d800066b45b0dc7",
+      "committedSha256": "692d2dbc5990e4766357167b24e6cf784224d995cbc0d8fa79e3a691cf3c30a7",
+      "pathPrefixesNormalized": true
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+194345:       const pattern = negated ? rawPattern.slice(1) : rawPattern;
+194346:       sources.push({ base, pattern, negated });
+194347:     }
+194348:   }
+194349:   return sources;
+194350: }
+194351: async function readPluginAppConfig(rootDir) {
+194352:   const packageJsonPath = join16(rootDir, "package.json");
+194353:   const pkg = await readPackageJson(packageJsonPath);
+194354:   const manifest = await validatePluginBuildManifest(
+194355:     pkg,
+194356:     rootDir,
+194357:     packageJsonPath
+194358:   );
+194359:   const app = manifest.bb.app;
+194360:   if (app === void 0) {
+194361:     throw new Error(
+194362:       `no frontend entry: ${packageJsonPath} has no "bb": { "app": "./app.tsx" } field (only plugins with an app entry can be built)`
+194363:     );
+194364:   }
+194365:   const appEntry = await resolveManifestEntryFile(rootDir, app, "bb.app");
+194366:   return {
+194367:     appEntry,
+194368:     packageName: manifest.name,
+194369:     pluginVersion: manifest.version
+194370:   };
+194371: }
+194372: async function buildTailwindCss(rootDir, pluginId, toolchain, dependencySources, bundledInputs) {
+194373:   const [{ compile: compile2 }, { Scanner }] = await Promise.all([
+194374:     import(toolchain.tailwindNode),
+194375:     import(toolchain.tailwindOxide)
+194376:   ]);
+194377:   const input2 = [
+194378:     `@layer theme, utilities;`,
+194379:     `@import "tailwindcss/theme.css" layer(theme);`,
+194380:     TW_ANIMATE_CSS,
+194381:     PLUGIN_THEME_CSS,
+194382:     `@layer utilities {`,
+194383:     `  @tailwind utilities;`,
+194384:     `}`,
+194385:     ``
+194386:   ].join("\n");
+194387:   const compiler = await compile2(input2, {
+194388:     base: rootDir,
+194389:     onDependency: () => {
+194390:     },
+194391:     customCssResolver: async (id3) => {
+194392:       if (id3 !== "tailwindcss" && !id3.startsWith("tailwindcss/")) {
+194393:         return void 0;
+194394:       }
+194395:       const subpath = id3 === "tailwindcss" ? "index.css" : id3.slice("tailwindcss/".length);
+194396:       const candidate = join16(toolchain.tailwindCssDir, subpath);
+194397:       return existsSync5(candidate) ? candidate : void 0;
+194398:     }
+194399:   });
+194400:   const ownScanner = new Scanner({
+194401:     sources: [
+194402:       { base: rootDir, pattern: "**/*", negated: false },
+194403:       { base: join16(rootDir, "dist"), pattern: "**/*", negated: true },
+194404:       { base: join16(rootDir, "node_modules"), pattern: "**/*", negated: true }
+194405:     ]
+194406:   });
+194407:   const candidates = new Set(ownScanner.scan());
+194408:   if (dependencySources.length > 0) {
+194409:     const dependencyFileIdentities = await Promise.all(
+194410:       new Scanner({ sources: dependencySources }).files.map(
+194411:         (file2) => realpath2(file2)
+194412:       )
+194413:     );
+194414:     const bundledDependencyFiles = [
+194415:       ...new Set(
+194416:         dependencyFileIdentities.filter((file2) => bundledInputs.has(file2))
+194417:       )
+194418:     ];
+194419:     const contents = await Promise.all(
+194420:       bundledDependencyFiles.map(async (file2) => ({
+194421:         content: await readFile7(file2, "utf8"),
+194422:         extension: extname2(file2).slice(1)
+194423:       }))
+194424:     );
+194425:     for (const candidate of new Scanner({ sources: [] }).scanFiles(contents)) {
+194426:       candidates.add(candidate);
+194427:     }
+194428:   }
+194429:   return scopePluginUtilities(
+194430:     compiler.build([...candidates]),
+194431:     pluginScopeRoots(pluginId)
+194432:   );
+194433: }
+194434: async function bundledInputPaths(metafile, absWorkingDir) {
+194435:   const paths2 = /* @__PURE__ */ new Set();
+194436:   await Promise.all(
+194437:     Object.keys(metafile.inputs).map(async (input2) => {
+194438:       if (input2.startsWith(`${SHIM_NAMESPACE}:`) || input2.startsWith(`${ZOD_LOCALE_STUB_NAMESPACE}:`) || input2.startsWith("(")) {
+194439:         return;
+194440:       }
+194441:       paths2.add(await realpath2(resolve9(absWorkingDir, input2)));
+194442:     })
+194443:   );
+194444:   return paths2;
+194445: }
+194446: async function buildPluginApp(rootDir, bbVersion, toolchain, options2 = { minify: true }) {
+194447:   const { appEntry, packageName, pluginVersion } = await readPluginAppConfig(rootDir);
+194448:   const pluginId = derivePluginId(packageName);
+194449:   const dependencySources = await readDependencyTailwindSources(rootDir);
+194450:   const distDir = join16(rootDir, "dist");
+194451:   await mkdir6(distDir, { recursive: true });
+194452:   const jsPath = join16(distDir, "app.js");
+194453:   const cssPath = join16(distDir, "app.css");
+194454:   const metaPath = join16(distDir, "app.meta.json");
+194455:   const stageDir = await mkdtemp(join16(distDir, ".stage-"));
+194456:   try {
+194457:     const stagedJsPath = join16(stageDir, "app.js");
+194458:     const stagedCssPath = join16(stageDir, "app.css");
+194459:     const stagedMetaPath = join16(stageDir, "app.meta.json");
+194460:     const esbuild = await import(toolchain.esbuild);
+194461:     const bundle = await esbuild.build({
+194462:       entryPoints: [appEntry],
+194463:       outfile: stagedJsPath,
+194464:       absWorkingDir: rootDir,
+194465:       bundle: true,
+194466:       metafile: dependencySources.length > 0,
+194467:       format: "esm",
+194468:       platform: "browser",
+194469:       target: "es2022",
+194470:       minify: options2.minify,
+194471:       legalComments: "none",
+194472:       jsx: "automatic",
+194473:       jsxDev: false,
+194474:       define: {
+194475:         "process.env.NODE_ENV": '"production"',
+194476:         __BB_PLUGIN_ID__: JSON.stringify(pluginId)
+194477:       },
+194478:       logLevel: "error",
+194479:       plugins: [zodLocaleStubPlugin(), runtimeShimPlugin()]
+194480:     });
+194481:     let authoredCss = "";
+194482:     try {
+194483:       authoredCss = await readFile7(stagedCssPath, "utf8");
+194484:     } catch (error3) {
+194485:       if (!isRecord4(error3) || error3.code !== "ENOENT") throw error3;
+194486:     }
+194487:     let bundledInputs = /* @__PURE__ */ new Set();
+194488:     if (dependencySources.length > 0) {
+194489:       if (bundle.metafile === void 0) {
+194490:         throw new Error(
+194491:           "esbuild did not return the metafile required for dependency Tailwind scanning"
+194492:         );
+194493:       }
+194494:       bundledInputs = await bundledInputPaths(bundle.metafile, rootDir);
+194495:     }
+194496:     const tailwindCss = (await buildTailwindCss(
+194497:       rootDir,
+194498:       pluginId,
+194499:       toolchain,
+194500:       dependencySources,
+194501:       bundledInputs
+194502:     )).trimEnd();
+194503:     const { optimize } = await import(toolchain.tailwindNode);
+194504:     const css = optimize(`${tailwindCss}
+194505: ${authoredCss}`, {
+194506:       minify: options2.minify
+194507:     }).code;
+194508:     await writeFile5(stagedCssPath, css);
+194509:     await writeFile5(
+194510:       stagedMetaPath,
+194511:       JSON.stringify(
+194512:         createPluginArtifactMeta({ packageName, pluginVersion, bbVersion }),
+194513:         null,
+194514:         2
+194515:       ) + "\n"
+194516:     );
+194517:     await renameIntoPlace(stagedJsPath, jsPath);
+194518:     await renameIntoPlace(stagedCssPath, cssPath);
+194519:     await renameIntoPlace(stagedMetaPath, metaPath);
+194520:   } finally {
+194521:     await rm4(stageDir, { recursive: true, force: true });
+194522:   }
+194523:   return { jsPath, cssPath, metaPath };
+194524: }
+194525: 
+194526: // ../../packages/plugin-build/src/build-plugin-server.ts
+194527: import {
+194528:   mkdir as mkdir8,
+194529:   mkdtemp as mkdtemp2,
+194530:   readFile as readFile10,
+194531:   realpath as realpath3,
+194532:   rm as rm6,
+194533:   writeFile as writeFile7
+194534: } from "node:fs/promises";
+194535: import { dirname as dirname11, extname as extname3, join as join20, relative as relative3, sep as sep2 } from "node:path";

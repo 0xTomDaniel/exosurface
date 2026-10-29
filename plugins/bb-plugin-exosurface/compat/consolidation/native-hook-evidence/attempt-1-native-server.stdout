@@ -1,0 +1,30 @@
+[21:49:28] INFO: [server] Server listening {"bindHost":"127.0.0.1","port":49173,"dataDir":"/tmp/exo-native-source.RVkor2/bb-data"}
+[21:49:29] WARN: [server] periodic bb-community catalog refresh failed: marketplace requests require an https URL
+[21:49:29] INFO: [server] plugin automations@0.1.0 loaded
+[21:49:29] INFO: [server] plugin bb--provider-usage@0.1.0 loaded
+[21:49:29] INFO: [server] plugin bb-account@0.1.0 loaded
+[21:49:29] INFO: [server] plugin bb-ai@0.1.0 loaded
+[21:49:29] INFO: [server] plugin bb-guide@0.1.0 loaded
+[21:49:29] INFO: [server] plugin concurrency-limit@0.1.0 loaded
+[21:49:29] INFO: [server] plugin connect@0.1.0 loaded
+[21:49:29] INFO: [server] plugin custom-instructions@0.1.0 loaded
+[21:49:29] INFO: [server] plugin drafts@0.1.0 loaded
+[21:49:29] INFO: [server] plugin environment-git-worktree@0.1.0 loaded
+[21:49:29] INFO: [server] plugin environment-personal-workspace@0.1.0 loaded
+[21:49:29] INFO: [server] plugin environment-project-checkout@0.1.0 loaded
+[21:49:29] INFO: [server] plugin inline-vis@0.1.0 loaded
+[21:49:29] INFO: [server] plugin keep-awake@0.1.0 loaded
+[21:49:29] INFO: [server] plugin navigation@0.1.0 loaded
+[21:49:29] INFO: [server] plugin pdf-preview@0.1.0 loaded
+[21:49:29] INFO: [server] plugin provider-acp@0.1.0 loaded
+[21:49:29] INFO: [server] plugin provider-claude-code@0.1.0 loaded
+[21:49:29] INFO: [server] plugin provider-codex@0.1.0 loaded
+[21:49:29] INFO: [server] plugin provider-pi@0.1.0 loaded
+[21:49:29] INFO: [server] plugin provider-retry@0.1.0 loaded
+[21:49:29] INFO: [server] plugin push-notifications@0.1.0 loaded
+[21:49:29] INFO: [server] plugin scheduled-send@0.1.0 loaded
+[21:49:29] INFO: [server] plugin secrets@0.1.0 loaded
+[21:49:29] INFO: [server] plugin side-chat@0.1.0 loaded
+[21:49:29] INFO: [server] plugin thread-list@0.1.0 loaded
+[21:49:54] INFO: [server] Event loop stalled {"intervalMs":5000,"maxDelayMs":726.1,"meanDelayMs":27,"p99DelayMs":45.2,"resolutionMs":20,"thresholdMs":500,"currentWork":"POST /api/v1/plugins/bb-account/rpc/bb-account.v1.waitForStatusChange > plugin:bb-account rpc bb-account.v1.waitForStatusChange | POST /api/v1/plugins/install","lastWork":"GET /api/v1/plugins","lastWorkMs":3,"slowestWork":"sweep:completed-event-output-migration:advance","slowestWorkMs":1.6}
+[21:49:54] WARN: [server] plugin exosurface failed to load: a "message.dispatch" hook handler is already registered by this plugin

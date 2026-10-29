@@ -1,0 +1,8 @@
+legacy/surface/node_modules/@a2ui/web_core/src/universal/a2ui-lit-element.d.ts(96,80): error TS2307: Cannot find module 'lit-html/directive.js' or its corresponding type declarations.
+legacy/surface/node_modules/@a2ui/web_core/src/universal/basic_catalog/directives/markdown.d.ts(27,104): error TS2307: Cannot find module 'lit-html' or its corresponding type declarations.
+legacy/surface/node_modules/@a2ui/web_core/src/universal/basic_catalog/directives/markdown.d.ts(28,115): error TS2307: Cannot find module 'lit-html' or its corresponding type declarations.
+legacy/surface/node_modules/@a2ui/web_core/src/universal/basic_catalog/directives/markdown.d.ts(30,162): error TS2307: Cannot find module 'lit-html/directive.js' or its corresponding type declarations.
+legacy/surface/node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts(14,22): error TS2307: Cannot find module 'better-sqlite3' or its corresponding type declarations.
+legacy/surface/node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts(15,25): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts(14,22): error TS2307: Cannot find module 'better-sqlite3' or its corresponding type declarations.
+node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts(15,25): error TS2307: Cannot find module 'hono' or its corresponding type declarations.

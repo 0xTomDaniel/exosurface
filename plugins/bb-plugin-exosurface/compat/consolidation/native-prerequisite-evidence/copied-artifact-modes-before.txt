@@ -1,0 +1,2 @@
+dr-xr-xr-x@ 11 <user>  wheel   352 Oct 28 21:20 /tmp/exo-native-consolidated.QPR6vW/plugin
+dr-xr-xr-x@ 38 <user>  wheel  1216 Oct 28 21:20 /tmp/exo-native-consolidated.QPR6vW/plugin/dist

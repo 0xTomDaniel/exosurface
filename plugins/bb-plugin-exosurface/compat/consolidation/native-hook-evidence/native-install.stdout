@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "plugin": {
+    "id": "exosurface",
+    "source": "path:/tmp/exo-native-source.RVkor2/home/Library/Application Support/Exosurface/bb-source",
+    "rootDir": "/tmp/exo-native-source.RVkor2/home/Library/Application Support/Exosurface/bb-source",
+    "version": "0.1.0-dev",
+    "provenance": "direct",
+    "isOrphanedBuiltin": false,
+    "publisherLabel": null,
+    "sourceDisplay": "path · ~/Library/Application Support/Exosurface/bb-source",
+    "updateState": {},
+    "enabled": true,
+    "description": "Existing primary Exo/OptChat and A2UI experience, consolidated; releaseReady remains false",
+    "name": "Exosurface",
+    "screenshots": [],
+    "collections": [],
+    "icon": "Bot",
+    "iconUrl": null,
+    "status": "error",
+    "statusDetail": "a \"message.dispatch\" hook handler is already registered by this plugin",
+    "handlerStats": {
+      "count": 0,
+      "totalMs": 0,
+      "maxMs": 0,
+      "errorCount": 0
+    },
+    "services": [],
+    "schedules": [],
+    "cliCommand": null,
+    "capabilities": [],
+    "hasSettings": false,
+    "app": {
+      "hasApp": false,
+      "bundle": null
+    },
+    "logoUrl": null,
+    "logoDarkUrl": null,
+    "providerIds": [],
+    "icons": {}
+  }
+}

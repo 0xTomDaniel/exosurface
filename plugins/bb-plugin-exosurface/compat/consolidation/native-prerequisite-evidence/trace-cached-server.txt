@@ -1,0 +1,36 @@
+201940:   const pluginCacheDir = dirname16(
+201941:     pluginServerCacheDirectory({
+201942:       dataDir: args.dataDir,
+201943:       pluginId: args.pluginId,
+201944:       rootDir: args.rootDir,
+201945:       artifactDigest: "pending",
+201946:       sdkVersion: args.sdkVersion,
+201947:       bbVersion: args.bbVersion
+201948:     })
+201949:   );
+201950:   await mkdir13(pluginCacheDir, { recursive: true });
+201951:   const stageDir = await mkdtemp4(join33(pluginCacheDir, ".stage-"));
+201952:   try {
+201953:     const built = await buildPluginServer(
+201954:       args.rootDir,
+201955:       args.bbVersion,
+201956:       await args.toolchain(),
+201957:       {
+201958:         outDir: stageDir,
+201959:         format: "cjs",
+201960:         validatedConfig: args.validatedConfig,
+201961:         runtimeImports: args.runtimeImports,
+201962:         fallbackResolve: args.fallbackResolve,
+201963:         preserveSourceModuleLocation: true,
+201964:         externalizeSourceOutsideRoot: true
+201965:       }
+201966:     );
+201967:     const digest2 = await hashFile(built.jsPath);
+201968:     const cacheDir = pluginServerCacheDirectory({
+201969:       dataDir: args.dataDir,
+201970:       pluginId: args.pluginId,
+201971:       rootDir: args.rootDir,
+201972:       artifactDigest: digest2,
+201973:       sdkVersion: args.sdkVersion,
+201974:       bbVersion: args.bbVersion
+201975:     });

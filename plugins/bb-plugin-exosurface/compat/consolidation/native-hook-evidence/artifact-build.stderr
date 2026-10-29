@@ -1,0 +1,1 @@
+DISPOSABLE TRIPWIRE: child-process {"name":"spawnSync","args":["git",["-C","/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface","rev-parse","HEAD"]],"cwd":"/private/tmp/exo-native-source.RVkor2/source/plugins/bb-plugin-exosurface"}

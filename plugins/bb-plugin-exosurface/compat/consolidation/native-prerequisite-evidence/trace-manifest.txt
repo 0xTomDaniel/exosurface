@@ -1,0 +1,36 @@
+196775:         continue;
+196776:       }
+196777:       names.add(entry.name);
+196778:     }
+196779:   }
+196780:   return [...names].sort();
+196781: }
+196782: async function readPluginManifest(rootDir) {
+196783:   const packageJsonPath = join24(rootDir, "package.json");
+196784:   const json2 = await readPluginPackageJsonFile(packageJsonPath);
+196785:   const parsed = pluginPackageJsonSchema.safeParse(json2);
+196786:   if (!parsed.success) {
+196787:     const issue2 = parsed.error.issues[0];
+196788:     const path14 = issue2?.path.join(".") ?? "";
+196789:     throw new Error(
+196790:       `invalid plugin package.json${path14 ? ` (${path14})` : ""}: ${issue2?.message ?? "unknown error"}`
+196791:     );
+196792:   }
+196793:   const { name: packageName, version: version4, engines: engines2, bb } = parsed.data;
+196794:   if (engines2?.bbPluginSdk !== void 0 && import_semver2.default.validRange(engines2.bbPluginSdk) === null) {
+196795:     throw new Error(
+196796:       "invalid plugin package.json (engines.bbPluginSdk): must be a valid semver range"
+196797:     );
+196798:   }
+196799:   const serverEntry = await resolveManifestEntryFile(
+196800:     rootDir,
+196801:     bb.server,
+196802:     "bb.server"
+196803:   );
+196804:   const hostEntry = bb.host ? await resolveManifestEntryFile(rootDir, bb.host, "bb.host") : void 0;
+196805:   const skillsRootPaths = (bb.skills ?? ["skills"]).map(
+196806:     (entry) => resolveManifestPath(rootDir, entry.replace(/\/\*$/, ""), "bb.skills")
+196807:   );
+196808:   const resolveBrandingAsset = (entry, label) => {
+196809:     if (!/\.(svg|png|webp)$/i.test(entry)) {
+196810:       throw new Error(
