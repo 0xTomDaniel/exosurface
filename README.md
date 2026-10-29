@@ -6,7 +6,7 @@ A shared, adaptive interface for you and your personal agent: conversation and p
 
 **Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
-The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. **A real conversation → page action → reopen has not yet been demonstrated**: a provider sign-in reports ready (credential check only), and the test awaits explicit consent to run real inference. This is a working-spike claim, not an end-to-end installation guarantee.
+The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. In that instance a real conversation (GPT-6.1 Sol via a ChatGPT sign-in), a page with a textbox and button, a button action and a reopen after restarting BB and the owner also worked once. This is a working-spike claim on one Mac, not an end-to-end installation guarantee; a physically fresh Mac has not been tried.
 
 ### What is included?
 
@@ -74,7 +74,7 @@ Initialization and owner startup are separate. Once setup reports `bound`, authe
 
 ### 6. Check the actual experience
 
-With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. These are the pending acceptance steps, **not reported successes**.
+With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. This sequence passed once in the isolated test; repeat it on your own install.
 
 Known limits: textboxes/atoms are capped at **2,000 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
 

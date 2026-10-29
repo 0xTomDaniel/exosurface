@@ -32,13 +32,30 @@ The 400 left the first attempt's journal at `spawning` (no thread created; `thre
 
 Second attempt: **Stage: bound**. One native thread `Exo initialization`, generic profile, Pi session with the single labelled initialization record, binding/receipt committed. No inference. Private Pi directory has an empty `auth.json`.
 
+## Real conversation, page action and reopen (after Tom's explicit consent, 2026-10-29)
+
+Scope: the isolated instance only; provider `openai` (ChatGPT sign-in made by Tom in the isolated owner's own Pi directory), model GPT-6.1 Sol, `"primarySolProvider": "openai"` in the isolated config, saved model set to Sol. No credential copying, no fallback.
+
+| Step | Observed |
+|---|---|
+| Owner `dist/owner-service.js` started | `owner/state.json` ready; runtime-info model `openai/gpt-6.1-sol`, thinking high |
+| First send (BB composer, Sol picked) | Initially blocked by defect 5 below; after the fix the reply streamed into BB. Pi session: assistant message `provider openai`, `model gpt-6.1-sol`, `stopReason stop` |
+| "Draw a page with a Note textbox and Save button" | `update_exosurface` tool call; page card in chat; workspace revision 1 (`TextField` + `Button` with a `save` event) rendered in the Exosurface view |
+| Typed "fresh install note 1", clicked Save | Revision 2 stored with `note: "fresh install note 1"`; action delivered to Exo as `▸ installtest · Save — Note: …`; reply "Note received: …" (Sol) |
+| Stopped owner + BB (SIGTERM), restarted both, reopened thread | Same thread and full history shown; same Pi session file/ID; owner reattached (`clients: 1`); asked what note was saved → "You saved “fresh install note 1”." (Sol) |
+
+Caveat observed: to reopen the page the run clicked the original (revision 1) card and then sent the question, which by design **brought the earlier version back** as revision 3 (empty note). Revision 2 remains in `workspace/history.jsonl`. Exo's answer came from the session history, not that page.
+
+Defect 5: BB started the setup thread ~40 s after setup had already committed `bound`, without a provider identity, and the host refused it ("must resume its provider identity"). Fix: for `thread/start` without identity, reuse the committed canonical binding **only** for the journal's exact thread; with no input, return the identity without attaching (owner may not be running yet); otherwise attach as usual. Other threads, and non-canonical bindings, are still refused. The canonical host path again validates profile/generation (`prepareRuntime`) before attaching, keeping the existing resume fail-closed check (the earlier fix 4 had skipped it; restored before commit, verified against the real bound state without inference). The end-to-end run above used the build before that restoration; the restored check is covered by the host control test.
+
 ## Checks (author)
 
 - `test/canonical-setup.test.ts`: 26/26 (24 existing + host selection + runtime root).
 - Full `test/*.test.ts`: 54/54.
 - `test/canonical-rpc-authorization.mjs`: six refused requests, zero native calls.
+- `test/canonical-control-host.mjs` (actual host build): 11 controls, late-bound start for exact thread only with owner deferred, other thread and non-canonical binding refused, unchanged resume fail-closed, zero model entries.
 - `tsc --noEmit`: exit 0.
 
 ## Not demonstrated
 
-Provider login, retained owner start, conversation, page action and reopen (a ChatGPT sign-in in the isolated owner's own Pi directory reports `openai` ready by `pi auth check --no-refresh`, metadata only; real inference awaits explicit test consent). The project-host preflight matches exact source path and a unique host ID, not this-Mac identity; spike scope is a locally created project. Physical fresh Mac, uncached downloads, the desktop GUI window itself (the browser served the same frontend), lifecycle/reboot, distribution and SDK rights remain open. `releaseReady: false`.
+A physically fresh Mac, the BB desktop window itself (a headless browser served the same frontend), Anthropic sign-in/Opus, uncached downloads, launchd/reboot, distribution and SDK rights. Inputs remain capped at 2,000 UTF-16 units. `releaseReady: false`.
