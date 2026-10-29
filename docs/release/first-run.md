@@ -108,7 +108,9 @@ Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` pr
      --offline --no-extensions --no-mcp --no-skills --no-prompt-templates --no-context-files --no-tools
    ```
 
-   Use interactive `/login` for the provider you intend to use; finish normal provider approval and exit Pi before starting the owner. `--offline` is not a network sandbox and does not replace provider authentication. No login or model call was performed in the isolated test. Do not run this before setup creates the private directories.
+   Use interactive `/login` for the provider you intend to use; finish normal provider approval and exit Pi before starting the owner. `--offline` is not a network sandbox and does not replace provider authentication. Do not run this before setup creates the private directories.
+
+   Check readiness without a model call or token refresh, using the same environment: `… "$NODE" "$PI_CLI" auth check --provider <provider> --json --no-refresh`. In the isolated test a ChatGPT login was stored by Pi 1.1 as provider **`openai`** (`ready`, OAuth); `anthropic` and `openai-codex` reported `credentials_not_configured`. That is credential metadata only; no inference has been run with it yet.
 
 5. Start the retained owner in a **separate terminal**, using the same Node, plugin and config paths:
 
@@ -126,7 +128,9 @@ Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` pr
 
 6. Confirm your intended model in BB, send a short message, ask for a page with a textbox/button, perform an action, then reopen the same conversation and verify the same thread/session and page. These real acceptance checks are **pending**, not recorded passes.
 
-The main model aliases remain `exo-opus-5-5` → `anthropic/claude-opus-5-5` (high), and the separately selected alternative `exo-gpt-6-1-sol` → `openai-codex/gpt-6.1-sol` (high). No automatic fallback is configured. The generic profile also names compactor `anthropic/claude-sonnet-5-5` (medium) and subagent `anthropic/claude-opus-5-5` (high); provision/authenticate a role before using it. Setup itself requests no inference for any role.
+The main model aliases remain `exo-opus-5-5` → `anthropic/claude-opus-5-5` (high), and the separately selected alternative `exo-gpt-6-1-sol` → `openai-codex/gpt-6.1-sol` (high). No automatic fallback is configured.
+
+**ChatGPT sign-in with Pi 1.1:** Pi 1.1 stores a ChatGPT login under provider `openai` and lists `gpt-6.1-sol` there, not under `openai-codex`. To use GPT-6.1 Sol with that login, add the existing optional key `"primarySolProvider": "openai"` to the local configuration (it only changes the Sol alias's provider; Opus is unaffected, and setup's configuration check permits this extra key), reload the plugin/owner so both read it, then pick **Exo — GPT-6.1 Sol** in BB's model picker. The owner starts on the last picked model (Opus by default) and switches before sending; a model whose provider is not signed in fails rather than falling back. Pending: this mapping has been checked with `auth check` only, not yet with a real conversation. The generic profile also names compactor `anthropic/claude-sonnet-5-5` (medium) and subagent `anthropic/claude-opus-5-5` (high); provision/authenticate a role before using it. Setup itself requests no inference for any role.
 
 ## Isolated test instance
 
