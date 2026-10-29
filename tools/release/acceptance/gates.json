@@ -138,7 +138,7 @@
       "id": "textbox-full-text",
       "kind": "manual",
       "spec": "pages-and-activity page edits (issue #31)",
-      "proof": "type more than 1000 characters in a page textbox, press: Exo receives all of it; the reliability lane's regression test is automated support only"
+      "proof": "type more than 1000 characters in a page textbox, press: Exo receives all of it; the reliability lane's regression test is automated support only; independent57fc59f browser roundtrip preserves901 UTF16 units/925 bytes only, so it does not close this >1000-character gate"
     },
     {
       "id": "dependency-audit",
@@ -162,7 +162,7 @@
       "id": "production-snapshot-actions",
       "kind": "manual",
       "spec": "acceptance-first-run-press",
-      "proof": "BLOCKED visual renderer/rendered interactions at8cb1f3b. Backend now independently18/18 plus6 compiled-module checks: compiled server\u2192real socket\u2192mock Pi compiled tools retains232027-byte textbox/reload sentinel. Direct handler/mock proof is not actual browser/BB RPC/Pi loader/inference; require rendered edit/press/reopen with stable refs and drafts within reuse-first scope."
+      "proof": "PARTIAL bounded57fc59f: independently rebuilt production RPC\u2192separate owner socket\u2192mock Pi compiled tools, existing renderer/drafts in new test shell; real browser multiline edit/press and fresh-profile durable revision4 reopen pass, two browser exits0/group gone and owner0/group gone. Not native BB transport/mounting, actual Pi loader/auth/inference or production graph adoption.901 UTF16-unit/925-byte sample, not >1000 textbox acceptance. Full23 TAP passes but two stopped-state unit fixture roots recreated: cleanup gate remains open. See evidence/browser-roundtrip-57fc59f.json."
     },
     {
       "id": "native-layout-interactions",
@@ -180,7 +180,7 @@
       "id": "production-visual-dependency-security",
       "kind": "decision",
       "spec": "release-pins",
-      "proof": "OPEN disposition/production integration: local5cab0d1 compatibility graph independently offline-installed with strict peers, root markdown0.2.1/scoped DOMPurify3.4.17 resolution,19 candidate+36 legacy/graph and real-DOM9/9 on one unmodified retry; initial shutdown timeout retained. Reviewed saved audit has no DOMPurify/0 critical/4 propagated Zod highs; not independently refreshed. Zod backport artifact unchanged, not upstream/scanner clearance or universal safety. Preserve license/notices; require owner security/integration disposition before production graph reuse; no actual page UI/browser release acceptance."
+      "proof": "OPEN disposition/production integration: local5cab0d1 compatibility graph independently offline-installed with strict peers, root markdown0.2.1/scoped DOMPurify3.4.17 resolution,19 candidate+36 legacy/graph and real-DOM9/9 on one unmodified retry; initial shutdown timeout retained. Reviewed saved audit has no DOMPurify/0 critical/4 propagated Zod highs; not independently refreshed. Zod backport artifact unchanged, not upstream/scanner clearance or universal safety. Preserve license/notices; require owner security/integration disposition before production graph reuse; no actual page UI/browser release acceptance. Isolated existing-renderer browser roundtrip at57fc59f now independently reproduced; not native/product integration or security disposition."
     }
   ]
 }

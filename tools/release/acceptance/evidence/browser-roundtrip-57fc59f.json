@@ -1,0 +1,304 @@
+{
+  "schema": "exosurface-independent-existing-ui-roundtrip/0",
+  "producer": "57fc59feee7dde391e8708a1afa618c327a01042",
+  "releaseReady": false,
+  "source_status": "",
+  "fixturePointer": "/tmp/exo-ui-independent-latest",
+  "fixtureRoot": "/private/tmp/exr-iq9t695b",
+  "environment": "Empty-object allowlist; real Node24.15.0; owned HOME/TMPDIR/BB_DATA_DIR, copied BB toolchain and version/lock-checked production development modules; copied prior independently installed5cab compatibility graph; new copied-cache offline strict-peer ignore-scripts bundler install,2 packages; no lifecycle scripts/global installations/provider/service calls; loopback HTTP/CDP only, browser proxy/resolver deny non-loopback. Same-account isolation, not OS sandbox.",
+  "checks": [
+    {
+      "check": "bb-build",
+      "exit": 0
+    },
+    {
+      "check": "owner-build",
+      "exit": 0
+    },
+    {
+      "check": "production-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "adapter-tests",
+      "exit": 0
+    },
+    {
+      "check": "production-tests",
+      "exit": 0
+    },
+    {
+      "check": "tools-offline-ci",
+      "exit": 0
+    },
+    {
+      "check": "tools-npm-ls",
+      "exit": 0
+    },
+    {
+      "check": "isolated-existing-ui-roundtrip",
+      "exit": 0,
+      "seconds": 20.881
+    },
+    {
+      "check": "fixture-client-legacy-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "strict-adapter-unit-typecheck",
+      "exit": 0
+    }
+  ],
+  "browserAttempts": {
+    "independentRuns": 1,
+    "retryUsed": false,
+    "producerFinalRunIdentifiers": [
+      14,
+      15
+    ],
+    "interpretation": "attempt14/15 are passing run identifiers, NOT a14/15 pass rate; earlier retained development failures reviewed, not independently rerun."
+  },
+  "roundtrip": {
+    "schema": "exosurface-existing-ui-roundtrip/0",
+    "releaseReady": false,
+    "passed": true,
+    "first": {
+      "inputMethod": "CDP Input.insertText + actual pointer press",
+      "revision": 4,
+      "fullTextPreserved": true,
+      "updatedHeadingVisible": true,
+      "browser": "Chrome/131.0.6778.204",
+      "lifecycle": {
+        "deadlineMs": 20000,
+        "closeRequested": true,
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "forced": false,
+        "processGroupGone": true
+      }
+    },
+    "reopened": {
+      "freshBrowserProfile": true,
+      "revision": 4,
+      "fullTextPreserved": true,
+      "updatedHeadingVisible": true,
+      "browser": "Chrome/131.0.6778.204",
+      "lifecycle": {
+        "deadlineMs": 20000,
+        "closeRequested": true,
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "forced": false,
+        "processGroupGone": true
+      }
+    },
+    "fullText": {
+      "characters": 901,
+      "bytes": 925,
+      "sha256": "bedd00ae68e3f299e402b9977f0cd925b43af494ead30242d7e4158c59ead80b"
+    },
+    "graph": {
+      "react": "19.2.4",
+      "a2ui": "0.13.0",
+      "markdown": "0.2.1",
+      "dompurify": "3.4.17",
+      "rendererZod": "3.25.76+exosurface.1",
+      "backendZod": "4.6.6"
+    },
+    "reused": [
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/exo-catalog.ts",
+        "sha256": "f28549b2d98313d4481053d2e9a57f78a0719f93f5a3f5e803eac715e4a5c292"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/stage.ts",
+        "sha256": "abb7660ca39d89ffa0815b583b178472ddf6daa0eebfdf18a322c092a25416c9"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/workspace.ts",
+        "sha256": "2d238b180e0e5174c219df92a5829af5ffdf001858a0f53eafa3a0cc91f5d6ff"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/drafts.ts",
+        "sha256": "ebb3c2f3516e60ba7fb72919aa22abf18778ae670c881c3110d8faa3f70d0ac8"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/workspace-view.ts",
+        "sha256": "af14d03f93ad5671c840881d936c4fd93fdb59ed06ba0c5ef8394e6c26439088"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/src/exo-components.tsx",
+        "sha256": "991777a1f5785f634f4c70eda0703a4b7ca2180cd3daebade33eb85b0a86305e"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/lib/document-style.ts",
+        "sha256": "c781a5b403cd6ce070e0ee20e336008dd5a0dedf301853c4124c76b93e9491a2"
+      },
+      {
+        "path": "bb-plugin-exo-a2ui-spike/lib/exo-theme.ts",
+        "sha256": "82b1bb03613af2310c6359f33895011a91dc702753f135606b7f71bf1e17bac0"
+      }
+    ],
+    "backendBundleSha256": "52a7a078f69be79afde6da2cd2f070fcd360eb3e8f9d539acfc49987a313edb9",
+    "browserBundleSha256": "0c40192bfcc0ed98dbbaff2c2578e5bba3c8328cb6c83ffc500ac642f1856ab2",
+    "calls": [
+      {
+        "method": "pageEdit",
+        "input": {
+          "threadId": "primary",
+          "baseRevision": 1,
+          "mutationId": "c1e27e0a-63a7-41ab-bcc8-0c48fccfcebd",
+          "surfaceId": "page",
+          "ref": "entry",
+          "value": "  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  FINAL COMPLETE VALUE  \n"
+        },
+        "result": {
+          "revision": 2,
+          "duplicate": false
+        }
+      },
+      {
+        "method": "pagePress",
+        "input": {
+          "threadId": "primary",
+          "baseRevision": 2,
+          "mutationId": "a89553e3-1429-42e8-bb57-366f2e2c6d0b",
+          "surfaceId": "page",
+          "ref": "send",
+          "values": {
+            "entry": "  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  leading whitespace\n\ud83e\uddea Unicode & <script>literal textbox value</script>\n  FINAL COMPLETE VALUE  \n"
+          }
+        },
+        "result": {
+          "revision": 3,
+          "duplicate": false
+        }
+      }
+    ],
+    "owner": {
+      "independentProcess": true,
+      "ownerPid": 29714,
+      "piPid": 29715,
+      "promptCount": 1,
+      "compiledPageTools": true,
+      "dispatch": "sent",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "processGroupGone": true
+    },
+    "persistedPageSha256": "d8c8ecb11e0d81dc7f25109c4dacade140b9b21b7d2899143303d3f50b45b4dd",
+    "limitations": [
+      "Mock Pi, manually registered compiled tools, synthetic auth artifact; NOT actual Pi extension loader, inference or authentication proof",
+      "Loopback stand-in for BB transport; no native BB/ThreadChat/product integration proof",
+      "Existing isolated candidate graph, not adoption into production plugin lock",
+      "Single-page browser milestone; not minimum-Node/platform/layout/release acceptance",
+      "Same-account scrubbed HOME isolation, not an OS sandbox"
+    ],
+    "cleanup": {
+      "fixtureRemoved": true,
+      "httpServerClosed": true,
+      "forbiddenServiceAttempts": 0
+    }
+  },
+  "invariants": {
+    "checkpointHashFieldsVerified": true,
+    "eightLegacyBundleInputsByteIdentical": true,
+    "sourceAndPayloadHashesMatchProducerRuns14and15": true,
+    "productionLockAndAppUnchangedFrom5cab": true,
+    "zodTreeAndOldSanitizerRunnerUnchangedFrom5cab": true,
+    "backendBundleMatchesProducerRun15": true,
+    "browserBundleMatchesProducerRun15": false,
+    "browserBundleNote": "Independent browser bundle hash retained; no deterministic cross-root browser-bundle identity claim. Pinned source inputs and graph versions checked instead.",
+    "uncommittedTeardownFixConsumed": false
+  },
+  "unitTeardown": {
+    "tapPassed": 23,
+    "fullSuiteInvocations": 1,
+    "stateOnlyDirectoriesRecreated": 2,
+    "producerReportedDirectoriesAcrossTwoInvocations": 4,
+    "state": "ready:false/status:failed/busy:false/error:stopped",
+    "cleanupAccepted": false,
+    "interpretation": "Preexisting removal hook runs before awaited owner.close, which recreates stopped state; not a browser shutdown failure or demonstrated process leak. Captured before explicit removal of only these owned directories. Node compile cache also inventoried; not treated as an owner-state leak.",
+    "explicitlyRemoved": [
+      "exo-pages-vnC27Q",
+      "exo-fr-OR56qU"
+    ]
+  },
+  "postRunOwnedProcessMatches": [],
+  "scope": {
+    "reuse": "Existing eight legacy model/draft/catalog/component/style/theme inputs plus official v0.9 A2uiSurface; NEW test-only mounting shell/synthetic light host palette and loopback transport, thin page adapter not mounted into production BB. Not byte-identical whole native app.",
+    "transport": "Real pointer/input\u2192existing view/drafts\u2192page adapter\u2192loopback HTTP\u2192compiled production page RPC handlers and Zod4 contracts\u2192real Unix owner socket\u2192separate Node owner\u2192PiRpc JSONL\u2192MOCK Pi manually registering compiled page tools\u2192durable revision4\u2192new browser profile.",
+    "value": "901 UTF-16 code units /925 UTF-8 bytes, leading/trailing whitespace, Unicode, multiline and literal script text. Browser sample does not satisfy >1000-character release textbox gate.",
+    "observed": "revision1\u21922 edit\u21923 press\u21924 owner heading update; exactly one prompt; complete values at edit/press/mock/persisted/new-browser checkpoints; both browser roots exit0/no signal/no force/group gone within unchanged20s per-browser deadline, owner exit0/group gone; fixture removed, HTTP closed, zero launchctl-tripwire attempts. Screenshots visually inspected, not layout approval.",
+    "remaining": [
+      "Native BB mounting/transport, first-open selection and approved layout",
+      "Actual Pi loader, real provider auth/inference",
+      "Production compatibility graph integration and owner security/license disposition",
+      "Greater-than1000-character rendered textbox acceptance",
+      "Clean-Mac/minimum-Node/reboot/lifecycle reliability",
+      "Existing sanitizer shutdown failure remains separate and unresolved",
+      "Unit teardown remains failed cleanup at this pinned checkpoint; no fix adopted",
+      "No independent fresh network audit"
+    ]
+  },
+  "rawFiles": {
+    "adapter-tests.log": {
+      "bytes": 824,
+      "sha256": "48ee3e03b17527e9177bbb2e5012c2896f8501c290195794a31b39ea8ebb1bd7"
+    },
+    "bb-build.log": {
+      "bytes": 150,
+      "sha256": "b170bf5b8795f9ec11966974424a1be7b2b030a24217321fd77afd38d961db09"
+    },
+    "client-typecheck.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owner-build.log": {
+      "bytes": 183,
+      "sha256": "d31750a7e5d350194e305c6914132e889a5251e3be81e27273e2f5469780a2e5"
+    },
+    "production-tests.log": {
+      "bytes": 3127,
+      "sha256": "4cb2569dee0cc3b5f9e3199256e63980b13a8d21c9f606b919a640acb8d9b884"
+    },
+    "production-typecheck.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reopened-page.png": {
+      "bytes": 74206,
+      "sha256": "f32f63f1114d9e69d9600f887801ea20da0fae6a897959601cba72e14b6149d7"
+    },
+    "roundtrip.json": {
+      "bytes": 6251,
+      "sha256": "ee1b428ae1adcd116d510999ee888b4325d60485271e4b00a56e99f879267cf3"
+    },
+    "strict-adapter-typecheck.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tools-npm-ls.log": {
+      "bytes": 1404,
+      "sha256": "d70c54c338c38d82258749aa95543bdd632d9de85ce77ce247626342a17519da"
+    },
+    "tools-offline-ci.log": {
+      "bytes": 27,
+      "sha256": "54ff47e1af1f1193d1eceb8ba1a15a4240e6c3aa5db2d701b43ba1da4593356a"
+    },
+    "unit-teardown-residue.json": {
+      "bytes": 744,
+      "sha256": "3127b1b8596d44a67527901103103cac7b6f243f0983fe31274fd28c59e4d078"
+    },
+    "updated-page.png": {
+      "bytes": 74210,
+      "sha256": "645f4897ed1a20a2e23b25429e7412fd943246daf6820a2238e92d46d1f58d89"
+    }
+  }
+}

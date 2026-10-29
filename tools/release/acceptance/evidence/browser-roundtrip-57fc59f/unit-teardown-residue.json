@@ -1,0 +1,19 @@
+[
+  {
+    "path": "node-compile-cache/v24.15.0-arm64-cf738c9d-501/b988b962",
+    "bytes": 1357724,
+    "sha256": "dfbb4505e543e77094d1e7dad2ad3ff97494649cdf27799d262a4989a231a340"
+  },
+  {
+    "path": "exo-pages-vnC27Q/state/owner/state.json",
+    "bytes": 82,
+    "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534",
+    "content": "{\n  \"ready\": false,\n  \"status\": \"failed\",\n  \"busy\": false,\n  \"error\": \"stopped\"\n}\n"
+  },
+  {
+    "path": "exo-fr-OR56qU/state/owner/state.json",
+    "bytes": 82,
+    "sha256": "ba66b801100656c146a61db395cc95b097ccdf3d162e3a3626f2147f8e2fc534",
+    "content": "{\n  \"ready\": false,\n  \"status\": \"failed\",\n  \"busy\": false,\n  \"error\": \"stopped\"\n}\n"
+  }
+]
