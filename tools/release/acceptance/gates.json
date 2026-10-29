@@ -180,7 +180,7 @@
       "id": "production-visual-dependency-security",
       "kind": "decision",
       "spec": "release-pins",
-      "proof": "OPEN disposition/integration: localc22ba24e narrow Zod3 upper-constrained array/set backport independently reproducible,19 candidate+36 legacy/graph pass, strict-peer offline lock and actual patched-v3/SDK4 resolutions verified. Not upstream scanner clearance/universal safety/browser acceptance. DOMPurify3.4.11 separately flagged; README3.4.16 version narrative corrected in acceptance evidence. No security acceptance or production dependency/UI change."
+      "proof": "OPEN disposition/production integration: local5cab0d1 compatibility graph independently offline-installed with strict peers, root markdown0.2.1/scoped DOMPurify3.4.17 resolution,19 candidate+36 legacy/graph and real-DOM9/9 on one unmodified retry; initial shutdown timeout retained. Reviewed saved audit has no DOMPurify/0 critical/4 propagated Zod highs; not independently refreshed. Zod backport artifact unchanged, not upstream/scanner clearance or universal safety. Preserve license/notices; require owner security/integration disposition before production graph reuse; no actual page UI/browser release acceptance."
     }
   ]
 }
