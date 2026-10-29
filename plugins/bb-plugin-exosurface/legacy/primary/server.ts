@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE } from './src/state.ts';
 import { local, LOCAL_CONFIG } from './src/local-config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
-import { canonicalBBNativeAdapter, canonicalSystemPorts } from './src/canonical-system.ts';
+import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
 import { consumeCanonicalInitialization } from './src/canonical-control.ts';
 import { loadIf } from '../../src/store.ts';
 import { join } from 'node:path';
@@ -55,8 +55,10 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       // ordinary prompt or resume path can authorize first-run native creation.
       const { recoverDeadLock, ...values } = setupInput.parse(input);
       const request = { ...values, home: HOME, optchatHome: CANONICAL_HOME, profile: CANONICAL_PROFILE };
-      const authorizedSetup = setupPorts ?? canonicalSystemPorts({ localConfig: LOCAL_CONFIG, runtimeRoot: SOURCE, node: process.execPath, native: canonicalBBNativeAdapter(bb.sdk.threads, true), ownerLabel: local('ownerLabel') || undefined });
+      const authorizedSetup = setupPorts ?? canonicalSystemPorts({ localConfig: LOCAL_CONFIG, runtimeRoot: SOURCE, node: process.execPath, native: canonicalBBNativeAdapter(bb.sdk.threads, true, bb.sdk.projects), ownerLabel: local('ownerLabel') || undefined });
       if (!authorizedSetup.nativeDispatchAllowed) throw Error('Canonical native dispatch is separately gated; no setup changes made');
+      // Preflight before any setup change: the thread must run on the project's own source at the vault path.
+      if (!setupPorts) await vaultHost(bb.sdk.projects, request as never);
       if (recoverDeadLock) recoverSetupLock(request);
       return canonicalSetup(request, authorizedSetup);
     },

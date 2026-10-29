@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { canonicalSetup, setupStatus, recoverSetupLock, type SetupRequest, type CanonicalSetupPorts } from '../legacy/primary/src/canonical-setup.ts';
 import { INITIALIZATION, freshCanonicalReceipt } from '../legacy/primary/src/canonical-fresh.ts';
-import { canonicalNativeAdapter, canonicalBBNativeAdapter, canonicalSystemPorts } from '../legacy/primary/src/canonical-system.ts';
+import { canonicalNativeAdapter, canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from '../legacy/primary/src/canonical-system.ts';
 import { consumeCanonicalInitialization, initializationControl } from '../legacy/primary/src/canonical-control.ts';
 import { save } from '../src/store.ts';
 function fixture() {
@@ -124,6 +124,17 @@ test('public BB native adapter remains denied by default; explicitly authorized 
     assert.deepEqual(await authorized.spawnThread(f.request), { id: 'unit-thread' }); await authorized.verifyThread(f.request, 'unit-thread'); assert.equal(calls, 1);
   } finally { f.close(); }
 });
+test('authorized BB adapter runs on the project source host at the vault path; other projects refuse before spawn', async () => {
+  const f = fixture(); const spawned: any[] = [];
+  const threads = { async spawn(input: any) { spawned.push(input); return { id: 'unit-thread' }; }, async get() { return { id: 'unit-thread', projectId: f.request.projectId, providerId: 'exo-spike' }; } };
+  const projects = (sources: any[]) => ({ async get() { return { id: f.request.projectId, sources }; } });
+  try {
+    await canonicalBBNativeAdapter(threads as any, true, projects([{ hostId: 'host_a', path: f.request.vault }, { hostId: 'host_b', path: '/elsewhere' }]) as any).spawnThread(f.request);
+    assert.equal(spawned[0].environment.hostId, 'host_a'); assert.deepEqual(spawned[0].environment.workspace, { type: 'unmanaged', path: f.request.vault });
+    await assert.rejects(vaultHost(projects([{ hostId: 'host_b', path: '/elsewhere' }]) as any, f.request), /exactly the workspace path/);
+    await assert.rejects(vaultHost(projects([]) as any, f.request), /exactly the workspace path/); assert.equal(spawned.length, 1);
+  } finally { f.close(); }
+});
 test('system configuration preserves an explicitly selected isolated owner supervisor label', async () => {
   const f = systemFixture(); try {
     const isolated = canonicalSystemPorts({ localConfig: f.localConfig, runtimeRoot: f.root, node: process.execPath, native: f.ports, ownerLabel: 'app.exosurface.owner.disposable' });
@@ -131,4 +142,9 @@ test('system configuration preserves an explicitly selected isolated owner super
     assert.equal(JSON.parse(before).ownerLabel, 'app.exosurface.owner.disposable');
     await isolated.configureLocal(f.request); assert.equal(readFileSync(f.localConfig, 'utf8'), before);
   } finally { f.close(); }
+});
+test('runtime root resolves to the consolidated plugin package, not legacy/primary', async () => {
+  const { SOURCE } = await import('../legacy/primary/src/state.ts');
+  assert.equal(JSON.parse(readFileSync(join(SOURCE, 'package.json'), 'utf8')).name, 'bb-plugin-exosurface');
+  assert.ok(existsSync(join(SOURCE, 'build-runtime.mjs')));
 });

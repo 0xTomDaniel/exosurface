@@ -47,5 +47,18 @@ if (process.argv[4] === '--build') {
   const resumed = await request('thread/resume', { ...start, threadId: 'legacy-resume', providerThreadId: 'exo:fresh:main' });
   assert.match(resumed.error?.message ?? '', /Existing canonical profile\/generation required/);
   assert.equal(globalThis.__canonicalMetrics.model, 0);
-  console.log(JSON.stringify({ passed: true, controls: 11, methods: ['thread/start', 'turn/start'], absentInputAdmission: true, controlMetrics, sensitiveControlNotInOutput: true, unchangedResumeFailClosed: true, providerDispatch: false, releaseReady: false }, null, 2));
+  // BB may start the setup-created thread after setup is already bound (no provider identity yet). Only that exact
+  // thread with its committed canonical binding gets the identity; owner attachment waits for the first turn.
+  writeFileSync(join(home, 'canonical-setup.json'), JSON.stringify({ ...journal, stage: 'bound', threadId: 'host-thread' }));
+  mkdirSync(join(home, 'bindings'), { recursive: true });
+  writeFileSync(join(home, 'bindings', 'host-thread.json'), JSON.stringify({ providerThreadId: 'exo:fresh:main', profile: 'fresh', runtimeKind: 'canonical', sessionFile: join(home, 'session.jsonl'), cursor: 0 }));
+  writeFileSync(join(home, 'bindings', 'other-thread.json'), JSON.stringify({ providerThreadId: 'exo:fresh:main', profile: 'fresh', runtimeKind: 'canonical', sessionFile: join(home, 'session.jsonl'), cursor: 0 }));
+  const before = { ...globalThis.__canonicalMetrics };
+  const late = await request('thread/start', start);
+  assert.equal(late.result?.providerThreadId, 'exo:fresh:main'); assert.deepEqual(globalThis.__canonicalMetrics, before);
+  assert.match((await request('thread/start', { ...start, threadId: 'other-thread' })).error?.message ?? '', /must resume its provider identity/);
+  writeFileSync(join(home, 'bindings', 'host-thread.json'), JSON.stringify({ providerThreadId: 'exo:fresh:main', profile: 'fresh', runtimeKind: 'offline', sessionFile: join(home, 'session.jsonl'), cursor: 0 }));
+  assert.ok((await request('thread/start', start)).error, 'non-canonical binding is not adopted');
+  assert.equal(globalThis.__canonicalMetrics.model, 0);
+  console.log(JSON.stringify({ passed: true, controls: 11, lateBoundStart: { exactThreadOnly: true, ownerDeferred: true }, methods: ['thread/start', 'turn/start'], absentInputAdmission: true, controlMetrics, sensitiveControlNotInOutput: true, unchangedResumeFailClosed: true, providerDispatch: false, releaseReady: false }, null, 2));
 }

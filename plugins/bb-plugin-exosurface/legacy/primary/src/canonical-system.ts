@@ -29,8 +29,15 @@ export function canonicalNativeAdapter(api: NativeSetupApi, dispatchAllowed = fa
     },
   };
 }
-export function canonicalBBNativeAdapter(threads: Pick<BbPluginApi['sdk']['threads'], 'spawn' | 'get'>, dispatchAllowed = false) {
-  return canonicalNativeAdapter({ create: (request, prompt) => threads.spawn({ projectId: request.projectId, environment: { type: 'host', workspace: { type: 'unmanaged', path: request.vault } }, providerId: 'exo-spike', model: CANONICAL_MODEL.id, reasoningLevel: 'high', permissionMode: 'full', title: 'Exo initialization', prompt }), get: id => threads.get({ threadId: id }) }, dispatchAllowed);
+/** BB requires an explicit machine for an unmanaged workspace: use the project's own source at the vault path. */
+export async function vaultHost(projects: Pick<BbPluginApi['sdk']['projects'], 'get'>, request: SetupRequest): Promise<string> {
+  const project: any = await projects.get({ projectId: request.projectId });
+  const hosts = new Set((project?.sources ?? []).filter((s: any) => s?.path === request.vault && typeof s.hostId === 'string').map((s: any) => s.hostId as string));
+  if (hosts.size !== 1) throw Error('Select a BB project whose source on this Mac is exactly the workspace path');
+  return [...hosts][0] as string;
+}
+export function canonicalBBNativeAdapter(threads: Pick<BbPluginApi['sdk']['threads'], 'spawn' | 'get'>, dispatchAllowed = false, projects?: Pick<BbPluginApi['sdk']['projects'], 'get'>) {
+  return canonicalNativeAdapter({ create: async (request, prompt) => threads.spawn({ projectId: request.projectId, environment: { type: 'host', ...(projects ? { hostId: await vaultHost(projects, request) } : {}), workspace: { type: 'unmanaged', path: request.vault } }, providerId: 'exo-spike', model: CANONICAL_MODEL.id, reasoningLevel: 'high', permissionMode: 'full', title: 'Exo initialization', prompt }), get: id => threads.get({ threadId: id }) }, dispatchAllowed);
 }
 export function canonicalSystemPorts(options: {
   localConfig: string; runtimeRoot: string; node: string;
@@ -47,8 +54,8 @@ export function canonicalSystemPorts(options: {
   const profileOp = (r: SetupRequest, op: 'create' | 'validate') => {
     const helper = join(options.runtimeRoot, 'dist', 'optchat-init.js');
     const answer = spawnSync(options.node, ['--experimental-transform-types', helper, r.optchat, op, r.profile], { cwd: r.vault, env: environment(r), encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024 });
-    if (answer.status !== 0 || answer.error) throw Error(`OptChat supported profile API ${op} failed`);
-    const result = JSON.parse(answer.stdout);
+    if (answer.status !== 0 || answer.error) throw Error(`OptChat supported profile API ${op} failed: ${(answer.error?.message ?? (answer.stdout || answer.stderr || `exit ${answer.status}`)).replace(/\s+/g, ' ').trim().slice(0, 400)}`);
+    let result: any; try { result = JSON.parse(answer.stdout); } catch { throw Error(`OptChat supported profile API ${op} returned no result: ${String(answer.stderr).replace(/\s+/g, ' ').trim().slice(0, 400)}`); }
     if (!result.ok || result.dir !== join(r.optchatHome, 'profiles', r.profile)) throw Error('OptChat profile identity mismatch');
   };
   return {

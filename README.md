@@ -6,7 +6,7 @@ A shared, adaptive interface for you and your personal agent: conversation and p
 
 **Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
-The source build and local BB registration have been exercised. **A complete fresh-desktop initialization → real conversation → page action → reopen has not yet been demonstrated.** The setup code passed focused independent review (24 targeted tests); that is not an end-to-end installation claim.
+The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. In that instance a real conversation (GPT-6.1 Sol via a ChatGPT sign-in), a page with a textbox and button, a button action and a reopen after restarting BB and the owner also worked once. This is a working-spike claim on one Mac, not an end-to-end installation guarantee; a physically fresh Mac has not been tried.
 
 ### What is included?
 
@@ -21,9 +21,9 @@ The complete experience needs **BB + this plugin + an Exocortex workspace + mode
 
 ### 1. Prepare BB, Node and your workspace
 
-- Install and open the normal **BB desktop app** (tested: 0.45.0); complete whatever first-launch setup BB itself requests. Extra BB account login/manual machine enrollment is **not an established prerequisite for installing this plugin**. That requirement arose only in our separate headless test route.
+- Install and open the normal **BB desktop app** (tested: 0.45.0); complete whatever first-launch setup BB itself requests. No BB account login or manual machine enrollment is needed for this plugin: BB's own launcher enrolls the local Mac automatically (verified in an isolated instance).
 - Install Git and **Node 22.19 or newer** with npm (tested: Node 24.15.0). Keep Node available when running the owner.
-- Provision your own Exocortex workspace/vault separately, including its `AGENTS.md` and `.agents/skills/`. The plugin does not install these or your private memory. Select a normal BB project for that workspace.
+- Provision your own Exocortex workspace/vault separately, including its `AGENTS.md` and `.agents/skills/`. The plugin does not install these or your private memory. Add it to BB as a normal project whose folder is **exactly** the workspace path (initialization refuses any other project before changing anything).
 - Obtain **OptChat 0.8.6** from its [upstream repository](https://github.com/jonaslsaa/pi-optchat), pinned to `aae1caf7715830051d327f819fc776792211167a`, and install its locked dependencies. The plugin uses its public extension/profile API, not the incompatible Pi SDK-root import.
 
 ### 2. Clone and install the locked plugin dependencies
@@ -66,15 +66,15 @@ This registers **Exosurface** (`exosurface`, with provider `exo-spike`). Keep th
 
 ### 5. Initialize, authenticate and start Exo
 
-Open **Exosurface** in BB (plugin route `/plugins/exosurface/proof`). In **Initialize a fresh Exo owner**, select the workspace/project and paths, review the consent, then choose **Initialize Exo**. It authorizes one native conversation and a labelled initialization record **without model inference**. Do not start a second operation or delete recovery records to get around an uncertain result.
+Open **Exo** in BB's sidebar (plugin route `/plugins/exosurface/proof`). In **Initialize a fresh Exo owner**, select the project for your workspace (not *Personal*), check the paths, review the consent, then choose **Initialize Exo**. It authorizes one native conversation and a labelled initialization record **without model inference**. Do not start a second operation or delete recovery records to get around an uncertain result.
 
-Initialization and owner startup are separate. Once setup reports `bound`, authenticate the model provider in the **setup-created private Pi directory**, then start the retained owner in a separate terminal. The [step-by-step guide](docs/release/first-run.md#initialize-and-start-the-owner) supplies the environment and commands. A running BB view is not the owner process; automatic launchd provisioning is not included in this spike.
+Initialization and owner startup are separate. Once setup reports `bound`, authenticate the model provider in the **setup-created private Pi directory** (signing in with ChatGPT under Pi 1.1? see [`primarySolProvider`](docs/release/first-run.md#initialize-and-start-the-owner)), then start the retained owner in a separate terminal. The [step-by-step guide](docs/release/first-run.md#initialize-and-start-the-owner) supplies the environment and commands. A running BB view is not the owner process; automatic launchd provisioning is not included in this spike.
 
-**Test boundary:** this fresh-desktop step and real interactions are still unverified. Report an initialization error rather than inventing bindings or copying another instance's authentication. Do not perform the headless machine-enrollment procedure merely to install the desktop plugin.
+**Test boundary:** initialization reached `bound` in an isolated instance of BB's own server/host daemon (see the [guide](docs/release/first-run.md#isolated-test-instance)); the owner start and real interactions are still unverified. Report an initialization error rather than inventing bindings or copying another instance's authentication. No BB account login or machine enrollment is needed: the earlier headless failure came from starting BB's server and host daemon separately, not from the desktop route.
 
 ### 6. Check the actual experience
 
-With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. These are the pending acceptance steps, **not reported successes**.
+With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. This sequence passed once in the isolated test; repeat it on your own install.
 
 Known limits: textboxes/atoms are capped at **2,000 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
 

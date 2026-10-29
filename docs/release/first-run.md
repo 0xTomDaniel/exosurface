@@ -8,7 +8,13 @@ The plugin supplies the interface, surface instructions/extensions and Pi/OptCha
 
 The first-run source checkpoint `57819800fd466cdd270cfc25ba630d21d5778db7` passed a focused independent review: **24/24 targeted tests**, including six unauthorized/malformed RPCs refused with zero native calls. Author-run checks also passed: locked root/nested installs, 52 synthetic tests, configured strict types, owner/runtime builds and actual isolated BB server plugin registration. UI inspection and synthetic checks are not real conversation acceptance.
 
-**Not yet demonstrated together:** normal fresh desktop installation, real native initialization/binding, authenticated retained-owner startup, conversation, page action and persisted reopen. The isolated test stopped before native setup because its separate headless server lacked an execution host. That is **not evidence that desktop plugin installation requires extra BB account login or manual machine enrollment**.
+**Demonstrated 2026-10-29 (branch `spike/desktop-install`):** in an [isolated instance](#isolated-test-instance) of BB 0.45's own server and host daemon, run under the BB.app binary exactly as the desktop app runs them, the plugin built, registered, and the real **Initialize Exo** button reached `bound`: one native BB conversation, a generic OptChat profile and Pi session, no inference. That run found and fixed four setup defects (runtime root, Electron child processes, host selection, copied host artifact; see the [check record](../../plugins/bb-plugin-exosurface/compat/consolidation/desktop-install-spike/README.md)).
+
+**Then, with Tom's explicit consent, in the same instance:** owner started; one conversation answered by `openai/gpt-6.1-sol` (recorded in the Pi session); Exo drew a page with a textbox and button; typing a note and pressing Save stored revision 2 and delivered the action to Exo, which acknowledged it; after stopping and restarting BB and the owner, the same thread, history and Pi session reopened and Exo recalled the saved note. A fifth defect (BB starting the setup thread after setup was already `bound`) was fixed on the way.
+
+**Not yet demonstrated:** an install on a physically fresh Mac, the BB desktop window itself (a browser served the same frontend), Anthropic sign-in, uncached downloads.
+
+**Superseded diagnosis:** the earlier isolated test failed with `Missing host bootstrap material` because it started `bb-server` and `bb-host-daemon` separately. BB's `bb-app` launcher (what BB.app and `npx bb-app` use) requests a local-host enrollment key from its own server automatically. No BB account login or manual machine enrollment is involved.
 
 ## Dependencies
 
@@ -81,7 +87,7 @@ Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` pr
 
 **These are the implemented sequence and pending real-desktop test steps, not a claim that the sequence has been demonstrated end to end.**
 
-1. In BB select/create a normal project for your Exocortex vault.
+1. In BB add a normal project whose folder is **exactly** your Exocortex vault path. Initialization runs the conversation on that project's source machine and refuses any other project (including *Personal*) before changing anything.
 2. Open **Initialize a fresh Exo owner** in Exosurface. Confirm project, workspace, public Pi CLI and OptChat paths; review the checkbox authorizing one native conversation and a labelled user initialization record, without inference; click **Initialize Exo**.
 3. Wait for setup to reach `bound`. `ownerReady: false` at this stage is intentional: initialization does not start the retained owner or authenticate a provider. If setup reports an uncertain creation outcome, stop and reconcile it; do not start a replacement operation or delete its journal.
 4. Authenticate only the setup-created private Pi directory via normal Pi `/login`. Do not copy another instance's `auth.json` or inherit API keys. Use the paths from your configuration; set the variables below explicitly, with no placeholders left:
@@ -104,7 +110,9 @@ Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` pr
      --offline --no-extensions --no-mcp --no-skills --no-prompt-templates --no-context-files --no-tools
    ```
 
-   Use interactive `/login` for the provider you intend to use; finish normal provider approval and exit Pi before starting the owner. `--offline` is not a network sandbox and does not replace provider authentication. No login or model call was performed in the isolated test. Do not run this before setup creates the private directories.
+   Use interactive `/login` for the provider you intend to use; finish normal provider approval and exit Pi before starting the owner. `--offline` is not a network sandbox and does not replace provider authentication. Do not run this before setup creates the private directories.
+
+   Check readiness without a model call or token refresh, using the same environment: `… "$NODE" "$PI_CLI" auth check --provider <provider> --json --no-refresh`. In the isolated test a ChatGPT login was stored by Pi 1.1 as provider **`openai`** (`ready`, OAuth); `anthropic` and `openai-codex` reported `credentials_not_configured`. That is credential metadata only; no inference has been run with it yet.
 
 5. Start the retained owner in a **separate terminal**, using the same Node, plugin and config paths:
 
@@ -120,9 +128,26 @@ Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` pr
 
    Keep this process running while testing. **Do not use `dist/first-run-shell-owner-service.js`**: that is the separate historical shell. No launchd/reboot supervision is provisioned by this spike. With the owner absent, the bridge may request its configured supervisor label; do not point the fresh config at another live owner's label.
 
-6. Confirm your intended model in BB, send a short message, ask for a page with a textbox/button, perform an action, then reopen the same conversation and verify the same thread/session and page. These real acceptance checks are **pending**, not recorded passes.
+6. Confirm your intended model in BB, send a short message, ask for a page with a textbox/button, perform an action, then reopen the same conversation and verify the same thread/session and page. This passed once in the isolated test (see above). Note: clicking an earlier page card and then sending a message **brings that earlier version back** as a new revision; to check persistence, open the page from the latest card.
 
-The main model aliases remain `exo-opus-5-5` → `anthropic/claude-opus-5-5` (high), and the separately selected alternative `exo-gpt-6-1-sol` → `openai-codex/gpt-6.1-sol` (high). No automatic fallback is configured. The generic profile also names compactor `anthropic/claude-sonnet-5-5` (medium) and subagent `anthropic/claude-opus-5-5` (high); provision/authenticate a role before using it. Setup itself requests no inference for any role.
+The main model aliases remain `exo-opus-5-5` → `anthropic/claude-opus-5-5` (high), and the separately selected alternative `exo-gpt-6-1-sol` → `openai-codex/gpt-6.1-sol` (high). No automatic fallback is configured.
+
+**ChatGPT sign-in with Pi 1.1:** Pi 1.1 stores a ChatGPT login under provider `openai` and lists `gpt-6.1-sol` there, not under `openai-codex`. To use GPT-6.1 Sol with that login, add the existing optional key `"primarySolProvider": "openai"` to the local configuration (it only changes the Sol alias's provider; Opus is unaffected, and setup's configuration check permits this extra key), reload the plugin/owner so both read it, then pick **Exo — GPT-6.1 Sol** in BB's model picker. The owner starts on the last picked model (Opus by default) and switches before sending; a model whose provider is not signed in fails rather than falling back. This mapping was used for the isolated test conversation above. The generic profile also names compactor `anthropic/claude-sonnet-5-5` (medium) and subagent `anthropic/claude-opus-5-5` (high); provision/authenticate a role before using it. Setup itself requests no inference for any role.
+
+## Isolated test instance
+
+To test without touching a working BB, run BB's own launcher with a separate HOME, data directory and ports. This is exactly the tested invocation (Electron binary as Node, as the desktop app runs its server; desktop-like minimal PATH):
+
+```sh
+R=/private/tmp/exo-test.XXXXXX   # a new private directory; use mktemp -d
+mkdir -p "$R/h" "$R/t" "$R/bb" "$R/v"
+BBAPP=/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist
+env -i HOME="$R/h" TMPDIR="$R/t" PATH=/usr/bin:/bin:/usr/sbin:/sbin ELECTRON_RUN_AS_NODE=1 \
+  /Applications/bb.app/Contents/MacOS/bb "$BBAPP/bb-app.js" \
+  --data-dir "$R/bb" --server-port 49411 --host-daemon-port 49412 --bundled
+```
+
+Open `http://127.0.0.1:49411` in a browser. Point the CLI at it with `env -i HOME="$R/h" TMPDIR="$R/t" PATH="$(dirname "$NODE"):/usr/bin:/bin" BB_DATA_DIR="$R/bb" BB_SERVER_URL=http://127.0.0.1:49411 "$NODE" "$BBAPP/bb.js" …`; for example `plugin install "$PLUGIN" --yes --json` and `project create --name "Exo vault" --root "$R/v" --machine <host id from machine list>`. Put the [local configuration](#local-configuration) in `$R/h/.config/exo/exosurface.json`. Stop it with Ctrl-C (or SIGTERM to the launcher). The working app's ports, data directory and userData are not used; this is an accident guard, not a sandbox.
 
 ## Troubleshooting and test boundaries
 
@@ -131,8 +156,9 @@ The main model aliases remain `exo-opus-5-5` → `anthropic/claude-opus-5-5` (hi
 | Missing local path/config | Check the actual config read by BB and the owner; all source/vault/CLI paths must exist |
 | Long socket path, symlink or foreign-state refusal | Correct the new instance's paths; do not weaken recovery guards or adopt another owner's files |
 | Setup is `bound` but conversation cannot attach | Confirm model auth and that `dist/owner-service.js` is running with the same config |
-| `Missing host bootstrap material` on a separately started headless server | That test server lacks an execution host; this is not proof that the desktop plugin requires manual machine enrollment |
-| `Sign in to your bb account to use bb connect` in the manual-machine route | Account-side prerequisite of that **headless test route**, not a desktop extension installation step |
+| `Select a BB project whose source on this Mac is exactly the workspace path` | Pick (or add) the project for the vault folder; nothing was changed. The check matches the project's exact source path and a single machine ID; it does not separately verify that machine is this Mac, so use a project created locally for this spike |
+| `Missing host bootstrap material` | `bb-server` and `bb-host-daemon` were started separately; use BB.app or the `bb-app` launcher, which enrolls the local host itself |
+| `Sign in to your bb account to use bb connect` | Only for adding a remote/manual machine; not needed for this plugin |
 | Input too large | Atom/textbox cap 2,000 UTF-16 units; workspace 40 KiB and serialized owner command 12,000 UTF-16 units; refusal is atomic, not silent truncation |
 
 The prior bounded test used a disposable HOME/data directory and separate backend ports. Plugin registration passed, but no host bootstrap/account credentials were manufactured or copied; no account login or machine enrollment was initiated. The desktop probe was stopped before launching a second Electron instance because safe profile/single-instance isolation was not established. A fresh HOME on an existing Mac is not physical clean-Mac proof.

@@ -12,7 +12,7 @@ import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
 import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
-import { runtimeLaunch, assertNativeOwner } from './src/runtime.ts';
+import { runtimeLaunch, prepareRuntime, assertNativeOwner } from './src/runtime.ts';
 import { promptWithPrimaryModel } from './src/model-selection.ts';
 import { consumeCanonicalInitialization, consumeAdmittedCanonicalStart } from './src/canonical-control.ts';
 import { setupStatus } from './src/canonical-setup.ts';
@@ -115,13 +115,16 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
     if (childId) {
       if (!runs(profile).some(r => r.id === childId)) throw new Error('No native OptChat child with that identity');
     } else {
-      const launch = runtimeLaunch(profile, runtimeKind, threadId, old?.sessionFile);
+      // The canonical owner is a separate process that validates/launches its own runtime; BB's copied host
+      // artifact has no packaged runtime beside it, so only non-canonical kinds launch Pi here.
+      // Canonical still validates the profile/generation here (fail closed) before attaching to the owner.
+      const launch = runtimeKind === 'canonical' ? (prepareRuntime(profile, runtimeKind), undefined) : runtimeLaunch(profile, runtimeKind, threadId, old?.sessionFile);
       const lost = (error: Error) => {
         if (!s.closing) { audit(s, 'unexpected-exit'); io.send({ jsonrpc: '2.0', method: 'error', params: { threadId, message: error.message } }); if (s.open) settle(s, 'failed'); }
       };
       s.rpc = runtimeKind === 'canonical'
         ? await OwnerClient.open(threadId, e => event(s, e), lost)
-        : new PiRpc(PI_CLI, launch.args, cwd, launch.env, e => event(s, e), lost);
+        : new PiRpc(PI_CLI, launch!.args, cwd, launch!.env, e => event(s, e), lost);
       const state = await s.rpc.send('get_state');
       const commands = await s.rpc.send('get_commands');
       await assertNativeOwner(profile, runtimeKind, s.rpc.pid);
@@ -192,12 +195,23 @@ async function request(id: string | number, method: string, p: any) {
       return;
     }
   }
+  // BB may start the setup-created thread only after setup has already committed `bound` (provisioning is slower
+  // than setup). That start carries no provider identity: reuse ONLY the committed fresh binding for this exact
+  // thread. Without input, defer owner attachment to the first turn (the owner may not be started yet).
+  let providerThreadId = p.providerThreadId;
+  if (method === 'thread/start' && !providerThreadId) {
+    const journal = setupStatus(HOME), canonical = binding(p.threadId);
+    if (journal?.stage === 'bound' && journal.threadId === p.threadId && canonical?.runtimeKind === 'canonical') {
+      providerThreadId = canonical.providerThreadId;
+      if (!p.input?.length) return io.sendResult(id, { providerThreadId, sessionRestorable: true });
+    }
+  }
   if (method === 'thread/start' || method === 'thread/resume') {
     const initial = (p.input ?? []).filter((i: any) => i.type === 'text').map((i: any) => i.text).join('');
     const match = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(initial);
     const attachment = p.options.providerOptions?.attachment;
     const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || isExoModel(p.options.model) ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
-    const s = await construct(p.threadId, p.cwd, p.providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
+    const s = await construct(p.threadId, p.cwd, providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
     io.sendResult(id, { providerThreadId: s.providerThreadId, sessionRestorable: true });
     if (p.input?.length) {
       try { await selectedPrompt(s, p.options?.model, p.input); }
