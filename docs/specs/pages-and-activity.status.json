@@ -1,0 +1,150 @@
+{
+  "spec": "pages-and-activity.spec.html",
+  "accepted_commit": "3666191",
+  "criteria": {
+    "acceptance-no-chat": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-exo-block-latest": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-activity-turns": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-activity-press": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-activity-no-draft": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-activity-version": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-activity-commit": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-new-surface": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-topic-new-page": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-topic-home": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-topic-history": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-out-of-scope-offer": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-out-of-scope-new": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-out-of-scope-home": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-follow-stays": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-follow-resumes": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-parallel-second": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-parallel-needs-you": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-parallel-active": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-parallel-first": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-sidebar-parts": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-settle": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-needs-you-empty": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-tree-new-surface": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-tree-nest": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-tree-kept": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-keep": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-keep-refresh": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-keep-versions": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-unkeep": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-reorder": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-kept-to-surface": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-child-reads-parent": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-trunk-shared": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-parent-knows-child": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-commit-linked": {
+      "status": "planned",
+      "pr": null
+    }
+  }
+}
