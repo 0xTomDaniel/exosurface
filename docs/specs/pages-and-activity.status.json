@@ -5,15 +5,15 @@
     "acceptance-no-chat": {
       "status": "built",
       "pr": 71,
-      "record": "20261104T044627Z-8cec36f8",
-      "commit": "c7050241d083371c8d261b8f4715a077061292b0",
+      "record": "20261104T045416Z-176847b3",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
       "tests": []
     },
     "acceptance-exo-block-latest": {
       "status": "built",
       "pr": 71,
-      "record": "20261104T044721Z-3014c8af",
-      "commit": "c7050241d083371c8d261b8f4715a077061292b0",
+      "record": "20261104T045506Z-ef3651f8",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
       "tests": []
     },
     "acceptance-activity-turns": {
@@ -39,8 +39,8 @@
     "acceptance-new-surface": {
       "status": "built",
       "pr": 71,
-      "record": "20261104T044807Z-016c7615",
-      "commit": "c7050241d083371c8d261b8f4715a077061292b0",
+      "record": "20261104T045559Z-4d090a9e",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
       "tests": []
     },
     "acceptance-topic-new-page": {
@@ -78,8 +78,8 @@
     "acceptance-parallel-second": {
       "status": "built",
       "pr": 71,
-      "record": "20261104T044956Z-fd931574",
-      "commit": "c7050241d083371c8d261b8f4715a077061292b0",
+      "record": "20261104T045804Z-72697c1f",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
       "tests": []
     },
     "acceptance-parallel-needs-you": {
@@ -93,8 +93,8 @@
     "acceptance-parallel-first": {
       "status": "built",
       "pr": 71,
-      "record": "20261104T045046Z-e80f4233",
-      "commit": "c7050241d083371c8d261b8f4715a077061292b0",
+      "record": "20261104T045921Z-edddf19e",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
       "tests": []
     },
     "acceptance-sidebar-parts": {
