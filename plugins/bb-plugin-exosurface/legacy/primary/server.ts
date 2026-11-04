@@ -1,6 +1,6 @@
 import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE } from './src/state.ts';
+import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT } from './src/state.ts';
 import { local, LOCAL_CONFIG } from './src/local-config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
@@ -10,6 +10,7 @@ import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
 import { latestTurn, ownerWorking, sessionOf } from './src/exo-turn.ts';
 import { validatePrompt } from '../../src/input.ts';
+import { existsSync } from 'node:fs';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
   canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), initializationAvailable: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
@@ -21,6 +22,10 @@ export const rpcContract = defineRpcContract({
   // The surface view's Exo block and input (#69): Exo's words from the thread's latest turn, and a send from the input.
   exo_block: { input: z.object({ threadId: z.string() }).strict(), output: z.object({ working: z.boolean(), words: z.string() }) },
   exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
+  // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
+  thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
+  // New surface (spec S7): a new top-level Exo thread, bound to its own profile before its provider starts.
+  thread_new: { input: z.null(), output: z.object({ threadId: z.string() }) },
 });
 import { createOverview } from './src/overview.ts';
 export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc), setupPorts?: CanonicalSetupPorts) {
@@ -42,6 +47,11 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
   bb.experimental_hooks.on('message.dispatch', async ctx => {
     if (ctx.thread.providerId !== 'exo-spike') return { action: 'proceed' };
     if (ctx.input.text.trimStart().startsWith('/exosurface-initialize')) { consumeCanonicalInitialization(HOME, ctx.thread.id, [{ type: 'text', text: ctx.input.text }]); return { action: 'proceed' }; }
+    if (ctx.input.text.trim() === NEW_THREAD_PROMPT) {
+      if (ctx.thread.parentThreadId) return { action: 'reject', message: 'A new surface is a top-level thread.' };
+      try { bindThread(ctx.thread.id); } catch (e) { return { action: 'reject', message: e instanceof Error ? e.message : String(e) }; }
+      return { action: 'proceed' };
+    }
     const attach = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(ctx.input.text.trim());
     if (!attach) return { action: 'proceed' };
     if (!ctx.thread.parentThreadId) return { action: 'reject', message: 'Child attachment requires its native main owner.' };
@@ -107,6 +117,23 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       try { await bb.sdk.threads.send({ threadId, input: [{ type: 'text', text, mentions: [] }], mode: 'auto' }); }
       catch (e) { awaiting.delete(threadId); throw e; }
       return { sent: true as const };
+    },
+    thread_list: async () => {
+      const pointer = join(HOME, 'canonical-thread.json');
+      if (!existsSync(pointer)) return { threads: [] };
+      const home = load(pointer).threadId as string;
+      const others = (await bb.sdk.threads.list({ hasParent: false, limit: 200 })).filter(t => t.providerId === 'exo-spike' && t.id !== home && !t.parentThreadId && isBoundThread(t.id)).sort((a, b) => a.createdAt - b.createdAt);
+      return { threads: [{ threadId: home, title: 'Home', home: true }, ...others.map(t => ({ threadId: t.id, title: t.title || 'New surface', home: false }))] };
+    },
+    thread_new: async () => {
+      const pointer = join(HOME, 'canonical-thread.json');
+      if (!existsSync(pointer)) throw new Error('Initialize the primary Exo thread before starting a new surface');
+      const home = await bb.sdk.threads.get({ threadId: load(pointer).threadId });
+      if (home.providerId !== 'exo-spike' || !home.environmentId) throw new Error('New surface requires the primary Exo thread with its environment');
+      // Same Exo (S10): the primary's provider, current model, project and environment (the vault). Its admission binds it.
+      const thread = await bb.sdk.threads.spawn({ projectId: home.projectId, environment: { type: 'reuse', environmentId: home.environmentId }, providerId: 'exo-spike', model: mainModel(), reasoningLevel: 'high', permissionMode: 'full', title: 'New surface', prompt: NEW_THREAD_PROMPT });
+      bindThread(thread.id);
+      return { threadId: thread.id };
     },
   });
 }

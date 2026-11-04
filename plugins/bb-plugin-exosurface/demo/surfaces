@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
-import { renderSurfacePanel, fireEvent } from '../test/render-app.ts';
+import { renderedApp } from '../test/app-render.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -34,13 +34,56 @@ async function parallelThreads() {
   }
 }
 
+// #68: the rendered Exosurface panel (package.json bb.app) on the real server RPCs; the person presses New surface.
+async function newSurface() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f), { kit, app, close } = await renderedApp();
+  const { fireEvent, waitFor, within, screen } = kit.testing;
+  const panel = app.navPanels.find(p => p.path === 'surface');
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: { thread_list: f.rpc.thread_list, thread_new: f.rpc.thread_new, workspace: f.rpc.workspace, exo_block: f.rpc.exo_block, exo_send: f.rpc.exo_send } });
+  try {
+    const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
+    const listed = () => sidebar().getAllByRole('listitem').map(li => li.textContent);
+    await waitFor(() => { if (listed().length !== 1) throw new Error('sidebar not loaded'); });
+    fireEvent.click(sidebar().getByRole('button', { name: 'New surface' }));
+    await waitFor(() => { if (listed().length !== 2) throw new Error('no new surface listed'); }, { timeout: 10000 });
+    // BB starts the spawned thread with its first message, as it does after spawn.
+    const made = f.spawns.at(-1), threads = (await f.rpc.thread_list(null)).threads, fresh = threads[1].threadId;
+    const started = await host.start(fresh, [{ type: 'text', text: made.prompt }]);
+    if (started.error) throw new Error(started.error.message);
+    await waitFor(async () => { if (!(await f.rpc.workspace({ deployment: 'main', threadId: fresh, cursor: null })).ready) throw new Error('not ready'); }, { timeout: 15000 });
+    const current = sidebar().getAllByRole('button').filter(b => b.getAttribute('aria-current') === 'page').map(b => b.textContent);
+    const main = document.querySelector('main[aria-label="Exosurface"]');
+    const pages = main.querySelectorAll('[data-surface]').length, page = await f.rpc.workspace({ deployment: 'main', threadId: fresh, cursor: null });
+    const inputs = [...document.querySelectorAll('textarea, input[type=text], [role=textbox]')].filter(e => !e.closest('nav'));
+    const chat = document.body.textContent.includes(`ThreadChat stub (${fresh})`);
+    const replies = host.deltas(fresh).filter(d => d.kind === 'item.textClose').length;
+    console.log(`surface in view: ${current.join(', ')} (thread ${page.threadId})`);
+    console.log(`  page: ${pages === 0 && page.revision === 0 && !page.delivery.checkpoint ? 'one empty page' : `${pages} drawn page(s), revision ${page.revision}`}`);
+    console.log(`  input: ${inputs.length ? `shown, ${inputs.every(e => (e.value ?? e.textContent) === '') ? 'empty' : 'NOT empty'}` : chat ? `BB's conversation input of thread ${fresh} (ThreadChat), a new thread with no draft` : 'NOT shown'}`);
+    console.log(`  activity: ${replies} Exo message(s)`);
+    console.log(`sidebar: ${listed().join(', ')}`);
+    const runs = Object.fromEntries(f.piRuns().map(r => [r.profile, r.pid]));
+    for (const t of threads) { const b = (await f.rpc.workspace({ deployment: 'main', ...(t.home ? {} : { threadId: t.threadId }), cursor: null })); console.log(`  ${t.title.padEnd(12)} thread ${t.threadId.padEnd(9)} pages of thread ${b.threadId}`); }
+    console.log(`Exo runs: ${Object.entries(runs).map(([p, pid]) => `${p} (pi ${pid})`).join(', ')}`);
+    const ok = current.length === 1 && current[0] === 'New surface' && page.threadId === fresh && pages === 0 && page.revision === 0 && (inputs.length ? inputs.every(e => (e.value ?? e.textContent) === '') : chat)
+      && replies === 0 && listed().join('|') === 'Home|New surface' && threads[0].threadId === f.setup.threadId && fresh !== f.setup.threadId && !made.parentThreadId;
+    if (!ok) throw new Error('new-surface failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
 // #69: the surface view (app.tsx, rendered) after two sends on one topic: one Exo block holding only the latest reply,
 // the input shown and empty, no chat column and no transcript.
 async function exoBlock() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
-  f.sends.deliver = (threadId, text) => { host.send(threadId, text); };
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
   const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
-  const view = await renderSurfacePanel(f.rpc);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
   const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
   try {
@@ -52,7 +95,7 @@ async function exoBlock() {
       console.log(`sent: ${JSON.stringify(text)}`);
       await until(`the reply to ${JSON.stringify(text)}`, () => block()?.textContent === `Exo (${f.setup.profile}): ${text}`);
     }
-    const page = view.container.querySelector('main').textContent + view.container.querySelector('form').textContent;
+    const page = view.container.querySelector('main').textContent + view.container.querySelector('form[aria-label="Message Exo"]').textContent;
     const chat = view.queryByTestId('bb-thread-chat') !== null, count = s => page.split(s).length - 1;
     // Only the latest reply is on screen: one reply from Exo, and the topic's words only inside it.
     const earlier = count(`Exo (${f.setup.profile})`) !== 1 || count(sends[0]) !== 1;
@@ -63,14 +106,14 @@ async function exoBlock() {
     console.log(`chat column: ${chat ? 'SHOWN' : 'none'}   transcript (earlier reply or messages on screen): ${earlier ? 'SHOWN' : 'none'}`);
     if (chat || earlier || input().value !== '' || block().textContent !== `Exo (${f.setup.profile}): ${sends[1]}`) throw new Error('exo-block failed');
   } finally {
-    view.unmount();
+    view.unmount(); close();
     for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
     await new Promise(r => setTimeout(r, 1000));
     rmSync(f.root, { recursive: true, force: true });
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'exo-block': exoBlock };
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

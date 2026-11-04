@@ -1,20 +1,22 @@
 // #69 (spec pages-and-activity S1, S2, E1-E4, E7): the surface view shows its page, one Exo block and one input, and no
-// chat. The app (app.tsx) is rendered through the SDK's app test runtime; its RPCs run on server.ts, a send goes through
+// chat. The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send goes through
 // the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
-import { renderSurfacePanel, fireEvent } from './render-app.ts';
+import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
 const host = bridge(f);
-f.sends.deliver = (threadId, text) => { host.send(threadId, text); };
+f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
 assert.equal((await host.start('primary')).result?.providerThreadId, 'exo:exo-optchat:main');
-const view = await renderSurfacePanel(f.rpc);
+const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+// The Exosurface panel with Home (the primary thread) in view; every RPC it calls runs on server.ts.
+const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
 after(async () => {
-  view.unmount();
+  view.unmount(); close();
   for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
   await new Promise(r => setTimeout(r, 1000));
   rmSync(f.root, { recursive: true, force: true });
@@ -22,7 +24,7 @@ after(async () => {
 
 const block = () => view.container.querySelector('section[aria-label="Exo"]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
-const pageText = () => view.container.querySelector('main')!.textContent + (view.container.querySelector('form')?.textContent ?? '');
+const pageText = () => view.container.querySelector('main')!.textContent + (view.container.querySelector('form[aria-label="Message Exo"]')?.textContent ?? '');
 async function until(what: string, ok: () => boolean, ms = 20000) {
   for (let waited = 0; !ok(); waited += 50) {
     if (waited > ms) throw new Error(`Timed out waiting for ${what}; page: ${pageText()}`);
@@ -68,4 +70,25 @@ test('a turn in which Exo says nothing leaves the Exo block empty', async () => 
   await until('the block to stop saying Exo is working', () => block()?.querySelector('[role="status"]') === null);
   assert.equal(block()!.textContent, '');
   assert.equal(input()!.value, '');
+});
+
+test('a surface made by New surface shows no transcript, not even its control first message; its Exo block shows only its own latest turn', async () => {
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
+  fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
+  await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
+  // BB starts the spawned thread with its first message, as it does after spawn.
+  const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
+  assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+  await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && block()?.textContent === '');
+  // S1: New surface's control first message is no transcript line anywhere in the view (sidebar, page, Exo block, input).
+  const control = '/exosurface-new-surface', shown = () => view.container.textContent!.includes(control) || input()!.value.includes(control);
+  assert.equal(f.spawns.at(-1).prompt, control);
+  assert.equal(shown(), false);
+  await send('book the cabin');
+  const profile = f.piRuns().at(-1).profile;
+  await until('the new surface\'s reply in its block', () => block()?.textContent === `Exo (${profile}): book the cabin`);
+  assert.equal(input()!.value, '');
+  assert.equal(count(pageText(), 'Exo ('), 1);
+  assert.equal(count(pageText(), 'Friday'), 0);
+  assert.equal(shown(), false);
 });

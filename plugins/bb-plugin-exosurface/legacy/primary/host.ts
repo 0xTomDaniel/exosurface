@@ -11,7 +11,7 @@ import {
 import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
-import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, threadProfile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
+import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, threadProfile, isBoundThread, NEW_THREAD_PROMPT, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
 import { runtimeLaunch, prepareRuntime, assertNativeOwner } from './src/runtime.ts';
 import { promptWithPrimaryModel } from './src/model-selection.ts';
 import { consumeCanonicalInitialization, consumeAdmittedCanonicalStart } from './src/canonical-control.ts';
@@ -151,6 +151,8 @@ async function close(s: Session) {
   s.closing = true; if (s.poll) clearInterval(s.poll);
   await s.rpc?.close(); sessions.delete(s.threadId); audit(s, s.runtimeKind === 'canonical' ? 'view-detached' : 'owner-released');
 }
+// New surface (#68): the thread_new RPC's first message only bound the thread at admission; no turn reaches Pi.
+const newSurface = (s: Session, input: any[] | undefined) => s.runtimeKind === 'canonical' && isBoundThread(s.threadId) && (input ?? []).map((i: any) => i.text ?? '').join('').trim() === NEW_THREAD_PROMPT;
 async function selectedPrompt(s: Session, picked: unknown, input: any[], requestId?: string) {
   const send = () => prompt(s, input, requestId);
   if (s.runtimeKind !== 'canonical' || s.childId || !s.rpc) return send();
@@ -215,7 +217,8 @@ async function request(id: string | number, method: string, p: any) {
     const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || isExoModel(p.options.model) ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
     const s = await construct(p.threadId, p.cwd, providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
     io.sendResult(id, { providerThreadId: s.providerThreadId, sessionRestorable: true });
-    if (p.input?.length) {
+    if (p.input?.length && newSurface(s, p.input)) settle(s);
+    else if (p.input?.length) {
       try { await selectedPrompt(s, p.options?.model, p.input); }
       catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
     }
@@ -233,6 +236,7 @@ async function request(id: string | number, method: string, p: any) {
   if (p.options?.providerOptions?.runtimeKind && p.options.providerOptions.runtimeKind !== s.runtimeKind) throw new Error('Cannot change fixture/live runtime on an existing conversation');
   if (method === 'turn/start') {
     io.sendResult(id, {});
+    if (newSurface(s, p.input)) { if (p.clientRequestId) emit(s, [{ kind: 'input.accepted', clientRequestId: p.clientRequestId }]); settle(s); return; }
     try { await selectedPrompt(s, p.options?.model, p.input, p.clientRequestId); }
     catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
     return;
