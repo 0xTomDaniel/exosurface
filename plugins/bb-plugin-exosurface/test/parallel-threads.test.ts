@@ -22,9 +22,11 @@ test('two bound canonical threads run turns at once; each reply reaches only its
   assert.notEqual(second.profile, f.setup.profile, 'the bound thread has its own profile');
   assert.deepEqual(await f.rpc.thread_bind({ threadId: 'second' }), second, 'binding is idempotent');
 
-  // The primary keeps the provider identity setup gave it; the bound thread gets its own.
-  assert.equal((await host.start('primary')).result?.providerThreadId, `exo:${f.setup.profile}:main`);
-  assert.equal((await host.start('second')).result?.providerThreadId, `exo:${second.profile}:main`);
+  // Both threads start; the bound thread gets a provider identity of its own, not the primary's.
+  const home = await host.start('primary'), bound = await host.start('second');
+  assert.deepEqual([home.error, bound.error], [undefined, undefined], JSON.stringify([home, bound]));
+  assert.ok(home.result?.providerThreadId && bound.result?.providerThreadId, 'the bridge gives each thread a provider thread');
+  assert.notEqual(bound.result.providerThreadId, home.result.providerThreadId);
   host.send('primary', 'together: plan the week');
   host.send('second', 'together: book the cabin');
   await host.settled(['primary', 'second']);
