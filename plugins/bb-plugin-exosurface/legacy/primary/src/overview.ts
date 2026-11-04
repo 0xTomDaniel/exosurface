@@ -22,7 +22,9 @@ export function createOverview(list: () => Promise<any[]>, get: (id: string) => 
     return { threads: cached.map(t => {
       const state = binding(t.id);
       const ownerFile = join(HOME, 'owner', 'state.json');
-      const owner = state?.runtimeKind === 'canonical' && existsSync(ownerFile) ? load(ownerFile) : undefined;
+      const all = state?.runtimeKind === 'canonical' && existsSync(ownerFile) ? load(ownerFile) : undefined;
+      // The owner's state for this thread: the primary's lane, or a bound thread's own (state.threads[id], #67).
+      const owner = all && all.threadId !== t.id ? all.threads?.[t.id] : all;
       return { id: t.id, title: t.title, status: owner?.ready ? owner.streaming ? 'running' : 'idle' : t.status,
         parentThreadId: t.parentThreadId, profile: state?.profile ?? null, childId: state?.childId ?? null,
         runtimeKind: state?.runtimeKind ?? 'offline', feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
