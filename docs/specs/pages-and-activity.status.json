@@ -31,8 +31,11 @@
       "pr": null
     },
     "acceptance-new-surface": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T040037Z-3dec267f",
+      "commit": "0f097c6827c737e14f1952a28624418ff1feecad",
+      "tests": []
     },
     "acceptance-topic-new-page": {
       "status": "planned",
