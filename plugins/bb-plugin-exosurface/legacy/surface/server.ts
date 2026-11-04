@@ -2,7 +2,7 @@ import {planData,planRestore} from './src/canvas-input.ts';
 import {validatePrompt} from '../../src/input.ts';
 import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { existsSync, watch, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, watch, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
@@ -80,16 +80,25 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
     try{await new Promise<void>((resolve,reject)=>{abort=resolve;w.on('error',reject);o.on('error',reject);signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});}
     finally{clearTimeout(timer);signal.removeEventListener('abort',abort);w.close();o.close();}
   }});
-  // Bound threads' pages (#68): one watcher over every bound thread's pages folder; each envelope names its own thread.
+  // Bound threads' pages (#68): every bound thread's pages folder is watched; each envelope names its own thread.
   bb.background.service('surface-stream-threads',{start:async signal=>{
     const root=join(byName('main').home,'threads');mkdirSync(root,{recursive:true,mode:0o700});
     const cursors=new Map<string,z.infer<typeof cursorSchema>>(),timers=new Map<string,ReturnType<typeof setTimeout>>();
     const emit=(threadId:string)=>{const d=boundDeployment(threadId);if(signal.aborted||!d)return;const s=status(d);bb.realtime.publish(d.channel,envelope(s,cursors.get(threadId)??null));cursors.set(threadId,{epoch:s.projection.epoch,revision:s.revision});};
-    const w=watch(root,{recursive:true},(_event,name)=>{const threadId=String(name??'').split(/[\\/]/)[0];if(!threadId)return;clearTimeout(timers.get(threadId));
-      timers.set(threadId,setTimeout(()=>{try{emit(threadId);}catch(e){bb.realtime.publish('surface-thread-error',{threadId,message:String(e)});}},5));});
+    const schedule=(threadId:string)=>{clearTimeout(timers.get(threadId));
+      timers.set(threadId,setTimeout(()=>{try{emit(threadId);}catch(e){bb.realtime.publish('surface-thread-error',{threadId,message:String(e)});}},5));};
+    // Each bound thread's workspace and owner folders are watched as the main deployment's are (#70): a recursive watch on
+    // Linux follows each file's inode, and misses every atomic replace of owner/state.json after the first.
+    const followed=new Map<string,ReturnType<typeof watch>[]>();let fail:(e:unknown)=>void=()=>{};
+    const follow=(threadId:string)=>{const d=followed.has(threadId)?null:boundDeployment(threadId);if(!d||signal.aborted)return;
+      mkdirSync(join(d.home,'workspace'),{recursive:true,mode:0o700});mkdirSync(join(d.home,'owner'),{recursive:true,mode:0o700});
+      followed.set(threadId,[watch(join(d.home,'workspace'),()=>schedule(threadId)),watch(join(d.home,'owner'),(_event,name)=>{if(name==='state.json')schedule(threadId);})]);
+      for(const x of followed.get(threadId)!)x.on('error',e=>fail(e));};
+    const w=watch(root,(_event,name)=>{const threadId=String(name??'');if(!threadId)return;follow(threadId);schedule(threadId);});
+    for(const threadId of readdirSync(root))follow(threadId);
     let abort:()=>void=()=>{};
-    try{await new Promise<void>((resolve,reject)=>{abort=resolve;w.on('error',reject);signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});}
-    finally{for(const t of timers.values())clearTimeout(t);signal.removeEventListener('abort',abort);w.close();}
+    try{await new Promise<void>((resolve,reject)=>{abort=resolve;fail=reject;w.on('error',reject);signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});}
+    finally{for(const t of timers.values())clearTimeout(t);signal.removeEventListener('abort',abort);w.close();for(const ws of followed.values())for(const x of ws)x.close();}
   }});
   // A surface pill in the composer (inserted when the person opens an earlier version, or typed with @). At send time
   // an earlier version is brought back as the current one, with the person's edits, before Exo's turn; Exo gets one
