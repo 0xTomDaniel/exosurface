@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, chmodSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { replayJournalSuffix } from './journal.ts';
 import { requireLocal } from './local-config.ts';
-import { HOME, CANONICAL_HOME, CANONICAL_PROFILE, PI_CLI, VAULT, load, save, binding, threadProfile } from './state.ts';
+import { HOME, CANONICAL_HOME, CANONICAL_PROFILE, PI_CLI, VAULT, load, save, binding, threadProfile, threadPagesHome } from './state.ts';
 import { PiRpc } from './pi-rpc.ts';
 import { runtimeLaunch, assertNativeOwner } from './runtime.ts';
 import { freshCanonicalReceipt } from './canonical-fresh.ts';
@@ -39,6 +39,9 @@ const state = (error?: string) => {
     threadId: primary, profile: CANONICAL_PROFILE, sessionFile: original.sessionFile, clients: p?.attached ? 1 : 0,
     threads: Object.fromEntries([...lanes.values()].filter(l => l.threadId !== primary).map(l => [l.threadId, { profile: l.profile, ready: l.ready, streaming: l.streaming, piPid: l.pi?.pid, clients: l.attached ? 1 : 0 }])),
     updatedAt: new Date().toISOString(), ...(error ? { error } : {}) });
+  // Each bound thread's own pages folder carries its lane's state, as the primary's HOME carries the primary's (#68).
+  for (const l of lanes.values()) if (l.threadId !== primary) save(join(threadPagesHome(l.threadId), 'owner', 'state.json'), { version: 2, ready: l.ready, streaming: l.streaming, ownerPid: process.pid, piPid: l.pi?.pid,
+    threadId: l.threadId, profile: l.profile, sessionFile: l.sessionFile, clients: l.attached ? 1 : 0, updatedAt: new Date().toISOString(), ...(error ? { error } : {}) });
 };
 const write = (socket: Socket, value: any) => {
   if (socket.destroyed) return;
@@ -83,7 +86,7 @@ function replayJournal(lane: Lane, socket: Socket, through: number) {
 /** Starts a thread's own Pi on its own profile. Never takes over a profile another process holds. */
 function launch(threadId: string, profile: string, sessionFile: string | undefined, cursorFile: string, lost: (lane: Lane) => void): Lane {
   const lane = { threadId, profile, sessionFile: sessionFile ?? '', cursorFile, ready: false, streaming: false, attached: false, sequence: 0, tail: [], tailBytes: 0, checkpoints: new Map() } as unknown as Lane;
-  lanes.set(threadId, lane);
+  lanes.set(threadId, lane); state(); // A bound thread's page extensions refuse to load before its pages folder has owner state.
   // A known session's cursor is taken before Pi starts, as the primary always has; a new session's once Pi names it.
   if (sessionFile) lane.acknowledged = cursor(lane);
   lane.startup = (async () => {
@@ -117,7 +120,7 @@ async function laneFor(threadId: unknown) {
     const bound = binding(threadId);
     if (threadId === primary || bound?.runtimeKind !== 'canonical' || bound.profile !== threadProfile(threadId)) throw new Error('Only the existing primary Exo thread or a bound Exo thread may attach');
     lane = launch(threadId, bound.profile, bound.sessionFile, join(OWNER_DIR, 'projection', `${threadId}.json`), l => {
-      lanes.delete(l.threadId); l.client?.destroy(); state();
+      state(); lanes.delete(l.threadId); l.client?.destroy(); state();
     });
     try { await lane.startup; } catch (e) { lanes.delete(threadId); await lane.pi?.close(); state(); throw e; }
   }
@@ -144,11 +147,13 @@ const server = createServer(socket => {
           // Exosurface page commands (same as the clone's owner): idle-only, revision-checked commits by code; no model
           // call and no view attachment. Same-user accident guards, not a sandbox.
           if (m.type === 'canvas-data' || m.type === 'canvas-restore') {
-            if (m.threadId !== primary || p.streaming || JSON.stringify(m.request).length > 12000) throw new Error('Idle primary Exo page command required');
-            const file = join(HOME, 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
+            // A thread's page command reaches only that thread's Pi and pages folder (#68).
+            const page = m.threadId === primary ? p : await laneFor(m.threadId);
+            if (page.streaming || JSON.stringify(m.request).length > 12000) throw new Error('Idle Exo page command required');
+            const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
             const before = rev();
             if (m.type === 'canvas-data' && before !== m.request?.revision) { write(socket, { kind: 'response', id: m.id, ok: false, error: `stale_revision ${before}` }); return; }
-            await p.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
             const after = rev();
             write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
           }

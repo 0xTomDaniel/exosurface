@@ -37,13 +37,13 @@ test('two bound canonical threads run turns at once; each reply reaches only its
   assert.ok(one.open.at < two.end.at && two.open.at < one.end.at, 'turns overlap');
   assert.equal(host.lines.some(l => l.value.error || l.value.method === 'error'), false, JSON.stringify(host.lines));
 
-  // S10: each thread its own Pi and session; the same instructions, model and vault. Pages stay the primary's.
+  // S10: each thread its own Pi and session; the same instructions, model and vault. Each loads pages, on its own (#68).
   const runs = f.piRuns();
   assert.deepEqual(runs.map(r => r.profile), [f.setup.profile, second.profile]);
   assert.notEqual(runs[0].pid, runs[1].pid);
   assert.notEqual(runs[0].sessionFile, runs[1].sessionFile);
   for (const r of runs) assert.deepEqual([r.instructions, r.model, realpathSync(r.cwd)], [INSTRUCTIONS, 'anthropic/claude-opus-5-5/high', f.vault]);
-  assert.deepEqual(runs.map(r => r.pageExtensions), [true, false]);
+  assert.deepEqual(runs.map(r => r.pageExtensions), [true, true]);
 });
 
 test('an unbound thread is refused by the bridge and by the owner, and starts no Pi', async () => {

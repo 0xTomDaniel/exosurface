@@ -14,6 +14,7 @@ import {stagePlan,surfaceTitle} from './src/stage';
 import {exoReactCatalog} from './src/exo-components';
 import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
+import {ThreadSidebar} from './src/thread-sidebar';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The canvas is a stage that follows the conversation. Every surface stays
 // mounted (drafts intact); receded ones are one click away on the shelf.
@@ -132,19 +133,20 @@ function BringBackCancel(){
  return <button type="button" aria-label={`Stop bringing back ${p.title}`} title={`Stop bringing back “${p.title}”`} onClick={async()=>{setRewind(null);setP(null);await rpc.call('pending',{threadId,op:'clear'}).catch(()=>{});}}
   className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">↺ <span aria-hidden="true">✕</span></button>;
 }
-function SurfacePage({deployment}:{deployment:'clone'|'main'}){
- const channel=deployment==='clone'?'workspace':'surface-main',clone=deployment==='clone';
+// threadId: a bound thread in view (a surface other than Home, #68); its own page state, envelopes naming it only.
+function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:string}){
+ const channel=threadId?'surface-thread':deployment==='clone'?'workspace':'surface-main',clone=deployment==='clone',other=(payload:unknown)=>!!threadId&&(payload as any)?.threadId!==threadId;
  const rpc=useRpc<typeof rpcContract>();type Status=Awaited<ReturnType<typeof getState>>;
  const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0),[local,setLocal]=useState<Local>(null);
  const saving=useRef(false),anyRewind=useRewind(),rewind=anyRewind&&(anyRewind.deployment??'clone')===deployment?anyRewind:null;
  useRealtime('pending-restore',v=>{if(!v)setRewind(null);});
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
  const serial=useRef(0),recover=useRef<()=>void>(()=>{});
- async function getState(){return rpc.call('workspace',{deployment,cursor:view.current?.epoch?view.current.cursor():null});}
+ async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
- useRealtime(channel,payload=>{serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
- useRealtime(`${channel}-error`,payload=>setError(String((payload as any)?.message??'Workspace stream failed')));
+ useRealtime(channel,payload=>{if(other(payload))return;serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
+ useRealtime(`${channel}-error`,payload=>!other(payload)&&setError(String((payload as any)?.message??'Workspace stream failed')));
  useEffect(()=>{
   let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,inFlight=false;
   const poll=async()=>{if(stopped||inFlight)return;inFlight=true;const before=serial.current;try{const value=await getState();if(!stopped&&before===serial.current)accept(value);}catch(e){if(!stopped)setError(String(e));}finally{inFlight=false;if(!stopped)timer=setTimeout(poll,document.hidden?10000:5000);}};
@@ -171,8 +173,13 @@ function SurfacePage({deployment}:{deployment:'clone'|'main'}){
   <section aria-label={clone?"Clone conversation":"Conversation with Exo"} className="min-h-[300px] min-w-0 border-t border-border md:w-[35%] md:min-h-0 md:border-l md:border-t-0">{state?.threadId?<ThreadChat threadId={state.threadId} variant="compact"/>:<p className="p-5 text-sm">{clone?'Clone conversation not provisioned yet.':'Exo’s conversation is not attached yet.'}</p>}</section>
  </div>;
 }
+// The surfaces view (#68): the sidebar and the surface in view. Home (null) is the primary thread's page state as before.
+function SurfacesPanel(){
+ const[inView,setInView]=useState<string|null>(null);
+ return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={setInView}/><div className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div></div>;
+}
 export default definePluginApp(app=>{
- app.slots.navPanel({id:'surface',path:'surface',title:'Exosurface',icon:'PanelsTopLeft',component:()=><SurfacePage deployment="main"/>});
+ app.slots.navPanel({id:'surface',path:'surface',title:'Exosurface',icon:'PanelsTopLeft',component:SurfacesPanel});
  app.slots.messageDirective({id:'exo-surface',component:ExoSurfaceCard});
  app.composer.customize({id:'exo-bring-back',scopes:['thread'],banners:[{id:'bring-back',chrome:'bare',component:BringBackPill}],actions:[{id:'bring-back-cancel',component:BringBackCancel}]});
 });
