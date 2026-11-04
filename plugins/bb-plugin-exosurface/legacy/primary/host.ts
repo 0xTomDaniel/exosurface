@@ -11,7 +11,7 @@ import {
 import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
-import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
+import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, threadProfile, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
 import { runtimeLaunch, prepareRuntime, assertNativeOwner } from './src/runtime.ts';
 import { promptWithPrimaryModel } from './src/model-selection.ts';
 import { consumeCanonicalInitialization, consumeAdmittedCanonicalStart } from './src/canonical-control.ts';
@@ -91,19 +91,21 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
   // Only full-permission mode is advertised; this is not a workspace sandbox.
   if (runtimeKind !== 'offline') cwd = VAULT;
   if (runtimeKind !== 'offline' && attach) throw new Error('Linked child projections are disabled outside the offline proof');
+  // A thread bound to its own canonical profile (thread-profiles.ts) runs beside the primary, never as it.
+  const bound = binding(threadId), own = runtimeKind === 'canonical' && bound?.runtimeKind === 'canonical' && bound.profile === threadProfile(threadId);
   if (runtimeKind === 'canonical') {
     const file = join(HOME, 'canonical-thread.json');
-    if (existsSync(file) && load(file).threadId !== threadId) throw new Error(`Open the existing canonical BB conversation ${load(file).threadId}; do not start another owner thread`);
+    if (existsSync(file) && load(file).threadId !== threadId && !own) throw new Error(`Open the existing canonical BB conversation ${load(file).threadId}; do not start another owner thread`);
   }
   if (sessions.has(threadId)) throw new Error('Thread already has an attached runtime');
-  let profile = attach?.profile ?? (providerThreadId ? providerThreadId.split(':')[1] : runtimeKind === 'canonical' ? CANONICAL_PROFILE : `${runtimeKind === 'live' ? 'live-' : ''}${randomUUID().replaceAll('-', '').slice(0, 20)}`);
+  let profile = attach?.profile ?? (providerThreadId ? providerThreadId.split(':')[1] : runtimeKind === 'canonical' ? (own ? bound.profile : CANONICAL_PROFILE) : `${runtimeKind === 'live' ? 'live-' : ''}${randomUUID().replaceAll('-', '').slice(0, 20)}`);
   if (!/^[a-z0-9_-]{1,64}$/.test(profile)) throw new Error('Invalid profile identity');
   const childId = attach?.childId ?? (providerThreadId?.split(':')[2] !== 'main' ? providerThreadId?.split(':')[2] : undefined);
   const handle = `exo:${profile}:${childId ?? 'main'}`;
   if ([...sessions.values()].some(s => s.providerThreadId === handle)) throw new Error('This provider session already belongs to a BB thread');
   const old = binding(threadId);
   if (old && (old.runtimeKind ?? 'offline') !== runtimeKind) throw new Error('Cannot switch a persisted proof conversation between fixture and live models; create a separate thread');
-  if (runtimeKind === 'canonical' && (profile !== CANONICAL_PROFILE || childId)) throw new Error('Canonical route requires the existing main exo-optchat identity');
+  if (runtimeKind === 'canonical' && ((profile !== CANONICAL_PROFILE && !(own && profile === bound.profile)) || childId)) throw new Error('Canonical route requires the existing main exo-optchat identity');
   if (runtimeKind === 'live' && (!profile.startsWith('live-') || childId)) throw new Error('Live trial cannot claim the existing personal profile or a linked child');
   if (!childId && old?.sessionFile && !providerThreadId) throw new Error('Existing spike conversation must resume its provider identity, not start a new profile on an old transcript');
   if (providerThreadId && old?.providerThreadId && old.providerThreadId !== providerThreadId) throw new Error('Provider identity does not match saved binding');
@@ -135,7 +137,7 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
         : (await s.rpc.send('get_entries')).entries.some((e: any) => e.type === 'custom' && e.customType === 'optchat.profile' && e.data?.name === profile);
       if (!bound) throw new Error('OptChat did not bind the requested profile; refusing a false-ready runtime');
       save(bindingFile(threadId), { providerThreadId: handle, profile, runtimeKind, sessionFile: state.sessionFile, commands: commands?.commands?.map((c: any) => ({ name: c.name, description: c.description })), cursor: 0 });
-      if (runtimeKind === 'canonical') save(join(HOME, 'canonical-thread.json'), { threadId, profile, providerThreadId: handle, sessionFile: state.sessionFile });
+      if (runtimeKind === 'canonical' && !own) save(join(HOME, 'canonical-thread.json'), { threadId, profile, providerThreadId: handle, sessionFile: state.sessionFile });
       audit(s, runtimeKind === 'canonical' ? 'view-attached' : 'owner-started', { sessionId: state.sessionId });
       if (runtimeKind === 'canonical') await s.rpc.send('attach');
     }
