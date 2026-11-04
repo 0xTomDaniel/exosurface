@@ -26,7 +26,7 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
-// too, so a refused or queued second turn leaves the first unanswered ("ALONE").
+// too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words.
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
@@ -53,8 +53,8 @@ export default function optchat(pi){
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
-    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});stream.push({type:'done',reason:'stop',message});stream.end();})();
+    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
 
@@ -64,13 +64,14 @@ async function serverRpc(vault: string) {
   const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
   // BB's threads: the ones spawned here (setup's is 'primary'), and any other id read as an existing Exo thread.
   const threads = new Map<string, any>(), spawns: any[] = [], sends: any[] = [];
+  // The thread's provider as BB reaches it on a send (a test sets deliver to its host.ts bridge); unset, sends are only recorded.
+  const provider: { deliver?: (threadId: string, text: string) => void } = {};
   const thread = (threadId: string) => threads.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
   const bb: any = { providers: { register() {} }, background: { service() {} }, realtime: { publish() {} }, ui: { registerMentionProvider() {} },
     experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
     sdk: {
       threads: {
         async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return [...threads.values()]; },
-        async send(args: unknown) { sends.push(args); return {}; },
         // BB creates the thread, then runs the dispatch pass on its first message before any provider sees it.
         async spawn(args: { prompt: string; projectId: string; parentThreadId?: string; title?: string; providerId: string; environment: unknown }) {
           spawns.push(args);
@@ -83,11 +84,23 @@ async function serverRpc(vault: string) {
           }
           return created;
         },
+        // A send on an existing thread: recorded; with a provider, the dispatch pass, then the turn goes to it.
+        async send(args: { threadId: string; input: { type: string; text: string }[] }) {
+          sends.push(args);
+          if (!provider.deliver) return {};
+          const text = args.input.map(p => p.text).join('');
+          for (const hook of hooks) {
+            const decision = await hook({ thread: thread(args.threadId), project: { id: 'project' }, environment: null, input: { text, blocks: [{ type: 'text', text }] }, attempt: 'start-turn', attemptKind: 'start-turn' });
+            if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
+          }
+          provider.deliver(args.threadId, text);
+          return {};
+        },
       },
       projects: { async list() { return [{ id: 'project', name: 'Exo' }]; }, async get() { return { id: 'project', sources: [{ hostId: 'host', path: vault }] }; } },
     } };
   (await import(pathToFileURL(join(PLUGIN, 'server.ts')).href)).default(bb);
-  return { handlers, spawns, sends };
+  return { handlers, spawns, sends, provider };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -103,11 +116,11 @@ export async function liveFixture() {
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
-  const { handlers: rpc, spawns, sends } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 

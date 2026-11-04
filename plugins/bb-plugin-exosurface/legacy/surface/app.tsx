@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {definePluginApp,ThreadChat,useRpc,useRealtime,useBbNavigate,useComposer} from '@get-bb/plugin-sdk/app';
+import {definePluginApp,useRpc,useRealtime,useBbNavigate,useComposer} from '@get-bb/plugin-sdk/app';
 import type {ComposerMention} from '@get-bb/plugin-sdk/app';
 import type {PluginMessageDirectiveProps} from '@get-bb/plugin-sdk/app';
 import {useRewind,setRewind,when,panelOf,type VersionRef} from './src/rewind-store';
@@ -14,6 +14,7 @@ import {stagePlan,surfaceTitle} from './src/stage';
 import {exoReactCatalog} from './src/exo-components';
 import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
+import {ExoBlock,SurfaceInput} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The canvas is a stage that follows the conversation. Every surface stays
@@ -162,15 +163,16 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
    catch{/* stale or busy: the next committed revision arrives and this retries */}finally{saving.current=false;recover.current();}},900);
   return()=>clearTimeout(timer);
  },[ticks,busy,state?.threadId,rpc]);
- return <div className="flex h-full min-h-0 flex-col md:flex-row">
+ return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme}</style>
   <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-topline"><h1>{clone?'Exosurface clone':'Exosurface'}</h1><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
-   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo in the conversation. When a picture helps, a page appears here.</p>}</div>
+   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
+   <ExoBlock threadId={state?.threadId??null}/>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
   </div></main>
-  <section aria-label={clone?"Clone conversation":"Conversation with Exo"} className="min-h-[300px] min-w-0 border-t border-border md:w-[35%] md:min-h-0 md:border-l md:border-t-0">{state?.threadId?<ThreadChat threadId={state.threadId} variant="compact"/>:<p className="p-5 text-sm">{clone?'Clone conversation not provisioned yet.':'Exo’s conversation is not attached yet.'}</p>}</section>
+  <SurfaceInput threadId={state?.threadId??null}/>
  </div>;
 }
 // The surfaces view (#68): the sidebar and the surface in view. Home (null) is the primary thread's page state as before.
