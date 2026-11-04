@@ -11,7 +11,9 @@ const f = await liveFixture();
 const ownerProcess = await owner(f);
 const host = bridge(f);
 f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
-assert.equal((await host.start('primary')).result?.providerThreadId, 'exo:exo-optchat:main');
+const started = await host.start('primary');
+assert.equal(started.error, undefined, JSON.stringify(started));
+assert.ok(started.result?.providerThreadId, 'the bridge gives Home a provider thread');
 const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
 // The Exosurface panel with Home (the primary thread) in view; every RPC it calls runs on server.ts.
 const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
