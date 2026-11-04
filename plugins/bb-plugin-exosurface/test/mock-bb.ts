@@ -26,7 +26,7 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
-// too, so a refused or queued second turn leaves the first unanswered ("ALONE").
+// too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words.
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
@@ -48,14 +48,14 @@ export default function optchat(pi){
     const name=pi.getFlag('optchat-profile'),turns=join(process.env.OPTCHAT_HOME,'turns');stream.push({type:'start',partial:message});
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
-    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});stream.push({type:'done',reason:'stop',message});stream.end();})();
+    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
 
 type Hook = (context: unknown) => Promise<{ action: string; message?: string }>;
 /** server.ts (package.json bb.server) registered against a mock BB; its RPC handlers and its message.dispatch hook. */
-async function serverRpc(vault: string) {
+async function serverRpc(vault: string, sends: { deliver?: (threadId: string, text: string) => void }) {
   const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
   const thread = (threadId: string) => ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env' });
   const bb: any = { providers: { register() {} }, background: { service() {} }, realtime: { publish() {} }, ui: { registerMentionProvider() {} },
@@ -71,6 +71,17 @@ async function serverRpc(vault: string) {
             if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
           }
           return created;
+        },
+        // A send on an existing thread: the dispatch pass, then the turn goes to the thread's provider (deliver).
+        async send({ threadId, input }: { threadId: string; input: { type: string; text: string }[] }) {
+          const text = input.map(p => p.text).join('');
+          for (const hook of hooks) {
+            const decision = await hook({ thread: thread(threadId), project: { id: 'project' }, environment: null, input: { text, blocks: [{ type: 'text', text }] }, attempt: 'start-turn', attemptKind: 'start-turn' });
+            if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
+          }
+          if (!sends.deliver) throw new Error('mock BB: no provider bridge to deliver the turn to');
+          sends.deliver(threadId, text);
+          return { kind: 'sent', threadId };
         },
       },
       projects: { async list() { return [{ id: 'project', name: 'Exo' }]; }, async get() { return { id: 'project', sources: [{ hostId: 'host', path: vault }] }; } },
@@ -92,11 +103,12 @@ export async function liveFixture() {
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
-  const rpc = await serverRpc(vault);
+  const sends: { deliver?: (threadId: string, text: string) => void } = {};
+  const rpc = await serverRpc(vault, sends);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, sends, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 

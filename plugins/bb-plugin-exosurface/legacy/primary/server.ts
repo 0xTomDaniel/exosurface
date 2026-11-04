@@ -8,6 +8,8 @@ import { consumeCanonicalInitialization } from './src/canonical-control.ts';
 import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
+import { latestTurn, ownerWorking, sessionOf } from './src/exo-turn.ts';
+import { validatePrompt } from '../../src/input.ts';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
   canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), initializationAvailable: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
@@ -16,6 +18,9 @@ export const rpcContract = defineRpcContract({
   overview: { input: z.null(), output: z.object({ threads: z.array(z.object({ id: z.string(), title: z.string().nullable(), status: z.string(), parentThreadId: z.string().nullable(), profile: z.string().nullable(), childId: z.string().nullable(), runtimeKind: z.enum(['offline', 'live', 'canonical']), commands: z.array(z.string()), feedback: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }), children: z.array(z.object({ id: z.string(), state: z.string(), report: z.string().nullable() })) })) }) },
   attach_child: { input: z.object({ threadId: z.string(), childId: z.string() }), output: z.object({ threadId: z.string() }) },
   thread_bind: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/) }).strict(), output: z.object({ threadId: z.string(), profile: z.string() }) },
+  // The surface view's Exo block and input (#69): Exo's words from the thread's latest turn, and a send from the input.
+  exo_block: { input: z.object({ threadId: z.string() }).strict(), output: z.object({ working: z.boolean(), words: z.string() }) },
+  exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
 });
 import { createOverview } from './src/overview.ts';
 export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc), setupPorts?: CanonicalSetupPorts) {
@@ -49,6 +54,7 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     return { action: 'proceed' };
   });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
+  const awaiting = new Map<string, string | null>(); // thread -> its latest person's entry when the input sent
   registerRpc(rpcContract, {
     canonical_setup_status: async () => { const journal = setupStatus(HOME); return { stage: journal?.stage ?? 'unconfigured', operationId: journal?.request.operationId ?? null, projectId: journal?.request.projectId ?? null, threadId: journal?.threadId ?? null, nativeDispatchAllowed: setup.nativeDispatchAllowed, initializationAvailable: setupPorts?.nativeDispatchAllowed ?? true, releaseReady: false as const, defaults: { vault: journal?.request.vault ?? local('vault'), piCli: journal?.request.piCli ?? local('piCli'), optchat: journal?.request.optchat ?? local('optchat') } }; },
     canonical_setup_projects: async () => (await bb.sdk.projects.list({ includePersonal: true })).map(project => ({ id: project.id, name: project.name })),
@@ -85,6 +91,22 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     thread_bind: async ({ threadId }) => {
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike') throw new Error('Only an Exo thread can be bound');
       return bindThread(threadId);
+    },
+    // Exo is working from a send until the thread's journal holds a newer message from the person and the owner's turn
+    // has ended; while it works, the block shows that and none of the previous turn's words.
+    exo_block: async ({ threadId }) => {
+      const turn = latestTurn(sessionOf(threadId)), sent = awaiting.get(threadId);
+      if (sent !== undefined && sent !== turn.userEntry) awaiting.delete(threadId);
+      const working = awaiting.has(threadId) || ownerWorking(threadId);
+      return { working, words: working ? '' : turn.words };
+    },
+    exo_send: async ({ threadId, text }) => {
+      validatePrompt(text);
+      if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike' || binding(threadId)?.runtimeKind !== 'canonical') throw new Error('Only an Exo surface thread takes a send from its input');
+      awaiting.set(threadId, latestTurn(sessionOf(threadId)).userEntry);
+      try { await bb.sdk.threads.send({ threadId, input: [{ type: 'text', text, mentions: [] }], mode: 'auto' }); }
+      catch (e) { awaiting.delete(threadId); throw e; }
+      return { sent: true as const };
     },
   });
 }

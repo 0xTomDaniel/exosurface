@@ -1,0 +1,71 @@
+// #69 (spec pages-and-activity S1, S2, E1-E4, E7): the surface view shows its page, one Exo block and one input, and no
+// chat. The app (app.tsx) is rendered through the SDK's app test runtime; its RPCs run on server.ts, a send goes through
+// the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
+import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { renderSurfacePanel, fireEvent } from './render-app.ts';
+
+const f = await liveFixture();
+const ownerProcess = await owner(f);
+const host = bridge(f);
+f.sends.deliver = (threadId, text) => { host.send(threadId, text); };
+assert.equal((await host.start('primary')).result?.providerThreadId, 'exo:exo-optchat:main');
+const view = await renderSurfacePanel(f.rpc);
+after(async () => {
+  view.unmount();
+  for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+  await new Promise(r => setTimeout(r, 1000));
+  rmSync(f.root, { recursive: true, force: true });
+});
+
+const block = () => view.container.querySelector('section[aria-label="Exo"]') as HTMLElement | null;
+const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+const pageText = () => view.container.querySelector('main')!.textContent + (view.container.querySelector('form')?.textContent ?? '');
+async function until(what: string, ok: () => boolean, ms = 20000) {
+  for (let waited = 0; !ok(); waited += 50) {
+    if (waited > ms) throw new Error(`Timed out waiting for ${what}; page: ${pageText()}`);
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
+async function send(text: string) {
+  await until('the input to take a message', () => !!input() && !input()!.disabled);
+  fireEvent.change(input()!, { target: { value: text } });
+  fireEvent.click(view.getByRole('button', { name: 'Send' }));
+}
+const count = (haystack: string, needle: string) => haystack.split(needle).length - 1;
+
+test('after a send and Exo\'s finished turn, the Exo block shows the reply, the input is shown and empty, and no chat shows', async () => {
+  await send('plan the week');
+  // E4: while Exo works, its block says so.
+  await until('the block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
+  await until('Exo\'s reply in the block', () => block()?.textContent === 'Exo (exo-optchat): plan the week');
+  assert.equal(input()!.value, '');
+  // S1: no chat column and no transcript; the person's message is not on screen apart from Exo's words echoing it.
+  assert.equal(view.queryByTestId('bb-thread-chat'), null);
+  assert.equal(count(pageText(), 'plan the week'), 1);
+  // E7: only Exo writes the block; nothing in it takes the person's input.
+  assert.equal(block()!.querySelectorAll('textarea, input, button, [contenteditable]').length, 0);
+});
+
+test('after a second send on the same topic, the Exo block shows only the reply to the new message', async () => {
+  await send('plan the week, with Friday off');
+  await until('the new reply in the block', () => block()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
+  assert.equal(input()!.value, '');
+  assert.equal(view.queryByTestId('bb-thread-chat'), null);
+  // E2: the earlier reply and messages are gone from the screen (they stay in the thread).
+  assert.equal(count(pageText(), 'Exo (exo-optchat)'), 1);
+  assert.equal(count(pageText(), 'plan the week'), 1);
+});
+
+test('a turn in which Exo says nothing leaves the Exo block empty', async () => {
+  await send('quiet: only redraw the page');
+  await until('the block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
+  // The provider bridge reports the third turn's end to BB; then the block has caught up with it.
+  const ended = () => { const d = host.deltas('primary'), third = d.filter(x => x.kind === 'turn.open')[2]; return !!third && d.slice(d.indexOf(third)).some(x => x.kind === 'turn.boundary'); };
+  await until('the third turn to end', ended);
+  await until('the block to stop saying Exo is working', () => block()?.querySelector('[role="status"]') === null);
+  assert.equal(block()!.textContent, '');
+  assert.equal(input()!.value, '');
+});
