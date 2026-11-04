@@ -161,7 +161,8 @@ const server = createServer(socket => {
           const own = lane;
           if (m.type === 'attach') {
             const snapshot = size(own.sessionFile);
-            const replayed = replayJournal(own, socket, snapshot);
+            // Pi writes a new session's file only with its first message: nothing past the cursor, nothing to replay.
+            const replayed = snapshot > own.acknowledged && replayJournal(own, socket, snapshot);
             if (!own.streaming && snapshot > own.acknowledged) {
               const checkpoint = ++own.sequence; own.checkpoints.set(checkpoint, snapshot);
               write(socket, { kind: 'event', event: { type: 'agent_settled', replayed: true }, checkpoint });

@@ -1,16 +1,15 @@
 #!/usr/bin/env -S node --experimental-transform-types --no-warnings
 // Exosurface surfaces demo (ADR 0002 fallback: BB is not on this box). Drives the live entry points through the mock-BB
-// harness (test/mock-bb.ts): server.ts RPC, host.ts provider bridge, and the release owner (legacy/primary), on a fresh
-// canonical install; fake Pi and OptChat profile API at the boundary.
+// harness (test/mock-bb.ts): server.ts RPC (canonical_setup, thread_bind), host.ts provider bridge and the release owner
+// (legacy/primary) on the real Pi CLI; fake BB, OptChat and model at the boundary. Needs build:owner and build:runtime.
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
-import { liveFixture, owner, serverRpc, bridge } from '../test/mock-bb.ts';
+import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   try {
-    const rpc = await serverRpc();
-    const second = await rpc.thread_bind({ threadId: 'second' });
+    const second = await f.rpc.thread_bind({ threadId: 'second' });
     console.log(`bound thread second -> its own OptChat profile ${second.profile} (instructions: the primary's AGENTS.md)`);
     for (const id of ['primary', 'second']) { const r = await host.start(id); if (r.error) throw new Error(`${id}: ${r.error.message}`); }
     host.send('primary', 'together: plan the week');
@@ -18,7 +17,7 @@ async function parallelThreads() {
     await host.settled(['primary', 'second']);
     const runs = Object.fromEntries(f.piRuns().map(r => [r.profile, r]));
     let ok = true; const spans = {};
-    for (const [id, profile] of [['primary', 'exo-optchat'], ['second', second.profile]]) {
+    for (const [id, profile] of [['primary', f.setup.profile], ['second', second.profile]]) {
       const t = host.turn(id); spans[id] = [t.open.at, t.end.at];
       console.log(`thread ${id.padEnd(7)} profile ${profile.padEnd(28)} pi ${runs[profile].pid}  turn ${String(t.open.at).padStart(5)}ms -> ${String(t.end.at).padStart(5)}ms  ${t.end.status}  reply: ${JSON.stringify(t.replies)}`);
       ok &&= t.end.status === 'completed' && t.replies.length === 1 && t.replies[0].startsWith(`Exo (${profile})`);
@@ -29,7 +28,7 @@ async function parallelThreads() {
     if (!overlap || refusals || !ok) throw new Error('parallel-threads failed');
   } finally {
     for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
-    await new Promise(r => setTimeout(r, 300)); // Pi children stop with the owner.
+    await new Promise(r => setTimeout(r, 1000)); // Pi children stop with the owner.
     rmSync(f.root, { recursive: true, force: true });
   }
 }
