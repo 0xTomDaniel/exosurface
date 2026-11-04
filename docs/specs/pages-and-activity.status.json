@@ -3,12 +3,18 @@
   "accepted_commit": "3666191",
   "criteria": {
     "acceptance-no-chat": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T045416Z-176847b3",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
+      "tests": []
     },
     "acceptance-exo-block-latest": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T045506Z-ef3651f8",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
+      "tests": []
     },
     "acceptance-activity-turns": {
       "status": "planned",
@@ -31,8 +37,11 @@
       "pr": null
     },
     "acceptance-new-surface": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T045559Z-4d090a9e",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
+      "tests": []
     },
     "acceptance-topic-new-page": {
       "status": "planned",
@@ -67,8 +76,11 @@
       "pr": null
     },
     "acceptance-parallel-second": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T045804Z-72697c1f",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
+      "tests": []
     },
     "acceptance-parallel-needs-you": {
       "status": "planned",
@@ -79,8 +91,11 @@
       "pr": null
     },
     "acceptance-parallel-first": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 71,
+      "record": "20261104T045921Z-edddf19e",
+      "commit": "d143f28409de12e611b2a0194fa78ab38603f4e5",
+      "tests": []
     },
     "acceptance-sidebar-parts": {
       "status": "planned",

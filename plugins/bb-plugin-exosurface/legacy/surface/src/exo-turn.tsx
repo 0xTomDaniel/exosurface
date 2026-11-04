@@ -1,0 +1,48 @@
+// The surface view's Exo block and input (#69; spec pages-and-activity S1, S2, E1-E4, E7), for whichever thread is in view.
+// The block shows only Exo's words from its latest turn, or that Exo is working; the person never writes in it.
+// The input sends a turn on the thread and is empty again once BB accepts it. There is no transcript: earlier turns
+// stay in the thread.
+import {useCallback,useEffect,useState,type FormEvent,type KeyboardEvent} from 'react';
+import {Markdown,useRpc} from '@get-bb/plugin-sdk/app';
+import type {rpcContract} from '../../primary/server';
+
+type Block={working:boolean;words:string};
+// A send from the input refreshes the block of that thread at once (both are mounted in the same surface view).
+const sent=new Set<(threadId:string)=>void>();
+
+export function ExoBlock({threadId}:{threadId:string|null}){
+ const rpc=useRpc<typeof rpcContract>();
+ const[block,setBlock]=useState<Block|null>(null),[error,setError]=useState('');
+ useEffect(()=>{
+  setBlock(null);setError('');if(!threadId)return;
+  let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,working=false;
+  const read=async()=>{clearTimeout(timer);try{const b=await rpc.call('exo_block',{threadId});if(stopped)return;working=b.working;setBlock(b);setError('');}catch(e){if(!stopped)setError(String(e));}
+   finally{if(!stopped)timer=setTimeout(read,working?1000:4000);}};
+  const onSent=(id:string)=>{if(id===threadId){working=true;setBlock({working:true,words:''});void read();}};
+  sent.add(onSent);void read();
+  return()=>{stopped=true;clearTimeout(timer);sent.delete(onSent);};
+ },[threadId,rpc]);
+ return <section aria-label="Exo" data-exo-block="" className="exo-block mt-6 max-w-prose text-sm">
+  {block?.working?<p role="status" aria-live="polite" style={{color:'var(--exo-quiet)'}}>Exo is working on this page…</p>
+   :block?.words?<Markdown content={block.words}/>:null}
+  {error&&<p role="alert" className="text-destructive">{error}</p>}
+ </section>;
+}
+
+export function SurfaceInput({threadId}:{threadId:string|null}){
+ const rpc=useRpc<typeof rpcContract>();
+ const[text,setText]=useState(''),[sending,setSending]=useState(false),[error,setError]=useState('');
+ const send=useCallback(async()=>{
+  if(!threadId||sending||!text.trim())return;setSending(true);setError('');
+  try{await rpc.call('exo_send',{threadId,text});setText('');for(const listener of sent)listener(threadId);}
+  catch(e){setError(String(e));}finally{setSending(false);}
+ },[threadId,sending,text,rpc]);
+ const submit=(e:FormEvent)=>{e.preventDefault();void send();};
+ const keys=(e:KeyboardEvent<HTMLTextAreaElement>)=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}};
+ return <form aria-label="Message Exo" onSubmit={submit} className="flex items-end gap-2 border-t border-border px-8 py-3">
+  <textarea aria-label="Message" value={text} onChange={e=>setText(e.target.value)} onKeyDown={keys} rows={2} disabled={!threadId}
+   placeholder={threadId?'Message Exo':'Exo is not attached yet.'} className="min-w-0 flex-1 resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm"/>
+  <button type="submit" disabled={!threadId||sending||!text.trim()} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent">Send</button>
+  {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+ </form>;
+}
