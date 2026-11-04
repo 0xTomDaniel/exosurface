@@ -2,6 +2,7 @@ import { local } from './local-config.ts';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 export const HOME = local('primaryStateDir') || join(homedir(), '.exo-bb-spike');
 // The plugin root, wherever it is checked out (symlinked install paths resolve to the real location). BB loads
@@ -34,8 +35,12 @@ export const bindingFile = (thread: string) => {
 export function binding(thread: string) { const file = bindingFile(thread); return existsSync(file) ? load(file) : undefined; }
 export const CANONICAL_HOME = local('primaryOptchatHome') || join(homedir(), '.optchat-exocortex-test');
 export const CANONICAL_PROFILE = local('primaryProfile') || 'exo-optchat';
+// A bound thread's own profile (#67, owner ruling option A): one OptChat profile and Pi per thread, same Exo.
+const threadPrefix = `${CANONICAL_PROFILE.slice(0, 40)}-t`;
+export const threadProfile = (threadId: string) => threadPrefix + createHash('sha256').update(threadId).digest('hex').slice(0, 16);
+export const isThreadProfile = (profile: string) => profile.startsWith(threadPrefix) && /^[0-9a-f]{16}$/.test(profile.slice(threadPrefix.length));
 export function profileHome(profile: string, kind: RuntimeKind = 'offline') {
-  if (kind === 'canonical' && profile !== CANONICAL_PROFILE) throw new Error('Canonical route is bound only to exo-optchat');
+  if (kind === 'canonical' && profile !== CANONICAL_PROFILE && !isThreadProfile(profile)) throw new Error('Canonical route is bound only to exo-optchat');
   return kind === 'canonical' ? CANONICAL_HOME : HOME;
 }
 const recentRuns = new Map<string, { mtime: number; rows: any[] }>();

@@ -6,6 +6,7 @@ import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
 import { consumeCanonicalInitialization } from './src/canonical-control.ts';
 import { loadIf } from '../../src/store.ts';
+import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
@@ -14,6 +15,7 @@ export const rpcContract = defineRpcContract({
   canonical_setup: { input: setupInput, output: z.object({ threadId: z.string(), profile: z.string(), stage: z.string(), ownerReady: z.literal(false), releaseReady: z.literal(false) }) },
   overview: { input: z.null(), output: z.object({ threads: z.array(z.object({ id: z.string(), title: z.string().nullable(), status: z.string(), parentThreadId: z.string().nullable(), profile: z.string().nullable(), childId: z.string().nullable(), runtimeKind: z.enum(['offline', 'live', 'canonical']), commands: z.array(z.string()), feedback: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }), children: z.array(z.object({ id: z.string(), state: z.string(), report: z.string().nullable() })) })) }) },
   attach_child: { input: z.object({ threadId: z.string(), childId: z.string() }), output: z.object({ threadId: z.string() }) },
+  thread_bind: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/) }).strict(), output: z.object({ threadId: z.string(), profile: z.string() }) },
 });
 import { createOverview } from './src/overview.ts';
 export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc), setupPorts?: CanonicalSetupPorts) {
@@ -78,6 +80,11 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
         return { threadId: child.id };
       })();
       attaching.set(key, work); try { return await work; } finally { attaching.delete(key); }
+    },
+    // Binds another Exo thread to its own canonical profile (thread-profiles.ts); its turns run beside the primary's.
+    thread_bind: async ({ threadId }) => {
+      if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike') throw new Error('Only an Exo thread can be bound');
+      return bindThread(threadId);
     },
   });
 }
