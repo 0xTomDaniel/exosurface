@@ -6,7 +6,7 @@ import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { requireLocal, local } from './local-config.ts';
 import { realpathSync } from 'node:fs';
-import { HOME, SOURCE, OPTCHAT, FAST, CANONICAL_HOME, CANONICAL_PROFILE, profileHome, isThreadProfile, save, EXO_MODELS, mainModel, primaryModelDefinition, type RuntimeKind } from './state.ts';
+import { HOME, SOURCE, OPTCHAT, FAST, CANONICAL_HOME, CANONICAL_PROFILE, profileHome, isThreadProfile, threadProfile, threadPagesHome, save, EXO_MODELS, mainModel, primaryModelDefinition, type RuntimeKind } from './state.ts';
 
 export async function assertNativeOwner(profile: string, kind: RuntimeKind, pid: number | undefined) {
   if (!pid) throw new Error('Pi owner PID missing');
@@ -58,8 +58,9 @@ export function runtimeLaunch(profile: string, kind: RuntimeKind, threadId: stri
   // Exosurface on the primary session (local config surfaceMain: on|off; off is the rollback). Same extension order as
   // the clone: the page extension loads before OptChat, the outline frame after it. Exo's own tools are untouched.
   // The consolidated artifact owns the extensions and skill; no checkout sibling or configured plugin path is used.
-  // Pages stay the primary thread's until pages per thread exist: a bound thread's Pi does not load the page extensions.
-  const surface = kind === 'canonical' && profile === CANONICAL_PROFILE && local('surfaceMain') !== 'off' ? SOURCE : '';
+  // A bound thread's Pi loads them too, on its own pages folder (threadPagesHome, #68): each surface has its own pages.
+  const own = kind === 'canonical' && isThreadProfile(profile) && profile === threadProfile(threadId);
+  const surface = kind === 'canonical' && (profile === CANONICAL_PROFILE || own) && local('surfaceMain') !== 'off' ? SOURCE : '';
   if(surface && !existsSync(join(surface,'dist/workspace-extension.js')))throw Error('Packaged Exosurface runtime missing; refusing a shell-only launch');
   // Primary Exo starts on the model last picked in BB; the isolated live trial stays on Opus.
   const launchModel = kind === 'canonical' ? primaryModelDefinition(mainModel()) : EXO_MODELS['exo-opus-5-5'];
@@ -69,7 +70,7 @@ export function runtimeLaunch(profile: string, kind: RuntimeKind, threadId: stri
   args.push('--optchat-profile', profile);
   if (sessionFile) args.push('--session', sessionFile);
   const fresh = kind === 'canonical' && freshCanonicalReceipt(HOME, CANONICAL_HOME, CANONICAL_PROFILE);
-  const env = { ...(fresh ? childEnv() : process.env), OPTCHAT_HOME: profileHome(profile, kind), PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: kind === 'offline' ? '1' : '0', PI_TELEMETRY: '0', EXO_BB_RUNTIME_KIND: kind, EXO_BB_PROFILE: profile, EXO_BB_INFO_FILE: join(HOME, 'runtime-info', `${threadId}.json`), ...(surface ? { EXOSURFACE_MODE: 'main', EXOSURFACE_HOME: HOME, EXOSURFACE_OPTCHAT_HOME: CANONICAL_HOME } : {}) };
+  const env = { ...(fresh ? childEnv() : process.env), OPTCHAT_HOME: profileHome(profile, kind), PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: kind === 'offline' ? '1' : '0', PI_TELEMETRY: '0', EXO_BB_RUNTIME_KIND: kind, EXO_BB_PROFILE: profile, EXO_BB_INFO_FILE: join(HOME, 'runtime-info', `${threadId}.json`), ...(surface ? { EXOSURFACE_MODE: 'main', EXOSURFACE_HOME: own ? threadPagesHome(threadId) : HOME, EXOSURFACE_OPTCHAT_HOME: CANONICAL_HOME } : {}) };
   mkdirSync(join(HOME, 'runtime-info'), { recursive: true, mode: 0o700 });
   return { args, env };
 }

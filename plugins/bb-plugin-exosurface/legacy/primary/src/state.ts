@@ -39,6 +39,15 @@ export const CANONICAL_PROFILE = local('primaryProfile') || 'exo-optchat';
 const threadPrefix = `${CANONICAL_PROFILE.slice(0, 40)}-t`;
 export const threadProfile = (threadId: string) => threadPrefix + createHash('sha256').update(threadId).digest('hex').slice(0, 16);
 export const isThreadProfile = (profile: string) => profile.startsWith(threadPrefix) && /^[0-9a-f]{16}$/.test(profile.slice(threadPrefix.length));
+/** A thread bound to its own canonical profile (thread-profiles.ts): a surface other than Home. */
+export function isBoundThread(threadId: string) { const b = binding(threadId); return b?.runtimeKind === 'canonical' && !b.childId && b.profile === threadProfile(threadId); }
+/** New surface (#68): the first message of a thread made by the thread_new RPC. Its admission binds the thread before any
+ *  provider start; the bridge settles it without a turn, so the new thread starts with an empty activity. */
+export const NEW_THREAD_PROMPT = '/exosurface-new-surface';
+
+// Pages per bound thread (#68, spec pages-and-activity S2, S3): its page extensions keep their state (EXOSURFACE_HOME)
+// and its owner state here, never in the primary's HOME.
+export function threadPagesHome(threadId: string) { bindingFile(threadId); return join(HOME, 'threads', threadId); }
 export function profileHome(profile: string, kind: RuntimeKind = 'offline') {
   if (kind === 'canonical' && profile !== CANONICAL_PROFILE && !isThreadProfile(profile)) throw new Error('Canonical route is bound only to exo-optchat');
   return kind === 'canonical' ? CANONICAL_HOME : HOME;
