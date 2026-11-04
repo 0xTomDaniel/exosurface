@@ -1,8 +1,10 @@
 // Mock-BB harness on the LIVE entry points (#67), shared by test/parallel-threads.test.ts and demo/surfaces.
-// Real: package.json bb.server (server.ts) RPC handlers, bb.host (host.ts) provider bridge as a child process on JSON-RPC
-// stdio, the release owner (legacy/primary/release-owner.ts) as its own process, and a fresh canonical install made by the
-// real canonicalSetup. Fake only at the boundaries: BB (sdk + JSON-RPC peer), Pi (JSONL RPC, OptChat lock socket and the
-// live.js runtime-info file), OptChat's profile API module, and setup's native ports (as test/canonical-setup.test.ts).
+// Real: package.json bb.server (server.ts: canonical_setup and thread_bind RPCs, its message.dispatch hook), bb.host
+// (host.ts) as a child process on JSON-RPC stdio, the release owner (legacy/primary/release-owner.ts) as its own process,
+// the packaged runtime (dist/, so build:owner and build:runtime first), and the real Pi 1.1 CLI.
+// Fake only at the boundaries: BB (sdk + JSON-RPC peer; spawn runs the registered dispatch hook as BB does), OptChat (a
+// Pi extension holding the profile lock and binding entry, plus its profile API module) and the model (Pi's `anthropic`
+// provider replaced by an offline stream).
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, realpathSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -10,91 +12,107 @@ import { pathToFileURL } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
 
 export const PLUGIN = resolve(import.meta.dirname, '..');
+const PI_CLI = join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
+const PI_AI = pathToFileURL(join(PLUGIN, 'node_modules/@earendil-works/pi-ai/dist/index.js')).href;
 export const INSTRUCTIONS = '# Exo\n\nThe one Exo instructions source.\n';
-const PROFILE = 'exo-optchat';
 
 // OptChat 0.8.6 profile API surface used by src/optchat-init.ts (profilePath, createProfile, loadConfig, saveConfig, instructions).
 const FAKE_PROFILES = `import{existsSync,mkdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 export const profilePath=n=>{if(!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(n))throw Error('bad profile name');return join(process.env.OPTCHAT_HOME,'profiles',n);};
-export function createProfile(n){const d=profilePath(n);if(existsSync(d))throw Error('Profile already exists: '+n);mkdirSync(d,{recursive:true});saveConfig(d,{compactor:{provider:'x',model:'default',thinking:'low'},subagent:{provider:'x',model:'default',thinking:'low'}});writeFileSync(join(d,'AGENTS.md'),'# '+n+' default\\n');}
+export function createProfile(n){const d=profilePath(n);if(existsSync(d))throw Error('Profile already exists: '+n);mkdirSync(d,{recursive:true});saveConfig(d,{compactor:{provider:'fixture',model:'compactor',thinking:'low'},subagent:{provider:'fixture',model:'subagent',thinking:'high'}});writeFileSync(join(d,'AGENTS.md'),'# '+n+'\\n\\nThis is the '+n+' profile.\\n');}
 export const loadConfig=d=>JSON.parse(readFileSync(join(d,'config.json'),'utf8'));
 export const saveConfig=(d,c)=>writeFileSync(join(d,'config.json'),JSON.stringify(c));
 export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 
-// Pi 1.1 RPC shape with OptChat's one-Pi-per-profile lock and live.js's runtime-info file. A prompt containing "together"
-// is answered only once another profile's turn is running too: a refused or queued second turn leaves the first unanswered.
-const FAKE_PI = `import{createInterface}from'node:readline';import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';import{randomUUID}from'node:crypto';
-const arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined,profile=arg('--optchat-profile'),home=process.env.OPTCHAT_HOME,dir=join(home,'profiles',profile),turns=join(home,'turns');
-const sessionId=randomUUID(),sessionFile=arg('--session')??join(arg('--session-dir'),sessionId+'.jsonl');
-if(!existsSync(sessionFile)){mkdirSync(arg('--session-dir'),{recursive:true});writeFileSync(sessionFile,JSON.stringify({type:'session',id:sessionId})+'\\n');}
-let model={provider:arg('--provider'),id:arg('--model')},thinkingLevel=arg('--thinking'),streaming=false;mkdirSync(turns,{recursive:true});
-writeFileSync(process.env.EXO_BB_INFO_FILE,JSON.stringify({boundProfile:profile,sessionFile}));
-appendFileSync(join(home,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile,cwd:process.cwd(),model:model.provider+'/'+model.id+'/'+thinkingLevel,instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile})+'\\n');
-const lock=createServer(s=>s.end(profile+' · PID '+process.pid+' · fixture'));await new Promise(r=>lock.listen(join(dir,'lock.sock'),r));
-const out=x=>console.log(JSON.stringify(x)),ok=(r,data={})=>out({type:'response',id:r.id,command:r.type,success:true,data});
-for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);
- if(r.type==='get_state'){ok(r,{sessionFile,sessionId,isStreaming:streaming,isCompacting:false,pendingMessageCount:0,model,thinkingLevel});continue;}
- if(r.type==='get_commands'){ok(r,{commands:[]});continue;}
- if(r.type==='set_model'){model={provider:r.provider,id:r.modelId};ok(r);continue;}
- if(r.type==='set_thinking_level'){thinkingLevel=r.level;ok(r);continue;}
- if(r.type!=='prompt'){ok(r);continue;}
- ok(r,{disposition:'started'});streaming=true;out({type:'agent_start'});
- if(r.message.includes('together')){writeFileSync(join(turns,profile),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await new Promise(z=>setTimeout(z,50));}
- const text=(r.message.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+profile+'): ')+r.message;
- out({type:'message_start',message:{role:'assistant',content:[]}});out({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:text}});
- const message={role:'assistant',content:[{type:'text',text}],stopReason:'stop'};appendFileSync(sessionFile,JSON.stringify({type:'message',message})+'\\n');
- out({type:'message_end',message});out({type:'agent_end'});streaming=false;out({type:'agent_settled'});}
-lock.close();`;
+// OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
+// optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
+// too, so a refused or queued second turn leaves the first unanswered ("ALONE").
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
+export default function optchat(pi){
+ pi.registerFlag('optchat-profile',{description:'OptChat profile',type:'string'});
+ let lock,recorded=false;
+ pi.on('session_start',async(_e,ctx)=>{
+  const name=pi.getFlag('optchat-profile');if(typeof name!=='string')return;const dir=join(process.env.OPTCHAT_HOME,'profiles',name);
+  if(!lock){lock=createServer(s=>s.end(name+' · PID '+process.pid+' · fixture'));await new Promise((ok,no)=>{lock.once('error',no);lock.listen(join(dir,'lock.sock'),ok);});}
+  if(!ctx.sessionManager.getEntries().some(e=>e.type==='custom'&&e.customType==='optchat.profile'))pi.appendEntry('optchat.profile',{name});
+  if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
+ });
+ pi.on('session_shutdown',()=>{lock?.close();});
+ pi.registerProvider('anthropic',{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-anthropic',
+  models:[{id:'claude-opus-5-5',name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
+  streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
+   const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
+   void(async()=>{const last=context.messages.findLast(m=>m.role==='user'),said=typeof last?.content==='string'?last.content:(last?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
+    const name=pi.getFlag('optchat-profile'),turns=join(process.env.OPTCHAT_HOME,'turns');stream.push({type:'start',partial:message});
+    if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
+    const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
+    message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});stream.push({type:'done',reason:'stop',message});stream.end();})();
+   return stream;}});
+}`;
 
-/** A fresh canonical install (primary thread `primary`), made by the real canonicalSetup, plus local config. Sets EXO_CONFIG. */
-export async function liveFixture({ surfaceMain = existsSync(join(PLUGIN, 'dist', 'workspace-extension.js')) } = {}) {
+type Hook = (context: unknown) => Promise<{ action: string; message?: string }>;
+/** server.ts (package.json bb.server) registered against a mock BB; its RPC handlers and its message.dispatch hook. */
+async function serverRpc(vault: string) {
+  const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
+  const thread = (threadId: string) => ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env' });
+  const bb: any = { providers: { register() {} }, background: { service() {} }, realtime: { publish() {} }, ui: { registerMentionProvider() {} },
+    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
+    sdk: {
+      threads: {
+        async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return []; },
+        // BB creates the thread, then runs the dispatch pass on its first message before any provider sees it.
+        async spawn(args: { prompt: string; projectId: string }) {
+          const created = thread('primary');
+          for (const hook of hooks) {
+            const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn' });
+            if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
+          }
+          return created;
+        },
+      },
+      projects: { async list() { return [{ id: 'project', name: 'Exo' }]; }, async get() { return { id: 'project', sources: [{ hostId: 'host', path: vault }] }; } },
+    } };
+  (await import(pathToFileURL(join(PLUGIN, 'server.ts')).href)).default(bb);
+  return handlers;
+}
+
+/** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
+export async function liveFixture() {
+  if (!existsSync(join(PLUGIN, 'dist', 'canonical-initialization.js')) || !existsSync(join(PLUGIN, 'dist', 'optchat-init.js'))) throw new Error('Run npm run build:owner && npm run build:runtime first (the packaged runtime is what the owner launches)');
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'exo-live-')));
-  const home = join(root, 's'), optchatHome = join(root, 'o'), vault = join(root, 'v'), optchat = join(root, 'optchat'), piCli = join(root, 'pi.mjs');
+  const home = join(root, 's'), optchatHome = join(root, 'o'), vault = join(root, 'v'), optchat = join(root, 'optchat');
   mkdirSync(vault); writeFileSync(join(vault, 'AGENTS.md'), '# Vault\n');
-  mkdirSync(join(optchat, 'src'), { recursive: true }); writeFileSync(join(optchat, 'src', 'profiles.ts'), FAKE_PROFILES); writeFileSync(piCli, FAKE_PI);
+  mkdirSync(join(optchat, 'src'), { recursive: true });
+  writeFileSync(join(optchat, 'package.json'), JSON.stringify({ name: 'pi-optchat', version: '0.8.6', type: 'module', pi: { extensions: ['./src/index.js'] } }));
+  writeFileSync(join(optchat, 'src', 'profiles.ts'), FAKE_PROFILES); writeFileSync(join(optchat, 'src', 'index.js'), FAKE_OPTCHAT);
+  // The installer's local config names the state homes and profile; setup confirms the rest and refuses any conflict.
   const config = join(root, 'exosurface.json');
-  writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: PROFILE, primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli, ...(surfaceMain ? {} : { surfaceMain: 'off' }) }));
-  process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import.
-  const { canonicalSetup } = await import(pathToFileURL(join(PLUGIN, 'legacy/primary/src/canonical-setup.ts')).href);
-  const { INITIALIZATION } = await import(pathToFileURL(join(PLUGIN, 'legacy/primary/src/canonical-fresh.ts')).href);
-  const { consumeCanonicalInitialization, initializationControl } = await import(pathToFileURL(join(PLUGIN, 'legacy/primary/src/canonical-control.ts')).href);
-  const request = { operationId: 'fixture-operation', authorizeInitialization: true, home, optchatHome, profile: PROFILE, vault, piCli, optchat, projectId: 'project' };
-  await canonicalSetup(request, {
-    nativeDispatchAllowed: true,
-    async configureLocal() { for (const d of ['pi-config', 'setup-home', 'setup-tmp']) mkdirSync(join(home, d), { recursive: true }); },
-    async createProfile() { const d = join(optchatHome, 'profiles', PROFILE); mkdirSync(d, { recursive: true }); writeFileSync(join(d, 'config.json'), JSON.stringify({ compactor: { provider: 'fixture', model: 'compactor', thinking: 'low' }, subagent: { provider: 'fixture', model: 'subagent', thinking: 'high' } })); writeFileSync(join(d, 'AGENTS.md'), INSTRUCTIONS); },
-    async validateProfile() {},
-    async initializeSession() { const id = 'primary-session', file = join(optchatHome, 'pi-sessions', `${id}.jsonl`); mkdirSync(join(optchatHome, 'pi-sessions'), { recursive: true }); if (!existsSync(file)) writeFileSync(file, [{ type: 'session', id }, { type: 'message', message: { role: 'user', content: [{ type: 'text', text: INITIALIZATION }] } }, { type: 'custom', customType: 'optchat.profile', data: { name: PROFILE } }].map(e => JSON.stringify(e)).join('\n') + '\n'); return { id, file }; },
-    async spawnThread(r: { home: string; operationId: string }) { consumeCanonicalInitialization(r.home, 'primary', [{ type: 'text', text: initializationControl(r.operationId) }]); return { id: 'primary' }; },
-    async verifyThread() {},
-  });
-  return { root, home, optchatHome, vault, config, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
+  process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
+  const rpc = await serverRpc(vault);
+  const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
+  // The person's own instructions, written after setup: every Exo thread must read exactly these.
+  writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
+  return { root, home, optchatHome, vault, config, rpc, setup, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 
-/** The release owner as launchd runs it, from source. Resolves once its socket answers. */
+/** The release owner as launchd runs it, from source. Resolves once it reports ready. */
 export async function owner(f: Fixture) {
   const child = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] });
   let errors = ''; child.stderr!.on('data', b => { errors += b; });
   const state = join(f.home, 'owner', 'state.json');
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 600; i++) {
     if (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
     if (child.exitCode !== null) break;
     await new Promise(r => setTimeout(r, 25));
   }
   child.kill(); throw new Error(`Owner did not become ready: ${existsSync(state) ? readFileSync(state, 'utf8') : 'no state'}\n${errors}`);
-}
-
-/** server.ts (package.json bb.server) registered against a mock BB; returns its RPC handlers. */
-export async function serverRpc() {
-  const handlers: Record<string, (input: unknown) => Promise<any>> = {};
-  const thread = (threadId: string) => ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env' });
-  const bb: any = { providers: { register() {} }, experimental_hooks: { on() {} }, background: { service() {} }, realtime: { publish() {} }, ui: { registerMentionProvider() {} }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
-    sdk: { threads: { async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return []; }, async spawn() { throw new Error('mock BB: no spawn'); } }, projects: { async list() { return []; }, async get() { return {}; } } } };
-  (await import(pathToFileURL(join(PLUGIN, 'server.ts')).href)).default(bb);
-  return handlers;
 }
 
 export type BridgeLine = { at: number; value: any };
@@ -107,7 +125,7 @@ export function bridge(f: Fixture) {
   child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) lines.push({ at: Date.now() - t0, value: JSON.parse(l) }); } });
   const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
-  const response = async (n: number, ms = 8000) => {
+  const response = async (n: number, ms = 15000) => {
     for (let waited = 0; waited <= ms; waited += 20) { const hit = lines.find(l => l.value.id === n); if (hit) return hit.value; await new Promise(r => setTimeout(r, 20)); }
     throw new Error(`No response to request ${n}: ${errors}`);
   };
@@ -126,7 +144,7 @@ export function bridge(f: Fixture) {
       return answer;
     },
     send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
-    async settled(threadIds: string[], ms = 8000) {
+    async settled(threadIds: string[], ms = 20000) {
       for (let waited = 0; !threadIds.every(t => turn(t).end); waited += 20) {
         if (waited > ms) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
         await new Promise(r => setTimeout(r, 20));
