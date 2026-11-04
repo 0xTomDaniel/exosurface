@@ -176,6 +176,3 @@ const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurfa
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
-// Each scenario has stopped its processes and removed its fixture. React's act, run by the SDK's emitRealtime in this bundled
-// app, leaves MessageChannel ports open (parallel), so the demo exits here instead of waiting on them.
-process.exit(process.exitCode ?? 0);

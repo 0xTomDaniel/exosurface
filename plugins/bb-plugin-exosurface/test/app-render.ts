@@ -24,6 +24,9 @@ export async function renderedApp() {
     const entry = `export * from ${JSON.stringify(join(modules, '@get-bb/plugin-sdk/dist/testing/app.js'))};export * as testing from ${JSON.stringify(join(modules, '@testing-library/react/dist/index.js'))};export {default as app} from ${JSON.stringify(join(PLUGIN, 'app.tsx'))};`;
     await build({ stdin: { contents: entry, resolveDir: PLUGIN, loader: 'js' }, bundle: true, format: 'esm', platform: 'node', outfile: join(out, 'app.mjs'), jsx: 'automatic', logLevel: 'silent',
       loader: { '.css': 'text' }, external: ['jsdom'],
+      // React's act queues its tasks on a new MessageChannel in this bundle (its Node setImmediate lookup fails here) and never
+      // closes it, so the open ports keep the process alive. In the bundle only: a port pair that delivers on setImmediate.
+      banner: { js: 'const MessageChannel=class{constructor(){const c=this;this.port1={onmessage:null};this.port2={postMessage:d=>setImmediate(()=>c.port1.onmessage?.({data:d}))};}};' },
       alias: { react: join(modules, 'react'), 'react-dom': join(modules, 'react-dom'), 'react/jsx-runtime': join(modules, 'react/jsx-runtime.js') } });
     const kit = await import(pathToFileURL(join(out, 'app.mjs')).href);
     const app = await kit.loadPluginApp(kit.app);
