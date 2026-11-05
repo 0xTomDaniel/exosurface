@@ -2,7 +2,7 @@
 // "surface" is a canvas component group, hence "thread" here). Lists surfaces only, never pages: Home (the primary thread)
 // always first, then every other surface, flat. New surface is the one button that starts new work.
 import {useCallback,useEffect,useState} from 'react';
-import {useRpc} from '@get-bb/plugin-sdk/app';
+import {useRpc,useRealtime} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
 type Row={threadId:string;title:string;home:boolean};
 /** `inView` is the thread in view; null is Home. */
@@ -11,6 +11,8 @@ export function ThreadSidebar({inView,onView}:{inView:string|null;onView:(thread
  const[threads,setThreads]=useState<Row[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const refresh=useCallback(()=>rpc.call('thread_list',null).then(v=>{setThreads(v.threads);setError('');},e=>setError(String(e))),[rpc]);
  useEffect(()=>{void refresh();},[refresh]);
+ // A surface named after its first turn (#82, spec N7): the server signals it; the list is read again.
+ useRealtime('surface-names',()=>{void refresh();});
  const create=async()=>{setBusy(true);setError('');try{const made=await rpc.call('thread_new',null);onView(made.threadId);await refresh();}catch(e){setError(String(e));}finally{setBusy(false);}};
  const current=(t:Row)=>t.home?inView===null:inView===t.threadId;
  return <nav aria-label="Surfaces" className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border p-3 text-sm">

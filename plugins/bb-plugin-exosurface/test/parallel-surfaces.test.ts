@@ -95,8 +95,11 @@ test('send on a surface, open Home before Exo finishes, send on Home: each Exo b
   await new Promise(r => setTimeout(r, 1000));
   assert.deepEqual([...new Set(inView.slice(home))], ['Home']);
   assert.ok(published.some(p => p.channel === 'surface-thread' && p.threadId === surface && p.at >= home), JSON.stringify(published));
-  open('New surface');
-  await until('the surface in view', () => current().join() === 'New surface');
+  // After its first turn the surface has its name from the namer (#82, spec N7): the fixture's model answers it.
+  const named = f.model.state.reply;
+  await until('the surface named', () => [...sidebar().querySelectorAll('li button')].some(b => b.textContent === named));
+  open(named);
+  await until('the surface in view', () => current().join() === named);
   await until('the surface\'s reply in its block', () => block()?.textContent === `Exo (${profile}): together: book the cabin`);
   assert.equal(pageText().includes('plan the week'), false);
   open('Home');

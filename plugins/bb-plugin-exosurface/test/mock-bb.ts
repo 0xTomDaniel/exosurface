@@ -4,7 +4,9 @@
 // the packaged runtime (dist/, so build:owner and build:runtime first), and the real Pi 1.1 CLI.
 // Fake only at the boundaries: BB (sdk + JSON-RPC peer; spawn runs the registered dispatch hook as BB does), OptChat (a
 // Pi extension holding the profile lock and binding entry, plus its profile API module) and the model (Pi's `anthropic`
-// provider replaced by an offline stream).
+// provider replaced by an offline stream; a Pi that loads no extension, as the surface namer, reaches the fake model over
+// HTTP, test/fake-model-http.ts, through the agent folder's models.json).
+import { fakeModelHttp } from './fake-model-http.ts';
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, realpathSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -68,15 +70,34 @@ async function serverRpc(vault: string) {
   const threads = new Map<string, any>(), spawns: any[] = [], sends: any[] = [];
   // The thread's provider as BB reaches it on a send (a test sets deliver to its host.ts bridge); unset, sends are only recorded.
   const provider: { deliver?: (threadId: string, text: string) => void } = {};
-  const thread = (threadId: string) => threads.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
+  // Threads read but not spawned here keep their updates (title) beside, so spawned ids stay as they were.
+  const others = new Map<string, any>(), metadata = new Map<string, Record<string, unknown>>();
+  const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
+  // BB's thread lifecycle events (bb.events) and the plugin's log lines.
+  const listeners: Record<string, ((payload: any) => unknown)[]> = {}, logs: string[] = [];
+  /** BB fires thread.idle when a thread's turn ends; resolves once every listener has returned. */
+  const idle = async (threadId: string) => { await Promise.all((listeners['thread.idle'] ?? []).map(h => h({ thread: thread(threadId), lastAssistantText: null }))); };
   // BB's realtime: what the plugin publishes goes to a test's app view (deliver); unset, it is dropped. Background services
   // are registered here and run only once a test starts them (streams()).
   const realtime: { deliver?: (channel: string, payload: unknown) => void } = {}, services: { name: string; start: (signal: AbortSignal) => Promise<void> }[] = [];
   const bb: any = { providers: { register() {} }, background: { service(name: string, s: { start: (signal: AbortSignal) => Promise<void> }) { services.push({ name, start: s.start }); } }, realtime: { publish(channel: string, payload: unknown) { realtime.deliver?.(channel, payload); } }, ui: { registerMentionProvider() {} },
+    events: { on(name: string, handler: (payload: any) => unknown) { (listeners[name] ??= []).push(handler); } },
+    log: Object.fromEntries(['debug', 'info', 'warn', 'error'].map(level => [level, (m: string) => { logs.push(`${level}: ${m}`); }])),
     experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
     sdk: {
       threads: {
         async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return [...threads.values()]; },
+        async update({ threadId, title }: { threadId: string; title?: string | null }) {
+          const t = thread(threadId); if (title !== undefined) t.title = title;
+          if (!threads.has(threadId)) others.set(threadId, t);
+          return t;
+        },
+        // The plugin's own namespace of a thread's metadata; set merges keys, as BB does.
+        async getPluginMetadata({ threadId }: { threadId: string }) { return { ...(metadata.get(threadId) ?? {}) }; },
+        async updatePluginMetadata({ threadId, set = {}, remove = [] }: { threadId: string; set?: Record<string, unknown>; remove?: string[] }) {
+          const next = { ...(metadata.get(threadId) ?? {}), ...set }; for (const k of remove) delete next[k];
+          metadata.set(threadId, next); return { ...next };
+        },
         // BB creates the thread, then runs the dispatch pass on its first message before any provider sees it.
         async spawn(args: { prompt: string; projectId: string; parentThreadId?: string; title?: string; providerId: string; environment: unknown }) {
           spawns.push(args);
@@ -111,7 +132,7 @@ async function serverRpc(vault: string) {
     for (const s of services) if (s.name !== 'workspace-stream') s.start(stop.signal).catch(e => { if (!stop.signal.aborted) throw e; });
     return () => stop.abort();
   };
-  return { handlers, spawns, sends, provider, realtime, streams };
+  return { handlers, spawns, sends, provider, realtime, streams, idle, logs, title: (threadId: string) => thread(threadId).title as string | null, metadata: (threadId: string) => metadata.get(threadId) ?? {} };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -127,11 +148,13 @@ export async function liveFixture() {
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
-  const { handlers: rpc, spawns, sends, provider, realtime, streams } = await serverRpc(vault);
+  // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply.
+  const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, idle, logs, title, metadata } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, idle, logs, title, metadata, model, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
@@ -157,7 +180,11 @@ export function bridge(f: Fixture) {
   const child: ChildProcess = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] });
   const t0 = Date.now(), lines: BridgeLine[] = [], providers = new Map<string, string>(); let buffer = '', errors = '', id = 0;
   child.stdout!.setEncoding('utf8'); child.stderr!.on('data', b => { errors += b; });
-  child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) lines.push({ at: Date.now() - t0, value: JSON.parse(l) }); } });
+  // As BB does when a turn ends (the bridge's turn.boundary), the thread goes idle: thread.idle to the plugin's listeners.
+  child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) {
+    const value = JSON.parse(l); lines.push({ at: Date.now() - t0, value });
+    if (value.method === 'thread/delta' && value.params.deltas.some((d: any) => d.kind === 'turn.boundary')) void f.idle(value.params.threadId);
+  } } });
   const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {

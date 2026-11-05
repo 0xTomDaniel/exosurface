@@ -1,7 +1,9 @@
 import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT } from './src/state.ts';
-import { local, LOCAL_CONFIG } from './src/local-config.ts';
+import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI, threadProfile } from './src/state.ts';
+import { local, LOCAL_CONFIG, requireLocal } from './src/local-config.ts';
+import { NEW_SURFACE, NAME_RECORD, namerChoice, firstTurn, namePrompt, callNamer, type NameRecord } from './src/surface-name.ts';
+import type { ModelChoice } from '../../src/config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
 import { consumeCanonicalInitialization } from './src/canonical-control.ts';
@@ -63,6 +65,35 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     save(bindingFile(ctx.thread.id), { providerThreadId: `exo:${attach[1]}:${attach[2]}`, profile: attach[1], childId: attach[2], cursor: current?.cursor ?? 0 });
     return { action: 'proceed' };
   });
+  // Surface auto-name (#82; the rule: src/surface-name.ts). Acts only on a bound surface still titled "New surface" with no
+  // name record; the name is the BB thread title the sidebar lists, the record on its plugin metadata. Home is never bound.
+  const naming = new Set<string>();
+  const nameSurface = async (threadId: string) => {
+    if (naming.has(threadId) || !isBoundThread(threadId)) return;
+    naming.add(threadId);
+    try {
+      if (((await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE) !== NEW_SURFACE) return;
+      if ((await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD]) return;
+      const turn = await firstTurn(sessionOf(threadId));
+      if (!turn) return; // only the New surface start so far: no person's message yet
+      const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
+      let choice: ModelChoice | undefined;
+      try {
+        choice = namerChoice(join(CANONICAL_HOME, 'profiles', threadProfile(threadId))).choice;
+        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), cwd: HOME });
+        await bb.sdk.threads.update({ threadId, title: name });
+        await record({ by: 'exo', state: 'named', name, model: `${choice.provider}/${choice.model}`, thinking: choice.thinking, at: new Date().toISOString(), ...(usage ? { usage } : {}) });
+        bb.log.info(`Surface ${threadId} named "${name}" by ${choice.provider}/${choice.model} thinking ${choice.thinking}${usage ? ` (${usage.input} in, ${usage.output} out tokens)` : ''}`);
+        bb.realtime.publish('surface-names', { threadId, title: name });
+      } catch (e) {
+        const reason = (e instanceof Error ? e.message : String(e)).replace(/\s+/g, ' ').slice(0, 400);
+        bb.log.warn(`Surface ${threadId} keeps "${NEW_SURFACE}": naming failed${choice ? ` on ${choice.provider}/${choice.model} thinking ${choice.thinking}` : ''}: ${reason}`);
+        await record({ by: 'exo', state: 'failed', reason, ...(choice ? { model: `${choice.provider}/${choice.model}`, thinking: choice.thinking } : {}), at: new Date().toISOString() });
+      }
+    } catch (e) { bb.log.error(`Surface ${threadId} naming check failed: ${e instanceof Error ? e.message : String(e)}`); }
+    finally { naming.delete(threadId); }
+  };
+  bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
   const awaiting = new Map<string, string | null>(); // thread -> its latest person's entry when the input sent
   registerRpc(rpcContract, {
