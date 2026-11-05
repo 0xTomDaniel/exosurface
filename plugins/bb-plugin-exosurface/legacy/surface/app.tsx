@@ -14,7 +14,7 @@ import {stagePlan,nativeFocus,surfaceTitle} from './src/stage';
 import {exoReactCatalog} from './src/exo-components';
 import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
-import {ExoBlock,SurfaceInput} from './src/exo-turn';
+import {ExoBlock,SurfaceInput,onSend} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 import {SurfaceTitle} from './src/surface-title';
 type Local={id:string;nativeFocus:string|undefined}|null;
@@ -150,6 +150,10 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  useRealtime('pending-restore',v=>{if(!v)setRewind(null);});
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
  const serial=useRef(0),recover=useRef<()=>void>(()=>{});
+ // A send brings the top of the surface into view (title, page strip, the new bubble), wherever the person had scrolled
+ // (owner walkthrough on PR #89; spec E8, F1/F4: each send starts following). Instant, so the bubble is there at once.
+ const scroller=useRef<HTMLElement>(null);
+ useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId&&scroller.current)scroller.current.scrollTop=0;}),[]);
  async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
@@ -172,7 +176,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  },[ticks,busy,state?.threadId,rpc]);
  return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme}</style>
-  <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
+  <main ref={scroller} aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-top">
     <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}

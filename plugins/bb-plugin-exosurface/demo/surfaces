@@ -194,12 +194,17 @@ async function opening() {
     await until('the sidebar', () => [...(sidebar()?.querySelectorAll('li button') ?? [])].some(b => b.textContent === 'Garden plan'));
     fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === 'Garden plan'));
     const sends = ['draw week: Week plan', 'draw beds: Garden beds', 'add a row of tomatoes'], latest = sends.at(-1);
+    let scroll = '';
     for (const text of sends) {
       await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
+      // The person has scrolled down the surface before the latest send (jsdom: the scroll container's position only).
+      if (text === latest) main().scrollTop = 400;
+      const was = main().scrollTop;
       fireEvent.change(input(), { target: { value: text } });
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
-      if (text === latest) { await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
+      if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send`; console.log(`  ${scroll}`);
+        await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
       await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
     await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
@@ -219,7 +224,7 @@ async function opening() {
     console.log(`earlier messages ${sends.slice(0, -1).map(t => JSON.stringify(t)).join(', ')}: ${first ? 'SHOWN' : 'absent'}`);
     const order = parts.map(kind).join(' > ');
     console.log(`order: ${order}`);
-    const ok = order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
+    const ok = scroll === 'scrolled 400 -> 0 after send' && order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
       && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
     if (!ok) throw new Error('opening failed');
   } finally {

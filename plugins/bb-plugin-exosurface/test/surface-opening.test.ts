@@ -5,6 +5,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { waiter } from './wait.ts';
 import { renderedApp, rightAligned, boxed } from './app-render.ts';
@@ -60,6 +61,28 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   // Nothing of the first message or its reply.
   assert.equal(view.container.textContent!.includes('draw: Week plan'), false);
   assert.equal(input()!.value, '');
+});
+
+test('a send scrolls the surface back to its top; a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
+  // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout: it proves the scroll request reaches the surface's
+  // scroll container (its scrollTop); that the title, page strip and bubble then show on screen is the owner's RDP re-check.
+  // jsdom does not upgrade the A2UI page's custom elements, so the press is the one the page's button sends, through the
+  // action RPC: the app hears of it only by its turn and the polls that follow.
+  const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
+  scroller.scrollTop = 400;
+  assert.ok(scroller.scrollTop === 400, `scrolled down: ${scroller.scrollTop}`);
+  const drawn = (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint;
+  const surfaceId = drawn.messages.find((m: any) => m.createSurface).createSurface.surfaceId, at = revision();
+  const button = drawn.messages.flatMap((m: any) => m.updateComponents?.components ?? []).find((n: any) => n.action?.event);
+  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, 'Grace']));
+  const pressed = await f.rpc.action({ threadId: 'primary', revision: drawn.revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json'] } } } });
+  assert.ok(pressed.accepted === true, JSON.stringify(pressed));
+  await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
+  assert.ok(scroller.scrollTop === 400, `after a press, Exo's turn and polls: ${scroller.scrollTop}`);
+  await send('and Saturday too');
+  await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Saturday too');
+  assert.ok(main() === scroller && scroller.scrollTop === 0, `after a send: ${scroller.scrollTop}`);
+  await until('the send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Saturday too');
 });
 
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
