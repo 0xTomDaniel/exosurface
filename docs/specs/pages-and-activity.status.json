@@ -1,6 +1,6 @@
 {
   "spec": "pages-and-activity.spec.html",
-  "accepted_commit": "3666191",
+  "accepted_commit": "c05db7956981977da4bed85cba04c343093c1c40",
   "criteria": {
     "acceptance-no-chat": {
       "status": "built",
