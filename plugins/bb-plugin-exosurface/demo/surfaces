@@ -184,7 +184,7 @@ async function opening() {
   const surface = (await f.rpc.thread_new(null)).threadId;
   f.retitle(surface, 'Garden plan'); // BB's stored name of the thread
   const started = await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
-  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const { kit, app, close, browser } = await renderedApp(), { fireEvent } = kit.testing;
   const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   const main = () => view.container.querySelector('main'), sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
   const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
@@ -199,11 +199,11 @@ async function opening() {
       await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
       // The person has scrolled down the surface before the latest send (jsdom: the scroll container's position only).
       if (text === latest) main().scrollTop = 400;
-      const was = main().scrollTop;
+      const was = main().scrollTop, asked = browser.scrolls.length;
       fireEvent.change(input(), { target: { value: text } });
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
-      if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send`; console.log(`  ${scroll}`);
+      if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send, requested ${JSON.stringify(browser.scrolls.slice(asked))}`; console.log(`  ${scroll}`);
         await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
       await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
@@ -224,8 +224,19 @@ async function opening() {
     console.log(`earlier messages ${sends.slice(0, -1).map(t => JSON.stringify(t)).join(', ')}: ${first ? 'SHOWN' : 'absent'}`);
     const order = parts.map(kind).join(' > ');
     console.log(`order: ${order}`);
-    const ok = scroll === 'scrolled 400 -> 0 after send' && order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
+    const viewOk = scroll.startsWith('scrolled 400 -> 0 after send') && order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
       && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
+    // The same send to top for a person who asked their system for reduced motion (jsdom: the requested scroll only; the
+    // visible easing is the owner's RDP re-check).
+    browser.reducedMotion = true; main().scrollTop = 400;
+    const again = 'and some basil', before = browser.scrolls.length;
+    fireEvent.change(input(), { target: { value: again } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the reduced-motion send accepted', () => input().value === '' && said()?.textContent === again);
+    const reduced = JSON.stringify(browser.scrolls.slice(before)), behavior = r => r === '[{"top":0,"behavior":"smooth"}]' ? 'smooth' : r === '[{"top":0,"behavior":"auto"}]' ? 'instant' : `UNEXPECTED ${r}`;
+    const requested = `scroll to top requested: ${behavior(scroll.slice(scroll.indexOf('requested ') + 10))} (reduced motion: ${behavior(reduced)})`;
+    console.log(requested);
+    await until('the reply to the reduced-motion send', () => reply()?.textContent?.endsWith(`: ${again}`));
+    const ok = requested === 'scroll to top requested: smooth (reduced motion: instant)' && viewOk;
     if (!ok) throw new Error('opening failed');
   } finally {
     view.unmount(); close();

@@ -154,9 +154,10 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
  const serial=useRef(0),recover=useRef<()=>void>(()=>{});
  // A send brings the top of the surface into view (title, page strip, the new bubble), wherever the person had scrolled
- // (owner walkthrough on PR #89; spec E8, F1/F4: each send starts following). Instant, so the bubble is there at once.
+ // (owner walkthrough on PR #89; spec E8, F1/F4: each send starts following). The browser's eased scroll, or an instant
+ // jump for a person who asked for reduced motion.
  const scroller=useRef<HTMLElement>(null);
- useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId&&scroller.current)scroller.current.scrollTop=0;}),[]);
+ useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId&&scroller.current)scroller.current.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}),[]);
  async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),CATALOGS);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
