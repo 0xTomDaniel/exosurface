@@ -27,7 +27,7 @@ export const saveConfig=(d,c)=>writeFileSync(join(d,'config.json'),JSON.stringif
 export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
-// optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
+// optchat.profile session entry. The model: a "call: <JSON>" prompt makes that one update_exosurface call; a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
 // a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
 // runs however long that takes ("hold: quiet: ..." is a held turn with no words).
@@ -63,6 +63,11 @@ export default function optchat(pi){
     const page=/^draw ([a-z]+): (.+?)(?: beside ([a-z]+))?$/.exec(said),stale=messages.at(-1)?.role==='toolResult'?/the surface is at revision (\\d+)/.exec(textOf(messages.at(-1))):null;
     if(page&&(messages.at(-1)?.role==='user'||stale)){const[,ref,title,beside]=page,revision=Number(stale?.[1]??0);
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:revision,snapshot:'- region '+JSON.stringify(title)+' [ref='+ref+']:\\n  - heading '+JSON.stringify(title)+' [ref=title]',...(beside?{focus:ref,beside:[beside]}:{})}};
+     message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
+     stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+    // "call: <JSON>" makes one update_exosurface call with exactly those arguments, well-formed or not, then answers.
+    if(said.startsWith('call: ')&&messages.at(-1)?.role==='user'){
+     const toolCall={type:'toolCall',id:'call_'+Date.now(),name:'update_exosurface',arguments:JSON.parse(said.slice(6))};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.startsWith('hold:'))for(const end=Date.now()+60000;!existsSync(join(process.env.OPTCHAT_HOME,'release',name))&&Date.now()<end;)await sleep(25);

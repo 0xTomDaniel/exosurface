@@ -3,10 +3,11 @@
 // harness (test/mock-bb.ts): server.ts RPC (canonical_setup, thread_bind), host.ts provider bridge and the release owner
 // (legacy/primary) on the real Pi CLI; fake BB, OptChat and model at the boundary. Needs build:owner and build:runtime.
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
-import { rmSync } from 'node:fs';
+import { rmSync, readFileSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
-import { waiter } from '../test/wait.ts';
+import { waiter, settled } from '../test/wait.ts';
+import { reapOnExit } from '../test/reap.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -363,7 +364,45 @@ async function secondBundle() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats };
+// #108: update_exosurface calls carrying each argument-format error, then a well-formed one, from the (fake) model through
+// the release owner's Pi; each tool result as Exo receives it, read from the Pi session. Plain words, never raw schema text.
+async function badArguments() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const until = waiter(() => host.errors());
+  const snapshot = '- region "Week plan" [ref=week]:\n  - heading "Week plan" [ref=title]';
+  const calls = [
+    ['baseRevision missing', { snapshot }], ['baseRevision -1', { baseRevision: -1, snapshot }], ['baseRevision 1.5', { baseRevision: 1.5, snapshot }],
+    ['edit op "bogus"', { baseRevision: 0, edits: [{ page: 'week', ref: 'title', op: 'bogus', lines: '- heading "Plan" [ref=title]' }] }],
+    ['edit ref missing', { baseRevision: 0, edits: [{ page: 'week', op: 'remove' }] }], ['edit page missing', { baseRevision: 0, edits: [{ ref: 'title', op: 'remove' }] }],
+    ['well-formed draw', { baseRevision: 0, snapshot }],
+  ];
+  const results = () => { const file = f.piRuns()[0]?.sessionFile; return file ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(e => e.type === 'message' && e.message.role === 'toolResult' && e.message.toolName === 'update_exosurface').map(e => e.message) : []; };
+  try {
+    let raw = 0;
+    for (const [i, [name, args]] of calls.entries()) {
+      host.send('primary', `call: ${JSON.stringify(args)}`);
+      await until(`the result of ${name}`, () => results().length === i + 1 && host.deltas('primary').filter(d => d.kind === 'turn.boundary').length === i + 1);
+      const r = results()[i], text = r.content.map(c => c.text).join('');
+      const isRaw = /Validation failed|Received arguments/.test(text); raw += isRaw ? 1 : 0;
+      console.log(`${name.padEnd(20)} ${r.isError ? 'error ' : 'saved '} ${isRaw ? 'RAW SCHEMA TEXT ' : ''}${JSON.stringify(text)}`);
+    }
+    const page = await f.rpc.workspace({ deployment: 'main', cursor: null });
+    console.log(`surface after the calls: revision ${page.revision}`);
+    if (raw || page.revision !== 1 || results().slice(0, -1).some(r => !r.isError) || results().at(-1).isError) throw new Error('bad-arguments failed');
+  } finally {
+    // The fixture's processes: the bridge, the owner and the Pi the owner started (its pid from the fake OptChat's record).
+    // Each must be seen gone by a wall-clock deadline before the fixture is removed; else its state stays for diagnosis.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+const SCENARIOS = { 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
