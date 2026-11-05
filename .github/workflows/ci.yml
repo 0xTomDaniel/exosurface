@@ -20,11 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      # Exact pin: sha of release tag v7.0.1 (lightweight tag), runs.using node24.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Node 22: the repo has no pin file; sebox pins node 22 through mise, and
       # plugins/bb-plugin-exosurface/package.json engines needs node >=22.19.0 (22 resolves to latest 22.x).
-      - uses: actions/setup-node@v4
+      # Exact pin: sha of release tag v7.1.0 (lightweight tag), runs.using node24.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
