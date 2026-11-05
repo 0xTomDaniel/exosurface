@@ -27,8 +27,10 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
-// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs.
-const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+// a "slow:" prompt is answered only once the test releases it (release(f, 'slow')), so another surface opens while it runs; a "steps: <topic>" prompt is
+// answered in several steps: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
+// with no bold headline (as Claude's summaries may come), then the reply. It holds each step until stepsTurn has seen its line.
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,rmSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
@@ -52,11 +54,21 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-    if(said.startsWith('slow:'))await sleep(3000);
+    if(said.startsWith('steps: ')){const topic=said.slice(7).trim(),at=context.messages.at(-1)?.role;
+     const hold=async n=>{const gate=join(process.env.OPTCHAT_HOME,'steps',topic+'-'+n);for(let i=0;i<1200&&!existsSync(gate);i++)await sleep(25);rmSync(gate,{force:true});};
+     const think=async deltas=>{const block={type:'thinking',thinking:''},i=message.content.push(block)-1;stream.push({type:'thinking_start',contentIndex:i,partial:message});
+      for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(50);}
+      stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});};
+     if(at==='user'){await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);await hold(1);
+      const toolCall={type:'toolCall',id:'read_'+Date.now(),name:'read',arguments:{path:topic+'.md'}};message.content.push(toolCall);message.stopReason='toolUse';
+      stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
+      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+     await hold(2);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(3);}
+    if(said.startsWith('slow:')){const gate=join(process.env.OPTCHAT_HOME,'release','slow');for(let i=0;i<2400&&!existsSync(gate);i++)await sleep(25);rmSync(gate,{force:true});}
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
-    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
+    if(!said.startsWith('quiet:')){const at=message.content.push({type:'text',text})-1;stream.push({type:'text_start',contentIndex:at,partial:message});stream.push({type:'text_delta',contentIndex:at,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:at,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
 
@@ -199,4 +211,25 @@ export function ownerRequest(f: Fixture, value: object) {
       socket.write(JSON.stringify({ id: 'probe', ...value }) + '\n');
     });
   });
+}
+
+/** A "steps: <topic>" send on a surface (the fake model above): records each change of what the surface's exo_block reports
+ * until Exo's turn has ended. The model holds each step until its line has been seen here, so none is missed under load. */
+export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}) {
+  const blocks: any[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
+  mkdirSync(gates, { recursive: true });
+  await f.rpc.exo_send({ threadId, text: `steps: ${topic}` });
+  for (let waited = 0; ; waited += 25) {
+    if (waited > 60000) throw new Error(`Exo's turn did not end: ${JSON.stringify(blocks)}`);
+    const block = await f.rpc.exo_block({ threadId });
+    if (JSON.stringify(block) !== JSON.stringify(blocks.at(-1))) { blocks.push(block); seen(block); }
+    for (const lines = new Set(blocks.map(b => b.activity).filter(Boolean)).size; released < lines;) writeFileSync(join(gates, `${topic}-${++released}`), '');
+    if (!block.working) return blocks;
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
+
+/** Lets the fake model answer a turn it holds: "slow" (a "slow:" prompt). */
+export function release(f: Fixture, name: 'slow') {
+  mkdirSync(join(f.optchatHome, 'release'), { recursive: true }); writeFileSync(join(f.optchatHome, 'release', name), '');
 }

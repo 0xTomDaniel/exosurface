@@ -1,11 +1,11 @@
 // #70 (spec pages-and-activity S6, S9, F5): Exo works on several surfaces at once and never switches the surface in view.
 // The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send
 // goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat,
-// the model ("slow:" answers after 3 s; "together" answers only while another surface's turn runs too, else "ALONE").
+// the model ("slow:" answers once the test releases it; "together" answers only while another surface's turn runs too, else "ALONE").
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { liveFixture, owner, bridge, release } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
@@ -62,6 +62,7 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
   assert.equal((await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   profile = f.piRuns().at(-1).profile;
   assert.equal(host.turn('primary').end, undefined, 'Home\'s turn was still running when the other surface opened');
+  release(f, 'slow');
   await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): slow: plan the week'));
   // Home's block has caught up with its finished turn (its owner state and journal), then one more full poll of the page.
   for (let i = 0; i < 100 && (await f.rpc.exo_block({ threadId: 'primary' })).working; i++) await new Promise(r => setTimeout(r, 50));
