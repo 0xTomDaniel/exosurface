@@ -2,7 +2,7 @@ import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plu
 import { z } from 'zod';
 import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI } from './src/state.ts';
 import { local, LOCAL_CONFIG, requireLocal } from './src/local-config.ts';
-import { NEW_SURFACE, NAME_RECORD, namerChoice, personsFirst, replyTo, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
+import { NEW_SURFACE, NAME_RECORD, namerChoice, personsFirst, personsFirstInLog, EVENT_PAGE, replyTo, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
 import type { ModelChoice } from '../../src/config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
@@ -99,8 +99,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     try {
       if (((await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE) !== NEW_SURFACE) return;
       if ((await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD]) return;
-      const requested = await bb.sdk.threads.events.list({ threadId, types: ['client/turn/requested'], order: 'asc', limit: '200' });
-      const message = personsFirst(requested, NEW_THREAD_PROMPT) ?? (sent?.trim() ? sent : undefined);
+      const first = await personsFirstInLog(afterSeq => bb.sdk.threads.events.list({ threadId, types: ['client/turn/requested'], order: 'asc', limit: String(EVENT_PAGE), ...(afterSeq ? { afterSeq } : {}) }), NEW_THREAD_PROMPT);
+      const message = first ?? (sent?.trim() ? sent : undefined);
       if (message === undefined) return; // no message from the person yet (only New surface's start, an agent's or the system's)
       const turn = { message, reply: await replyTo(sessionOf(threadId), message) };
       const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
