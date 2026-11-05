@@ -29,8 +29,9 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
-// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs.
-const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+// a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
+// runs however long that takes.
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
@@ -54,7 +55,7 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-    if(said.startsWith('slow:'))await sleep(3000);
+    if(said.startsWith('hold:'))while(!existsSync(join(process.env.OPTCHAT_HOME,'release',name)))await sleep(25);
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
     if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
@@ -154,7 +155,9 @@ export async function liveFixture() {
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, idle, logs, title, metadata, model, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  /** Lets the profile's "hold:" turn be answered. */
+  const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, idle, logs, title, metadata, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
