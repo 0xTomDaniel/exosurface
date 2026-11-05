@@ -66,8 +66,8 @@ test('after a second send and Exo\'s finished turn: the name, the second message
 test('a send scrolls the surface back to its top; a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
   // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout: it proves the scroll request reaches the surface's
   // scroll container (its scrollTop); that the title, page strip and bubble then show on screen is the owner's RDP re-check.
-  // jsdom does not upgrade the A2UI page's custom elements, so the press is the one the page's button sends, through the
-  // action RPC: the app hears of it only by its turn and the polls that follow.
+  // The press is the one the page's button sends, through the action RPC: the app hears of it only by its turn and the
+  // polls that follow.
   const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
   scroller.scrollTop = 400;
   assert.ok(scroller.scrollTop === 400, `scrolled down: ${scroller.scrollTop}`);

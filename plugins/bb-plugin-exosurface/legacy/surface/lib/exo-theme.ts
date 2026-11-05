@@ -2,6 +2,7 @@
 // meaning tones; colour encodes meaning only. Rounded display face for a calm,
 // companionable voice; system text face for reading; tabular numerals for data.
 // Orbit blue / trail teal nod to the Exomachina orbital reference (not adopted brand).
+import {bundleTag} from '../src/bundle-tags';
 export const exoTheme=`
 .exo-canvas{
  --exo-ink:var(--foreground,#1d2128);--exo-paper:var(--background,#fff);--exo-quiet:var(--muted-foreground,#646b78);--exo-line:var(--border,#dde1e7);
@@ -59,8 +60,8 @@ export const exoTheme=`
 /* Basic catalog polish */
 .exo-generated .a2ui-text{overflow-wrap:break-word}
 /* Rows wrap instead of squashing: each item keeps a readable minimum width. */
-.exo-generated a2ui-basic-row{flex-wrap:wrap;gap:var(--a2ui-row-gap,.9rem)}
-.exo-generated a2ui-basic-row>:not(a2ui-basic-button){flex:1 1 12rem;min-width:0}
+.exo-generated ${bundleTag('a2ui-basic-row')}{flex-wrap:wrap;gap:var(--a2ui-row-gap,.9rem)}
+.exo-generated ${bundleTag('a2ui-basic-row')}>:not(${bundleTag('a2ui-basic-button')}){flex:1 1 12rem;min-width:0}
 .exo-generated .a2ui-text h1{font-family:var(--exo-display);font-size:1.75rem;line-height:1.15;font-weight:680;letter-spacing:-.02em;margin:0 0 .25rem;text-wrap:balance}
 .exo-generated .a2ui-text h2{font-family:var(--exo-display);font-size:1.22rem;line-height:1.25;font-weight:650;letter-spacing:-.01em;margin:.9rem 0 .15rem;text-wrap:balance}
 .exo-generated .a2ui-text h3,.exo-generated .a2ui-text h4{font-size:1rem;line-height:1.35;font-weight:650;margin:.5rem 0 .1rem}
