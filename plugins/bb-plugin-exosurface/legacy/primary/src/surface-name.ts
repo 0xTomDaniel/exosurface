@@ -13,10 +13,22 @@ import { PiRpc } from './pi-rpc.ts';
 
 export const NEW_SURFACE = 'New surface';
 export const DEFAULT_NAMER: ModelChoice = { provider: 'openai', model: 'gpt-6-luna', thinking: 'off' };
-/** The durable record on the BB thread (plugin metadata key): one per surface. #83 adds the person's rename to it. */
+/** The durable record on the BB thread (plugin metadata key): one per surface. Any record, Exo's or the person's rename
+ * (#83), means Exo never names that surface again. */
 export const NAME_RECORD = 'surfaceName';
 export type NameRecord = { by: 'exo'; state: 'named'; name: string; model: string; thinking: string; at: string; usage?: { input: number; output: number } }
-  | { by: 'exo'; state: 'failed'; reason: string; model?: string; thinking?: string; at: string };
+  | { by: 'exo'; state: 'failed'; reason: string; model?: string; thinking?: string; at: string }
+  | { by: 'person'; state: 'named'; name: string; at: string };
+
+/** The longest name the person may give a surface. */
+export const MAX_NAME = 80;
+/** The person's name for a surface: trimmed, inner whitespace one space; empty or longer than MAX_NAME throws. */
+export function personName(name: string) {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  if (!clean) throw new Error('A surface name cannot be empty');
+  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${MAX_NAME} characters`);
+  return clean;
+}
 
 /** The naming model from a profile's config.json: its "namer", or the default when absent. An invalid one throws. */
 export function namerChoice(profileDir: string): { choice: ModelChoice; from: 'profile' | 'default' } {
