@@ -150,14 +150,24 @@ export async function liveFixture() {
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
+// Every fixture child dies with the test process: on its exit (normal end, failure, or a test runner timeout) and on
+// SIGINT or SIGTERM. SIGTERM lets the owner stop its own Pi children first.
+const live = new Set<ChildProcess>();
+function reaped(child: ChildProcess) {
+  live.add(child); child.once('exit', () => live.delete(child));
+  return child;
+}
+process.once('exit', () => { for (const child of live) child.kill('SIGTERM'); });
+for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { for (const child of live) child.kill('SIGTERM'); process.exit(signal === 'SIGINT' ? 130 : 143); });
+
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 
 /** The release owner as launchd runs it, from source. Resolves once it reports ready. */
 export async function owner(f: Fixture) {
-  const child = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = reaped(spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] }));
   let errors = ''; child.stderr!.on('data', b => { errors += b; });
   const state = join(f.home, 'owner', 'state.json');
-  for (let i = 0; i < 600; i++) {
+  for (const end = Date.now() + 15000; Date.now() <= end;) {
     if (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
     if (child.exitCode !== null) break;
     await new Promise(r => setTimeout(r, 25));
@@ -169,14 +179,14 @@ export type BridgeLine = { at: number; value: any };
 /** host.ts (package.json bb.host) as BB runs it: a child process speaking JSON-RPC lines on stdio. */
 export function bridge(f: Fixture) {
   const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(join(PLUGIN, 'host.ts')).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
-  const child: ChildProcess = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] });
+  const child: ChildProcess = reaped(spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] }));
   const t0 = Date.now(), lines: BridgeLine[] = [], providers = new Map<string, string>(); let buffer = '', errors = '', id = 0;
   child.stdout!.setEncoding('utf8'); child.stderr!.on('data', b => { errors += b; });
   child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) lines.push({ at: Date.now() - t0, value: JSON.parse(l) }); } });
   const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {
-    for (let waited = 0; waited <= ms; waited += 20) { const hit = lines.find(l => l.value.id === n); if (hit) return hit.value; await new Promise(r => setTimeout(r, 20)); }
+    for (const end = Date.now() + ms; Date.now() <= end;) { const hit = lines.find(l => l.value.id === n); if (hit) return hit.value; await new Promise(r => setTimeout(r, 20)); }
     throw new Error(`No response to request ${n}: ${errors}`);
   };
   const deltas = (threadId: string) => lines.filter(l => l.value.method === 'thread/delta' && l.value.params.threadId === threadId).flatMap(l => l.value.params.deltas.map((d: any) => ({ at: l.at, ...d })));
@@ -196,8 +206,8 @@ export function bridge(f: Fixture) {
     },
     send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
     async settled(threadIds: string[], ms = 20000) {
-      for (let waited = 0; !threadIds.every(t => turn(t).end); waited += 20) {
-        if (waited > ms) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
+      for (const end = Date.now() + ms; !threadIds.every(t => turn(t).end);) {
+        if (Date.now() > end) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
         await new Promise(r => setTimeout(r, 20));
       }
     },

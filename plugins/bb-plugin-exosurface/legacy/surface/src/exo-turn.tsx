@@ -3,6 +3,8 @@
 // text, or that Exo is working; the person never writes in it.
 // The input sends a turn on the thread and is empty again once BB accepts it. There is no transcript: earlier turns
 // stay in the thread.
+// It floats over the bottom of the surface in the page's column (#80, S11): the page scrolls beneath it, and the content
+// under it fades out from its middle down.
 import {useCallback,useEffect,useState,type FormEvent,type KeyboardEvent} from 'react';
 import {Markdown,useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
@@ -41,10 +43,10 @@ export function SurfaceInput({threadId}:{threadId:string|null}){
  },[threadId,sending,text,rpc]);
  const submit=(e:FormEvent)=>{e.preventDefault();void send();};
  const keys=(e:KeyboardEvent<HTMLTextAreaElement>)=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}};
- return <form aria-label="Message Exo" onSubmit={submit} className="flex items-end gap-2 border-t border-border px-8 py-3">
+ return <div className="exo-dock"><div aria-hidden="true" className="exo-fade"/><form aria-label="Message Exo" onSubmit={submit} className="exo-input flex items-end gap-2">
   <textarea aria-label="Message" value={text} onChange={e=>setText(e.target.value)} onKeyDown={keys} rows={2} disabled={!threadId}
    placeholder={threadId?'Message Exo':'Exo is not attached yet.'} className="min-w-0 flex-1 resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm"/>
   <button type="submit" disabled={!threadId||sending||!text.trim()} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent">Send</button>
   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
- </form>;
+ </form></div>;
 }
