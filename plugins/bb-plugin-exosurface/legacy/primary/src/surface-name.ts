@@ -42,20 +42,35 @@ export function namerChoice(configFile: string): { choice: ModelChoice; from: 'c
 const said = (message: any) => typeof message?.content === 'string' ? message.content
   : (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
-/** The first turn in a Pi session journal: the person's first message and Exo's words after it. Reads forward, stops at the next. */
-export async function firstTurn(sessionFile: string | undefined): Promise<{ message: string; reply: string } | undefined> {
-  if (!sessionFile || !existsSync(sessionFile)) return undefined;
+/** Only the person's messages name a surface (owner ruling 2026-11-05): an agent's or the system's never does, nor uses up the
+ * once-only naming. BB records each admitted message as a client/turn/requested thread event with its author ("initiator",
+ * set by BB's resolveDispatchAuthor: "user" unless it came from another thread, "agent", or is a retry or notice, "system").
+ * The person's first message: the text of the first such event whose initiator is "user", other than `skip` (New
+ * surface's own control prompt); undefined when the person has sent nothing yet. */
+export function personsFirst(rows: readonly { type: string; data?: any }[], skip: string): string | undefined {
+  for (const row of rows) {
+    if (row.type !== 'client/turn/requested' || row.data?.initiator !== 'user') continue;
+    const text = (Array.isArray(row.data.input) ? row.data.input : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('\n');
+    if (text.trim() && text.trim() !== skip) return text;
+  }
+  return undefined;
+}
+
+/** Exo's words after `message` in a Pi session journal: the replies after the first person's entry holding that text, up to
+ * the next person's entry; empty when the journal holds no such entry or no reply yet. Reads forward. */
+export async function replyTo(sessionFile: string | undefined, message: string): Promise<string> {
+  if (!sessionFile || !existsSync(sessionFile)) return '';
   const lines = createInterface({ input: createReadStream(sessionFile, 'utf8'), crlfDelay: Infinity });
-  let message: string | undefined; const reply: string[] = [];
+  let found = false; const reply: string[] = [];
   try {
     for await (const line of lines) {
       let entry: any; try { entry = JSON.parse(line); } catch { continue; } // a line still being written
       if (entry?.type !== 'message') continue;
-      if (entry.message?.role === 'user') { if (message !== undefined) break; message = said(entry.message); }
-      else if (entry.message?.role === 'assistant' && message !== undefined) reply.push(said(entry.message));
+      if (entry.message?.role === 'user') { if (found) break; found = said(entry.message).trim() === message.trim(); }
+      else if (entry.message?.role === 'assistant' && found) reply.push(said(entry.message));
     }
   } finally { lines.close(); }
-  return message?.trim() ? { message, reply: reply.filter(Boolean).join('\n\n') } : undefined;
+  return reply.filter(Boolean).join('\n\n');
 }
 
 const SYSTEM = 'You name a conversation for a sidebar. Answer with only the name: 2 to 5 words, no quotes, no trailing punctuation.';

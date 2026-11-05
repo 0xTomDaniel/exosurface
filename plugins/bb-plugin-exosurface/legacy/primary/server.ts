@@ -2,7 +2,7 @@ import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plu
 import { z } from 'zod';
 import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI } from './src/state.ts';
 import { local, LOCAL_CONFIG, requireLocal } from './src/local-config.ts';
-import { NEW_SURFACE, NAME_RECORD, namerChoice, firstTurn, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
+import { NEW_SURFACE, NAME_RECORD, namerChoice, personsFirst, replyTo, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
 import type { ModelChoice } from '../../src/config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
@@ -58,8 +58,13 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       return { action: 'proceed' };
     }
     const attach = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(ctx.input.text.trim());
-    // The person's message on a surface: the first one starts the naming beside Exo's turn, never holding the send.
-    if (!attach) { void nameSurface(ctx.thread.id, ctx.input.text); return { action: 'proceed' }; }
+    // The person's message on a surface (BB's author "user"; in a grouped dispatch, the person's rows): the first one starts
+    // the naming beside Exo's turn, never holding the send. An agent's or the system's message starts nothing.
+    if (!attach) {
+      const person = ctx.initiator === 'user' ? ctx.input.text : ctx.initiator === 'mixed' ? personsFirst((ctx.queuedMessages ?? []).filter(m => m.initiator === 'user').map(m => ({ type: 'client/turn/requested', data: { initiator: 'user', input: m.content } })), NEW_THREAD_PROMPT) : undefined;
+      if (person !== undefined) void nameSurface(ctx.thread.id, person);
+      return { action: 'proceed' };
+    }
     if (!ctx.thread.parentThreadId) return { action: 'reject', message: 'Child attachment requires its native main owner.' };
     const parent = binding(ctx.thread.parentThreadId);
     if (parent?.runtimeKind && parent.runtimeKind !== 'offline') return { action: 'reject', message: 'Linked child projections are disabled for the live trial; native reports go only through OptChat.' };
@@ -87,15 +92,17 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     const held = (await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD] as NameRecord | undefined;
     return held ? ('name' in held ? held.name : title) : undefined;
   };
-  /** `sent`: the message being dispatched, the person's first when the journal holds none yet (Exo's reply not there). */
+  /** `sent`: the person's message being dispatched, their first when BB's event log holds none of theirs yet. */
   const nameSurface = async (threadId: string, sent?: string) => {
     if (naming.has(threadId) || !isBoundThread(threadId)) return;
     naming.add(threadId);
     try {
       if (((await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE) !== NEW_SURFACE) return;
       if ((await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD]) return;
-      const turn = await firstTurn(sessionOf(threadId)) ?? (sent?.trim() ? { message: sent, reply: '' } : undefined);
-      if (!turn) return; // only the New surface start so far: no person's message yet
+      const requested = await bb.sdk.threads.events.list({ threadId, types: ['client/turn/requested'], order: 'asc', limit: '200' });
+      const message = personsFirst(requested, NEW_THREAD_PROMPT) ?? (sent?.trim() ? sent : undefined);
+      if (message === undefined) return; // no message from the person yet (only New surface's start, an agent's or the system's)
+      const turn = { message, reply: await replyTo(sessionOf(threadId), message) };
       const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
       let choice: ModelChoice | undefined;
       try {
@@ -120,7 +127,7 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     finally { naming.delete(threadId); }
   };
   // Fallback only: BB runs message.dispatch on every send but a person's Send-now on a queued row (that bypasses the hook
-  // by design), so a first message sent that way is named once its turn ends, from the journal's first turn.
+  // by design), so a first message sent that way is named once its turn ends, from the person's first message in BB's log.
   bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
   const awaiting = new Map<string, { entry: string | null; text: string }>(); // thread -> its latest person's entry when the input sent, and what it sent
