@@ -175,8 +175,9 @@ async function parallel() {
   }
 }
 
-// #82: a new surface is "New surface" until its first turn; then the namer from its profile config names it once. Rendered
-// sidebar (app.tsx) on the real server RPCs; the namer's model is the fixture's fake over HTTP (models.json in its agent folder).
+// #82: a new surface is "New surface" until its first turn; then the namer names it once. Rendered
+// sidebar (app.tsx) on the real server RPCs; the namer is "namer" in the Exosurface local config (EXO_CONFIG); its model is
+// the fixture's fake over HTTP (models.json in its agent folder).
 async function autoName() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -198,15 +199,15 @@ async function autoName() {
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
     await until('the new surface ready', () => input() && !input().disabled && boundaries(made) > 0);
-    const profile = f.piRuns().at(-1).profile, config = JSON.parse(readFileSync(join(f.optchatHome, 'profiles', profile, 'config.json'), 'utf8'));
-    console.log(`profile ${profile} config.json: compactor ${JSON.stringify(config.compactor)}, namer ${config.namer ? JSON.stringify(config.namer) : 'absent (default openai/gpt-6-luna, thinking off)'}`);
+    const config = JSON.parse(readFileSync(f.config, 'utf8'));
+    console.log(`namer from the Exosurface local config ${f.config}: ${config.namer ? JSON.stringify(config.namer) : '"namer" absent (default openai/gpt-6-luna, thinking off)'}`);
     const before = entries()[1];
     console.log(`before its first turn: sidebar ${entries().join(', ')}`);
     await send(made, 'Help me plan a vegetable garden for spring');
     await until('the name in the sidebar', () => entries()[1] !== 'New surface', 15000).catch(() => {});
     const record = f.metadata(made).surfaceName, request = f.model.requests[0];
     console.log(`after its first turn:  sidebar ${entries().join(', ')}`);
-    console.log(`  namer used: ${record?.model} thinking ${record?.thinking} (model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)})`);
+    console.log(`  namer used: ${record?.model} thinking ${record?.thinking} from the Exosurface local config ${config.namer ? '"namer"' : 'default (no "namer")'} (model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)})`);
     console.log(`  record: ${JSON.stringify(record)}`);
     for (const line of f.logs) console.log(`  log ${line}`);
     const named = entries()[1], asked = f.model.requests.length;

@@ -1,5 +1,5 @@
 // #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until its first turn ends; then
-// the naming model from its profile config names it once from the person's first message and Exo's reply. Home never is.
+// the naming model from the Exosurface local config names it once from the person's first message and Exo's reply. Home never is.
 // Through the live entry points (server.ts RPCs, events and dispatch hook, host.ts bridge, the release owner, real Pi);
 // fake at the boundaries: BB, OptChat, Exo's model (a Pi extension) and the namer's model (HTTP, test/fake-model-http.ts).
 import { test, after } from 'node:test';
@@ -24,8 +24,15 @@ after(async () => {
 });
 const until = async (what: string, ok: () => boolean | Promise<boolean>, ms = 30000) => { for (let w = 0; !(await ok()); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}\n${f.logs.join('\n')}`); await new Promise(r => setTimeout(r, 50)); } };
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
-const primaryConfig = join(f.optchatHome, 'profiles', f.setup.profile, 'config.json');
-const setNamer = (namer: object | undefined) => { const c = JSON.parse(readFileSync(primaryConfig, 'utf8')); if (namer) c.namer = namer; else delete c.namer; writeFileSync(primaryConfig, JSON.stringify(c)); };
+/** The naming model in the Exosurface local config (EXO_CONFIG): set, or removed for the default. */
+const setNamer = (namer: object | undefined) => { const c = JSON.parse(readFileSync(f.config, 'utf8')); if (namer) c.namer = namer; else delete c.namer; writeFileSync(f.config, JSON.stringify(c)); };
+/** An OptChat profile rewritten as OptChat's own settings page saves it (pinned 0.8.6: settings-page update -> saveConfig of
+ * loadConfig's result, which keeps only compactor, subagent and OptChat's settings keys), with one setting changed. */
+const OPTCHAT_KEYS = ['compactor', 'subagent', 'subagentLevels', 'maxAgents', 'groupReports', 'previousExchange', 'previousExchangeKB', 'memorySearch', 'summaryAcceptBytes', 'jobs', 'refreshAt'];
+const optchatRewrite = (profile: string) => {
+  const file = join(f.optchatHome, 'profiles', profile, 'config.json'), raw = JSON.parse(readFileSync(file, 'utf8'));
+  writeFileSync(file, JSON.stringify({ ...Object.fromEntries(Object.entries(raw).filter(([k]) => OPTCHAT_KEYS.includes(k))), jobs: 4 }, null, 2) + '\n');
+};
 /** New surface through the server, started by BB with its first message, as the sidebar's button does. */
 async function newSurface() {
   const { threadId } = await f.rpc.thread_new(null);
@@ -95,7 +102,7 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('the namer is the surface profile config\'s "namer" (provider, model, thinking); absent, openai/gpt-6-luna with thinking off', async () => {
+test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
   // Absent: the default, as the model receives it.
   setNamer(undefined);
   f.model.state.reply = 'Cabin trip';
@@ -105,19 +112,20 @@ test('the namer is the surface profile config\'s "namer" (provider, model, think
   const luna = f.model.requests[seen];
   assert.deepEqual([luna.path, luna.body.model, luna.body.reasoning?.effort], ['/v1/responses', 'gpt-6-luna', 'none']);
 
-  // Set beside compactor in the profile config (a new surface's profile takes the primary's): claude-haiku-5-5 is accepted.
+  // Set in the local config: claude-haiku-5-5 is accepted, and OptChat rewriting the primary's and the new surface's profile
+  // configs through its own writer (a settings change) does not lose it.
   setNamer({ provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' });
+  optchatRewrite(f.setup.profile);
   f.model.state.reply = '"Tax return checklist."';
   const haiku = await newSurface();
-  const own = JSON.parse(readFileSync(join(f.optchatHome, 'profiles', f.piRuns().at(-1).profile, 'config.json'), 'utf8'));
-  assert.deepEqual(own.namer, { provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' }, 'the surface profile config holds the namer');
+  optchatRewrite(f.piRuns().at(-1).profile);
   await turn(haiku, 'What do I need for my tax return?');
   await until('named', async () => (await listedName(haiku)) === 'Tax return checklist');
   const asked = f.model.requests.at(-1)!;
   assert.deepEqual([asked.path.split('?')[0], asked.body.model], ['/v1/messages', 'claude-haiku-5-5']);
   // Thinking as the model receives it: Pi sends a managed-effort model's level as the trailing system message's effort.
   assert.equal(asked.body.messages.filter((m: any) => m.role === 'system').at(-1)?.output_config?.effort, 'low');
-  assert.ok((await listed()).includes('Tax return checklist'));
+  assert.ok(logged('info', haiku, 'by anthropic/claude-haiku-5-5 thinking low'), f.logs.join('\n'));
   setNamer(undefined);
 });
 
@@ -136,13 +144,13 @@ test('a failing namer leaves "New surface" and logs why; an invalid namer is nev
   assert.equal(f.model.requests.length, asked);
   assert.equal(await listedName(failing), 'New surface');
 
-  // An invalid namer in the surface's profile config: no model is called at all.
+  // An invalid namer in the local config: naming fails loudly and no model is called at all.
   const invalid = await newSurface();
-  const config = join(f.optchatHome, 'profiles', f.piRuns().at(-1).profile, 'config.json'), c = JSON.parse(readFileSync(config, 'utf8'));
-  writeFileSync(config, JSON.stringify({ ...c, namer: { provider: 'openai', model: 'gpt-6-luna', thinking: 'none' } }));
+  setNamer({ provider: 'openai', model: 'gpt-6-luna', thinking: 'none' });
   const before = f.model.requests.length;
   await turn(invalid, 'Plan the week');
   await until('the failure logged', () => logged('warn', invalid, /keeps "New surface".*Invalid "namer"/));
   assert.equal(f.model.requests.length, before);
   assert.equal(await listedName(invalid), 'New surface');
+  setNamer(undefined);
 });

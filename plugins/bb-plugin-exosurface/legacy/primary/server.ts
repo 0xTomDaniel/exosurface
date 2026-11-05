@@ -1,6 +1,6 @@
 import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI, threadProfile } from './src/state.ts';
+import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI } from './src/state.ts';
 import { local, LOCAL_CONFIG, requireLocal } from './src/local-config.ts';
 import { NEW_SURFACE, NAME_RECORD, namerChoice, firstTurn, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
 import type { ModelChoice } from '../../src/config.ts';
@@ -96,7 +96,7 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
       let choice: ModelChoice | undefined;
       try {
-        choice = namerChoice(join(CANONICAL_HOME, 'profiles', threadProfile(threadId))).choice;
+        choice = namerChoice(LOCAL_CONFIG).choice;
         const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), cwd: HOME });
         const used = choice;
         const person = await nameWrite(threadId, async () => {
