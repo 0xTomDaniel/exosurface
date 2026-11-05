@@ -6,7 +6,8 @@
 import { rmSync, readFileSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
-import { waiter } from '../test/wait.ts';
+import { waiter, settled } from '../test/wait.ts';
+import { reapOnExit } from '../test/reap.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -390,9 +391,14 @@ async function badArguments() {
     console.log(`surface after the calls: revision ${page.revision}`);
     if (raw || page.revision !== 1 || results().slice(0, -1).some(r => !r.isError) || results().at(-1).isError) throw new Error('bad-arguments failed');
   } finally {
-    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
-    await new Promise(r => setTimeout(r, 1000));
-    rmSync(f.root, { recursive: true, force: true });
+    // The fixture's processes: the bridge, the owner and the Pi the owner started (its pid from the fake OptChat's record).
+    // Each must be seen gone by a wall-clock deadline before the fixture is removed; else its state stays for diagnosis.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
   }
 }
 
