@@ -154,11 +154,19 @@ async function serverRpc(vault: string) {
           await dispatch(args.threadId, args.input.map(p => p.text).join(''), 'user', null);
           return {};
         },
-        // BB's thread event log (bb.sdk.threads.events.list), oldest first or newest first, filtered by type.
+        // BB's thread event log (bb.sdk.threads.events.list) with BB 0.48's query rules (threadEventsQuerySchema and its
+        // route): limit, afterSeq and beforeSeq are digit strings; limit at most 100 (THREAD_EVENT_LIST_PAGE_SIZE), refused
+        // with HTTP 400 as the SDK reports it; absent, one page of 100. Rows after afterSeq and before beforeSeq, by type,
+        // oldest first or newest first.
         events: {
-          async list({ threadId, types, order = 'asc' }: { threadId: string; types?: string[]; order?: 'asc' | 'desc' }) {
-            const rows = (requested.get(threadId) ?? []).filter(r => !types || types.includes(r.type));
-            return order === 'desc' ? [...rows].reverse() : rows;
+          async list({ threadId, types, order = 'asc', limit, afterSeq, beforeSeq }: { threadId: string; types?: string[]; order?: 'asc' | 'desc'; limit?: string; afterSeq?: string; beforeSeq?: string }) {
+            for (const [name, value] of [['limit', limit], ['afterSeq', afterSeq], ['beforeSeq', beforeSeq]] as const)
+              if (value !== undefined && !/^\d+$/.test(String(value))) throw new Error(`HTTP 400: ${name} must be a string of digits`);
+            if (limit !== undefined && Number(limit) > 100) throw new Error('HTTP 400: Thread event limit cannot exceed 100');
+            const page = limit === undefined ? 100 : Number(limit);
+            if (page <= 0) throw new Error('HTTP 400: limit must be a positive integer');
+            const rows = (requested.get(threadId) ?? []).filter(r => (!types || types.includes(r.type)) && (afterSeq === undefined || r.seq > Number(afterSeq)) && (beforeSeq === undefined || r.seq < Number(beforeSeq)));
+            return (order === 'desc' ? [...rows].reverse() : rows).slice(0, page);
           },
         },
       },
@@ -177,7 +185,7 @@ async function serverRpc(vault: string) {
    *  sender) or a system notice (system), dispatched as BB does. */
   const tell = (threadId: string, text: string, from: { senderThreadId: string } | 'system') =>
     dispatch(threadId, text, from === 'system' ? 'system' : 'agent', from === 'system' ? null : from.senderThreadId);
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk: bb.sdk };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -195,13 +203,13 @@ export async function liveFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 

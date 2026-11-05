@@ -56,6 +56,19 @@ export function personsFirst(rows: readonly { type: string; data?: any }[], skip
   return undefined;
 }
 
+/** BB's largest page of thread events (BB 0.48 THREAD_EVENT_LIST_PAGE_SIZE: a larger limit is refused with HTTP 400). */
+export const EVENT_PAGE = 100;
+/** The person's first message (personsFirst) in a thread's whole client/turn/requested log, read oldest first a page of at
+ * most EVENT_PAGE rows at a time, each page after the last row's seq, until it is found or a short page ends the log. */
+export async function personsFirstInLog(page: (afterSeq: string | undefined) => Promise<readonly { type: string; seq: number; data?: any }[]>, skip: string): Promise<string | undefined> {
+  for (let after: string | undefined; ;) {
+    const rows = await page(after);
+    const found = personsFirst(rows, skip);
+    if (found !== undefined || rows.length < EVENT_PAGE) return found;
+    after = String(rows.at(-1)!.seq);
+  }
+}
+
 /** Exo's words after `message` in a Pi session journal: the replies after the first person's entry holding that text, up to
  * the next person's entry; empty when the journal holds no such entry or no reply yet. Reads forward. */
 export async function replyTo(sessionFile: string | undefined, message: string): Promise<string> {

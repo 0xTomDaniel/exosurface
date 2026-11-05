@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
 import { waiter, settled } from './wait.ts';
+import { personsFirstInLog } from '../legacy/primary/src/surface-name.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -212,6 +213,21 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
     assert.equal(await listedName(made), 'Rose garden');
     assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
   } finally { view.unmount(); f.realtime.deliver = undefined; }
+});
+
+test('the person\'s first message is found past BB\'s event page of 100: 150 agent messages first, read within BB\'s limit', async () => {
+  // Messages BB admits to a thread (its event log) with no provider turn: the log is what is read here.
+  const deliver = f.provider.deliver; f.provider.deliver = () => {};
+  try {
+    for (let i = 0; i < 150; i++) await f.tell('paged', `agent note ${i}`, { senderThreadId: 'thread-other' });
+    await f.sdk.threads.send({ threadId: 'paged', input: [{ type: 'text', text: 'Plan the orchard' }] });
+    await f.sdk.threads.send({ threadId: 'paged', input: [{ type: 'text', text: 'And the bees' }] });
+  } finally { f.provider.deliver = deliver; }
+  await assert.rejects(f.sdk.threads.events.list({ threadId: 'paged', types: ['client/turn/requested'], limit: '200' }), /Thread event limit cannot exceed 100/);
+  const pages: string[] = [];
+  const first = await personsFirstInLog(afterSeq => { pages.push(afterSeq ?? 'start'); return f.sdk.threads.events.list({ threadId: 'paged', types: ['client/turn/requested'], order: 'asc', limit: '100', ...(afterSeq ? { afterSeq } : {}) }); }, '/exosurface-new-surface');
+  assert.equal(first, 'Plan the orchard');
+  assert.deepEqual(pages, ['start', '100']);
 });
 
 test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
