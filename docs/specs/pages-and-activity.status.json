@@ -160,6 +160,38 @@
     "acceptance-commit-linked": {
       "status": "planned",
       "pr": null
+    },
+    "acceptance-opening": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-input-floats": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-one-page-in-view": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-name-header": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-auto-name": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-rename": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-live-activity": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-live-activity-ends": {
+      "status": "planned",
+      "pr": null
     }
   }
 }
