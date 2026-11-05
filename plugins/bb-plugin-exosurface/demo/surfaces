@@ -190,7 +190,6 @@ async function opening() {
   try {
     await until('the sidebar', () => [...(sidebar()?.querySelectorAll('li button') ?? [])].some(b => b.textContent === 'Garden plan'));
     fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === 'Garden plan'));
-    // The fake model echoes the last user-role context; on a bound surface with a page that is the owner's page state.
     const sends = ['draw: Garden beds', 'add a row of tomatoes'];
     for (const text of sends) {
       await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
@@ -198,7 +197,7 @@ async function opening() {
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
       if (text === sends[1]) { await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
-      await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo ('));
+      await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
     await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
     // Everything shown at the top of the surface, in screen (document) order.
@@ -209,13 +208,13 @@ async function opening() {
     console.log('--- the surface view, top to bottom ---');
     for (const el of parts) {
       const k = kind(el), boxed = k === 'reply' && /\b(border|rounded|shadow|card|callout)/.test([el, el.parentElement].map(e => e.getAttribute('class') ?? '').join(' '));
-      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : JSON.stringify(k === 'reply' && el.textContent.includes('\n') ? `${el.textContent.split('\n')[0]}…` : el.textContent)}${k === 'bubble' ? `  (right-aligned: margin-left ${getComputedStyle(el).marginLeft})` : ''}${k === 'reply' ? `  (${boxed ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
+      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (right-aligned: margin-left ${getComputedStyle(el).marginLeft})` : ''}${k === 'reply' ? `  (${boxed ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
     }
     const first = view.container.textContent.includes(sends[0]);
     console.log(`first message ${JSON.stringify(sends[0])}: ${first ? 'SHOWN' : 'absent'}`);
     const order = parts.map(kind).join(' > ');
     console.log(`order: ${order}`);
-    const ok = order === 'title > bubble > reply > page' && parts[0].textContent === 'Garden plan' && said().textContent === sends[1] && getComputedStyle(said()).marginLeft === 'auto' && !first
+    const ok = order === 'title > bubble > reply > page' && parts[0].textContent === 'Garden plan' && said().textContent === sends[1] && reply().textContent.endsWith(`: ${sends[1]}`) && getComputedStyle(said()).marginLeft === 'auto' && !first
       && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
     if (!ok) throw new Error('opening failed');
   } finally {
