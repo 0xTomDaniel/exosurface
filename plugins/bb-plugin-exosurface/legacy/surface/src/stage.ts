@@ -1,5 +1,5 @@
-// The canvas is a stage that follows the conversation: one focused surface,
-// at most two supporting context surfaces beside it, everything else recedes
+// The canvas is a stage that follows the conversation: one focused surface in
+// view (layout may name up to two beside it; they show as pills), everything else recedes
 // (kept mounted, drafts intact, one click to bring back). Pure, shared by the
 // native reducer and frontend.
 export type Layout={columns?:number;wide?:string[];focus?:string;beside?:string[]};
@@ -30,12 +30,16 @@ export function surfaceTitle(nodes:any[],id:string):string{
  const text=heading?plain(heading.text):id.replace(/[_-]+/g,' ').replace(/^\w/,c=>c.toUpperCase());
  return text.length>48?text.slice(0,47)+'…':text;
 }
-export type StagePlan={mode:'stage';focus:string;beside:string[];receded:string[]}|{mode:'grid';all:string[]};
+// A surface shows one page at a time (spec pages-and-activity S13): the plan has one page in view and every other page
+// recedes to the shelf as a pill. layout.beside is still read and kept by the native reducer and Exo's outline, but it is
+// never rendered beside the page in view. Without a layout.focus the newest page is in view (never a grid of pages).
+export type StagePlan={focus:string;native:string;receded:string[]};
+// The page Exo has in view: layout.focus when it names a page, else the newest page.
+export const nativeFocus=(ids:string[],layout:Layout|undefined)=>layout?.focus&&ids.includes(layout.focus)?layout.focus:ids.at(-1);
 // local: owner's temporary pick from the shelf; it lapses when Exo moves the stage.
-export function stagePlan(ids:string[],layout:Layout|undefined,local:{id:string;nativeFocus:string|undefined}|null):StagePlan{
- const nativeFocus=layout?.focus&&ids.includes(layout.focus)?layout.focus:undefined;
- if(!nativeFocus)return{mode:'grid',all:ids};
- const focus=local&&local.nativeFocus===nativeFocus&&ids.includes(local.id)?local.id:nativeFocus;
- const beside=(layout?.beside??[]).filter(id=>ids.includes(id)&&id!==focus).slice(0,MAX_BESIDE);
- return{mode:'stage',focus,beside,receded:ids.filter(id=>id!==focus&&!beside.includes(id))};
+export function stagePlan(ids:string[],layout:Layout|undefined,local:{id:string;nativeFocus:string|undefined}|null):StagePlan|null{
+ const native=nativeFocus(ids,layout);
+ if(!native)return null;
+ const focus=local&&local.nativeFocus===native&&ids.includes(local.id)?local.id:native;
+ return{focus,native,receded:ids.filter(id=>id!==focus)};
 }
