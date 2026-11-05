@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { fixtureCleanup } from './fixture-cleanup.ts';
+import { PARENT_WATCH } from './reap.ts';
 
 test('test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it', async t => {
   const root = mkdtempSync(join(tmpdir(), 'exo-cleanup-order-'));
@@ -27,7 +28,7 @@ test('test teardown awaits reverse resource shutdown before deleting its root; l
 test('test teardown reaps its owned child and verifies PID disappearance before root removal', t => {
   const root = mkdtempSync(join(tmpdir(), 'exo-cleanup-child-'));
   const cleanup = fixtureCleanup(t, root);
-  const child = spawn(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {
+  const child = spawn(process.execPath, [...PARENT_WATCH, '-e', 'setInterval(()=>{},1000)'], {
     cwd: root, env: { HOME: root, TMPDIR: root, PATH: '/usr/bin:/bin' }, stdio: 'ignore',
   });
   cleanup.child(child);

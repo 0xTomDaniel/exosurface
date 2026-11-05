@@ -10,6 +10,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { reaped, PARENT_WATCH } from './reap.ts';
+import { settled } from './wait.ts';
 
 export const PLUGIN = resolve(import.meta.dirname, '..');
 const PI_CLI = join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
@@ -27,8 +29,9 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
-// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs.
-const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+// a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
+// runs however long that takes ("hold: quiet: ..." is a held turn with no words).
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
@@ -45,17 +48,27 @@ export default function optchat(pi){
   models:[{id:'claude-opus-5-5',name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
-   void(async()=>{const last=context.messages.findLast(m=>m.role==='user'),said=typeof last?.content==='string'?last.content:(last?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
+   void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
+    const textOf=m=>typeof m.content==='string'?m.content:(m.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
+    const messages=context.messages.filter(m=>!(m.role==='user'&&textOf(m).startsWith('Machine state of the surface')));
+    const last=messages.findLast(m=>m.role==='user'),said=typeof last?.content==='string'?last.content:(last?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
     const name=pi.getFlag('optchat-profile'),turns=join(process.env.OPTCHAT_HOME,'turns');stream.push({type:'start',partial:message});
     // "draw: <title>" draws a page with one input and one button on the thread's own pages, then answers once drawn.
-    if(said.startsWith('draw: ')&&context.messages.at(-1)?.role==='user'){const title=said.slice(6).trim();
+    if(said.startsWith('draw: ')&&messages.at(-1)?.role==='user'){const title=said.slice(6).trim();
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-    if(said.startsWith('slow:'))await sleep(3000);
-    if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
+    // "draw <ref>: <title>" draws a page about that topic as page <ref>; "draw <ref>: <title> beside <other>" also asks for
+    // page <other> beside it. It tries revision 0 and, told the surface is further on, draws again on that revision.
+    const page=/^draw ([a-z]+): (.+?)(?: beside ([a-z]+))?$/.exec(said),stale=messages.at(-1)?.role==='toolResult'?/the surface is at revision (\\d+)/.exec(textOf(messages.at(-1))):null;
+    if(page&&(messages.at(-1)?.role==='user'||stale)){const[,ref,title,beside]=page,revision=Number(stale?.[1]??0);
+     const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:revision,snapshot:'- region '+JSON.stringify(title)+' [ref='+ref+']:\\n  - heading '+JSON.stringify(title)+' [ref=title]',...(beside?{focus:ref,beside:[beside]}:{})}};
+     message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
+     stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+    if(said.startsWith('hold:'))for(const end=Date.now()+60000;!existsSync(join(process.env.OPTCHAT_HOME,'release',name))&&Date.now()<end;)await sleep(25);
+    if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(const end=Date.now()+5000;readdirSync(turns).length<2&&Date.now()<end;)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
+    if(!said.replace(/^hold: /,'').startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
     stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
@@ -111,7 +124,9 @@ async function serverRpc(vault: string) {
     for (const s of services) if (s.name !== 'workspace-stream') s.start(stop.signal).catch(e => { if (!stop.signal.aborted) throw e; });
     return () => stop.abort();
   };
-  return { handlers, spawns, sends, provider, realtime, streams };
+  /** BB's stored name of a thread, as the person (or BB) set it; what thread_list reads as the surface's title. */
+  const retitle = (threadId: string, title: string) => { threads.set(threadId, { ...thread(threadId), title }); };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -127,11 +142,13 @@ export async function liveFixture() {
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
-  const { handlers: rpc, spawns, sends, provider, realtime, streams } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  /** Lets the profile's "hold:" turn be answered. */
+  const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
@@ -139,14 +156,11 @@ const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: 
 
 /** The release owner as launchd runs it, from source. Resolves once it reports ready. */
 export async function owner(f: Fixture) {
-  const child = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = reaped(spawn(process.execPath, [...PARENT_WATCH, '--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] }));
   let errors = ''; child.stderr!.on('data', b => { errors += b; });
   const state = join(f.home, 'owner', 'state.json');
-  for (let i = 0; i < 600; i++) {
-    if (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
-    if (child.exitCode !== null) break;
-    await new Promise(r => setTimeout(r, 25));
-  }
+  await settled(() => child.exitCode !== null || (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready), 15000, 25);
+  if (child.exitCode === null && existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
   child.kill(); throw new Error(`Owner did not become ready: ${existsSync(state) ? readFileSync(state, 'utf8') : 'no state'}\n${errors}`);
 }
 
@@ -154,14 +168,14 @@ export type BridgeLine = { at: number; value: any };
 /** host.ts (package.json bb.host) as BB runs it: a child process speaking JSON-RPC lines on stdio. */
 export function bridge(f: Fixture) {
   const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(join(PLUGIN, 'host.ts')).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
-  const child: ChildProcess = spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] });
+  const child: ChildProcess = reaped(spawn(process.execPath, [...PARENT_WATCH, '--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] }));
   const t0 = Date.now(), lines: BridgeLine[] = [], providers = new Map<string, string>(); let buffer = '', errors = '', id = 0;
   child.stdout!.setEncoding('utf8'); child.stderr!.on('data', b => { errors += b; });
   child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) lines.push({ at: Date.now() - t0, value: JSON.parse(l) }); } });
   const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {
-    for (let waited = 0; waited <= ms; waited += 20) { const hit = lines.find(l => l.value.id === n); if (hit) return hit.value; await new Promise(r => setTimeout(r, 20)); }
+    if (await settled(() => lines.some(l => l.value.id === n), ms, 20)) return lines.find(l => l.value.id === n)!.value;
     throw new Error(`No response to request ${n}: ${errors}`);
   };
   const deltas = (threadId: string) => lines.filter(l => l.value.method === 'thread/delta' && l.value.params.threadId === threadId).flatMap(l => l.value.params.deltas.map((d: any) => ({ at: l.at, ...d })));
@@ -181,10 +195,7 @@ export function bridge(f: Fixture) {
     },
     send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
     async settled(threadIds: string[], ms = 20000) {
-      for (let waited = 0; !threadIds.every(t => turn(t).end); waited += 20) {
-        if (waited > ms) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
-        await new Promise(r => setTimeout(r, 20));
-      }
+      if (!(await settled(() => threadIds.every(t => turn(t).end), ms, 20))) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
     },
   };
 }

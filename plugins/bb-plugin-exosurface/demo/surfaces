@@ -5,7 +5,8 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
-import { renderedApp } from '../test/app-render.ts';
+import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
+import { waiter } from '../test/wait.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -84,8 +85,8 @@ async function exoBlock() {
   const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
   const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
   const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
-  const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
-  const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const until = waiter();
   try {
     const sends = ['plan the week', 'plan the week, with Friday off'];
     for (const text of sends) {
@@ -97,8 +98,8 @@ async function exoBlock() {
     }
     const page = view.container.querySelector('main').textContent + view.container.querySelector('form[aria-label="Message Exo"]').textContent;
     const chat = view.queryByTestId('bb-thread-chat') !== null, count = s => page.split(s).length - 1;
-    // Only the latest reply is on screen: one reply from Exo, and the topic's words only inside it.
-    const earlier = count(`Exo (${f.setup.profile})`) !== 1 || count(sends[0]) !== 1;
+    // Only the latest turn is on screen: one reply from Exo, and the topic's words only in the bubble and the reply.
+    const earlier = count(`Exo (${f.setup.profile})`) !== 1 || count(sends[0]) !== 2;
     console.log('--- the surface view after two sends ---');
     console.log(`page:      ${JSON.stringify(view.container.querySelector('main').textContent.replace(block().textContent, ''))}`);
     console.log(`Exo block: ${JSON.stringify(block().textContent)}`);
@@ -126,8 +127,8 @@ async function parallel() {
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
   const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent).join('|');
   const click = title => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title));
-  const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
-  const until = async (what, ok, ms = 20000) => { for (let w = 0; !ok(); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const until = waiter();
   // The surface in view, sampled every 20 ms; each change is printed with what the person did last.
   let did = 'opened the panel', last = '', changes = [], watching = false;
   const sampler = setInterval(() => { const now = current(); if (now !== last) { last = now; console.log(`${at()}  in view: ${now || '(none)'}   after: ${did}`); if (watching) changes.push({ now, did }); } }, 20);
@@ -172,7 +173,197 @@ async function parallel() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel };
+// #79: the rendered surface view of a surface whose stored name is "Garden plan", after its sends: the name on top, then the
+// Exo block opening the page (the latest message as a bubble, Exo's reply as plain text), then the page; no earlier message.
+// #81 (owner walkthrough, PR #89): an earlier page about the week puts its pill in the page strip, which sits under the
+// title, above the Exo block, set off from it by a hairline.
+async function opening() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const surface = (await f.rpc.thread_new(null)).threadId;
+  f.retitle(surface, 'Garden plan'); // BB's stored name of the thread
+  const started = await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
+  const { kit, app, close, browser } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
+  const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const said = () => block()?.querySelector('[data-exo-said]'), reply = () => block()?.querySelector('[data-exo-reply]');
+  const until = waiter(() => `page: ${main()?.textContent}`);
+  try {
+    await until('the sidebar', () => [...(sidebar()?.querySelectorAll('li button') ?? [])].some(b => b.textContent === 'Garden plan'));
+    fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === 'Garden plan'));
+    const sends = ['draw week: Week plan', 'draw beds: Garden beds', 'add a row of tomatoes'], latest = sends.at(-1);
+    let scroll = '';
+    for (const text of sends) {
+      await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
+      // The person has scrolled down the surface before the latest send (jsdom: the scroll container's position only).
+      if (text === latest) main().scrollTop = 400;
+      const was = main().scrollTop, asked = browser.scrolls.length;
+      fireEvent.change(input(), { target: { value: text } });
+      fireEvent.click(view.getByRole('button', { name: 'Send' }));
+      console.log(`sent: ${JSON.stringify(text)}`);
+      if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send, requested ${JSON.stringify(browser.scrolls.slice(asked))}`; console.log(`  ${scroll}`);
+        await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
+      await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
+    }
+    await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
+    // Everything shown at the top of the surface, in screen (document) order.
+    const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || getComputedStyle(at).display === 'none') return false; return true; };
+    const parts = [...main().querySelectorAll('h1, nav, [data-exo-said], [data-exo-reply], [data-surface]')].filter(el => shown(el) && (el.tagName !== 'NAV' || !!el.querySelector('button[aria-pressed]')));
+    const kind = el => el.tagName === 'H1' ? 'title' : el.tagName === 'NAV' ? 'strip' : el.hasAttribute('data-exo-said') ? 'bubble' : el.hasAttribute('data-exo-reply') ? 'reply' : 'page';
+    const strip = parts.find(el => kind(el) === 'strip'), pillsOf = el => JSON.stringify([...el.querySelectorAll('button[aria-pressed]')].map(b => b.textContent));
+    // The page shows as its title and its rendered root element (its A2UI element, under this bundle's own tag name).
+    const pageText = el => `${JSON.stringify(el.getAttribute('aria-label'))}, rendered as <${el.firstElementChild?.tagName.toLowerCase()}>`;
+    console.log('--- the surface view, top to bottom ---');
+    for (const el of parts) {
+      const k = kind(el); // presentation from computed styles (test/app-render.ts); true layout: the owner's RDP walkthrough
+      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : k === 'strip' ? `pills ${pillsOf(el)}  (${divided(el, block()) ? 'hairline below it, before the Exo block' : 'NO hairline before the Exo block'})` : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (${rightAligned(el) ? 'right-aligned' : 'NOT right-aligned'})` : ''}${k === 'reply' ? `  (${boxed(el, block()) ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
+    }
+    const first = sends.slice(0, -1).some(t => view.container.textContent.includes(t));
+    console.log(`earlier messages ${sends.slice(0, -1).map(t => JSON.stringify(t)).join(', ')}: ${first ? 'SHOWN' : 'absent'}`);
+    const order = parts.map(kind).join(' > ');
+    console.log(`order: ${order}`);
+    const viewOk = scroll.startsWith('scrolled 400 -> 0 after send') && order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
+      && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
+    // The same send to top for a person who asked their system for reduced motion (jsdom: the requested scroll only; the
+    // visible easing is the owner's RDP re-check).
+    browser.reducedMotion = true; main().scrollTop = 400;
+    const again = 'and some basil', before = browser.scrolls.length;
+    fireEvent.change(input(), { target: { value: again } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the reduced-motion send accepted', () => input().value === '' && said()?.textContent === again);
+    const reduced = JSON.stringify(browser.scrolls.slice(before)), behavior = r => r === '[{"top":0,"behavior":"smooth"}]' ? 'smooth' : r === '[{"top":0,"behavior":"auto"}]' ? 'instant' : `UNEXPECTED ${r}`;
+    const requested = `scroll to top requested: ${behavior(scroll.slice(scroll.indexOf('requested ') + 10))} (reduced motion: ${behavior(reduced)})`;
+    console.log(requested);
+    await until('the reply to the reduced-motion send', () => reply()?.textContent?.endsWith(`: ${again}`));
+    const ok = requested === 'scroll to top requested: smooth (reduced motion: instant)' && viewOk;
+    if (!ok) throw new Error('opening failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+// #81: one page at a time. A page about the week, then a message about the garden and Exo's finished turn (nobody scrolls,
+// clicks or types): the rendered pages in view (one, the garden's) and the page strip's pills (the week's); then Exo asks
+// for the garden page beside a new seed list page: still one page in view, the garden page a pill.
+async function onePage() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
+  const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
+  const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label'));
+  const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
+  // The surface view top down: the title, the page strip (the navigation holding the pills), the Exo block, the page in view.
+  const order = () => [...main().querySelectorAll('h1, nav, section[aria-label="Exo"], section[data-surface]')].filter(el => shown(el) && (el.tagName !== 'NAV' || !!el.querySelector('button[aria-pressed]')))
+    .map(el => el.tagName === 'H1' ? 'title' : el.tagName === 'NAV' ? `strip${divided(el, main().querySelector('section[aria-label="Exo"]')) ? ' (hairline below)' : ''}` : el.getAttribute('aria-label') === 'Exo' ? 'Exo block' : `page ${JSON.stringify(el.getAttribute('aria-label'))}`).join(' > ');
+  const until = waiter(() => `in view ${JSON.stringify(inView())}`);
+  const send = async (text, page) => {
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: text } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply()?.textContent === `Exo (${f.setup.profile}): ${text}` && inView().includes(page));
+    console.log(`sent ${JSON.stringify(text)}; Exo's turn finished, nothing scrolled, clicked or typed since`);
+    console.log(`  pages in view (${inView().length}): ${JSON.stringify(inView())}`);
+    console.log(`  page strip pills: ${JSON.stringify(pills())}`);
+    console.log(`  top down: ${order()}`);
+  };
+  try {
+    await send('draw week: Week plan', 'Week plan');
+    await send('draw garden: Garden plan', 'Garden plan');
+    const topic = JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]' && order() === 'title > strip (hairline below) > Exo block > page "Garden plan"';
+    await send('draw seeds: Seed list beside garden', 'Seed list');
+    const beside = JSON.stringify(inView()) === '["Seed list"]' && pills().includes('Garden plan');
+    if (!topic || !beside) throw new Error('one page failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+// #80: the rendered surface view with a drawn page: where the input sits, what its width follows, and where the fade over the
+// content beneath it starts. Read from computed styles (test/app-render.ts); jsdom does no layout, so true layout and paint
+// are the owner's RDP walkthrough.
+async function inputFloats() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), form = () => view.container.querySelector('form[aria-label="Message Exo"]');
+  const input = () => form()?.querySelector('textarea'), reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
+  const until = waiter();
+  const name = el => el === main() ? 'the scrolling surface (main "Exosurface")' : el?.matches('form') ? 'the input itself' : el ? `the page's column (max-width ${getComputedStyle(el).maxWidth})` : 'the window';
+  try {
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: 'draw: Week plan' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    console.log('sent: "draw: Week plan"');
+    await until('the drawn page', () => !!main().querySelector('[data-surface]') && reply()?.textContent?.startsWith('Exo ('));
+    const page = main().querySelector('[data-surface]'), held = pinnedToBottom(form()), col = column(page), own = column(form());
+    const after = held && !!(page.compareDocumentPosition(held.pinned) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const start = held ? fadeStart(held.pinned) : null, middle = held ? centeredIn(form(), held.pinned) : false;
+    console.log('--- the input on the surface view ---');
+    console.log(`pinned:  ${held ? `sticky at bottom ${getComputedStyle(held.pinned).bottom} of ${name(held.scroller)}, stays in view while the page scrolls` : 'NOT pinned'}`);
+    console.log(`flow:    ${after ? 'after the page, in the same column: the page\'s last lines scroll clear above it' : 'NOT after the page'}`);
+    console.log(`column:  the page sits in ${name(col)}; the input's width follows ${name(own)} (${own === col ? 'the same column, not the window' : 'NOT the page\'s column'})`);
+    console.log(`fade:    ${start === null ? 'NONE' : `starts ${start * 100}% down the floating box, clear to opaque at its bottom edge`}; the input ${middle ? 'is centred in that box, so the fade starts at the input\'s middle' : 'is NOT centred in it'}`);
+    fireEvent.change(input(), { target: { value: 'plan the week, with Friday off' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the second reply', () => reply()?.textContent?.endsWith(': plan the week, with Friday off'));
+    console.log(`send:    still works; reply ${JSON.stringify(reply().textContent)}, input value ${JSON.stringify(input().value)}`);
+    const ok = held && held.scroller === main() && held.scroller.contains(page) && after && col && own === col && start === 0.5 && middle && input().value === '';
+    if (!ok) throw new Error('input-floats failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+// PR #89 blocker: BB loads a reinstalled plugin's new app bundle into its long-lived window, whose custom element registry
+// still holds the first bundle's A2UI elements. Two distinct builds of app.tsx in one jsdom window render the same page.
+async function secondBundle() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  host.send('primary', 'draw week: Week plan'); await host.settled(['primary']);
+  const first = await renderedApp(), second = await renderedApp({ window: first.window });
+  const errors = [], consoleError = console.error;
+  console.error = (...args) => { errors.push(args.map(a => a instanceof Error ? a.message : String(a)).join(' ')); };
+  const render = async (bundle, name) => {
+    let view;
+    try { view = bundle.kit.renderSlot(bundle.app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc }); } catch (e) { errors.push(String(e)); return false; }
+    const page = () => view.container.querySelector('section[data-surface]');
+    for (let waited = 0; !page()?.textContent?.includes('Week plan') && waited < 20000; waited += 50) await new Promise(r => setTimeout(r, 50));
+    const root = page()?.firstElementChild, tag = root?.tagName.toLowerCase() ?? '', upgraded = !!root && !!customElements.get(tag) && root instanceof customElements.get(tag);
+    const ok = page()?.getAttribute('aria-label') === 'Week plan' && page().textContent.includes('Week plan') && upgraded;
+    console.log(`${name} rendered page ${JSON.stringify(page()?.getAttribute('aria-label') ?? null)}: root <${tag || 'none'}> ${upgraded ? 'upgraded' : 'NOT upgraded'}, text ${JSON.stringify(page()?.textContent?.trim() ?? '')}`);
+    view.unmount(); return ok;
+  };
+  try {
+    const one = await render(first, 'bundle 1'), two = await render(second, 'bundle 2');
+    const collisions = errors.filter(e => e.includes('collision'));
+    console.log(collisions.length ? `COLLISION: ${collisions[0]}` : 'no collision');
+    if (!one || !two || collisions.length) throw new Error('second bundle failed');
+  } finally {
+    console.error = consoleError; first.close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
