@@ -27,7 +27,7 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
-// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs; a "steps: <topic>" prompt is
+// a "slow:" prompt is answered only once the test releases it (release(f, 'slow')), so another surface opens while it runs; a "steps: <topic>" prompt is
 // answered in several steps: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
 // with no bold headline (as Claude's summaries may come), then the reply. It holds each step until stepsTurn has seen its line.
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,rmSync,writeFileSync}from'node:fs';import{join}from'node:path';
@@ -64,7 +64,7 @@ export default function optchat(pi){
       stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
       stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
      await hold(2);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(3);}
-    if(said.startsWith('slow:'))await sleep(3000);
+    if(said.startsWith('slow:')){const gate=join(process.env.OPTCHAT_HOME,'release','slow');for(let i=0;i<2400&&!existsSync(gate);i++)await sleep(25);rmSync(gate,{force:true});}
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
     if(!said.startsWith('quiet:')){const at=message.content.push({type:'text',text})-1;stream.push({type:'text_start',contentIndex:at,partial:message});stream.push({type:'text_delta',contentIndex:at,delta:text,partial:message});
@@ -227,4 +227,9 @@ export async function stepsTurn(f: Fixture, threadId: string, topic: string, see
     if (!block.working) return blocks;
     await new Promise(r => setTimeout(r, 25));
   }
+}
+
+/** Lets the fake model answer a turn it holds: "slow" (a "slow:" prompt). */
+export function release(f: Fixture, name: 'slow') {
+  mkdirSync(join(f.optchatHome, 'release'), { recursive: true }); writeFileSync(join(f.optchatHome, 'release', name), '');
 }
