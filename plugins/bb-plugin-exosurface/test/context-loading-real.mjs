@@ -47,7 +47,7 @@ const owner = spawn(process.execPath, ['--import', pathToFileURL(join(plugin, 't
 let ownerErr = ''; owner.stderr.on('data', d => { ownerErr += d; });
 const stateFile = join(home, 'owner/state.json');
 let state;
-for (let i = 0; i < 60; i++) { await sleep(500); if (existsSync(stateFile)) { state = JSON.parse(readFileSync(stateFile, 'utf8')); if (state.ready || state.error) break; } }
+for (const end = Date.now() + 30000; Date.now() < end;) { await sleep(500); if (existsSync(stateFile)) { state = JSON.parse(readFileSync(stateFile, 'utf8')); if (state.ready || state.error) break; } }
 assert.ok(state?.ready, 'owner not ready: ' + (state?.error ?? 'no state') + ' ' + ownerErr.slice(0, 400));
 const spawned = readFileSync(record, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(r => r.args?.[0] === piCli);
 assert.equal(spawned.length, 1, 'exactly one Pi launch by the owner');

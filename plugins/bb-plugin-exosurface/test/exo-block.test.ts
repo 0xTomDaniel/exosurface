@@ -5,6 +5,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
@@ -25,14 +26,11 @@ after(async () => {
 });
 
 const block = () => view.container.querySelector('section[aria-label="Exo"]') as HTMLElement | null;
+// Exo's words in the block (since #79 the block opens with the person's latest message as a bubble above them).
+const reply = () => block()?.querySelector('[data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const pageText = () => view.container.querySelector('main')!.textContent + (view.container.querySelector('form[aria-label="Message Exo"]')?.textContent ?? '');
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (let waited = 0; !ok(); waited += 50) {
-    if (waited > ms) throw new Error(`Timed out waiting for ${what}; page: ${pageText()}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `page: ${pageText()}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });
@@ -43,34 +41,36 @@ const count = (haystack: string, needle: string) => haystack.split(needle).lengt
 test('after a send and Exo\'s finished turn, the Exo block shows the reply, the input is shown and empty, and no chat shows', async () => {
   await send('plan the week');
   // E4: while Exo works, its block says so.
-  await until('the block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
-  await until('Exo\'s reply in the block', () => block()?.textContent === 'Exo (exo-optchat): plan the week');
+  await until('the block to say Exo is working', () => reply()?.textContent === 'Exo is working on this page…');
+  await until('Exo\'s reply in the block', () => reply()?.textContent === 'Exo (exo-optchat): plan the week');
   assert.equal(input()!.value, '');
-  // S1: no chat column and no transcript; the person's message is not on screen apart from Exo's words echoing it.
-  assert.equal(view.queryByTestId('bb-thread-chat'), null);
-  assert.equal(count(pageText(), 'plan the week'), 1);
+  // S1: no chat column and no transcript; the person's message is on screen only as the block's bubble and in Exo's words echoing it.
+  assert.ok(view.queryByTestId('bb-thread-chat') === null, 'no chat column');
+  assert.equal(count(pageText(), 'plan the week'), 2);
   // E7: only Exo writes the block; nothing in it takes the person's input.
   assert.equal(block()!.querySelectorAll('textarea, input, button, [contenteditable]').length, 0);
 });
 
 test('after a second send on the same topic, the Exo block shows only the reply to the new message', async () => {
   await send('plan the week, with Friday off');
-  await until('the new reply in the block', () => block()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
+  await until('the new reply in the block', () => reply()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
   assert.equal(input()!.value, '');
-  assert.equal(view.queryByTestId('bb-thread-chat'), null);
+  assert.ok(view.queryByTestId('bb-thread-chat') === null, 'no chat column');
   // E2: the earlier reply and messages are gone from the screen (they stay in the thread).
   assert.equal(count(pageText(), 'Exo (exo-optchat)'), 1);
-  assert.equal(count(pageText(), 'plan the week'), 1);
+  assert.equal(count(pageText(), 'plan the week'), 2); // the bubble and Exo's echo of the second message
 });
 
 test('a turn in which Exo says nothing leaves the Exo block empty', async () => {
-  await send('quiet: only redraw the page');
-  await until('the block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
+  // Held until the block has been seen saying Exo is working, so the turn cannot end before the block shows it.
+  await send('hold: quiet: only redraw the page');
+  await until('the block to say Exo is working', () => reply()?.textContent === 'Exo is working on this page…');
+  f.release(f.setup.profile);
   // The provider bridge reports the third turn's end to BB; then the block has caught up with it.
   const ended = () => { const d = host.deltas('primary'), third = d.filter(x => x.kind === 'turn.open')[2]; return !!third && d.slice(d.indexOf(third)).some(x => x.kind === 'turn.boundary'); };
   await until('the third turn to end', ended);
   await until('the block to stop saying Exo is working', () => block()?.querySelector('[role="status"]') === null);
-  assert.equal(block()!.textContent, '');
+  assert.equal(reply()!.textContent, '');
   assert.equal(input()!.value, '');
 });
 
@@ -81,14 +81,14 @@ test('a surface made by New surface shows no transcript, not even its control fi
   // BB starts the spawned thread with its first message, as it does after spawn.
   const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
-  await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && block()?.textContent === '');
+  await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && reply()?.textContent === '');
   // S1: New surface's control first message is no transcript line anywhere in the view (sidebar, page, Exo block, input).
   const control = '/exosurface-new-surface', shown = () => view.container.textContent!.includes(control) || input()!.value.includes(control);
   assert.equal(f.spawns.at(-1).prompt, control);
   assert.equal(shown(), false);
   await send('book the cabin');
   const profile = f.piRuns().at(-1).profile;
-  await until('the new surface\'s reply in its block', () => block()?.textContent === `Exo (${profile}): book the cabin`);
+  await until('the new surface\'s reply in its block', () => reply()?.textContent === `Exo (${profile}): book the cabin`);
   assert.equal(input()!.value, '');
   assert.equal(count(pageText(), 'Exo ('), 1);
   assert.equal(count(pageText(), 'Friday'), 0);

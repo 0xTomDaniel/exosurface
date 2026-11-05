@@ -13,7 +13,7 @@ function fixture(value:unknown=text){
 }
 test('adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds',async()=>{
  const f=fixture(),adapter=new PageRendererAdapter(f.view,f.rpc,'primary',f.id);
- const one=adapter.flush(),two=adapter.flush();assert.equal(one,two);await one;
+ const one=adapter.flush(),two=adapter.flush();assert.ok(one===two,'a second flush joins the one in flight');await one;
  assert.deepEqual(f.calls.map(c=>c.method),['pageEdit','pageRead']);
  assert.equal(f.calls[0].input.value,text);assert.equal(f.calls[0].input.ref,'entry');assert.equal(f.view.drafts.edits.size,0);
  await adapter.refresh();assert.deepEqual(f.calls.map(c=>c.method),['pageEdit','pageRead','pageRead']);
