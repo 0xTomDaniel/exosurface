@@ -1,5 +1,5 @@
-// Surface auto-name (#82; spec pages-and-activity N7, N5): a new surface is "New surface" until its first turn ends; then a
-// small, fast model names it once from the person's first message and Exo's reply when it has arrived. The naming model is
+// Surface auto-name (#82; spec pages-and-activity N7, N5): a new surface is "New surface" until the person's first message is sent; then, beside
+// Exo's turn, a small, fast model names it once from the person's first message and Exo's reply when it has arrived. The naming model is
 // "namer" in the Exosurface local config (EXO_CONFIG exosurface.json, local-config.ts), with compactor's {provider, model,
 // thinking} shape and validation; absent, it is openai/gpt-6-luna with thinking off. One namer, set once in Exosurface's
 // own config and shared by every profile (spec N7), never in an OptChat profile config. The file is read at each naming, so a change applies to the next surface named. It is called through Pi (the

@@ -154,3 +154,58 @@ test('the rename RPC refuses Home, an empty name, a too long name and a thread t
   fireEvent.keyDown(sidebar().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
   assert.equal(entries().at(-1), listed);
 });
+
+/** The top of the surface in view (its title and revision line), as queries; never held by an assert. */
+const header = () => within(view.container.querySelector('main .exo-topline') as HTMLElement);
+/** An element's opacity as the browser computes it from the app's own stylesheets (jsdom: no :hover, no layout or paint). */
+const opacity = (el: Element) => Number(getComputedStyle(el).opacity || '1');
+/** Whether a pencil shows faintly at rest (computed opacity strictly between 0 and 1: the stylesheet applied, and not hidden) and
+ *  fully once it has keyboard focus, as computed style says; focus is left as it was. */
+function pencilShows(button: HTMLElement) {
+  const resting = opacity(button);
+  button.focus();
+  const focused = document.activeElement === button && button.tabIndex >= 0, shown = opacity(button);
+  button.blur();
+  return { resting: resting > 0 && resting < 1, focused, shown: shown === 1 };
+}
+
+test('acceptance-rename: the title at the top renames the surface in view (double-click, "Backyard", Enter); its pencil is keyboard focusable and shows on focus, as the sidebar\'s does; Home\'s title has neither', async () => {
+  // Home in view: no pencil at the top, and a double-click on its title opens nothing.
+  fireEvent.click(sidebar().getByRole('button', { name: 'Home' }));
+  await until('Home in view', () => title() === 'Home');
+  assert.equal(header().queryByRole('button', { name: /^Rename/ }) !== null, false, 'Home\'s title has no pencil');
+  fireEvent.doubleClick(header().getByRole('heading'));
+  assert.equal(header().queryByRole('textbox', { name: 'Surface name' }) !== null, false, 'Home\'s title does not turn into a field');
+  assert.equal(title(), 'Home');
+
+  f.model.state.reply = 'Patio lights';
+  const made = await newSurface();
+  await turn(made, 'Help me string lights over the patio');
+  await until('named at the top', () => title() === 'Patio lights' && entries().at(-1) === 'Patio lights');
+
+  // The pencil beside the title and the sidebar's, judged by computed style from the app's own stylesheets.
+  assert.deepEqual(pencilShows(header().getByRole('button', { name: 'Rename Patio lights' })), { resting: true, focused: true, shown: true });
+  assert.deepEqual(pencilShows(sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1)!), { resting: true, focused: true, shown: true });
+
+  // A refusal shows at the top and keeps the field open; Escape leaves the name as it was.
+  fireEvent.doubleClick(header().getByRole('heading', { name: 'Patio lights' }));
+  assert.equal((header().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement).value, 'Patio lights');
+  fireEvent.change(header().getByRole('textbox', { name: 'Surface name' }), { target: { value: '  ' } });
+  fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Enter' });
+  await until('the refusal shown at the top', () => /empty/.test(header().queryByRole('alert')?.textContent ?? ''));
+  assert.equal(header().queryByRole('textbox', { name: 'Surface name' }) !== null, true);
+  fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
+  assert.equal(title(), 'Patio lights');
+
+  // Double-click, type, Enter: the title and the sidebar show the new name, as the server lists it.
+  fireEvent.doubleClick(header().getByRole('heading', { name: 'Patio lights' }));
+  fireEvent.change(header().getByRole('textbox', { name: 'Surface name' }), { target: { value: 'Backyard' } });
+  fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Enter' });
+  await until('the title and the sidebar show Backyard', () => title() === 'Backyard' && entries().at(-1) === 'Backyard');
+  assert.equal(await listedName(made), 'Backyard');
+  // The pencil opens the same field.
+  fireEvent.click(header().getByRole('button', { name: 'Rename Backyard' }));
+  assert.equal((header().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement).value, 'Backyard');
+  fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
+  assert.equal(title(), 'Backyard');
+});

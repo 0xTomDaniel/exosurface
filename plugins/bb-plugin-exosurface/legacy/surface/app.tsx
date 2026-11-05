@@ -18,6 +18,7 @@ import {exoTheme} from './lib/exo-theme';
 import {ExoBlock,SurfaceInput,onSend} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 import {SurfaceTitle} from './src/surface-title';
+import {renameStyle} from './src/surface-rename';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The catalogs pages render with: their elements under this bundle's own tag names (src/bundle-tags.ts).
 const CATALOGS=bundleCatalogs([basicCatalog,exoReactCatalog]);
@@ -179,7 +180,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
   return()=>clearTimeout(timer);
  },[ticks,busy,state?.threadId,rpc]);
  return <div className="flex h-full min-h-0 flex-col">
-  <style>{documentStyle+exoTheme}</style>
+  <style>{documentStyle+exoTheme+renameStyle}</style>
   <main ref={scroller} aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-top">
     <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
