@@ -164,8 +164,8 @@
     "acceptance-opening": {
       "status": "built",
       "pr": 89,
-      "record": "20261105T034329Z-6ad72cd4",
-      "commit": "36ebc5f7a1c4353cff1d40d482130ab225e0645b",
+      "record": "20261105T035717Z-88b2a10d",
+      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
       "tests": []
     },
     "acceptance-input-floats": {
@@ -175,15 +175,15 @@
     "acceptance-one-page-in-view": {
       "status": "built",
       "pr": 89,
-      "record": "20261105T034702Z-798907ca",
-      "commit": "36ebc5f7a1c4353cff1d40d482130ab225e0645b",
+      "record": "20261105T040055Z-578d7846",
+      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
       "tests": []
     },
     "acceptance-name-header": {
       "status": "built",
       "pr": 89,
-      "record": "20261105T034423Z-30b060ad",
-      "commit": "36ebc5f7a1c4353cff1d40d482130ab225e0645b",
+      "record": "20261105T035819Z-44d19186",
+      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
       "tests": []
     },
     "acceptance-auto-name": {
