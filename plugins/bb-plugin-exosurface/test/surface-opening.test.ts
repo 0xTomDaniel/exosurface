@@ -15,7 +15,7 @@ const ownerProcess = await owner(f);
 const host = bridge(f);
 f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
 assert.equal((await host.start('primary')).error, undefined);
-const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+const { kit, app, close, browser } = await renderedApp(), { fireEvent } = kit.testing;
 const panel = app.navPanels.find((p: any) => p.path === 'surface');
 let view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
 after(async () => {
@@ -63,14 +63,17 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   assert.equal(input()!.value, '');
 });
 
-test('a send scrolls the surface back to its top; a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
-  // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout: it proves the scroll request reaches the surface's
-  // scroll container (its scrollTop); that the title, page strip and bubble then show on screen is the owner's RDP re-check.
+test('a send scrolls the surface back to its top, eased (instantly under reduced motion); a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
+  // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout or scrolling: through the browser stand-ins of
+  // test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that the
+  // request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then showing
+  // on screen, are the owner's RDP re-check.
   // The press is the one the page's button sends, through the action RPC: the app hears of it only by its turn and the
   // polls that follow.
   const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
   scroller.scrollTop = 400;
   assert.ok(scroller.scrollTop === 400, `scrolled down: ${scroller.scrollTop}`);
+  const asked = browser.scrolls.length, request = () => JSON.stringify(browser.scrolls.slice(asked));
   const drawn = (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint;
   const surfaceId = drawn.messages.find((m: any) => m.createSurface).createSurface.surfaceId, at = revision();
   const button = drawn.messages.flatMap((m: any) => m.updateComponents?.components ?? []).find((n: any) => n.action?.event);
@@ -78,11 +81,21 @@ test('a send scrolls the surface back to its top; a press on its page, Exo\'s tu
   const pressed = await f.rpc.action({ threadId: 'primary', revision: drawn.revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json'] } } } });
   assert.ok(pressed.accepted === true, JSON.stringify(pressed));
   await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
-  assert.ok(scroller.scrollTop === 400, `after a press, Exo's turn and polls: ${scroller.scrollTop}`);
+  assert.ok(scroller.scrollTop === 400 && request() === '[]', `after a press, Exo's turn and polls: ${scroller.scrollTop}, scrolls asked ${request()}`);
   await send('and Saturday too');
   await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Saturday too');
-  assert.ok(main() === scroller && scroller.scrollTop === 0, `after a send: ${scroller.scrollTop}`);
+  assert.ok(main() === scroller && scroller.scrollTop === 0 && request() === '[{"top":0,"behavior":"smooth"}]', `after a send: ${scroller.scrollTop}, scrolls asked ${request()}`);
   await until('the send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Saturday too');
+  // The person asked their system for reduced motion: the next send jumps to the top instead.
+  browser.reducedMotion = true; scroller.scrollTop = 400;
+  const before = browser.scrolls.length;
+  try {
+    await send('and Sunday');
+    await until('the second send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Sunday');
+    const jumped = JSON.stringify(browser.scrolls.slice(before));
+    assert.ok(scroller.scrollTop === 0 && jumped === '[{"top":0,"behavior":"auto"}]', `after a send with reduced motion: ${scroller.scrollTop}, scrolls asked ${jumped}`);
+    await until('the second send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Sunday');
+  } finally { browser.reducedMotion = false; }
 });
 
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {

@@ -12,6 +12,24 @@ import { parse, type CssNode } from 'css-tree';
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
 
+/** What the app asked the browser to scroll (an element's scrollTo), and the person's reduced-motion setting. */
+export type Browser = { scrolls: { top: number; behavior: string }[]; reducedMotion: boolean };
+const browsers = new WeakMap<JSDOM, Browser>();
+// jsdom has neither an element's scrollTo nor matchMedia, and does no scrolling or animation. Test-side stand-ins for those
+// browser surfaces, once per window: scrollTo records each request and moves scrollTop there at once (the easing itself is
+// the browser's, seen in the owner's RDP re-check); matchMedia answers the reduced-motion query from `reducedMotion`, and no
+// other query matches.
+function scrolling(dom: JSDOM): Browser {
+  let browser = browsers.get(dom);
+  if (browser) return browser;
+  const made: Browser = { scrolls: [], reducedMotion: false }, w = dom.window as any;
+  browsers.set(dom, made);
+  w.Element.prototype.scrollTo = function (this: Element, options: ScrollToOptions) { made.scrolls.push({ top: options.top ?? 0, behavior: options.behavior ?? 'auto' }); this.scrollTop = options.top ?? 0; };
+  w.matchMedia = (media: string) => ({ media, matches: /prefers-reduced-motion:\s*reduce/.test(media) && made.reducedMotion, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false });
+  (globalThis as any).matchMedia = w.matchMedia;
+  return made;
+}
+
 /** Installs a jsdom window as the global DOM, then returns the bundled app's registrations and the SDK test kit. Each call
  *  builds and loads its own bundle (its own module instances and element classes). `window`: load into an earlier call's
  *  window instead of a fresh one, as BB loads a reinstalled plugin's new app bundle into its long-lived window (one
@@ -25,6 +43,7 @@ export async function renderedApp(options: { window?: JSDOM } = {}) {
   // registry, so A2UI elements were never upgraded in this harness and a second bundle's definitions were never checked. The
   // upgraded elements then use the window's DOM classes (every one Node lacks), and its events: Node's own Event is refused by jsdom.
   g.IS_REACT_ACT_ENVIRONMENT = true;
+  const browser = scrolling(dom);
   if (!g.CSS) g.CSS = { supports: () => false, escape: (s: string) => s };
   const out = mkdtempSync(join(tmpdir(), 'exo-app-'));
   try {
@@ -37,7 +56,7 @@ export async function renderedApp(options: { window?: JSDOM } = {}) {
       alias: { react: join(modules, 'react'), 'react-dom': join(modules, 'react-dom'), 'react/jsx-runtime': join(modules, 'react/jsx-runtime.js') } });
     const kit = await import(pathToFileURL(join(out, 'app.mjs')).href);
     const app = await kit.loadPluginApp(kit.app);
-    return { kit, app, window: dom, close: () => { if (!options.window) dom.window.close(); } };
+    return { kit, app, window: dom, browser, close: () => { if (!options.window) dom.window.close(); } };
   } finally { rmSync(out, { recursive: true, force: true }); }
 }
 
