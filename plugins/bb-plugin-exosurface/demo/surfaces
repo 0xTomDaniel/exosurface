@@ -205,10 +205,9 @@ async function autoName() {
     console.log(`before its first turn: sidebar ${entries().join(', ')}`);
     await send(made, 'Help me plan a vegetable garden for spring');
     await until('the name in the sidebar', () => entries()[1] !== 'New surface', 15000).catch(() => {});
-    const record = f.metadata(made).surfaceName, request = f.model.requests[0];
+    const request = f.model.requests[0];
     console.log(`after its first turn:  sidebar ${entries().join(', ')}`);
-    console.log(`  namer used: ${record?.model} thinking ${record?.thinking} from the Exosurface local config ${config.namer ? '"namer"' : 'default (no "namer")'} (model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)})`);
-    console.log(`  record: ${JSON.stringify(record)}`);
+    console.log(`  namer from the Exosurface local config ${config.namer ? '"namer"' : 'default (no "namer")'}; the model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)}`);
     for (const line of f.logs) console.log(`  log ${line}`);
     const named = entries()[1], asked = f.model.requests.length;
     f.model.state.reply = 'Something else entirely';
@@ -217,7 +216,7 @@ async function autoName() {
     const after = entries()[1], again = f.model.requests.length - asked;
     console.log(`after a second turn:   sidebar ${entries().join(', ')} (${after === named && !again ? 'name unchanged, namer not asked again' : `CHANGED or asked again (${again})`})`);
     const ok = before === 'New surface' && named === 'Spring vegetable garden' && after === named && !again && entries()[0] === 'Home'
-      && record?.model === `${config.namer?.provider ?? 'openai'}/${config.namer?.model ?? 'gpt-6-luna'}` && record?.thinking === (config.namer?.thinking ?? 'off');
+      && !config.namer && request?.path === '/v1/responses' && request?.body.model === 'gpt-6-luna' && request?.body.reasoning?.effort === 'none'; // the default: openai, gpt-6-luna, thinking off
     if (!ok) throw new Error('auto-name failed');
   } finally {
     view.unmount(); close();
