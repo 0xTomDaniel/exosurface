@@ -20,21 +20,14 @@ import {SurfaceTitle} from './src/surface-title';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The canvas is a stage that follows the conversation: one page in view (S13). Every surface stays
 // mounted (drafts intact); receded ones are one click away on the shelf.
-function Canvas({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void}){
- const[allEarlier,setAllEarlier]=useState(false);
+function Canvas({view,local}:{view:WorkspaceView;local:Local}){
  const snapshot=view.displayed,ids=snapshot?moduleIds(snapshot):[],plan=stagePlan(ids,snapshot?.layout,local);
- const surfaces=view.processor.getSurfaces(),edits=[...view.drafts.edits.values()],dirty=new Set(edits.map(e=>e.surfaceId));
+ const surfaces=view.processor.getSurfaces(),edits=[...view.drafts.edits.values()];
  const render=(id:string)=>{const s=surfaces.get(id);if(!s)return null;return <section key={id} aria-label={snapshot?surfaceTitle(moduleNodes(snapshot,id),id):id} data-surface={id} className={`exo-generated min-w-0${snapshot&&moduleNodes(snapshot,id).some(n=>n.id.startsWith('doc_'))?' exo-document':''}`}><MarkdownContext.Provider value={renderMarkdown}><A2uiSurface surface={s}/></MarkdownContext.Provider></section>;};
- const title=(id:string)=>snapshot?surfaceTitle(moduleNodes(snapshot,id),id):id;
  return <>
   {view.error&&<p role="alert" className="mb-4 text-sm text-destructive">{view.error}</p>}
   {view.orphan.length>0&&<details className="mb-4 text-sm"><summary>Unsent edits no longer fit the new controls; copy them before leaving.</summary><pre className="overflow-auto whitespace-pre-wrap">{JSON.stringify(view.orphan.map(({surfaceId,path,value})=>({surfaceId,path,value})),null,2)}</pre></details>}
   {plan&&<>
-   {(plan.receded.length>0||local)&&<nav className="exo-shelf" aria-label="Earlier in this conversation">
-    <span>Earlier</span>
-    {(()=>{const recent=[...plan.receded].reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
-    {local&&<button type="button" className="exo-follow" onClick={()=>setLocal(null)}>Back to the current topic</button>}
-   </nav>}
    <div className="exo-stage-grid">
     <div key={plan.focus} className="exo-stage exo-enter">{render(plan.focus)}</div>
    </div>
@@ -42,6 +35,20 @@ function Canvas({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(
   </>}
   {edits.length>0&&<p role="status" className="mt-5 text-sm" style={{color:'var(--exo-quiet)'}}>Saving your changes…</p>}
  </>;
+}
+// The page strip: the surface's other pages as pills, under the title (owner walkthrough on PR #89). Same plan as the
+// Canvas, so the page in view and the pills never disagree.
+function PageStrip({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void}){
+ const[allEarlier,setAllEarlier]=useState(false);
+ const snapshot=view.displayed,ids=snapshot?moduleIds(snapshot):[],plan=stagePlan(ids,snapshot?.layout,local);
+ const dirty=new Set([...view.drafts.edits.values()].map(e=>e.surfaceId));
+ const title=(id:string)=>snapshot?surfaceTitle(moduleNodes(snapshot,id),id):id;
+ if(!plan||!(plan.receded.length>0||local))return null;
+ return <nav className="exo-shelf" aria-label="Earlier in this conversation">
+    <span>Earlier</span>
+    {(()=>{const recent=[...plan.receded].reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
+    {local&&<button type="button" className="exo-follow" onClick={()=>setLocal(null)}>Back to the current topic</button>}
+   </nav>;
 }
 // A surface card in the chat, where Exo drew or edited it. Clicking shows that version on the canvas.
 function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
@@ -166,10 +173,14 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme}</style>
   <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
-   <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
+   <div className="exo-top">
+    <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
+    {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
+    {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal}/></div>}
+   </div>
    <ExoBlock threadId={state?.threadId??null}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
-   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
+   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
    <SurfaceInput threadId={state?.threadId??null}/>
   </div></main>

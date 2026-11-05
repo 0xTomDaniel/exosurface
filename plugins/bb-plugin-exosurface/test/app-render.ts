@@ -139,3 +139,12 @@ export function boxed(el: Element, within: Element): boolean {
   for (let at: Element | null = el; at; at = at === within ? null : at.parentElement) chain.push(at);
   return chain.some(e => painted(css(e)));
 }
+const line = (s: CSSStyleDeclaration, side: 'Top' | 'Bottom') => !['', 'none', 'hidden'].includes((s as any)[`border${side}Style`]) && !['0', '0px', ''].includes((s as any)[`border${side}Width`]);
+/** Whether a hairline sets `above` off from `below` (which follows it on screen): a bottom border or shadow on `above` or on
+ *  a box holding it and not `below`, a top border on `below` or on a box holding it and not `above`, or an <hr> between them. */
+export function divided(above: Element, below: Element): boolean {
+  const up = (from: Element, other: Element) => { const out: Element[] = []; for (let at: Element | null = from; at && !at.contains(other); at = at.parentElement) out.push(at); return out; };
+  if (up(above, below).some(e => line(css(e), 'Bottom') || !['', 'none', 'initial'].includes(css(e).boxShadow))) return true;
+  if (up(below, above).some(e => line(css(e), 'Top'))) return true;
+  return [...(above.ownerDocument.querySelectorAll('hr'))].some(hr => !!(above.compareDocumentPosition(hr) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(hr.compareDocumentPosition(below) & Node.DOCUMENT_POSITION_FOLLOWING));
+}

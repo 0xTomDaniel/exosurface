@@ -28,6 +28,10 @@ export const exoTheme=`
 .exo-status:empty{margin:0}
 .exo-status[data-busy="true"]::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--exo-accent);animation:exo-breathe 1.6s ease-in-out infinite}
 .exo-shelf{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0 0 1.4rem}
+/* The top area (title, page strip) is set off from the Exo block and page below by one hairline: no box, not sticky. */
+.exo-top{margin-bottom:1.1rem;padding-bottom:.75rem;border-bottom-width:1px;border-bottom-style:solid;border-bottom-color:var(--exo-line)}
+.exo-top .exo-topline{margin-bottom:0}
+.exo-top .exo-shelf{margin:.6rem 0 0}
 .exo-more{font:inherit;font-size:.8rem;border:0;background:none;color:var(--exo-quiet);cursor:pointer;padding:.3rem .3rem}
 .exo-more:hover{color:var(--exo-ink)}
 .exo-shelf>span{font-size:.8rem;color:var(--exo-quiet);margin-right:.2rem}
