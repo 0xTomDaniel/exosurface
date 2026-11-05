@@ -187,12 +187,18 @@
       "tests": []
     },
     "acceptance-auto-name": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T190535Z-d3b1a17d",
+      "commit": "931d65dcc8270f5169c9ee729173bc4d03d0e066",
+      "tests": []
     },
     "acceptance-rename": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T190639Z-4032bb61",
+      "commit": "931d65dcc8270f5169c9ee729173bc4d03d0e066",
+      "tests": []
     },
     "acceptance-live-activity": {
       "status": "planned",
