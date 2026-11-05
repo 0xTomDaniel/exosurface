@@ -8,6 +8,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
+import { waiter, settled } from './wait.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -16,13 +17,16 @@ f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
 assert.equal((await host.start('primary')).error, undefined);
 const { kit, app, close } = await renderedApp();
 after(async () => {
-  close();
-  for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
-  await new Promise(r => setTimeout(r, 500));
-  await f.model.close();
-  rmSync(f.root, { recursive: true, force: true });
+  try {
+    close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 500));
+  } finally { await f.model.close(); rmSync(f.root, { recursive: true, force: true }); }
 });
-const until = async (what: string, ok: () => boolean | Promise<boolean>, ms = 30000) => { for (let w = 0; !(await ok()); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}\n${f.logs.join('\n')}`); await new Promise(r => setTimeout(r, 50)); } };
+const wait = waiter(() => f.logs.join('\n'));
+const until = (what: string, ok: () => boolean | Promise<boolean>) => wait(what, ok, 30000);
+/** Exo would act within moments of a turn's end: a wall-clock bounded wait for a change that must not come (false: none came). */
+const unchanged = async (changed: () => boolean | Promise<boolean>) => !(await settled(changed, 1500));
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
 /** The naming model in the Exosurface local config (EXO_CONFIG): set, or removed for the default. */
 const setNamer = (namer: object | undefined) => { const c = JSON.parse(readFileSync(f.config, 'utf8')); if (namer) c.namer = namer; else delete c.namer; writeFileSync(f.config, JSON.stringify(c)); };
@@ -52,13 +56,15 @@ const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).t
 /** A published log line about this surface at this level. */
 const logged = (level: string, threadId: string, text: string | RegExp) => f.logs.some(l => l.startsWith(`${level}:`) && l.includes(threadId) && (typeof text === 'string' ? l.includes(text) : text.test(l)));
 
-test('a new surface is named after its first turn from the namer\'s answer, in the rendered sidebar; a second turn does not rename it; Home keeps its name', async () => {
+test('a new surface is named after its first turn from the namer\'s answer, in the rendered sidebar and the title at the top; a second turn does not rename it; Home keeps its name', async () => {
   f.model.state.reply = 'Spring vegetable garden';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
   const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+  /** The surface's title at the top of the view (the header's text). */
+  const title = () => view.container.querySelector('main h1')?.textContent ?? null;
   const { fireEvent } = kit.testing;
   try {
     await until('Home listed', () => entries().join('|') === 'Home');
@@ -66,8 +72,8 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     await until('the new surface listed', () => entries().join('|') === 'Home|New surface');
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
-    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0);
-    await new Promise(r => setTimeout(r, 300));
+    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    assert.ok(await unchanged(() => f.model.requests.length > 0 || title() !== 'New surface'), 'not named before its first turn');
     assert.deepEqual(entries(), ['Home', 'New surface'], 'not named before its first turn');
     assert.equal(f.model.requests.length, 0);
 
@@ -76,6 +82,7 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('Exo\'s first turn ends', () => boundaries(made) > sent);
     await until('the sidebar shows the name', () => entries().join('|') === 'Home|Spring vegetable garden');
+    await until('the title shows the name', () => title() === 'Spring vegetable garden');
     // The namer was asked once, with the person's first message and Exo's reply.
     assert.equal(f.model.requests.length, 1);
     const asked = JSON.stringify(f.model.requests[0].body);
@@ -87,15 +94,16 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     fireEvent.change(input()!, { target: { value: 'Add tomatoes to the plan' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('Exo\'s second turn ends', () => boundaries(made) > second);
-    await new Promise(r => setTimeout(r, 1500));
+    assert.ok(await unchanged(() => f.model.requests.length > 1 || entries()[1] !== 'Spring vegetable garden' || title() !== 'Spring vegetable garden'), 'a second turn does not rename it');
     assert.deepEqual(entries(), ['Home', 'Spring vegetable garden'], 'a second turn does not rename it');
+    assert.equal(title(), 'Spring vegetable garden');
     assert.equal(f.model.requests.length, 1, 'the namer is not asked again');
 
     // Home: its turns end too, and it is never named.
     const homeTurns = boundaries('primary');
     host.send('primary', 'plan the garden on Home');
     await until('Home\'s turn', () => boundaries('primary') > homeTurns);
-    await new Promise(r => setTimeout(r, 1500));
+    assert.ok(await unchanged(() => f.model.requests.length > 1 || entries()[0] !== 'Home'), 'Home is never named');
     assert.equal(entries()[0], 'Home');
     assert.equal((await listed())[0], 'Home');
     assert.equal(f.model.requests.length, 1);
@@ -140,7 +148,7 @@ test('a failing namer leaves "New surface" and logs why; an invalid namer is nev
   f.model.state.fail = undefined;
   const asked = f.model.requests.length;
   await turn(failing, 'Start with the shelves');
-  await new Promise(r => setTimeout(r, 1500));
+  assert.ok(await unchanged(() => f.model.requests.length > asked), 'not asked again after a failure');
   assert.equal(f.model.requests.length, asked);
   assert.equal(await listedName(failing), 'New surface');
 

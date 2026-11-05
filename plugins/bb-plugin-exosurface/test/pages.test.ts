@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
@@ -12,6 +12,8 @@ import { layout, type Config } from '../src/config.ts';
 import { startOwner } from '../src/owner-runtime.ts';
 import { ownerConnection } from '../src/owner-client.ts';
 import { fixtureCleanup } from './fixture-cleanup.ts';
+import { settled } from './wait.ts';
+import { reapOnExit } from './reap.ts';
 const source='- region "Fixture page" [ref=page]:\n  - heading "Review" [ref=heading]\n  - textbox "Full text" [ref=entry] [multiline]: initial\n  - button "Send" [ref=send] [action=submit] [sends=entry]';
 const longText=' leading whitespace\n🧪 multiline Unicode complete field\n'.repeat(4000)+' FINAL FULL-TEXT SENTINEL \n';
 function temp(t:any){const home=mkdtempSync(join(tmpdir(),'exo-pages-'));return {home,cleanup:fixtureCleanup(t,home)};}
@@ -70,7 +72,9 @@ await registry.get('update_exosurface').execute('fixture-tool-call',{baseRevisio
 out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',message:{role:'assistant',content:[{type:'text',text:'Page action received full '+p.values.entry}]}});out({type:'agent_end'});
 }else out({type:'response',id:r.id,success:true,data:{}});}lock.close();`);
  drawPages(config.stateDir,{baseRevision:0,mutationId:'draw',snapshot:source});
- const owner=await startOwner(config);cleanup.beforeRemove(async()=>{const pid=Number(readFileSync(join(config.stateDir,'fixture-pi.pid'),'utf8'));await owner.close();assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir,'fixture-pi-exit.json'),'utf8')),{pid,code:0});cleanup.verifyGone(pid);});let ended=false;
+ const owner=await startOwner(config);
+ await settled(()=>existsSync(join(config.stateDir,'fixture-pi.pid')),10000,10);reapOnExit(Number(readFileSync(join(config.stateDir,'fixture-pi.pid'),'utf8'))); // the Pi this in-process owner starts dies with this process
+ cleanup.beforeRemove(async()=>{const pid=Number(readFileSync(join(config.stateDir,'fixture-pi.pid'),'utf8'));await owner.close();assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir,'fixture-pi-exit.json'),'utf8')),{pid,code:0});cleanup.verifyGone(pid);});let ended=false;
  const client=ownerConnection(config,e=>{if(e.type==='agent_end')ended=true;});cleanup.beforeRemove(()=>client.close());
  await assert.rejects(client.send('wrong-thread','page.edit',{baseRevision:1,mutationId:'wrong',surfaceId:'page',ref:'entry',value:longText}),/Not the primary/);
  const edit={baseRevision:1,mutationId:'edit',surfaceId:'page',ref:'entry',value:longText};
@@ -81,7 +85,7 @@ out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',mess
  assert.equal((await handlers.pageEdit(compiled.rpcContract.pageEdit.input.parse({threadId:'primary',...edit}))).revision,2);
  const press={baseRevision:2,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  assert.equal((await handlers.pagePress(compiled.rpcContract.pagePress.input.parse({threadId:'primary',...press}))).revision,3);
- for(let n=0;n<200&&!ended;n++)await new Promise(r=>setTimeout(r,10));assert.equal(ended,true);
+ await settled(()=>ended,10000,10);assert.equal(ended,true);
  const page=readPages(config.stateDir)!;assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page').entry,longText);
  assert.match(surfaceSnapshot(page.snapshot,'page'),/Owner updated page/);
  assert.equal(JSON.parse(readFileSync(join(config.stateDir,'response-page.json'),'utf8')).body,'Page action received full '+longText);

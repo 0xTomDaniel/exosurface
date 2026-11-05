@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
+import { waiter, settled } from './wait.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -17,17 +18,24 @@ const { kit, app, close } = await renderedApp();
 const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
 f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
 after(async () => {
-  view.unmount(); close();
-  for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
-  await new Promise(r => setTimeout(r, 500));
-  await f.model.close();
-  rmSync(f.root, { recursive: true, force: true });
+  try {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 500));
+  } finally { await f.model.close(); rmSync(f.root, { recursive: true, force: true }); }
 });
 const { fireEvent, within } = kit.testing;
-const until = async (what: string, ok: () => boolean | Promise<boolean>, ms = 30000) => { for (let w = 0; !(await ok()); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}\n${f.logs.join('\n')}`); await new Promise(r => setTimeout(r, 50)); } };
+const wait = waiter(() => f.logs.join('\n'));
+const until = (what: string, ok: () => boolean | Promise<boolean>) => wait(what, ok, 30000);
+/** Exo would act within moments of a turn's end: a wall-clock bounded wait for a change that must not come (false: none came). */
+const unchanged = async (changed: () => boolean | Promise<boolean>) => !(await settled(changed, 1500));
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
 const sidebar = () => within(view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement);
-const entries = () => sidebar().queryAllByRole('listitem').map((li: any) => li.textContent);
+const entries = () => sidebar().queryAllByRole('listitem').map((li: any) => li.textContent as string);
+/** The title at the top of the surface in view (the header's text). */
+const title = () => view.container.querySelector('main h1')?.textContent ?? null;
+/** Whether the sidebar shows an element of this role and name (a plain value to assert on, never the element). */
+const shows = (role: string, name: string | RegExp) => sidebar().queryByRole(role, { name }) !== null;
 /** The surface's name as the server lists it (thread_list, what every view reads). */
 const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
 /** A new surface through the sidebar's New surface button, started by BB with its first message. */
@@ -50,18 +58,20 @@ async function turn(threadId: string, text: string) {
 async function rename(from: string, to: string) {
   fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${from}` }).at(-1)!);
   const field = sidebar().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement;
-  assert.equal(field.value, from);
+  const shown = field.value;
+  assert.equal(shown, from);
   fireEvent.change(field, { target: { value: to } });
   fireEvent.keyDown(field, { key: 'Enter' });
 }
 
 test('acceptance-rename: a surface Exo named, renamed to "Backyard" in the sidebar, keeps "Backyard" after a further turn; the namer is not asked again', async () => {
   await until('Home listed', () => entries().join('|') === 'Home');
-  assert.equal(sidebar().queryByRole('button', { name: /^Rename/ }), null, 'Home has no rename');
+  assert.equal(shows('button', /^Rename/), false, 'Home has no rename');
   f.model.state.reply = 'Spring vegetable garden';
   const made = await newSurface();
   await turn(made, 'Help me plan a vegetable garden for spring');
   await until('auto-named in the sidebar', () => entries().join('|') === 'Home|Spring vegetable garden');
+  await until('auto-named in the title', () => title() === 'Spring vegetable garden');
   assert.equal(f.model.requests.length, 1);
 
   // Escape leaves the name as it was.
@@ -69,17 +79,20 @@ test('acceptance-rename: a surface Exo named, renamed to "Backyard" in the sideb
   const field = sidebar().getByRole('textbox', { name: 'Surface name' });
   fireEvent.change(field, { target: { value: 'Not this' } });
   fireEvent.keyDown(field, { key: 'Escape' });
-  assert.equal(sidebar().queryByRole('textbox', { name: 'Surface name' }), null);
+  assert.equal(shows('textbox', 'Surface name'), false);
   assert.deepEqual(entries(), ['Home', 'Spring vegetable garden']);
+  assert.equal(title(), 'Spring vegetable garden');
 
   await rename('Spring vegetable garden', '  Backyard ');
   await until('the sidebar shows Backyard', () => entries().join('|') === 'Home|Backyard');
+  await until('the title shows Backyard', () => title() === 'Backyard');
   assert.equal(await listedName(made), 'Backyard');
 
   f.model.state.reply = 'Something else entirely';
   await turn(made, 'Add tomatoes along the fence');
-  await new Promise(r => setTimeout(r, 1500));
+  assert.ok(await unchanged(() => f.model.requests.length > 1 || entries().join('|') !== 'Home|Backyard' || title() !== 'Backyard'));
   assert.deepEqual(entries(), ['Home', 'Backyard']);
+  assert.equal(title(), 'Backyard');
   assert.equal(await listedName(made), 'Backyard');
   assert.equal(f.model.requests.length, 1, 'the namer is not asked again');
 });
@@ -89,10 +102,11 @@ test('acceptance-rename: a surface renamed before its first turn keeps the perso
   const made = await newSurface();
   const asked = f.model.requests.length;
   await rename('New surface', 'Cabin trip');
-  await until('the sidebar shows Cabin trip', () => entries().at(-1) === 'Cabin trip');
+  await until('the sidebar and the title show Cabin trip', () => entries().at(-1) === 'Cabin trip' && title() === 'Cabin trip');
   await turn(made, 'Book the cabin for June');
-  await new Promise(r => setTimeout(r, 1500));
+  assert.ok(await unchanged(() => f.model.requests.length > asked || entries().at(-1) !== 'Cabin trip' || title() !== 'Cabin trip'));
   assert.equal(entries().at(-1), 'Cabin trip');
+  assert.equal(title(), 'Cabin trip');
   assert.equal(await listedName(made), 'Cabin trip');
   assert.equal(f.model.requests.length, asked, 'the namer is never called for it');
 
@@ -100,7 +114,7 @@ test('acceptance-rename: a surface renamed before its first turn keeps the perso
   await rename('Cabin trip', 'New surface');
   await until('the sidebar shows New surface', () => entries().at(-1) === 'New surface');
   await turn(made, 'And a canoe');
-  await new Promise(r => setTimeout(r, 1500));
+  assert.ok(await unchanged(() => f.model.requests.length > asked || entries().at(-1) !== 'New surface'));
   assert.equal(await listedName(made), 'New surface');
   assert.equal(f.model.requests.length, asked);
 });
@@ -116,9 +130,10 @@ test('acceptance-rename: a rename landing while the naming call is in flight win
   await until('the sidebar shows Garage', () => entries().at(-1) === 'Garage');
   f.model.release();
   await until('the namer gives way', () => f.logs.some(l => l.includes(made) && l.includes('keeps the person\'s name')));
-  await new Promise(r => setTimeout(r, 500));
+  assert.ok(await unchanged(() => entries().at(-1) !== 'Garage' || title() !== 'Garage'));
   assert.equal(await listedName(made), 'Garage');
   assert.equal(entries().at(-1), 'Garage');
+  assert.equal(title(), 'Garage');
 });
 
 test('the rename RPC refuses Home, an empty name, a too long name and a thread that is not a bound Exo surface', async () => {
@@ -135,7 +150,7 @@ test('the rename RPC refuses Home, an empty name, a too long name and a thread t
   fireEvent.change(field, { target: { value: ' ' } });
   fireEvent.keyDown(field, { key: 'Enter' });
   await until('the refusal shown', () => /empty/.test(sidebar().queryByRole('alert')?.textContent ?? ''));
-  assert.ok(sidebar().queryByRole('textbox', { name: 'Surface name' }));
+  assert.equal(shows('textbox', 'Surface name'), true);
   fireEvent.keyDown(sidebar().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
   assert.equal(entries().at(-1), listed);
 });
