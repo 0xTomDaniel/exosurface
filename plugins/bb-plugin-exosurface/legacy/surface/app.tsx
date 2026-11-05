@@ -16,6 +16,7 @@ import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
 import {ExoBlock,SurfaceInput} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
+import {SurfaceTitle} from './src/surface-title';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The canvas is a stage that follows the conversation. Every surface stays
 // mounted (drafts intact); receded ones are one click away on the shelf.
@@ -166,10 +167,10 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme}</style>
   <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
-   <div className="exo-topline"><h1>{clone?'Exosurface clone':'Exosurface'}</h1><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
+   <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
+   <ExoBlock threadId={state?.threadId??null}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
-   <ExoBlock threadId={state?.threadId??null}/>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
   </div></main>
   <SurfaceInput threadId={state?.threadId??null}/>
