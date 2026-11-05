@@ -175,8 +175,9 @@ async function parallel() {
   }
 }
 
-// #82: a new surface is "New surface" until its first turn; then the namer from its profile config names it once. Rendered
-// sidebar (app.tsx) on the real server RPCs; the namer's model is the fixture's fake over HTTP (models.json in its agent folder).
+// #82: a new surface is "New surface" until its first turn; then the namer names it once. Rendered
+// sidebar (app.tsx) on the real server RPCs; the namer is "namer" in the Exosurface local config (EXO_CONFIG); its model is
+// the fixture's fake over HTTP (models.json in its agent folder).
 async function autoName() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -198,15 +199,15 @@ async function autoName() {
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
     await until('the new surface ready', () => input() && !input().disabled && boundaries(made) > 0);
-    const profile = f.piRuns().at(-1).profile, config = JSON.parse(readFileSync(join(f.optchatHome, 'profiles', profile, 'config.json'), 'utf8'));
-    console.log(`profile ${profile} config.json: compactor ${JSON.stringify(config.compactor)}, namer ${config.namer ? JSON.stringify(config.namer) : 'absent (default openai/gpt-6-luna, thinking off)'}`);
+    const config = JSON.parse(readFileSync(f.config, 'utf8'));
+    console.log(`namer from the Exosurface local config ${f.config}: ${config.namer ? JSON.stringify(config.namer) : '"namer" absent (default openai/gpt-6-luna, thinking off)'}`);
     const before = entries()[1];
     console.log(`before its first turn: sidebar ${entries().join(', ')}`);
     await send(made, 'Help me plan a vegetable garden for spring');
     await until('the name in the sidebar', () => entries()[1] !== 'New surface', 15000).catch(() => {});
     const record = f.metadata(made).surfaceName, request = f.model.requests[0];
     console.log(`after its first turn:  sidebar ${entries().join(', ')}`);
-    console.log(`  namer used: ${record?.model} thinking ${record?.thinking} (model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)})`);
+    console.log(`  namer used: ${record?.model} thinking ${record?.thinking} from the Exosurface local config ${config.namer ? '"namer"' : 'default (no "namer")'} (model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)})`);
     console.log(`  record: ${JSON.stringify(record)}`);
     for (const line of f.logs) console.log(`  log ${line}`);
     const named = entries()[1], asked = f.model.requests.length;
@@ -227,7 +228,77 @@ async function autoName() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, 'auto-name': autoName };
+// #83: the person renames a surface from the rendered sidebar (its Rename action, type, Enter); Exo never names it again.
+// One surface Exo named, then renamed to Backyard, then a further turn; one renamed before its first turn.
+async function rename() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
+  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const boundaries = id => host.deltas(id).filter(d => d.kind === 'turn.boundary').length;
+  const until = async (what, ok, ms = 30000) => { for (let w = 0; !ok(); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const name = async id => (await f.rpc.thread_list(null)).threads.find(t => t.threadId === id)?.title;
+  const turn = async (id, text) => { const before = boundaries(id); await f.rpc.exo_send({ threadId: id, text }); console.log(`  sent: ${JSON.stringify(text)}`); await until('the turn to end', () => boundaries(id) > before); await new Promise(r => setTimeout(r, 1500)); };
+  const newOne = async () => {
+    const count = entries().length;
+    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')));
+    await until('the new surface', () => entries().length === count + 1);
+    const made = (await f.rpc.thread_list(null)).threads.at(-1).threadId;
+    const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
+    await until('the new surface ready', () => boundaries(made) > 0);
+    return made;
+  };
+  const renameTo = async (from, to) => {
+    fireEvent.click([...sidebar().querySelectorAll(`button[aria-label="Rename ${from}"]`)].at(-1));
+    const field = sidebar().querySelector('input[aria-label="Surface name"]');
+    fireEvent.change(field, { target: { value: to } }); fireEvent.keyDown(field, { key: 'Enter' });
+    console.log(`  renamed in the sidebar: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`);
+    await until(`the sidebar to show ${to}`, () => entries().at(-1) === to);
+  };
+  const show = async (when, id) => { const n = await name(id); console.log(`  ${when.padEnd(30)} name ${JSON.stringify(n)}  sidebar: ${entries().join(', ')}  namer calls: ${f.model.requests.length}`); return n; };
+  try {
+    await until('Home listed', () => entries().join('|') === 'Home');
+    const homeRpc = await f.rpc.thread_rename({ threadId: f.setup.threadId, name: 'My home' }).then(() => 'ACCEPTED', e => `refused (${e.message})`);
+    console.log(`Home: rename action ${sidebar().querySelector('button[aria-label^="Rename"]') ? 'SHOWN' : 'none'}; RPC: ${homeRpc}`);
+    console.log('--- a surface Exo named, renamed to Backyard ---');
+    f.model.state.reply = 'Spring vegetable garden';
+    const one = await newOne();
+    await turn(one, 'Help me plan a vegetable garden for spring');
+    await until('the auto-name', () => entries().at(-1) !== 'New surface', 15000).catch(() => {});
+    const auto = await show('after auto-naming:', one), asked = f.model.requests.length;
+    await renameTo(auto, 'Backyard');
+    const renamed = await show('after the rename:', one);
+    const emptyRpc = await f.rpc.thread_rename({ threadId: one, name: '  ' }).then(() => 'ACCEPTED', e => `refused (${e.message})`);
+    console.log(`  empty name: ${emptyRpc}`);
+    f.model.state.reply = 'Something else entirely';
+    await turn(one, 'Add tomatoes along the fence');
+    const further = await show('after a further turn:', one), againOne = f.model.requests.length - asked;
+    console.log('--- a surface renamed before its first turn ---');
+    f.model.state.reply = 'Exo would call it this';
+    const two = await newOne(), before = f.model.requests.length;
+    await show('new:', two);
+    await renameTo('New surface', 'Cabin trip');
+    const early = await show('after the rename:', two);
+    await turn(two, 'Book the cabin for June');
+    const kept = await show('after its first turn:', two), againTwo = f.model.requests.length - before;
+    console.log(`namer asked again: ${againOne} (Backyard), ${againTwo} (Cabin trip)`);
+    const ok = auto === 'Spring vegetable garden' && renamed === 'Backyard' && further === 'Backyard' && !againOne && early === 'Cabin trip' && kept === 'Cabin trip' && !againTwo
+      && entries().join('|') === 'Home|Backyard|Cabin trip' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
+    if (!ok) throw new Error('rename failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    await f.model.close();
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, 'auto-name': autoName, rename };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

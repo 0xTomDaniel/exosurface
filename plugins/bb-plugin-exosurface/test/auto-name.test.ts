@@ -1,5 +1,5 @@
 // #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until its first turn ends; then
-// the naming model from its profile config names it once from the person's first message and Exo's reply. Home never is.
+// the naming model from the Exosurface local config names it once from the person's first message and Exo's reply. Home never is.
 // Through the live entry points (server.ts RPCs, events and dispatch hook, host.ts bridge, the release owner, real Pi);
 // fake at the boundaries: BB, OptChat, Exo's model (a Pi extension) and the namer's model (HTTP, test/fake-model-http.ts).
 import { test, after } from 'node:test';
@@ -24,8 +24,15 @@ after(async () => {
 });
 const until = async (what: string, ok: () => boolean | Promise<boolean>, ms = 30000) => { for (let w = 0; !(await ok()); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}\n${f.logs.join('\n')}`); await new Promise(r => setTimeout(r, 50)); } };
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
-const primaryConfig = join(f.optchatHome, 'profiles', f.setup.profile, 'config.json');
-const setNamer = (namer: object | undefined) => { const c = JSON.parse(readFileSync(primaryConfig, 'utf8')); if (namer) c.namer = namer; else delete c.namer; writeFileSync(primaryConfig, JSON.stringify(c)); };
+/** The naming model in the Exosurface local config (EXO_CONFIG): set, or removed for the default. */
+const setNamer = (namer: object | undefined) => { const c = JSON.parse(readFileSync(f.config, 'utf8')); if (namer) c.namer = namer; else delete c.namer; writeFileSync(f.config, JSON.stringify(c)); };
+/** An OptChat profile rewritten as OptChat's own settings page saves it (pinned 0.8.6: settings-page update -> saveConfig of
+ * loadConfig's result, which keeps only compactor, subagent and OptChat's settings keys), with one setting changed. */
+const OPTCHAT_KEYS = ['compactor', 'subagent', 'subagentLevels', 'maxAgents', 'groupReports', 'previousExchange', 'previousExchangeKB', 'memorySearch', 'summaryAcceptBytes', 'jobs', 'refreshAt'];
+const optchatRewrite = (profile: string) => {
+  const file = join(f.optchatHome, 'profiles', profile, 'config.json'), raw = JSON.parse(readFileSync(file, 'utf8'));
+  writeFileSync(file, JSON.stringify({ ...Object.fromEntries(Object.entries(raw).filter(([k]) => OPTCHAT_KEYS.includes(k))), jobs: 4 }, null, 2) + '\n');
+};
 /** New surface through the server, started by BB with its first message, as the sidebar's button does. */
 async function newSurface() {
   const { threadId } = await f.rpc.thread_new(null);
@@ -39,8 +46,11 @@ async function turn(threadId: string, text: string) {
   await f.rpc.exo_send({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
-const record = (threadId: string) => f.metadata(threadId).surfaceName as any;
 const listed = async () => (await f.rpc.thread_list(null)).threads.map((t: any) => t.title);
+/** The surface's name as the server lists it (thread_list, what every view reads). */
+const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
+/** A published log line about this surface at this level. */
+const logged = (level: string, threadId: string, text: string | RegExp) => f.logs.some(l => l.startsWith(`${level}:`) && l.includes(threadId) && (typeof text === 'string' ? l.includes(text) : text.test(l)));
 
 test('a new surface is named after its first turn from the namer\'s answer, in the rendered sidebar; a second turn does not rename it; Home keeps its name', async () => {
   f.model.state.reply = 'Spring vegetable garden';
@@ -82,40 +92,40 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     assert.equal(f.model.requests.length, 1, 'the namer is not asked again');
 
     // Home: its turns end too, and it is never named.
-    const homeTitle = f.title('primary'), homeTurns = boundaries('primary');
+    const homeTurns = boundaries('primary');
     host.send('primary', 'plan the garden on Home');
     await until('Home\'s turn', () => boundaries('primary') > homeTurns);
     await new Promise(r => setTimeout(r, 1500));
     assert.equal(entries()[0], 'Home');
-    assert.equal(f.title('primary'), homeTitle);
-    assert.equal(record('primary'), undefined);
+    assert.equal((await listed())[0], 'Home');
     assert.equal(f.model.requests.length, 1);
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('the namer is the surface profile config\'s "namer" (provider, model, thinking); absent, openai/gpt-6-luna with thinking off', async () => {
+test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
   // Absent: the default, as the model receives it.
   setNamer(undefined);
   f.model.state.reply = 'Cabin trip';
   const plain = await newSurface(), seen = f.model.requests.length;
   await turn(plain, 'Book the cabin for June');
-  await until('named', () => record(plain)?.state === 'named');
-  assert.deepEqual([record(plain).model, record(plain).thinking, f.title(plain)], ['openai/gpt-6-luna', 'off', 'Cabin trip']);
+  await until('named', async () => (await listedName(plain)) === 'Cabin trip');
   const luna = f.model.requests[seen];
   assert.deepEqual([luna.path, luna.body.model, luna.body.reasoning?.effort], ['/v1/responses', 'gpt-6-luna', 'none']);
 
-  // Set beside compactor in the profile config (a new surface's profile takes the primary's): claude-haiku-5-5 is accepted.
+  // Set in the local config: claude-haiku-5-5 is accepted, and OptChat rewriting the primary's and the new surface's profile
+  // configs through its own writer (a settings change) does not lose it.
   setNamer({ provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' });
+  optchatRewrite(f.setup.profile);
   f.model.state.reply = '"Tax return checklist."';
   const haiku = await newSurface();
-  const own = JSON.parse(readFileSync(join(f.optchatHome, 'profiles', f.piRuns().at(-1).profile, 'config.json'), 'utf8'));
-  assert.deepEqual(own.namer, { provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' }, 'the surface profile config holds the namer');
+  optchatRewrite(f.piRuns().at(-1).profile);
   await turn(haiku, 'What do I need for my tax return?');
-  await until('named', () => record(haiku)?.state === 'named');
+  await until('named', async () => (await listedName(haiku)) === 'Tax return checklist');
   const asked = f.model.requests.at(-1)!;
   assert.deepEqual([asked.path.split('?')[0], asked.body.model], ['/v1/messages', 'claude-haiku-5-5']);
-  assert.deepEqual([record(haiku).model, record(haiku).thinking, f.title(haiku)], ['anthropic/claude-haiku-5-5', 'low', 'Tax return checklist']);
-  assert.ok((await listed()).includes('Tax return checklist'));
+  // Thinking as the model receives it: Pi sends a managed-effort model's level as the trailing system message's effort.
+  assert.equal(asked.body.messages.filter((m: any) => m.role === 'system').at(-1)?.output_config?.effort, 'low');
+  assert.ok(logged('info', haiku, 'by anthropic/claude-haiku-5-5 thinking low'), f.logs.join('\n'));
   setNamer(undefined);
 });
 
@@ -123,25 +133,24 @@ test('a failing namer leaves "New surface" and logs why; an invalid namer is nev
   f.model.state.fail = 400;
   const failing = await newSurface();
   await turn(failing, 'Sort out the garage');
-  await until('the failure recorded', () => record(failing)?.state === 'failed');
-  assert.equal(f.title(failing), 'New surface');
-  assert.ok(f.logs.some(l => l.startsWith('warn:') && l.includes(failing) && l.includes('keeps "New surface"') && l.includes('openai/gpt-6-luna')), f.logs.join('\n'));
+  await until('the failure logged', () => logged('warn', failing, 'keeps "New surface"'));
+  assert.ok(logged('warn', failing, 'openai/gpt-6-luna'), f.logs.join('\n'));
+  assert.equal(await listedName(failing), 'New surface');
   // Named once: a later turn does not ask again, even after a failure.
   f.model.state.fail = undefined;
   const asked = f.model.requests.length;
   await turn(failing, 'Start with the shelves');
   await new Promise(r => setTimeout(r, 1500));
   assert.equal(f.model.requests.length, asked);
-  assert.equal(f.title(failing), 'New surface');
+  assert.equal(await listedName(failing), 'New surface');
 
-  // An invalid namer in the surface's profile config: no model is called at all.
+  // An invalid namer in the local config: naming fails loudly and no model is called at all.
   const invalid = await newSurface();
-  const config = join(f.optchatHome, 'profiles', f.piRuns().at(-1).profile, 'config.json'), c = JSON.parse(readFileSync(config, 'utf8'));
-  writeFileSync(config, JSON.stringify({ ...c, namer: { provider: 'openai', model: 'gpt-6-luna', thinking: 'none' } }));
+  setNamer({ provider: 'openai', model: 'gpt-6-luna', thinking: 'none' });
   const before = f.model.requests.length;
   await turn(invalid, 'Plan the week');
-  await until('the failure recorded', () => record(invalid)?.state === 'failed');
-  assert.match(record(invalid).reason, /Invalid "namer"/);
+  await until('the failure logged', () => logged('warn', invalid, /keeps "New surface".*Invalid "namer"/));
   assert.equal(f.model.requests.length, before);
-  assert.equal(f.title(invalid), 'New surface');
+  assert.equal(await listedName(invalid), 'New surface');
+  setNamer(undefined);
 });

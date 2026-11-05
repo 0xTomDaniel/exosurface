@@ -33,9 +33,8 @@ export function bindThread(threadId: string) {
   const dir = join(CANONICAL_HOME, 'profiles', profile), agents = join(dir, 'AGENTS.md'), primary = join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE);
   if (!existsSync(dir)) optchat('create', profile);
   if (!lstatSync(agents, { throwIfNoEntry: false })?.isSymbolicLink()) { rmSync(agents, { force: true }); symlinkSync(join(primary, 'AGENTS.md'), agents); }
-  // The naming model (#82, surface-name.ts) is the primary's too when it sets one; absent, every surface uses the default.
-  const { compactor, subagent, namer } = JSON.parse(readFileSync(join(primary, 'config.json'), 'utf8'));
-  optchat('configure', profile, { compactor, subagent, ...(namer !== undefined ? { namer } : {}) });
+  const { compactor, subagent } = JSON.parse(readFileSync(join(primary, 'config.json'), 'utf8'));
+  optchat('configure', profile, { compactor, subagent });
   optchat('validate', profile);
   if (!createExclusive(file, { providerThreadId: `exo:${profile}:main`, profile, runtimeKind: 'canonical', cursor: 0 })) throw new Error('Thread binding changed concurrently');
   return { threadId, profile };

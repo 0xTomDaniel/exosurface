@@ -1,30 +1,43 @@
 // Surface auto-name (#82; spec pages-and-activity N7, N5): a new surface is "New surface" until its first turn ends; then a
 // small, fast model names it once from the person's first message and Exo's reply when it has arrived. The naming model is
-// the surface profile's "namer" in OptChat's config.json, beside "compactor" and with its {provider, model, thinking} shape
-// and validation; absent, it is openai/gpt-6-luna with thinking off. It is called through Pi (the same CLI and JSONL RPC
-// client the runtime uses, pi-rpc.ts) with no tools, extensions, context files or session, and must run on exactly that
-// model and thinking: anything else is a failure, never a substitute.
+// "namer" in the Exosurface local config (EXO_CONFIG exosurface.json, local-config.ts), with compactor's {provider, model,
+// thinking} shape and validation; absent, it is openai/gpt-6-luna with thinking off. It lives there, not in the OptChat
+// profile config, because OptChat's own config writers keep only the keys OptChat knows and would drop it (director ruling,
+// #82 review). The file is read at each naming, so a change applies to the next surface named. It is called through Pi (the
+// same CLI and JSONL RPC client the runtime uses, pi-rpc.ts) with no tools, extensions, context files or session, and must
+// run on exactly that model and thinking: anything else is a failure, never a substitute.
 import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { join } from 'node:path';
 import { modelChoice, type ModelChoice } from '../../../src/config.ts';
 import { childEnv } from '../../../src/env.ts';
 import { PiRpc } from './pi-rpc.ts';
 
 export const NEW_SURFACE = 'New surface';
 export const DEFAULT_NAMER: ModelChoice = { provider: 'openai', model: 'gpt-6-luna', thinking: 'off' };
-/** The durable record on the BB thread (plugin metadata key): one per surface. #83 adds the person's rename to it. */
+/** The durable record on the BB thread (plugin metadata key): one per surface. Any record, Exo's or the person's rename
+ * (#83), means Exo never names that surface again. */
 export const NAME_RECORD = 'surfaceName';
 export type NameRecord = { by: 'exo'; state: 'named'; name: string; model: string; thinking: string; at: string; usage?: { input: number; output: number } }
-  | { by: 'exo'; state: 'failed'; reason: string; model?: string; thinking?: string; at: string };
+  | { by: 'exo'; state: 'failed'; reason: string; model?: string; thinking?: string; at: string }
+  | { by: 'person'; state: 'named'; name: string; at: string };
 
-/** The naming model from a profile's config.json: its "namer", or the default when absent. An invalid one throws. */
-export function namerChoice(profileDir: string): { choice: ModelChoice; from: 'profile' | 'default' } {
-  const config = JSON.parse(readFileSync(join(profileDir, 'config.json'), 'utf8'));
+/** The longest name the person may give a surface. */
+export const MAX_NAME = 80;
+/** The person's name for a surface: trimmed, inner whitespace one space; empty or longer than MAX_NAME throws. */
+export function personName(name: string) {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  if (!clean) throw new Error('A surface name cannot be empty');
+  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${MAX_NAME} characters`);
+  return clean;
+}
+
+/** The naming model from the Exosurface local config file: its "namer", or the default when absent. An invalid one throws. */
+export function namerChoice(configFile: string): { choice: ModelChoice; from: 'config' | 'default' } {
+  const config = existsSync(configFile) ? JSON.parse(readFileSync(configFile, 'utf8')) : {};
   if (config.namer === undefined) return { choice: DEFAULT_NAMER, from: 'default' };
-  if (!modelChoice(config.namer)) throw new Error(`Invalid "namer" in ${join(profileDir, 'config.json')}: needs {"provider","model","thinking"} like "compactor"`);
+  if (!modelChoice(config.namer)) throw new Error(`Invalid "namer" in ${configFile}: needs {"provider","model","thinking"} like "compactor"`);
   const { provider, model, thinking } = config.namer;
-  return { choice: { provider, model, thinking }, from: 'profile' };
+  return { choice: { provider, model, thinking }, from: 'config' };
 }
 
 const said = (message: any) => typeof message?.content === 'string' ? message.content
