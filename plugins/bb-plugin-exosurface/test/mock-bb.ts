@@ -90,6 +90,24 @@ async function serverRpc(vault: string) {
   const provider: { deliver?: (threadId: string, text: string) => void } = {};
   // Threads read but not spawned here keep their updates (title) beside, so spawned ids stay as they were.
   const others = new Map<string, any>(), metadata = new Map<string, Record<string, unknown>>();
+  // BB's thread event log, the client/turn/requested rows only: one per admitted message, with its author as BB resolves it
+  // (dispatch-author.ts, resolveDispatchAuthor: a retry is "system", a message from another thread "agent" with its
+  // senderThreadId, a system notice "system", anything else, a person's send or a plugin's sdk send, "user").
+  const requested = new Map<string, any[]>();
+  const logRequest = (threadId: string, text: string, initiator: string, senderThreadId: string | null, source: 'spawn' | 'tell') => {
+    const rows = requested.get(threadId) ?? []; requested.set(threadId, rows);
+    rows.push({ id: `event-${threadId}-${rows.length + 1}`, threadId, seq: rows.length + 1, createdAt: Date.now(), scope: { kind: 'thread' }, type: 'client/turn/requested', data: { direction: 'outbound', initiator, senderThreadId, source, input: [{ type: 'text', text, mentions: [] }] } });
+  };
+  /** BB's dispatch of a message to an existing thread by its author: the dispatch pass (its context carrying that author),
+   *  then the request row in the thread's event log, then the turn goes to the thread's provider. */
+  const dispatch = async (threadId: string, text: string, initiator: 'user' | 'agent' | 'system', senderThreadId: string | null) => {
+    for (const hook of hooks) {
+      const decision = await hook({ thread: thread(threadId), project: { id: 'project' }, environment: null, input: { text, blocks: [{ type: 'text', text }] }, attempt: 'start-turn', attemptKind: 'start-turn', initiator, senderThreadId, queuedMessages: [] });
+      if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
+    }
+    logRequest(threadId, text, initiator, senderThreadId, 'tell');
+    provider.deliver!(threadId, text);
+  };
   const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
   // BB's thread lifecycle events (bb.events) and the plugin's log lines.
   const listeners: Record<string, ((payload: any) => unknown)[]> = {}, logs: string[] = [];
@@ -123,22 +141,25 @@ async function serverRpc(vault: string) {
           const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt: 1000 + threads.size };
           threads.set(id, created);
           for (const hook of hooks) {
-            const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn' });
+            const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn', initiator: 'user', senderThreadId: null, queuedMessages: [] });
             if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
           }
+          logRequest(id, args.prompt, 'user', null, 'spawn');
           return created;
         },
-        // A send on an existing thread: recorded; with a provider, the dispatch pass, then the turn goes to it.
+        // A plugin's send on an existing thread (no sender thread: BB's author is "user"): recorded; with a provider, dispatched.
         async send(args: { threadId: string; input: { type: string; text: string }[] }) {
           sends.push(args);
           if (!provider.deliver) return {};
-          const text = args.input.map(p => p.text).join('');
-          for (const hook of hooks) {
-            const decision = await hook({ thread: thread(args.threadId), project: { id: 'project' }, environment: null, input: { text, blocks: [{ type: 'text', text }] }, attempt: 'start-turn', attemptKind: 'start-turn' });
-            if (decision.action === 'reject') throw new Error(`mock BB: dispatch rejected: ${decision.message}`);
-          }
-          provider.deliver(args.threadId, text);
+          await dispatch(args.threadId, args.input.map(p => p.text).join(''), 'user', null);
           return {};
+        },
+        // BB's thread event log (bb.sdk.threads.events.list), oldest first or newest first, filtered by type.
+        events: {
+          async list({ threadId, types, order = 'asc' }: { threadId: string; types?: string[]; order?: 'asc' | 'desc' }) {
+            const rows = (requested.get(threadId) ?? []).filter(r => !types || types.includes(r.type));
+            return order === 'desc' ? [...rows].reverse() : rows;
+          },
         },
       },
       projects: { async list() { return [{ id: 'project', name: 'Exo' }]; }, async get() { return { id: 'project', sources: [{ hostId: 'host', path: vault }] }; } },
@@ -152,7 +173,11 @@ async function serverRpc(vault: string) {
   };
   /** BB's stored name of a thread, as the person (or BB) set it; what thread_list reads as the surface's title. */
   const retitle = (threadId: string, title: string) => { threads.set(threadId, { ...thread(threadId), title }); };
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs };
+  /** A message reaching a thread from someone other than the person: another thread's `bb thread tell` (agent, with its
+   *  sender) or a system notice (system), dispatched as BB does. */
+  const tell = (threadId: string, text: string, from: { senderThreadId: string } | 'system') =>
+    dispatch(threadId, text, from === 'system' ? 'system' : 'agent', from === 'system' ? null : from.senderThreadId);
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -170,13 +195,13 @@ export async function liveFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 

@@ -156,6 +156,64 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
+test('acceptance-auto-name: an agent\'s or the system\'s message on a new surface before the person\'s first message names nothing and uses up nothing; the person\'s first message then names it while Exo\'s turn runs, once', async () => {
+  f.model.state.reply = 'Rose garden';
+  const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+  const title = () => view.container.querySelector('main h1')?.textContent ?? null;
+  const { fireEvent } = kit.testing;
+  try {
+    await until('the sidebar listed', () => entries()[0] === 'Home');
+    const count = entries().length;
+    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    await until('the new surface listed', () => entries().length === count + 1);
+    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+    const profile = f.piRuns().at(-1).profile;
+    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    const asked = f.model.requests.length;
+
+    // First another thread tells the surface something (agent), then a system notice reaches it; each is a full Exo turn.
+    for (const [text, from] of [['quiet: agent note about the cabin trip', { senderThreadId: 'thread-other' }], ['quiet: system notice: a child thread finished', 'system']] as const) {
+      const before = boundaries(made);
+      await f.tell(made, text, from);
+      await until(`Exo's turn on ${JSON.stringify(text)}`, () => boundaries(made) > before);
+    }
+    assert.equal(await unchanged(() => f.model.requests.length > asked || title() !== 'New surface'), true, 'an agent or system message names nothing');
+    assert.equal(f.model.requests.length - asked, 0, 'the namer was not asked');
+    assert.equal(title(), 'New surface');
+    assert.equal(await listedName(made), 'New surface');
+
+    // The person's first message names it, from that message, while Exo's turn is still running.
+    const sent = boundaries(made);
+    fireEvent.change(input()!, { target: { value: 'hold: Plan a rose garden by the porch' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the name while Exo\'s turn runs', () => title() === 'Rose garden' && entries().at(-1) === 'Rose garden');
+    assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
+    assert.equal(f.model.requests.length - asked, 1);
+    const prompt = JSON.stringify(f.model.requests[asked].body);
+    assert.equal(prompt.includes('Plan a rose garden by the porch'), true, 'named from the person\'s message');
+    assert.equal(prompt.includes('cabin trip') || prompt.includes('child thread finished'), false, 'not from the agent\'s or the system\'s');
+
+    f.release(profile);
+    await until('Exo\'s turn ends', () => boundaries(made) > sent);
+    f.model.state.reply = 'Something else entirely';
+    const later = boundaries(made);
+    await f.tell(made, 'quiet: another agent note', { senderThreadId: 'thread-other' });
+    await until('the agent\'s later turn ends', () => boundaries(made) > later);
+    const last = boundaries(made);
+    fireEvent.change(input()!, { target: { value: 'Add climbing roses' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the later turn ends', () => boundaries(made) > last);
+    assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Rose garden'), true, 'named once');
+    assert.equal(await listedName(made), 'Rose garden');
+    assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
+  } finally { view.unmount(); f.realtime.deliver = undefined; }
+});
+
 test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
   // Absent: the default, as the model receives it.
   setNamer(undefined);

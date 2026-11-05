@@ -371,6 +371,7 @@ async function secondBundle() {
 // once. Rendered surface view (app.tsx: sidebar and the title at the top) on the real server RPCs; the namer is "namer" in the
 // Exosurface local config (EXO_CONFIG); its model is the fixture's fake over HTTP (models.json in its agent folder). Exo's first
 // turn is held (the fake Exo model answers a "hold:" message only on release), so the name is seen while Exo still works.
+// An agent's and a system message come first and name nothing: only the person's first message does.
 async function autoName() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -398,6 +399,14 @@ async function autoName() {
     console.log(`namer from the Exosurface local config ${f.config}: ${config.namer ? JSON.stringify(config.namer) : '"namer" absent (default openai/gpt-6-luna, thinking off)'}`);
     const before = entries()[1], titleBefore = title();
     console.log(`before its first message: sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(titleBefore)}`);
+    // Only the person's messages name a surface: another thread's message (agent) and a system notice come first.
+    for (const [text, from, who] of [['quiet: agent note about the cabin trip', { senderThreadId: 'thread-other' }, 'agent (another thread)'], ['quiet: system notice: a child thread finished', 'system', 'system']]) {
+      const at = boundaries(made); await f.tell(made, text, from);
+      await until(`Exo's turn on the ${who} message`, () => boundaries(made) > at, 30000);
+      await settled(() => f.model.requests.length > 0 || title() !== 'New surface', 1500);
+      console.log(`after a message from the ${who} and Exo's turn on it: sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())}; namer asked ${f.model.requests.length} times`);
+    }
+    const untouched = title() === 'New surface' && entries()[1] === 'New surface' && f.model.requests.length === 0;
     const turns = boundaries(made);
     type('hold: Help me plan a vegetable garden for spring');
     await until('the name in the sidebar and the title', () => entries()[1] !== 'New surface' && title() !== 'New surface', 30000);
@@ -418,7 +427,7 @@ async function autoName() {
     const changed = await settled(() => f.model.requests.length > 1 || entries()[1] !== named || title() !== titled, 2000);
     const after = entries()[1], asked = f.model.requests.length;
     console.log(`after a later send:     sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())} (${!changed ? 'unchanged' : 'CHANGED'}; namer asked ${asked} time${asked === 1 ? '' : 's'} in all)`);
-    const ok = before === 'New surface' && titleBefore === 'New surface' && running && named === 'Spring vegetable garden' && titled === named && !changedAtEnd && !changed && after === named && asked === 1 && entries()[0] === 'Home'
+    const ok = before === 'New surface' && titleBefore === 'New surface' && untouched && running && named === 'Spring vegetable garden' && titled === named && !changedAtEnd && !changed && after === named && asked === 1 && entries()[0] === 'Home'
       && !config.namer && request?.path === '/v1/responses' && request?.body.model === 'gpt-6-luna' && request?.body.reasoning?.effort === 'none'; // the default: openai, gpt-6-luna, thinking off
     if (!ok) throw new Error('auto-name failed');
   } finally {
