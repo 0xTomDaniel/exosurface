@@ -185,7 +185,10 @@ async function serverRpc(vault: string) {
    *  sender) or a system notice (system), dispatched as BB does. */
   const tell = (threadId: string, text: string, from: { senderThreadId: string } | 'system') =>
     dispatch(threadId, text, from === 'system' ? 'system' : 'agent', from === 'system' ? null : from.senderThreadId);
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk: bb.sdk };
+  /** The person's queued message sent with BB's explicit Send-now: BB skips the dispatch pass for it by design (BB 0.48
+   *  dispatch: `if (!sendNow && hasMessageDispatchHooks())`), then logs the request (author "user") and starts the turn. */
+  const sendNow = (threadId: string, text: string) => { logRequest(threadId, text, 'user', null, 'tell'); provider.deliver!(threadId, text); };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -203,13 +206,13 @@ export async function liveFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sdk, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 

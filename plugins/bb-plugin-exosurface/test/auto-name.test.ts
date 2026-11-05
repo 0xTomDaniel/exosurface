@@ -10,7 +10,6 @@ import { join } from 'node:path';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
 import { waiter, settled } from './wait.ts';
-import { personsFirstInLog } from '../legacy/primary/src/surface-name.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -215,19 +214,43 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('the person\'s first message is found past BB\'s event page of 100: 150 agent messages first, read within BB\'s limit', async () => {
-  // Messages BB admits to a thread (its event log) with no provider turn: the log is what is read here.
-  const deliver = f.provider.deliver; f.provider.deliver = () => {};
+test('acceptance-auto-name: 150 agent messages on a new surface, then the person\'s first message sent with BB\'s Send-now (no dispatch pass): it is found past BB\'s event page of 100 and names the surface once Exo\'s turn ends', async () => {
+  f.model.state.reply = 'Creek orchard';
+  const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+  const title = () => view.container.querySelector('main h1')?.textContent ?? null;
+  const { fireEvent } = kit.testing;
   try {
-    for (let i = 0; i < 150; i++) await f.tell('paged', `agent note ${i}`, { senderThreadId: 'thread-other' });
-    await f.sdk.threads.send({ threadId: 'paged', input: [{ type: 'text', text: 'Plan the orchard' }] });
-    await f.sdk.threads.send({ threadId: 'paged', input: [{ type: 'text', text: 'And the bees' }] });
-  } finally { f.provider.deliver = deliver; }
-  await assert.rejects(f.sdk.threads.events.list({ threadId: 'paged', types: ['client/turn/requested'], limit: '200' }), /Thread event limit cannot exceed 100/);
-  const pages: string[] = [];
-  const first = await personsFirstInLog(afterSeq => { pages.push(afterSeq ?? 'start'); return f.sdk.threads.events.list({ threadId: 'paged', types: ['client/turn/requested'], order: 'asc', limit: '100', ...(afterSeq ? { afterSeq } : {}) }); }, '/exosurface-new-surface');
-  assert.equal(first, 'Plan the orchard');
-  assert.deepEqual(pages, ['start', '100']);
+    await until('the sidebar listed', () => entries()[0] === 'Home');
+    const count = entries().length;
+    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    await until('the new surface listed', () => entries().length === count + 1);
+    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    const asked = f.model.requests.length;
+    // Another thread tells the surface 150 things: BB admits and logs each (author "agent"); their turns are not what this
+    // is about, so the provider is not reached for them.
+    const deliver = f.provider.deliver; f.provider.deliver = () => {};
+    try { for (let i = 0; i < 150; i++) await f.tell(made, `agent note ${i} about the cabin trip`, { senderThreadId: 'thread-other' }); }
+    finally { f.provider.deliver = deliver; }
+    assert.equal(await unchanged(() => f.model.requests.length > asked || title() !== 'New surface'), true, 'agent messages name nothing');
+
+    // The person's first message, queued and sent with Send-now: no dispatch pass, so only BB's event log holds it, after
+    // 151 earlier requests (New surface's start and the agent's 150). Exo's turn ends, and the surface is named from it.
+    const sent = boundaries(made);
+    f.sendNow(made, 'Plan the orchard by the creek');
+    await until('Exo\'s turn on the person\'s message', () => boundaries(made) > sent);
+    await until('the title and the sidebar show the name', () => title() === 'Creek orchard' && entries().at(-1) === 'Creek orchard');
+    assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
+    const prompt = JSON.stringify(f.model.requests[asked].body);
+    assert.equal(prompt.includes('Plan the orchard by the creek'), true, 'the person\'s text reached the namer');
+    assert.equal(prompt.includes('cabin trip'), false, 'no agent text reached the namer');
+    assert.equal(await listedName(made), 'Creek orchard');
+  } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
 test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
