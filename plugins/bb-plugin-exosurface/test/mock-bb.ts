@@ -56,6 +56,13 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+    // "draw <ref>: <title>" draws a page about that topic as page <ref>; "draw <ref>: <title> beside <other>" also asks for
+    // page <other> beside it. It tries revision 0 and, told the surface is further on, draws again on that revision.
+    const page=/^draw ([a-z]+): (.+?)(?: beside ([a-z]+))?$/.exec(said),stale=messages.at(-1)?.role==='toolResult'?/the surface is at revision (\\d+)/.exec(textOf(messages.at(-1))):null;
+    if(page&&(messages.at(-1)?.role==='user'||stale)){const[,ref,title,beside]=page,revision=Number(stale?.[1]??0);
+     const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:revision,snapshot:'- region '+JSON.stringify(title)+' [ref='+ref+']:\\n  - heading '+JSON.stringify(title)+' [ref=title]',...(beside?{focus:ref,beside:[beside]}:{})}};
+     message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
+     stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.startsWith('hold:'))while(!existsSync(join(process.env.OPTCHAT_HOME,'release',name)))await sleep(25);
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;

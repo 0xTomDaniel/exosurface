@@ -225,7 +225,46 @@ async function opening() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening };
+// #81: one page at a time. A page about the week, then a message about the garden and Exo's finished turn (nobody scrolls,
+// clicks or types): the rendered pages in view (one, the garden's) and the page strip's pills (the week's); then Exo asks
+// for the garden page beside a new seed list page: still one page in view, the garden page a pill.
+async function onePage() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
+  const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
+  const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label'));
+  const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
+  const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}; in view ${JSON.stringify(inView())}`); await new Promise(r => setTimeout(r, 50)); } };
+  const send = async (text, page) => {
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: text } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply()?.textContent === `Exo (${f.setup.profile}): ${text}` && inView().includes(page));
+    console.log(`sent ${JSON.stringify(text)}; Exo's turn finished, nothing scrolled, clicked or typed since`);
+    console.log(`  pages in view (${inView().length}): ${JSON.stringify(inView())}`);
+    console.log(`  page strip pills: ${JSON.stringify(pills())}`);
+  };
+  try {
+    await send('draw week: Week plan', 'Week plan');
+    await send('draw garden: Garden plan', 'Garden plan');
+    const topic = JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]';
+    await send('draw seeds: Seed list beside garden', 'Seed list');
+    const beside = JSON.stringify(inView()) === '["Seed list"]' && pills().includes('Garden plan');
+    if (!topic || !beside) throw new Error('one page failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
