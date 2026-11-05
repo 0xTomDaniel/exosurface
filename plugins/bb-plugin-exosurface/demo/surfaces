@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
-import { renderedApp } from '../test/app-render.ts';
+import { renderedApp, rightAligned, boxed } from '../test/app-render.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -207,14 +207,14 @@ async function opening() {
     const pageText = el => `${JSON.stringify(el.getAttribute('aria-label'))}, rendered as <${el.firstElementChild?.tagName.toLowerCase()}>`;
     console.log('--- the surface view, top to bottom ---');
     for (const el of parts) {
-      const k = kind(el), boxed = k === 'reply' && /\b(border|rounded|shadow|card|callout)/.test([el, el.parentElement].map(e => e.getAttribute('class') ?? '').join(' '));
-      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (right-aligned: margin-left ${getComputedStyle(el).marginLeft})` : ''}${k === 'reply' ? `  (${boxed ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
+      const k = kind(el); // presentation from computed styles (test/app-render.ts); true layout: the owner's RDP walkthrough
+      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (${rightAligned(el) ? 'right-aligned' : 'NOT right-aligned'})` : ''}${k === 'reply' ? `  (${boxed(el, block()) ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
     }
     const first = view.container.textContent.includes(sends[0]);
     console.log(`first message ${JSON.stringify(sends[0])}: ${first ? 'SHOWN' : 'absent'}`);
     const order = parts.map(kind).join(' > ');
     console.log(`order: ${order}`);
-    const ok = order === 'title > bubble > reply > page' && parts[0].textContent === 'Garden plan' && said().textContent === sends[1] && reply().textContent.endsWith(`: ${sends[1]}`) && getComputedStyle(said()).marginLeft === 'auto' && !first
+    const ok = order === 'title > bubble > reply > page' && parts[0].textContent === 'Garden plan' && said().textContent === sends[1] && reply().textContent.endsWith(`: ${sends[1]}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
       && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
     if (!ok) throw new Error('opening failed');
   } finally {

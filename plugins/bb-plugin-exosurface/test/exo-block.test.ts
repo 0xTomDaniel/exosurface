@@ -66,8 +66,10 @@ test('after a second send on the same topic, the Exo block shows only the reply 
 });
 
 test('a turn in which Exo says nothing leaves the Exo block empty', async () => {
-  await send('quiet: only redraw the page');
+  // Held until the block has been seen saying Exo is working, so the turn cannot end before the block shows it.
+  await send('hold: quiet: only redraw the page');
   await until('the block to say Exo is working', () => reply()?.textContent === 'Exo is working on this page…');
+  f.release(f.setup.profile);
   // The provider bridge reports the third turn's end to BB; then the block has caught up with it.
   const ended = () => { const d = host.deltas('primary'), third = d.filter(x => x.kind === 'turn.open')[2]; return !!third && d.slice(d.indexOf(third)).some(x => x.kind === 'turn.boundary'); };
   await until('the third turn to end', ended);

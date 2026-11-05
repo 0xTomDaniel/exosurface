@@ -33,3 +33,35 @@ export async function renderedApp() {
     return { kit, app, close: () => dom.window.close() };
   } finally { rmSync(out, { recursive: true, force: true }); }
 }
+
+// Presentation as jsdom computes it from the app's own stylesheets (getComputedStyle), never class names, so a restyle
+// that looks the same passes. jsdom does no layout, and it drops a shorthand declaration holding var() (e.g. a border in a
+// theme colour): true layout and paint are checked in the owner's RDP walkthrough.
+const css = (el: Element) => getComputedStyle(el);
+const edge = (v: string) => ['flex-end', 'end', 'right', 'self-end'].includes(v);
+/** Whether an element sits against the right edge of its container, by any technique: an auto left margin on a shrunk box,
+ *  a right float, flex or grid end alignment on it or its container, or right text alignment around an inline box. */
+export function rightAligned(el: Element): boolean {
+  const own = css(el), parent = el.parentElement ? css(el.parentElement) : null, display = parent?.display ?? '';
+  if (own.float === 'right') return true;
+  if (display.endsWith('flex')) {
+    const column = (parent!.flexDirection ?? '').startsWith('column');
+    return own.marginLeft === 'auto' || (column ? edge(own.alignSelf) || (['', 'auto'].includes(own.alignSelf) && edge(parent!.alignItems)) : edge(parent!.justifyContent));
+  }
+  if (display.endsWith('grid')) return own.marginLeft === 'auto' || edge(own.justifySelf) || (['', 'auto'].includes(own.justifySelf) && edge(parent!.justifyItems));
+  if (own.display.startsWith('inline')) return ['right', 'end'].includes(parent?.textAlign ?? '');
+  // A block box: an auto left margin moves it right only when it is narrower than its container.
+  const shrunk = !['', 'auto', '100%'].includes(own.width) || !['', 'none', '100%'].includes(own.maxWidth) || own.display === 'table';
+  return own.marginLeft === 'auto' && shrunk;
+}
+const painted = (s: CSSStyleDeclaration) =>
+  ['Top', 'Right', 'Bottom', 'Left'].some(side => !['', 'none', 'hidden'].includes((s as any)[`border${side}Style`]) && !['0', '0px'].includes((s as any)[`border${side}Width`]))
+  || !['', 'transparent', 'rgba(0, 0, 0, 0)', 'initial'].includes(s.backgroundColor) || !['', 'none', 'initial'].includes(s.backgroundImage)
+  || !['', 'none', 'initial'].includes(s.boxShadow);
+/** Whether an element is drawn in a box: it, anything inside it, or any element between it and `within` (inclusive) has a
+ *  border, a background or a shadow. */
+export function boxed(el: Element, within: Element): boolean {
+  const chain: Element[] = [...el.querySelectorAll('*')];
+  for (let at: Element | null = el; at; at = at === within ? null : at.parentElement) chain.push(at);
+  return chain.some(e => painted(css(e)));
+}
