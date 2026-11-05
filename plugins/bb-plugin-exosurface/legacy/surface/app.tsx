@@ -12,12 +12,15 @@ import {deliverySchema} from './src/delivery';
 import {moduleNodes,moduleIds} from './src/workspace';
 import {stagePlan,nativeFocus,surfaceTitle} from './src/stage';
 import {exoReactCatalog} from './src/exo-components';
+import {bundleCatalogs} from './src/bundle-tags';
 import {documentStyle} from './lib/document-style';
 import {exoTheme} from './lib/exo-theme';
 import {ExoBlock,SurfaceInput,onSend} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 import {SurfaceTitle} from './src/surface-title';
 type Local={id:string;nativeFocus:string|undefined}|null;
+// The catalogs pages render with: their elements under this bundle's own tag names (src/bundle-tags.ts).
+const CATALOGS=bundleCatalogs([basicCatalog,exoReactCatalog]);
 // The canvas is a stage that follows the conversation: one page in view (S13). Every surface stays
 // mounted (drafts intact); receded ones are one click away on the shelf.
 function Canvas({view,local}:{view:WorkspaceView;local:Local}){
@@ -78,7 +81,7 @@ function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:Ver
  const view=useRef<WorkspaceView|null>(null),press=useRef<(a:any)=>void>(()=>{});
  useEffect(()=>{let alive=true;setMeta(null);setError('');
   rpc.call('surfaceAt',{threadId,surface:ref.surface,revision:ref.revision}).then(async m=>{if(!alive)return;if(m.onStage){onCurrent(m.surface);return;}
-   const v=new WorkspaceView(a=>press.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);v.accept(deliverySchema.parse({epoch:`rewind-${m.surface}-${m.revision}`,checkpoint:m.snapshot,updates:[],preview:null}));
+   const v=new WorkspaceView(a=>press.current(a),()=>tick(n=>n+1),CATALOGS);v.accept(deliverySchema.parse({epoch:`rewind-${m.surface}-${m.revision}`,checkpoint:m.snapshot,updates:[],preview:null}));
    const p=await rpc.call('pending',{threadId,op:'get'}).catch(()=>null);if(p&&p.surface===m.surface&&p.revision===m.revision)for(const u of p.updates)v.processor.getSurfaces().get(m.surface)?.dataModel.set(u.path,u.value);
    view.current?.dispose();view.current=v;setMeta(m);}).catch(e=>alive&&setError(String(e)));
   return()=>{alive=false;view.current?.dispose();view.current=null;};},[ref.surface,ref.revision,threadId]);
@@ -155,7 +158,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  const scroller=useRef<HTMLElement>(null);
  useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId&&scroller.current)scroller.current.scrollTop=0;}),[]);
  async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
- useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),[basicCatalog,exoReactCatalog]);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
+ useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),CATALOGS);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
  useRealtime(channel,payload=>{if(other(payload))return;serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
  useRealtime(`${channel}-error`,payload=>!other(payload)&&setError(String((payload as any)?.message??'Workspace stream failed')));

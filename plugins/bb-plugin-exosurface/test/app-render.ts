@@ -12,12 +12,18 @@ import { parse, type CssNode } from 'css-tree';
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
 
-/** Installs a jsdom window as the global DOM, then returns the bundled app's registrations and the SDK test kit. */
-export async function renderedApp() {
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://bb.invalid/plugins/exosurface/surface', pretendToBeVisual: true });
+/** Installs a jsdom window as the global DOM, then returns the bundled app's registrations and the SDK test kit. Each call
+ *  builds and loads its own bundle (its own module instances and element classes). `window`: load into an earlier call's
+ *  window instead of a fresh one, as BB loads a reinstalled plugin's new app bundle into its long-lived window (one
+ *  customElements registry); its `close` then leaves the window to that earlier call. */
+export async function renderedApp(options: { window?: JSDOM } = {}) {
+  const dom = options.window ?? new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://bb.invalid/plugins/exosurface/surface', pretendToBeVisual: true });
   const g = globalThis as any;
-  for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent', 'MutationObserver', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame', 'DocumentFragment', 'Text', 'CustomEvent', 'HTMLInputElement', 'HTMLTextAreaElement', 'HTMLButtonElement', 'HTMLSelectElement'])
-    if (!(key in g) || key === 'window' || key === 'document' || key === 'navigator') Object.defineProperty(g, key, { configurable: true, writable: true, value: (dom.window as any)[key] });
+  for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent', 'MutationObserver', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame', 'DocumentFragment', 'Text', 'CustomEvent', 'HTMLInputElement', 'HTMLTextAreaElement', 'HTMLButtonElement', 'HTMLSelectElement', 'customElements', ...Object.getOwnPropertyNames(dom.window).filter(k => /^[A-Z]/.test(k) && typeof (dom.window as any)[k] === 'function')])
+    if (!(key in g) || ['window', 'document', 'navigator', 'customElements', 'Event', 'CustomEvent'].includes(key)) Object.defineProperty(g, key, { configurable: true, writable: true, value: (dom.window as any)[key] });
+  // The window's own custom element registry, as in BB's renderer: without it Lit's Node build installs a server-side stand-in
+  // registry, so A2UI elements were never upgraded in this harness and a second bundle's definitions were never checked. The
+  // upgraded elements then use the window's DOM classes (every one Node lacks), and its events: Node's own Event is refused by jsdom.
   g.IS_REACT_ACT_ENVIRONMENT = true;
   if (!g.CSS) g.CSS = { supports: () => false, escape: (s: string) => s };
   const out = mkdtempSync(join(tmpdir(), 'exo-app-'));
@@ -31,7 +37,7 @@ export async function renderedApp() {
       alias: { react: join(modules, 'react'), 'react-dom': join(modules, 'react-dom'), 'react/jsx-runtime': join(modules, 'react/jsx-runtime.js') } });
     const kit = await import(pathToFileURL(join(out, 'app.mjs')).href);
     const app = await kit.loadPluginApp(kit.app);
-    return { kit, app, close: () => dom.window.close() };
+    return { kit, app, window: dom, close: () => { if (!options.window) dom.window.close(); } };
   } finally { rmSync(out, { recursive: true, force: true }); }
 }
 
