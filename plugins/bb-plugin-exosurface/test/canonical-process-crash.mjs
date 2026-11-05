@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { settled } from './wait.ts';
 const plugin = resolve(process.argv[2]), root = process.env.PROOF_ROOT;
 assert.ok(root && process.env.HOME.startsWith(root + '/'));
 const cases = ['profile-api-no-receipt', 'profile-receipt', 'session-ready', 'native-spawning', 'pi-intent'];
@@ -41,7 +42,8 @@ if (process.argv[3] === '--worker') {
       return { child, done, capture: () => ({ stdout, stderr }) };
     };
     const first = run('crash'); let reached = false;
-    for (let n = 0; n < 200; n++) { if (existsSync(join(base, 'phase.json'))) { reached = true; break; } if (first.child.exitCode !== null || first.child.signalCode !== null) break; await sleep(100); }
+    await settled(() => existsSync(join(base, 'phase.json')) || first.child.exitCode !== null || first.child.signalCode !== null, 20000, 100);
+    reached = existsSync(join(base, 'phase.json'));
     assert.ok(reached, scenario + ' did not reach crash boundary: ' + JSON.stringify(first.capture()));
     let liveConcurrency;
     if (scenario === 'native-spawning') {

@@ -7,6 +7,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parse, type CssNode } from 'css-tree';
 
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
@@ -81,21 +82,32 @@ export function column(el: Element): Element | null {
   for (let at: Element | null = el; at; at = at.parentElement) if (held(css(at))) return at;
   return null;
 }
-// The top-level, comma-separated arguments of a CSS function value.
-const args = (value: string) => {
-  const out: string[] = []; let depth = 0, cur = '';
-  for (const ch of value) { if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; continue; } if (ch === '(') depth++; if (ch === ')') depth--; cur += ch; }
-  return [...out, cur.trim()];
+// Computed values are read through css-tree's value parser (its AST), so no CSS grammar lives here; only what a fade means.
+const value = (text: string): CssNode | null => { try { const v = parse(text, { context: 'value' }); return v.type === 'Value' && v.children.size === 1 ? v.children.first : null; } catch { return null; } };
+/** Whether a colour paints nothing: transparent, or rgb()/rgba() with a zero alpha. */
+const clear = (color: CssNode | null | undefined) => {
+  if (!color) return true;
+  if (color.type === 'Identifier') return color.name === 'transparent';
+  if (color.type !== 'Function' || !['rgb', 'rgba'].includes(color.name)) return false;
+  const channels = [...color.children].filter(n => n.type === 'Number' || n.type === 'Percentage') as Array<{ value: string }>;
+  return channels.length === 4 && Number(channels[3].value) === 0;
 };
-const clear = (color: string) => color === 'transparent' || /^rgba\(.*,\s*0\)$/.test(color);
-/** Where a top-to-bottom gradient, clear at first and opaque at the bottom edge, begins (a fraction of the box's height). */
-function gradientStart(value: string): number | null {
-  const m = /^linear-gradient\((.*)\)$/.exec(value.trim()); if (!m) return null;
-  const parts = args(m[1]); if (/^(to |-?[\d.]+(deg|turn|rad))/.test(parts[0])) { if (!['to bottom', '180deg', '0.5turn'].includes(parts.shift()!)) return null; }
-  const stop = (s: string) => { const at = /\s(-?[\d.]+)%$/.exec(s); return { color: at ? s.slice(0, at.index).trim() : s, at: at ? Number(at[1]) / 100 : null }; };
-  const first = stop(parts[0]), last = stop(parts.at(-1)!);
-  if (parts.length < 2 || !clear(first.color) || clear(last.color) || (last.at !== null && last.at !== 1)) return null;
-  return first.at ?? 0;
+const downward = (direction: CssNode[]) => direction.length === 0 || direction.map(n => n.type === 'Identifier' ? n.name : '?').join(' ') === 'to bottom'
+  || (direction.length === 1 && direction[0].type === 'Dimension' && ((direction[0].unit === 'deg' && Number(direction[0].value) === 180) || (direction[0].unit === 'turn' && Number(direction[0].value) === 0.5)));
+/** Where a top-to-bottom linear gradient, clear at first and opaque at the bottom edge, begins (a fraction of the box's
+ *  height); null for any other value. */
+function gradientStart(text: string): number | null {
+  const only = value(text);
+  if (!only || only.type !== 'Function' || only.name !== 'linear-gradient') return null;
+  const groups: CssNode[][] = [[]];
+  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push([]); else groups.at(-1)!.push(n); });
+  const isStop = (g: CssNode[]) => g[0] && (g[0].type === 'Function' || g[0].type === 'Hash' || (g[0].type === 'Identifier' && g[0].name !== 'to'));
+  const direction = isStop(groups[0]) ? [] : groups.shift()!;
+  if (!downward(direction) || groups.length < 2) return null;
+  const at = (g: CssNode[]) => { const p = g.find(n => n.type === 'Percentage'); return p && p.type === 'Percentage' ? Number(p.value) / 100 : null; };
+  const first = groups[0], last = groups.at(-1)!;
+  if (!clear(first[0]) || clear(last[0]) || (at(last) !== null && at(last) !== 1)) return null;
+  return at(first) ?? 0;
 }
 /** Where the fade over the content beneath a floating box begins, as a fraction of the box's height from its top: a
  *  top-to-bottom gradient from clear to opaque at the box's bottom edge, painted as its background or masking a painted
@@ -104,7 +116,7 @@ export function fadeStart(box: Element): number | null {
   const covers = (e: Element) => { const s = css(e); return s.position === 'absolute' && [s.top, s.right, s.bottom, s.left].every(zero); };
   for (const layer of [box, ...[...box.children].filter(covers)]) {
     const s = css(layer), mask = s.getPropertyValue('mask-image') || s.getPropertyValue('-webkit-mask-image');
-    const start = gradientStart(s.backgroundImage) ?? (mask && !clear(s.backgroundColor) && s.backgroundColor !== '' ? gradientStart(mask) : null);
+    const start = gradientStart(s.backgroundImage) ?? (mask && s.backgroundColor !== '' && !clear(value(s.backgroundColor)) ? gradientStart(mask) : null);
     if (start !== null) return start;
   }
   return null;

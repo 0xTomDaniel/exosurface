@@ -21,8 +21,9 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
 
 // One detached sidecar per test process, in its own session so a sweep of the test's process group spares it. It reads
 // registered pids from a pipe held only by this process; at that pipe's end (this process is gone, however it ended) it
-// sends each registered process still running SIGTERM, then SIGKILL 2 s later. A pid is identified by its start time
-// (/proc/<pid>/stat), so a pid reused by an unrelated process is left alone.
+// sends each registered process still running SIGTERM, then SIGKILL 2 s later. Linux only: a pid is identified by its
+// start time in /proc/<pid>/stat, so a pid reused by an unrelated process is left alone. Without /proc (macOS) both reads
+// are null and that protection is absent: a reused pid would be signalled.
 const SIDECAR = `const{readFileSync}=require('node:fs');const started=p=>{try{return readFileSync('/proc/'+p+'/stat','utf8').split(') ').at(-1).split(' ')[19];}catch{return null;}};
 const pids=new Map();let buffer='';process.stdin.setEncoding('utf8');
 process.stdin.on('data',c=>{buffer+=c;let end;while((end=buffer.indexOf('\\n'))>=0){const p=Number(buffer.slice(0,end));buffer=buffer.slice(end+1);if(p>0)pids.set(p,started(p));}});
