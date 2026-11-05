@@ -23,6 +23,7 @@ import {offerParameters} from '../composition/tool-schema.ts';
 import {OBS_MODE,nextObserver,observerSurface} from '../observer/mode.ts';
 import {OBS_RUN,type Route,type ObserverStatus} from '../observer/stream.ts';
 import {DocumentObserverTurn as ObserverTurn} from '../observer/document-turn.ts';
+import {checkUpdateArguments,OP_WORDS} from '../../../src/update-arguments.ts';
 export const OMITTED='Legacy: layout JSON kept out of conversation history; this call was applied.';
 export default function workspace(pi:ExtensionAPI){
  assertDeployment();
@@ -144,11 +145,13 @@ export default function workspace(pi:ExtensionAPI){
  // Registered for branch history/reversal compatibility, never active in this trial.
  register({name:PUBLICATION,label:'Legacy workspace checkpoint',description:'Legacy full snapshot; not active in incremental trial.',parameters:Type.Object({baseRevision:Type.Integer(),messages:Type.Array(Type.Any())}),execute:async(_id,args)=>{current=validateSnapshot({revision:args.baseRevision+1,messages:args.messages});return {content:[{type:'text',text:'Legacy checkpoint'}],details:{workspace:current}};}});
  register({name:SURFACE_UPDATE,label:'Update pages on the surface',executionMode:'sequential',description:SURFACE_DESCRIPTION,promptSnippet:SURFACE_SNIPPET,promptGuidelines:SURFACE_GUIDELINES,
-  parameters:Type.Object({baseRevision:Type.Integer({minimum:0}),snapshot:Type.Optional(Type.String({maxLength:40000})),
-   edits:Type.Optional(Type.Array(Type.Object({page:Type.String(),ref:Type.String(),op:Type.Union([Type.Literal('replace'),Type.Literal('insertAfter'),Type.Literal('insertInto'),Type.Literal('remove')]),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
+  // Format checks (baseRevision, edit page/ref/op) are in execute, so a malformed call reaches Exo in plain words (#108).
+  parameters:Type.Object({baseRevision:Type.Optional(Type.Number({description:'The revision in the surface outline: a whole number 0 or more.'})),snapshot:Type.Optional(Type.String({maxLength:40000})),
+   edits:Type.Optional(Type.Array(Type.Object({page:Type.Optional(Type.String()),ref:Type.Optional(Type.String()),op:Type.Optional(Type.String({description:`One of ${OP_WORDS}.`})),lines:Type.Optional(Type.String({maxLength:20000}))}),{maxItems:24})),
    delete:Type.Optional(Type.Array(Type.String(),{maxItems:8})),focus:Type.Optional(Type.String()),beside:Type.Optional(Type.Array(Type.String(),{maxItems:2}))}),
   execute:async(id,args)=>{
    try{
+    checkUpdateArguments(args,'page');
     if(args.baseRevision!==(current?.revision??0))throw Error(`stale baseRevision ${args.baseRevision}; the surface is at revision ${current?.revision??0} (see the outline)`);
     const change=changeMessages(current,{snapshot:args.snapshot,edits:args.edits?.map((e:any)=>({surface:e.page,ref:e.ref,op:e.op,lines:e.lines})) as Edit[]|undefined,delete:args.delete},fromHistory);
     const keep=(xs:string[]|undefined)=>xs?.filter(x=>!change.deleted.includes(x));
