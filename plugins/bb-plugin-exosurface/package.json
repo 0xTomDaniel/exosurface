@@ -9,6 +9,7 @@
     "bbPluginSdk": ">=0.6.15"
   },
   "scripts": {
+    "check": "scripts/check",
     "test": "node --experimental-transform-types --test test/*.test.ts",
     "build": "bb plugin build && node build.mjs && node build-runtime.mjs",
     "build:owner": "node build.mjs",
