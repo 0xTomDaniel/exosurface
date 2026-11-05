@@ -46,18 +46,9 @@ export const exoTheme=`
 .exo-fade{position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;background-color:var(--exo-paper);mask-image:linear-gradient(to bottom,transparent 50%,#000)}
 .exo-input{position:relative;margin:0;padding:.35rem;border-radius:.9rem;background-color:var(--exo-paper);box-shadow:0 1px 6px color-mix(in oklab,var(--exo-ink) 10%,transparent)}
 .exo-stage-grid{display:grid;gap:2.5rem;grid-template-columns:minmax(0,1fr);align-items:start}
-/* Context sits beside the stage only when both get a readable width; otherwise it stacks below. */
-@container exo-canvas (min-width:1180px){
- .exo-frame:has(.exo-stage-grid.has-beside){max-width:74rem}
- .exo-stage-grid.has-beside{grid-template-columns:minmax(0,46rem) minmax(20rem,25rem);justify-content:center;gap:3rem}
-}
 .exo-stage{min-width:0}
 .exo-stage.exo-enter{animation:exo-enter .32s cubic-bezier(.2,.7,.2,1)}
-.exo-beside{display:grid;gap:1.25rem;min-width:0;font-size:.94em}
-.exo-beside .a2ui-text h1{font-size:1.3rem}.exo-beside .a2ui-text h2{font-size:1.1rem}
-.exo-beside>section{padding:1rem 1.1rem;border-radius:12px;background:var(--exo-wash)}
 .exo-hidden{display:none!important}
-.exo-legacy-grid{display:grid;gap:2rem}
 @keyframes exo-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes exo-breathe{0%,100%{opacity:.35}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.exo-stage.exo-enter,.exo-status[data-busy="true"]::before,.exo-tl-now .exo-tl-mark::after{animation:none}}
