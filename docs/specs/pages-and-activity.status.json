@@ -182,22 +182,22 @@
     "acceptance-name-header": {
       "status": "built",
       "pr": 91,
-      "record": "20261105T200002Z-1bc8758b",
-      "commit": "e1d831a45d85bdd7327672d615ed7475147087f0",
+      "record": "20261105T204005Z-0bde1c3d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
       "tests": []
     },
     "acceptance-auto-name": {
       "status": "built",
       "pr": 91,
-      "record": "20261105T195734Z-8a46d38c",
-      "commit": "e1d831a45d85bdd7327672d615ed7475147087f0",
+      "record": "20261105T203747Z-89206fe2",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
       "tests": []
     },
     "acceptance-rename": {
       "status": "built",
       "pr": 91,
-      "record": "20261105T195830Z-55a43e5a",
-      "commit": "e1d831a45d85bdd7327672d615ed7475147087f0",
+      "record": "20261105T203907Z-f777bc8d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
       "tests": []
     },
     "acceptance-live-activity": {
