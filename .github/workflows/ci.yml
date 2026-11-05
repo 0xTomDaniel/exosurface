@@ -1,0 +1,49 @@
+# Exosurface CI: runs the same one deterministic gate the lanes run (owner ruling 2026-11-05, #105, #107).
+# No secrets, no model calls, no second test list: the gate step is only scripts/check.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Private repo, Actions minutes matter: a newer run on the same ref cancels the superseded one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      # Exact pin: sha of release tag v7.0.1 (lightweight tag), runs.using node24.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node 22: the repo has no pin file; sebox pins node 22 through mise, and
+      # plugins/bb-plugin-exosurface/package.json engines needs node >=22.19.0 (22 resolves to latest 22.x).
+      # Exact pin: sha of release tag v7.1.0 (lightweight tag), runs.using node24.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            plugins/bb-plugin-exosurface/package-lock.json
+            plugins/bb-plugin-exosurface/legacy/surface/package-lock.json
+
+      - name: gate (scripts/check)
+        run: plugins/bb-plugin-exosurface/scripts/check
+
+      # bb CLI: the public MIT npm package bb-app (github.com/get-bb/bb) ships the `bb` bin; no login, no secret.
+      # Pinned to 0.48.0, the BB the lanes run. --ignore-scripts skips native add-ons `plugin build` does not need.
+      # BB_DATA_DIR in runner temp so no state lands in the checkout. Runs after the gate, which npm ci'd both trees.
+      - name: bb plugin build
+        working-directory: plugins/bb-plugin-exosurface
+        env:
+          BB_DATA_DIR: ${{ runner.temp }}/bb-data
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bb-cli" --no-save --ignore-scripts --no-audit --no-fund bb-app@0.48.0
+          timeout -k 10 300 "$RUNNER_TEMP/bb-cli/node_modules/.bin/bb" plugin build
