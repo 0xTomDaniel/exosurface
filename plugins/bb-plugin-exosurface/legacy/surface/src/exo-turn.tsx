@@ -1,14 +1,15 @@
-// The surface view's Exo block and input (#69; spec pages-and-activity S1, S2, E1-E4, E7), for whichever thread is in view.
-// The block shows only Exo's words from its latest turn, or that Exo is working; the person never writes in it.
+// The surface view's Exo block and input (#69, #79; spec pages-and-activity S1, S2, E1-E4, E7, E8), for whichever thread is
+// in view. The block opens the page: the person's latest message as a bubble, then only Exo's words from that turn as plain
+// text, or that Exo is working; the person never writes in it.
 // The input sends a turn on the thread and is empty again once BB accepts it. There is no transcript: earlier turns
 // stay in the thread.
 import {useCallback,useEffect,useState,type FormEvent,type KeyboardEvent} from 'react';
 import {Markdown,useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
 
-type Block={working:boolean;words:string};
+type Block={working:boolean;said:string;words:string};
 // A send from the input refreshes the block of that thread at once (both are mounted in the same surface view).
-const sent=new Set<(threadId:string)=>void>();
+const sent=new Set<(threadId:string,text:string)=>void>();
 
 export function ExoBlock({threadId}:{threadId:string|null}){
  const rpc=useRpc<typeof rpcContract>();
@@ -18,13 +19,14 @@ export function ExoBlock({threadId}:{threadId:string|null}){
   let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,working=false;
   const read=async()=>{clearTimeout(timer);try{const b=await rpc.call('exo_block',{threadId});if(stopped)return;working=b.working;setBlock(b);setError('');}catch(e){if(!stopped)setError(String(e));}
    finally{if(!stopped)timer=setTimeout(read,working?1000:4000);}};
-  const onSent=(id:string)=>{if(id===threadId){working=true;setBlock({working:true,words:''});void read();}};
+  const onSent=(id:string,text:string)=>{if(id===threadId){working=true;setBlock({working:true,said:text,words:''});void read();}};
   sent.add(onSent);void read();
   return()=>{stopped=true;clearTimeout(timer);sent.delete(onSent);};
  },[threadId,rpc]);
- return <section aria-label="Exo" data-exo-block="" className="exo-block mt-6 max-w-prose text-sm">
-  {block?.working?<p role="status" aria-live="polite" style={{color:'var(--exo-quiet)'}}>Exo is working on this page…</p>
-   :block?.words?<Markdown content={block.words}/>:null}
+ return <section aria-label="Exo" data-exo-block="" className="exo-block mb-6 text-sm">
+  {block?.said?<p data-exo-said="" className="exo-bubble">{block.said}</p>:null}
+  <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" style={{color:'var(--exo-quiet)'}}>Exo is working on this page…</p>
+   :block?.words?<Markdown content={block.words}/>:null}</div>
   {error&&<p role="alert" className="text-destructive">{error}</p>}
  </section>;
 }
@@ -34,7 +36,7 @@ export function SurfaceInput({threadId}:{threadId:string|null}){
  const[text,setText]=useState(''),[sending,setSending]=useState(false),[error,setError]=useState('');
  const send=useCallback(async()=>{
   if(!threadId||sending||!text.trim())return;setSending(true);setError('');
-  try{await rpc.call('exo_send',{threadId,text});setText('');for(const listener of sent)listener(threadId);}
+  try{await rpc.call('exo_send',{threadId,text});setText('');for(const listener of sent)listener(threadId,text);}
   catch(e){setError(String(e));}finally{setSending(false);}
  },[threadId,sending,text,rpc]);
  const submit=(e:FormEvent)=>{e.preventDefault();void send();};

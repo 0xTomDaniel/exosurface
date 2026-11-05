@@ -34,7 +34,8 @@ after(async () => {
 const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
 const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent ?? '');
 const open = (title: string) => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title)!);
-const block = () => view.container.querySelector('section[aria-label="Exo"]') as HTMLElement | null;
+// Exo's words in the surface's Exo block (since #79 the block opens with the person's message as a bubble above them).
+const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const pageText = () => view.container.textContent;
 async function until(what: string, ok: () => boolean, ms = 20000) {
@@ -65,7 +66,7 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
   await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): slow: plan the week'));
   // Home's block has caught up with its finished turn (its owner state and journal), then one more full poll of the page.
   for (let i = 0; i < 100 && (await f.rpc.exo_block({ threadId: 'primary' })).working; i++) await new Promise(r => setTimeout(r, 50));
-  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, words: 'Exo (exo-optchat): slow: plan the week' });
+  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'slow: plan the week', words: 'Exo (exo-optchat): slow: plan the week' });
   await new Promise(r => setTimeout(r, 5500));
   assert.deepEqual([...new Set(inView.slice(opened))], ['New surface']);
   // Home's turn reached the app over realtime while the other surface was in view.

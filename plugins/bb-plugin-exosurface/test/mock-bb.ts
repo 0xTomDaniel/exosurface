@@ -45,10 +45,13 @@ export default function optchat(pi){
   models:[{id:'claude-opus-5-5',name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
-   void(async()=>{const last=context.messages.findLast(m=>m.role==='user'),said=typeof last?.content==='string'?last.content:(last?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
+   void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
+    const textOf=m=>typeof m.content==='string'?m.content:(m.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
+    const messages=context.messages.filter(m=>!(m.role==='user'&&textOf(m).startsWith('Machine state of the surface')));
+    const last=messages.findLast(m=>m.role==='user'),said=typeof last?.content==='string'?last.content:(last?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
     const name=pi.getFlag('optchat-profile'),turns=join(process.env.OPTCHAT_HOME,'turns');stream.push({type:'start',partial:message});
     // "draw: <title>" draws a page with one input and one button on the thread's own pages, then answers once drawn.
-    if(said.startsWith('draw: ')&&context.messages.at(-1)?.role==='user'){const title=said.slice(6).trim();
+    if(said.startsWith('draw: ')&&messages.at(-1)?.role==='user'){const title=said.slice(6).trim();
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
@@ -111,7 +114,9 @@ async function serverRpc(vault: string) {
     for (const s of services) if (s.name !== 'workspace-stream') s.start(stop.signal).catch(e => { if (!stop.signal.aborted) throw e; });
     return () => stop.abort();
   };
-  return { handlers, spawns, sends, provider, realtime, streams };
+  /** BB's stored name of a thread, as the person (or BB) set it; what thread_list reads as the surface's title. */
+  const retitle = (threadId: string, title: string) => { threads.set(threadId, { ...thread(threadId), title }); };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle };
 }
 
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
@@ -127,11 +132,11 @@ export async function liveFixture() {
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
-  const { handlers: rpc, spawns, sends, provider, realtime, streams } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle } = await serverRpc(vault);
   const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
