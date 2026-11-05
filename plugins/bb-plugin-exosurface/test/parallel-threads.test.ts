@@ -4,6 +4,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { realpathSync, rmSync } from 'node:fs';
 import { liveFixture, owner, bridge, ownerRequest, INSTRUCTIONS } from './mock-bb.ts';
+import { settled } from './wait.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -11,7 +12,7 @@ const host = bridge(f);
 after(async () => {
   for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
   const pids = f.piRuns().map(r => r.pid);
-  for (let i = 0; i < 200 && pids.some(alive); i++) await new Promise(r => setTimeout(r, 25));
+  await settled(() => !pids.some(alive), 10000, 25);
   assert.deepEqual(pids.filter(alive), [], 'every owned Pi stopped with the owner');
   rmSync(f.root, { recursive: true, force: true });
 });

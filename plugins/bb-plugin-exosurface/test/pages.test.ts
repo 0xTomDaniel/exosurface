@@ -12,6 +12,7 @@ import { layout, type Config } from '../src/config.ts';
 import { startOwner } from '../src/owner-runtime.ts';
 import { ownerConnection } from '../src/owner-client.ts';
 import { fixtureCleanup } from './fixture-cleanup.ts';
+import { settled } from './wait.ts';
 const source='- region "Fixture page" [ref=page]:\n  - heading "Review" [ref=heading]\n  - textbox "Full text" [ref=entry] [multiline]: initial\n  - button "Send" [ref=send] [action=submit] [sends=entry]';
 const longText=' leading whitespace\n🧪 multiline Unicode complete field\n'.repeat(4000)+' FINAL FULL-TEXT SENTINEL \n';
 function temp(t:any){const home=mkdtempSync(join(tmpdir(),'exo-pages-'));return {home,cleanup:fixtureCleanup(t,home)};}
@@ -81,7 +82,7 @@ out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',mess
  assert.equal((await handlers.pageEdit(compiled.rpcContract.pageEdit.input.parse({threadId:'primary',...edit}))).revision,2);
  const press={baseRevision:2,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  assert.equal((await handlers.pagePress(compiled.rpcContract.pagePress.input.parse({threadId:'primary',...press}))).revision,3);
- for(let n=0;n<200&&!ended;n++)await new Promise(r=>setTimeout(r,10));assert.equal(ended,true);
+ await settled(()=>ended,10000,10);assert.equal(ended,true);
  const page=readPages(config.stateDir)!;assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page').entry,longText);
  assert.match(surfaceSnapshot(page.snapshot,'page'),/Owner updated page/);
  assert.equal(JSON.parse(readFileSync(join(config.stateDir,'response-page.json'),'utf8')).body,'Page action received full '+longText);

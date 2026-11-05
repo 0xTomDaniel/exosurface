@@ -8,6 +8,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
@@ -34,12 +35,7 @@ const shown = (el: Element) => { for (let at: Element | null = el; at; at = at.p
 const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label'));
 /** The page strip's pills, by their labels. */
 const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (let waited = 0; !ok(); waited += 50) {
-    if (waited > ms) throw new Error(`Timed out waiting for ${what}; in view ${JSON.stringify(inView())}, pills ${JSON.stringify(pills())}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `in view ${JSON.stringify(inView())}, pills ${JSON.stringify(pills())}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });

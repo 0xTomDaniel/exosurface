@@ -6,6 +6,7 @@
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
 import { renderedApp, rightAligned, boxed, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
+import { waiter } from '../test/wait.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -85,7 +86,7 @@ async function exoBlock() {
   const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
   const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
-  const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const until = waiter();
   try {
     const sends = ['plan the week', 'plan the week, with Friday off'];
     for (const text of sends) {
@@ -127,7 +128,7 @@ async function parallel() {
   const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent).join('|');
   const click = title => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title));
   const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
-  const until = async (what, ok, ms = 20000) => { for (let w = 0; !ok(); w += 50) { if (w > ms) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const until = waiter();
   // The surface in view, sampled every 20 ms; each change is printed with what the person did last.
   let did = 'opened the panel', last = '', changes = [], watching = false;
   const sampler = setInterval(() => { const now = current(); if (now !== last) { last = now; console.log(`${at()}  in view: ${now || '(none)'}   after: ${did}`); if (watching) changes.push({ now, did }); } }, 20);
@@ -186,7 +187,7 @@ async function opening() {
   const main = () => view.container.querySelector('main'), sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
   const block = () => view.container.querySelector('section[aria-label="Exo"]'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
   const said = () => block()?.querySelector('[data-exo-said]'), reply = () => block()?.querySelector('[data-exo-reply]');
-  const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}; page: ${main()?.textContent}`); await new Promise(r => setTimeout(r, 50)); } };
+  const until = waiter(() => `page: ${main()?.textContent}`);
   try {
     await until('the sidebar', () => [...(sidebar()?.querySelectorAll('li button') ?? [])].some(b => b.textContent === 'Garden plan'));
     fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === 'Garden plan'));
@@ -239,7 +240,7 @@ async function onePage() {
   const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
   const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label'));
   const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
-  const until = async (what, ok) => { for (let i = 0; !ok(); i++) { if (i > 400) throw new Error(`timed out waiting for ${what}; in view ${JSON.stringify(inView())}`); await new Promise(r => setTimeout(r, 50)); } };
+  const until = waiter(() => `in view ${JSON.stringify(inView())}`);
   const send = async (text, page) => {
     await until('the input', () => input() && !input().disabled);
     fireEvent.change(input(), { target: { value: text } });
@@ -275,7 +276,7 @@ async function inputFloats() {
   const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   const main = () => view.container.querySelector('main'), form = () => view.container.querySelector('form[aria-label="Message Exo"]');
   const input = () => form()?.querySelector('textarea'), reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
-  const until = async (what, ok) => { for (const end = Date.now() + 20000; !ok();) { if (Date.now() > end) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const until = waiter();
   const name = el => el === main() ? 'the scrolling surface (main "Exosurface")' : el?.matches('form') ? 'the input itself' : el ? `the page's column (max-width ${getComputedStyle(el).maxWidth})` : 'the window';
   try {
     await until('the input', () => input() && !input().disabled);
