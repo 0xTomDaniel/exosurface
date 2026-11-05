@@ -12,6 +12,8 @@ import type {rpcContract} from '../../primary/server';
 type Block={working:boolean;said:string;words:string};
 // A send from the input refreshes the block of that thread at once (both are mounted in the same surface view).
 const sent=new Set<(threadId:string,text:string)=>void>();
+/** Calls `listener` on each send BB accepted from the input (not on a page press, a poll or a turn ending); returns the unsubscribe. */
+export function onSend(listener:(threadId:string,text:string)=>void){sent.add(listener);return()=>{sent.delete(listener);};}
 
 export function ExoBlock({threadId}:{threadId:string|null}){
  const rpc=useRpc<typeof rpcContract>();
