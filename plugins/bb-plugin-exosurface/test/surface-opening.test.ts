@@ -6,6 +6,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { waiter } from './wait.ts';
 import { renderedApp, rightAligned, boxed } from './app-render.ts';
 
 const f = await liveFixture();
@@ -29,12 +30,7 @@ const block = () => view.container.querySelector('section[aria-label="Exo"]') as
 const bubble = () => block()?.querySelector('[data-exo-said]') as HTMLElement | null;
 const reply = () => block()?.querySelector('[data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (let waited = 0; !ok(); waited += 50) {
-    if (waited > ms) throw new Error(`Timed out waiting for ${what}; page: ${main()?.textContent}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `page: ${main()?.textContent}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });

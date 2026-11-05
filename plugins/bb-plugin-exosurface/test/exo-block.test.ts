@@ -5,6 +5,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
@@ -29,12 +30,7 @@ const block = () => view.container.querySelector('section[aria-label="Exo"]') as
 const reply = () => block()?.querySelector('[data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const pageText = () => view.container.querySelector('main')!.textContent + (view.container.querySelector('form[aria-label="Message Exo"]')?.textContent ?? '');
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (let waited = 0; !ok(); waited += 50) {
-    if (waited > ms) throw new Error(`Timed out waiting for ${what}; page: ${pageText()}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `page: ${pageText()}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });
@@ -49,7 +45,7 @@ test('after a send and Exo\'s finished turn, the Exo block shows the reply, the 
   await until('Exo\'s reply in the block', () => reply()?.textContent === 'Exo (exo-optchat): plan the week');
   assert.equal(input()!.value, '');
   // S1: no chat column and no transcript; the person's message is on screen only as the block's bubble and in Exo's words echoing it.
-  assert.equal(view.queryByTestId('bb-thread-chat'), null);
+  assert.ok(view.queryByTestId('bb-thread-chat') === null, 'no chat column');
   assert.equal(count(pageText(), 'plan the week'), 2);
   // E7: only Exo writes the block; nothing in it takes the person's input.
   assert.equal(block()!.querySelectorAll('textarea, input, button, [contenteditable]').length, 0);
@@ -59,7 +55,7 @@ test('after a second send on the same topic, the Exo block shows only the reply 
   await send('plan the week, with Friday off');
   await until('the new reply in the block', () => reply()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
   assert.equal(input()!.value, '');
-  assert.equal(view.queryByTestId('bb-thread-chat'), null);
+  assert.ok(view.queryByTestId('bb-thread-chat') === null, 'no chat column');
   // E2: the earlier reply and messages are gone from the screen (they stay in the thread).
   assert.equal(count(pageText(), 'Exo (exo-optchat)'), 1);
   assert.equal(count(pageText(), 'plan the week'), 2); // the bubble and Exo's echo of the second message

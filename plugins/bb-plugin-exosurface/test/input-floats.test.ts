@@ -7,6 +7,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { waiter } from './wait.ts';
 import { renderedApp, pinnedToBottom, column, fadeStart, centeredIn } from './app-render.ts';
 
 const f = await liveFixture();
@@ -27,13 +28,7 @@ const main = () => view.container.querySelector('main') as HTMLElement;
 const form = () => view.container.querySelector('form[aria-label="Message Exo"]') as HTMLFormElement | null;
 const input = () => form()?.querySelector('textarea') as HTMLTextAreaElement | null;
 const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
-// Bounded by the wall clock, so a starved event loop still ends the wait.
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (const end = Date.now() + ms; !ok();) {
-    if (Date.now() > end) throw new Error(`Timed out waiting for ${what}; page: ${main()?.textContent}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `page: ${main()?.textContent}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { realpathSync, rmSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { liveFixture, owner, bridge, INSTRUCTIONS } from './mock-bb.ts';
+import { settled } from './wait.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -17,7 +18,7 @@ after(async () => {
 });
 const CATALOG = 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
 const pages = (threadId?: string) => f.rpc.workspace({ deployment: 'main', ...(threadId ? { threadId } : {}), cursor: null });
-const until = async (check: () => Promise<boolean>, what: string) => { for (let i = 0; i < 400; i++) { if (await check()) return; await new Promise(r => setTimeout(r, 25)); } throw new Error(`timed out: ${what}`); };
+const until = async (check: () => Promise<boolean>, what: string) => { if (!(await settled(check, 10000, 25))) throw new Error(`timed out: ${what}`); };
 /** BB's dispatch of a sent message: the turn/start it hands the provider bridge. */
 const deliver = (sent: any) => host.send(sent.threadId, sent.input.map((i: any) => i.text).join(''));
 

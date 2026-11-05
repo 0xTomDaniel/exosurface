@@ -10,6 +10,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { reaped, PARENT_WATCH } from './reap.ts';
+import { settled } from './wait.ts';
 
 export const PLUGIN = resolve(import.meta.dirname, '..');
 const PI_CLI = join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
@@ -63,8 +65,8 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:revision,snapshot:'- region '+JSON.stringify(title)+' [ref='+ref+']:\\n  - heading '+JSON.stringify(title)+' [ref=title]',...(beside?{focus:ref,beside:[beside]}:{})}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-    if(said.startsWith('hold:'))while(!existsSync(join(process.env.OPTCHAT_HOME,'release',name)))await sleep(25);
-    if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
+    if(said.startsWith('hold:'))for(const end=Date.now()+60000;!existsSync(join(process.env.OPTCHAT_HOME,'release',name))&&Date.now()<end;)await sleep(25);
+    if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(const end=Date.now()+5000;readdirSync(turns).length<2&&Date.now()<end;)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
     if(!said.replace(/^hold: /,'').startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
     stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
@@ -150,28 +152,15 @@ export async function liveFixture() {
 }
 type Fixture = Awaited<ReturnType<typeof liveFixture>>;
 
-// Every fixture child dies with the test process: on its exit (normal end, failure, or a test runner timeout) and on
-// SIGINT or SIGTERM. SIGTERM lets the owner stop its own Pi children first.
-const live = new Set<ChildProcess>();
-function reaped(child: ChildProcess) {
-  live.add(child); child.once('exit', () => live.delete(child));
-  return child;
-}
-process.once('exit', () => { for (const child of live) child.kill('SIGTERM'); });
-for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { for (const child of live) child.kill('SIGTERM'); process.exit(signal === 'SIGINT' ? 130 : 143); });
-
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 
 /** The release owner as launchd runs it, from source. Resolves once it reports ready. */
 export async function owner(f: Fixture) {
-  const child = reaped(spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] }));
+  const child = reaped(spawn(process.execPath, [...PARENT_WATCH, '--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: childEnv(f), stdio: ['ignore', 'pipe', 'pipe'] }));
   let errors = ''; child.stderr!.on('data', b => { errors += b; });
   const state = join(f.home, 'owner', 'state.json');
-  for (const end = Date.now() + 15000; Date.now() <= end;) {
-    if (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
-    if (child.exitCode !== null) break;
-    await new Promise(r => setTimeout(r, 25));
-  }
+  await settled(() => child.exitCode !== null || (existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready), 15000, 25);
+  if (child.exitCode === null && existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready) return child;
   child.kill(); throw new Error(`Owner did not become ready: ${existsSync(state) ? readFileSync(state, 'utf8') : 'no state'}\n${errors}`);
 }
 
@@ -179,14 +168,14 @@ export type BridgeLine = { at: number; value: any };
 /** host.ts (package.json bb.host) as BB runs it: a child process speaking JSON-RPC lines on stdio. */
 export function bridge(f: Fixture) {
   const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(join(PLUGIN, 'host.ts')).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
-  const child: ChildProcess = reaped(spawn(process.execPath, ['--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] }));
+  const child: ChildProcess = reaped(spawn(process.execPath, [...PARENT_WATCH, '--experimental-transform-types', '--no-warnings', '--input-type=module', '-e', shim], { cwd: f.vault, env: childEnv(f), stdio: ['pipe', 'pipe', 'pipe'] }));
   const t0 = Date.now(), lines: BridgeLine[] = [], providers = new Map<string, string>(); let buffer = '', errors = '', id = 0;
   child.stdout!.setEncoding('utf8'); child.stderr!.on('data', b => { errors += b; });
   child.stdout!.on('data', chunk => { buffer += chunk; let end: number; while ((end = buffer.indexOf('\n')) >= 0) { const l = buffer.slice(0, end); buffer = buffer.slice(end + 1); if (l.trim()) lines.push({ at: Date.now() - t0, value: JSON.parse(l) }); } });
   const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {
-    for (const end = Date.now() + ms; Date.now() <= end;) { const hit = lines.find(l => l.value.id === n); if (hit) return hit.value; await new Promise(r => setTimeout(r, 20)); }
+    if (await settled(() => lines.some(l => l.value.id === n), ms, 20)) return lines.find(l => l.value.id === n)!.value;
     throw new Error(`No response to request ${n}: ${errors}`);
   };
   const deltas = (threadId: string) => lines.filter(l => l.value.method === 'thread/delta' && l.value.params.threadId === threadId).flatMap(l => l.value.params.deltas.map((d: any) => ({ at: l.at, ...d })));
@@ -206,10 +195,7 @@ export function bridge(f: Fixture) {
     },
     send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
     async settled(threadIds: string[], ms = 20000) {
-      for (const end = Date.now() + ms; !threadIds.every(t => turn(t).end);) {
-        if (Date.now() > end) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
-        await new Promise(r => setTimeout(r, 20));
-      }
+      if (!(await settled(() => threadIds.every(t => turn(t).end), ms, 20))) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
     },
   };
 }
