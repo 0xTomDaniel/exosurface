@@ -13,7 +13,7 @@ import { startOwner } from '../src/owner-runtime.ts';
 import { ownerConnection } from '../src/owner-client.ts';
 import { fixtureCleanup } from './fixture-cleanup.ts';
 import { settled } from './wait.ts';
-import { PARENT_WATCH, reaped } from './reap.ts';
+import { PARENT_WATCH, reaped, reapOnExit } from './reap.ts';
 
 const model = { provider: 'fixture', model: 'mock', thinking: 'medium' as const };
 function fixture(t: any) {
@@ -100,7 +100,10 @@ writeFileSync(join(process.env.EXO_PAGE_STATE,'fixture-pi.pid'),String(process.p
 process.on('exit',code=>writeFileSync(join(process.env.EXO_PAGE_STATE,'fixture-pi-exit.json'),JSON.stringify({pid:process.pid,code})));
 const dir=join(process.env.OPTCHAT_HOME,'profiles','exo');mkdirSync(dir,{recursive:true});const lock=createServer(s=>s.end('exo · PID '+process.pid+' · fixture'));await new Promise(r=>lock.listen(join(dir,'lock.sock'),r));
 const out=x=>console.log(JSON.stringify(x));for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);out({type:'response',id:r.id,success:true,data:{}});if(r.type==='prompt'){if(r.message==='detached owner proof')await new Promise(r=>setTimeout(r,250));out({type:'message_end',message:{role:'assistant',content:[{type:'text',text:r.message}]}});out({type:'agent_end'});}}lock.close();`);
-  const owner = await startOwner(config); cleanup.beforeRemove(async () => { const pid = Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')); await owner.close(); assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir, 'fixture-pi-exit.json'), 'utf8')), {pid,code:0}); cleanup.verifyGone(pid); });
+  const owner = await startOwner(config);
+  // The owner runs in this process; the Pi it starts is reaped even if this process is killed.
+  await settled(() => existsSync(join(config.stateDir, 'fixture-pi.pid')), 10000, 10); reapOnExit(Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')));
+  cleanup.beforeRemove(async () => { const pid = Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')); await owner.close(); assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir, 'fixture-pi-exit.json'), 'utf8')), {pid,code:0}); cleanup.verifyGone(pid); });
   const text = 'x'.repeat(1800), events: any[] = []; let finish: () => void; const done = new Promise<void>(r => { finish = r; });
   const client = ownerConnection(config, e => { events.push(e); if (e.type === 'agent_end') finish(); }); cleanup.beforeRemove(() => client.close());
   await assert.rejects(client.send('unrelated', 'prompt', text), /Not the primary/);
