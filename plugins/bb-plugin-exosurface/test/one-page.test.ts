@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { waiter } from './wait.ts';
-import { renderedApp } from './app-render.ts';
+import { renderedApp, divided } from './app-render.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -50,6 +50,25 @@ test('after a message about a new topic and Exo\'s finished turn, its page is th
   await until('the garden page', () => inView().includes('Garden plan'));
   assert.deepEqual(inView(), ['Garden plan']);
   assert.deepEqual(pills(), ['Week plan']);
+});
+
+test('top down: the title, the page strip with the earlier page\'s pill, then the Exo block, then the page; a hairline sets the title and strip off', async () => {
+  // Owner walkthrough on PR #89. Each part by what the person sees: the heading, the navigation holding the pills, the
+  // Exo block, the page in view; screen (document) order as primitives, never elements compared.
+  const title = main().querySelector('h1, h2, h3, h4, h5, h6')!, strip = [...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n))!;
+  const block = main().querySelector('section[aria-label="Exo"]')!, page = [...main().querySelectorAll('section[data-surface]')].find(shown)!;
+  assert.ok(!!title && !!strip && !!block && !!page, `parts present: title ${!!title}, strip ${!!strip}, block ${!!block}, page ${!!page}`);
+  const parts = [['title', title], ['strip', strip], ['block', block], ['page', page]] as const;
+  const order = [...parts].sort(([, a], [, b]) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1).map(([k]) => k).join(' > ');
+  assert.ok(order === 'title > strip > block > page', order);
+  assert.ok(JSON.stringify(pills()) === '["Week plan"]', JSON.stringify(pills()));
+  // The top area (title and strip) and the Exo block below it: a hairline between them (computed styles; true paint: RDP).
+  assert.ok(divided(strip, block) && divided(title, block), `divided: strip ${divided(strip, block)}, title ${divided(title, block)}`);
+  // The strip still works from its new place: a pill shows that page, and Back returns to the current topic.
+  fireEvent.click([...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan')!);
+  await until('the week page from its pill', () => JSON.stringify(inView()) === '["Week plan"]');
+  fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
+  await until('back to the garden page', () => JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]');
 });
 
 test('when Exo\'s layout asks for the earlier page beside the new one, the new page is still the only page in view', async () => {

@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
-import { renderedApp, rightAligned, boxed, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
+import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter } from '../test/wait.ts';
 
 async function parallelThreads() {
@@ -173,8 +173,10 @@ async function parallel() {
   }
 }
 
-// #79: the rendered surface view of a surface whose stored name is "Garden plan", after two sends: the name on top, then the
-// Exo block opening the page (the second message as a bubble, Exo's reply as plain text), then the page; no first message.
+// #79: the rendered surface view of a surface whose stored name is "Garden plan", after its sends: the name on top, then the
+// Exo block opening the page (the latest message as a bubble, Exo's reply as plain text), then the page; no earlier message.
+// #81 (owner walkthrough, PR #89): an earlier page about the week puts its pill in the page strip, which sits under the
+// title, above the Exo block, set off from it by a hairline.
 async function opening() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -191,31 +193,33 @@ async function opening() {
   try {
     await until('the sidebar', () => [...(sidebar()?.querySelectorAll('li button') ?? [])].some(b => b.textContent === 'Garden plan'));
     fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === 'Garden plan'));
-    const sends = ['draw: Garden beds', 'add a row of tomatoes'];
+    const sends = ['draw week: Week plan', 'draw beds: Garden beds', 'add a row of tomatoes'], latest = sends.at(-1);
     for (const text of sends) {
       await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
       fireEvent.change(input(), { target: { value: text } });
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
-      if (text === sends[1]) { await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
+      if (text === latest) { await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
       await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
     await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
     // Everything shown at the top of the surface, in screen (document) order.
-    const parts = [...main().querySelectorAll('h1, [data-exo-said], [data-exo-reply], [data-surface]')];
-    const kind = el => el.tagName === 'H1' ? 'title' : el.hasAttribute('data-exo-said') ? 'bubble' : el.hasAttribute('data-exo-reply') ? 'reply' : 'page';
+    const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || getComputedStyle(at).display === 'none') return false; return true; };
+    const parts = [...main().querySelectorAll('h1, nav, [data-exo-said], [data-exo-reply], [data-surface]')].filter(el => shown(el) && (el.tagName !== 'NAV' || !!el.querySelector('button[aria-pressed]')));
+    const kind = el => el.tagName === 'H1' ? 'title' : el.tagName === 'NAV' ? 'strip' : el.hasAttribute('data-exo-said') ? 'bubble' : el.hasAttribute('data-exo-reply') ? 'reply' : 'page';
+    const strip = parts.find(el => kind(el) === 'strip'), pillsOf = el => JSON.stringify([...el.querySelectorAll('button[aria-pressed]')].map(b => b.textContent));
     // jsdom does not upgrade the A2UI catalog's custom elements: the page shows as its title and its rendered root element.
     const pageText = el => `${JSON.stringify(el.getAttribute('aria-label'))}, rendered as <${el.firstElementChild?.tagName.toLowerCase()}>`;
     console.log('--- the surface view, top to bottom ---');
     for (const el of parts) {
       const k = kind(el); // presentation from computed styles (test/app-render.ts); true layout: the owner's RDP walkthrough
-      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (${rightAligned(el) ? 'right-aligned' : 'NOT right-aligned'})` : ''}${k === 'reply' ? `  (${boxed(el, block()) ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
+      console.log(`${k.padEnd(6)} ${k === 'page' ? pageText(el) : k === 'strip' ? `pills ${pillsOf(el)}  (${divided(el, block()) ? 'hairline below it, before the Exo block' : 'NO hairline before the Exo block'})` : JSON.stringify(el.textContent)}${k === 'bubble' ? `  (${rightAligned(el) ? 'right-aligned' : 'NOT right-aligned'})` : ''}${k === 'reply' ? `  (${boxed(el, block()) ? 'IN A BOX' : 'plain text, no box'})` : ''}`);
     }
-    const first = view.container.textContent.includes(sends[0]);
-    console.log(`first message ${JSON.stringify(sends[0])}: ${first ? 'SHOWN' : 'absent'}`);
+    const first = sends.slice(0, -1).some(t => view.container.textContent.includes(t));
+    console.log(`earlier messages ${sends.slice(0, -1).map(t => JSON.stringify(t)).join(', ')}: ${first ? 'SHOWN' : 'absent'}`);
     const order = parts.map(kind).join(' > ');
     console.log(`order: ${order}`);
-    const ok = order === 'title > bubble > reply > page' && parts[0].textContent === 'Garden plan' && said().textContent === sends[1] && reply().textContent.endsWith(`: ${sends[1]}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
+    const ok = order === 'title > strip > bubble > reply > page' && parts[0].textContent === 'Garden plan' && pillsOf(strip) === '["Week plan"]' && divided(strip, block()) && said().textContent === latest && reply().textContent.endsWith(`: ${latest}`) && rightAligned(said()) && !boxed(reply(), block()) && !first
       && ![...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(h => h.textContent.includes('Exosurface'));
     if (!ok) throw new Error('opening failed');
   } finally {
@@ -240,6 +244,9 @@ async function onePage() {
   const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
   const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label'));
   const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
+  // The surface view top down: the title, the page strip (the navigation holding the pills), the Exo block, the page in view.
+  const order = () => [...main().querySelectorAll('h1, nav, section[aria-label="Exo"], section[data-surface]')].filter(el => shown(el) && (el.tagName !== 'NAV' || !!el.querySelector('button[aria-pressed]')))
+    .map(el => el.tagName === 'H1' ? 'title' : el.tagName === 'NAV' ? `strip${divided(el, main().querySelector('section[aria-label="Exo"]')) ? ' (hairline below)' : ''}` : el.getAttribute('aria-label') === 'Exo' ? 'Exo block' : `page ${JSON.stringify(el.getAttribute('aria-label'))}`).join(' > ');
   const until = waiter(() => `in view ${JSON.stringify(inView())}`);
   const send = async (text, page) => {
     await until('the input', () => input() && !input().disabled);
@@ -249,11 +256,12 @@ async function onePage() {
     console.log(`sent ${JSON.stringify(text)}; Exo's turn finished, nothing scrolled, clicked or typed since`);
     console.log(`  pages in view (${inView().length}): ${JSON.stringify(inView())}`);
     console.log(`  page strip pills: ${JSON.stringify(pills())}`);
+    console.log(`  top down: ${order()}`);
   };
   try {
     await send('draw week: Week plan', 'Week plan');
     await send('draw garden: Garden plan', 'Garden plan');
-    const topic = JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]';
+    const topic = JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]' && order() === 'title > strip (hairline below) > Exo block > page "Garden plan"';
     await send('draw seeds: Seed list beside garden', 'Seed list');
     const beside = JSON.stringify(inView()) === '["Seed list"]' && pills().includes('Garden plan');
     if (!topic || !beside) throw new Error('one page failed');
