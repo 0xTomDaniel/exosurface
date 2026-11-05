@@ -58,7 +58,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       return { action: 'proceed' };
     }
     const attach = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(ctx.input.text.trim());
-    if (!attach) return { action: 'proceed' };
+    // The person's message on a surface: the first one starts the naming beside Exo's turn, never holding the send.
+    if (!attach) { void nameSurface(ctx.thread.id, ctx.input.text); return { action: 'proceed' }; }
     if (!ctx.thread.parentThreadId) return { action: 'reject', message: 'Child attachment requires its native main owner.' };
     const parent = binding(ctx.thread.parentThreadId);
     if (parent?.runtimeKind && parent.runtimeKind !== 'offline') return { action: 'reject', message: 'Linked child projections are disabled for the live trial; native reports go only through OptChat.' };
@@ -86,13 +87,14 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     const held = (await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD] as NameRecord | undefined;
     return held ? ('name' in held ? held.name : title) : undefined;
   };
-  const nameSurface = async (threadId: string) => {
+  /** `sent`: the message being dispatched, the person's first when the journal holds none yet (Exo's reply not there). */
+  const nameSurface = async (threadId: string, sent?: string) => {
     if (naming.has(threadId) || !isBoundThread(threadId)) return;
     naming.add(threadId);
     try {
       if (((await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE) !== NEW_SURFACE) return;
       if ((await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD]) return;
-      const turn = await firstTurn(sessionOf(threadId));
+      const turn = await firstTurn(sessionOf(threadId)) ?? (sent?.trim() ? { message: sent, reply: '' } : undefined);
       if (!turn) return; // only the New surface start so far: no person's message yet
       const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
       let choice: ModelChoice | undefined;
@@ -117,6 +119,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     } catch (e) { bb.log.error(`Surface ${threadId} naming check failed: ${e instanceof Error ? e.message : String(e)}`); }
     finally { naming.delete(threadId); }
   };
+  // Fallback only: BB runs message.dispatch on every send but a person's Send-now on a queued row (that bypasses the hook
+  // by design), so a first message sent that way is named once its turn ends, from the journal's first turn.
   bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
   const awaiting = new Map<string, { entry: string | null; text: string }>(); // thread -> its latest person's entry when the input sent, and what it sent

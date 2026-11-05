@@ -1,5 +1,6 @@
-// #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until its first turn ends; then
-// the naming model from the Exosurface local config names it once from the person's first message and Exo's reply. Home never is.
+// #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until the person's first message
+// is sent; then, beside Exo's turn, the naming model from the Exosurface local config names it once from that message (and Exo's
+// reply if it has already arrived). Home never is.
 // Through the live entry points (server.ts RPCs, events and dispatch hook, host.ts bridge, the release owner, real Pi);
 // fake at the boundaries: BB, OptChat, Exo's model (a Pi extension) and the namer's model (HTTP, test/fake-model-http.ts).
 import { test, after } from 'node:test';
@@ -56,7 +57,7 @@ const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).t
 /** A published log line about this surface at this level. */
 const logged = (level: string, threadId: string, text: string | RegExp) => f.logs.some(l => l.startsWith(`${level}:`) && l.includes(threadId) && (typeof text === 'string' ? l.includes(text) : text.test(l)));
 
-test('a new surface is named after its first turn from the namer\'s answer, in the rendered sidebar and the title at the top; a second turn does not rename it; Home keeps its name', async () => {
+test('a new surface is named from its first message by the namer\'s answer, in the rendered sidebar and the title at the top; a second turn does not rename it; Home keeps its name', async () => {
   f.model.state.reply = 'Spring vegetable garden';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
@@ -73,8 +74,8 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
-    assert.ok(await unchanged(() => f.model.requests.length > 0 || title() !== 'New surface'), 'not named before its first turn');
-    assert.deepEqual(entries(), ['Home', 'New surface'], 'not named before its first turn');
+    assert.ok(await unchanged(() => f.model.requests.length > 0 || title() !== 'New surface'), 'not named before its first message');
+    assert.deepEqual(entries(), ['Home', 'New surface'], 'not named before its first message');
     assert.equal(f.model.requests.length, 0);
 
     const sent = boundaries(made);
@@ -83,11 +84,10 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     await until('Exo\'s first turn ends', () => boundaries(made) > sent);
     await until('the sidebar shows the name', () => entries().join('|') === 'Home|Spring vegetable garden');
     await until('the title shows the name', () => title() === 'Spring vegetable garden');
-    // The namer was asked once, with the person's first message and Exo's reply.
+    // The namer was asked once, at the send, with the person's first message (Exo's reply only if it had already arrived).
     assert.equal(f.model.requests.length, 1);
     const asked = JSON.stringify(f.model.requests[0].body);
     assert.match(asked, /Help me plan a vegetable garden for spring/);
-    assert.match(asked, /Exo \(exo-optchat-t[0-9a-f]{16}\): Help me plan a vegetable garden for spring/);
 
     const second = boundaries(made);
     f.model.state.reply = 'Something else entirely';
@@ -107,6 +107,52 @@ test('a new surface is named after its first turn from the namer\'s answer, in t
     assert.equal(entries()[0], 'Home');
     assert.equal((await listed())[0], 'Home');
     assert.equal(f.model.requests.length, 1);
+  } finally { view.unmount(); f.realtime.deliver = undefined; }
+});
+
+test('acceptance-auto-name: the name shows in the title and the sidebar while Exo\'s first turn is still running, from the first message alone; it stays after the turn and a later send; the namer is asked once', async () => {
+  f.model.state.reply = 'Garden beds while working';
+  const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+  const title = () => view.container.querySelector('main h1')?.textContent ?? null;
+  const { fireEvent } = kit.testing;
+  try {
+    await until('the sidebar listed', () => entries()[0] === 'Home');
+    const count = entries().length;
+    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    await until('the new surface listed', () => entries().length === count + 1);
+    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+    const profile = f.piRuns().at(-1).profile;
+    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    const asked = f.model.requests.length, sent = boundaries(made);
+
+    // Exo's turn is held (the fake Exo model answers a "hold:" message only on release): the name must come meanwhile.
+    fireEvent.change(input()!, { target: { value: 'hold: Help me plan raised garden beds' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the title and the sidebar show the name while Exo\'s turn runs', () => title() === 'Garden beds while working' && entries().at(-1) === 'Garden beds while working');
+    assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
+    assert.equal(f.model.requests.length - asked, 1);
+    // Named from the person's first message alone: Exo's reply had not arrived.
+    const prompt = JSON.stringify(f.model.requests[asked].body);
+    assert.equal(prompt.includes('Help me plan raised garden beds'), true);
+    assert.equal(prompt.includes('The reply:'), false);
+
+    f.release(profile);
+    await until('Exo\'s turn ends', () => boundaries(made) > sent);
+    f.model.state.reply = 'Something else entirely';
+    const later = boundaries(made);
+    fireEvent.change(input()!, { target: { value: 'Add a herb bed' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the later turn ends', () => boundaries(made) > later);
+    assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Garden beds while working' || entries().at(-1) !== 'Garden beds while working'), true, 'the name stays after the turn and a later send');
+    assert.equal(title(), 'Garden beds while working');
+    assert.equal(entries().at(-1), 'Garden beds while working');
+    assert.equal(await listedName(made), 'Garden beds while working');
+    assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 

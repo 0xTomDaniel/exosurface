@@ -366,9 +366,10 @@ async function secondBundle() {
   }
 }
 
-// #82: a new surface is "New surface" until its first turn; then the namer names it once. Rendered surface view (app.tsx:
-// sidebar and the title at the top) on the real server RPCs; the namer is "namer" in the Exosurface local config
-// (EXO_CONFIG); its model is the fixture's fake over HTTP (models.json in its agent folder).
+// #82: a new surface is "New surface" until the person's first message is sent; then, beside Exo's turn, the namer names it
+// once. Rendered surface view (app.tsx: sidebar and the title at the top) on the real server RPCs; the namer is "namer" in the
+// Exosurface local config (EXO_CONFIG); its model is the fixture's fake over HTTP (models.json in its agent folder). Exo's first
+// turn is held (the fake Exo model answers a "hold:" message only on release), so the name is seen while Exo still works.
 async function autoName() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -382,7 +383,7 @@ async function autoName() {
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
   const boundaries = id => host.deltas(id).filter(d => d.kind === 'turn.boundary').length;
   const until = waiter(() => `sidebar ${entries().join(', ')}; title ${JSON.stringify(title())}`);
-  const send = async (id, text) => { const before = boundaries(id); fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' })); console.log(`sent: ${JSON.stringify(text)}`); await until('the turn to end', () => boundaries(id) > before, 30000); };
+  const type = text => { fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' })); console.log(`sent: ${JSON.stringify(text)}`); };
   try {
     f.model.state.reply = 'Spring vegetable garden';
     await until('Home listed', () => entries().join('|') === 'Home');
@@ -390,25 +391,33 @@ async function autoName() {
     await until('the new surface', () => entries().length === 2);
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
+    const profile = f.piRuns().at(-1).profile;
     await until('the new surface ready', () => input() && !input().disabled && boundaries(made) > 0 && title() === 'New surface');
     const config = JSON.parse(readFileSync(f.config, 'utf8'));
     console.log(`namer from the Exosurface local config ${f.config}: ${config.namer ? JSON.stringify(config.namer) : '"namer" absent (default openai/gpt-6-luna, thinking off)'}`);
     const before = entries()[1], titleBefore = title();
-    console.log(`before its first turn: sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(titleBefore)}`);
-    await send(made, 'Help me plan a vegetable garden for spring');
-    await settled(() => entries()[1] !== 'New surface' && title() !== 'New surface', 15000);
-    const request = f.model.requests[0];
-    console.log(`after its first turn:  sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())}`);
-    console.log(`  namer from the Exosurface local config ${config.namer ? '"namer"' : 'default (no "namer")'}; the model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)}`);
+    console.log(`before its first message: sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(titleBefore)}`);
+    const turns = boundaries(made);
+    type('hold: Help me plan a vegetable garden for spring');
+    await until('the name in the sidebar and the title', () => entries()[1] !== 'New surface' && title() !== 'New surface', 30000);
+    const running = boundaries(made) === turns, request = f.model.requests[0];
+    console.log(`while Exo's turn is still running (${running ? 'its turn has not ended' : 'TURN ALREADY ENDED'}): sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())}`);
+    console.log(`  the model received: ${request?.path} model ${request?.body.model}, reasoning ${JSON.stringify(request?.body.reasoning ?? null)}; from the first message alone: ${!JSON.stringify(request?.body ?? '').includes('The reply:')}`);
     for (const line of f.logs) console.log(`  log ${line}`);
-    const named = entries()[1], titled = title(), asked = f.model.requests.length;
+    const named = entries()[1], titled = title();
     f.model.state.reply = 'Something else entirely';
-    await send(made, 'Add tomatoes to the plan');
+    f.release(profile);
+    await until('Exo\'s first turn to end', () => boundaries(made) > turns, 30000);
     // Exo would act within moments of the turn's end: a wall-clock bounded wait for a change that must not come.
-    const changed = await settled(() => f.model.requests.length > asked || entries()[1] !== named || title() !== titled, 2000);
-    const after = entries()[1], again = f.model.requests.length - asked;
-    console.log(`after a second turn:   sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())} (${!changed ? 'name unchanged, namer not asked again' : `CHANGED or asked again (${again})`})`);
-    const ok = before === 'New surface' && titleBefore === 'New surface' && named === 'Spring vegetable garden' && titled === named && !changed && after === named && !again && entries()[0] === 'Home'
+    const changedAtEnd = await settled(() => f.model.requests.length > 1 || entries()[1] !== named || title() !== titled, 2000);
+    console.log(`after Exo's first turn: sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())} (${!changedAtEnd ? 'unchanged' : 'CHANGED or asked again'})`);
+    const later = boundaries(made);
+    type('Add tomatoes to the plan');
+    await until('the later turn to end', () => boundaries(made) > later, 30000);
+    const changed = await settled(() => f.model.requests.length > 1 || entries()[1] !== named || title() !== titled, 2000);
+    const after = entries()[1], asked = f.model.requests.length;
+    console.log(`after a later send:     sidebar ${entries().join(', ')}; title at the top ${JSON.stringify(title())} (${!changed ? 'unchanged' : 'CHANGED'}; namer asked ${asked} time${asked === 1 ? '' : 's'} in all)`);
+    const ok = before === 'New surface' && titleBefore === 'New surface' && running && named === 'Spring vegetable garden' && titled === named && !changedAtEnd && !changed && after === named && asked === 1 && entries()[0] === 'Home'
       && !config.namer && request?.path === '/v1/responses' && request?.body.model === 'gpt-6-luna' && request?.body.reasoning?.effort === 'none'; // the default: openai, gpt-6-luna, thinking off
     if (!ok) throw new Error('auto-name failed');
   } finally {
@@ -422,7 +431,7 @@ async function autoName() {
 
 // #83: the person renames a surface from the rendered sidebar (its Rename action, type, Enter); Exo never names it again,
 // and the title at the top follows. One surface Exo named, then renamed to Backyard, then a further turn; one renamed before
-// its first turn.
+// its first turn, then once more from the title at the top (double-click, type, Enter). Home's title has no pencil.
 async function rename() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
   f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
@@ -459,11 +468,13 @@ async function rename() {
     console.log(`  renamed in the sidebar: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`);
     await until(`the sidebar and the title to show ${to}`, () => entries().at(-1) === to && title() === to);
   };
+  const top = () => view.container.querySelector('main .exo-topline');
   const show = async (when, id) => { const n = await name(id); console.log(`  ${when.padEnd(30)} name ${JSON.stringify(n)}  title at the top ${JSON.stringify(title())}  sidebar: ${entries().join(', ')}  namer calls: ${f.model.requests.length}`); return n === title() ? n : `${n} (title ${title()})`; };
   try {
     await until('Home listed', () => entries().join('|') === 'Home');
     const homeRpc = await f.rpc.thread_rename({ threadId: f.setup.threadId, name: 'My home' }).then(() => 'ACCEPTED', e => `refused (${e.message})`);
-    console.log(`Home: rename action ${sidebar().querySelector('button[aria-label^="Rename"]') ? 'SHOWN' : 'none'}; RPC: ${homeRpc}; title at the top ${JSON.stringify(title())}`);
+    console.log(`Home: rename action ${sidebar().querySelector('button[aria-label^="Rename"]') ? 'SHOWN' : 'none'}; RPC: ${homeRpc}; title at the top ${JSON.stringify(title())}, its pencil ${top()?.querySelector('button[aria-label^="Rename"]') ? 'SHOWN' : 'none'}`);
+    const homeTitle = title(), homePencil = !!top()?.querySelector('button[aria-label^="Rename"]');
     console.log('--- a surface Exo named, renamed to Backyard ---');
     f.model.state.reply = 'Spring vegetable garden';
     const one = await newOne();
@@ -487,8 +498,18 @@ async function rename() {
     await turn(two, 'Book the cabin for June');
     const kept = await show('after its first turn:', two), againTwo = f.model.requests.length - before;
     console.log(`namer asked again: ${againOne} (Backyard), ${againTwo} (Cabin trip)`);
+    console.log('--- renamed from the title at the top ---');
+    const pencil = !!top().querySelector('button[aria-label="Rename Cabin trip"]');
+    fireEvent.doubleClick(top().querySelector('h1'));
+    const field = top().querySelector('input[aria-label="Surface name"]'), held = field?.value ?? null;
+    console.log(`  double-click on the title "Cabin trip": a field holding ${JSON.stringify(held)}; pencil beside the title: ${pencil ? 'shown' : 'NONE'}`);
+    fireEvent.change(field, { target: { value: 'Lake cabin' } }); fireEvent.keyDown(field, { key: 'Enter' });
+    console.log('  typed "Lake cabin", Enter');
+    await until('the title and the sidebar to show Lake cabin', () => title() === 'Lake cabin' && entries().at(-1) === 'Lake cabin');
+    const header = await show('after the title rename:', two);
     const ok = auto === 'Spring vegetable garden' && renamed === 'Backyard' && further === 'Backyard' && !againOne && early === 'Cabin trip' && kept === 'Cabin trip' && !againTwo
-      && entries().join('|') === 'Home|Backyard|Cabin trip' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
+      && pencil && held === 'Cabin trip' && header === 'Lake cabin' && homeTitle === 'Home' && !homePencil
+      && entries().join('|') === 'Home|Backyard|Lake cabin' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
     if (!ok) throw new Error('rename failed');
   } finally {
     view.unmount(); close();
