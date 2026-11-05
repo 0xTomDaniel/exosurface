@@ -166,14 +166,14 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  },[ticks,busy,state?.threadId,rpc]);
  return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme}</style>
-  <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 py-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
+  <main aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
    <ExoBlock threadId={state?.threadId??null}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?.layout?.focus});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local} setLocal={setLocal}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
+   <SurfaceInput threadId={state?.threadId??null}/>
   </div></main>
-  <SurfaceInput threadId={state?.threadId??null}/>
  </div>;
 }
 // The surfaces view (#68): the sidebar and the surface in view. Home (null) is the primary thread's page state as before.

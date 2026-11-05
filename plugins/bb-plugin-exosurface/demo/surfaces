@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
-import { renderedApp, rightAligned, boxed } from '../test/app-render.ts';
+import { renderedApp, rightAligned, boxed, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 
 async function parallelThreads() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
@@ -225,7 +225,48 @@ async function opening() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening };
+// #80: the rendered surface view with a drawn page: where the input sits, what its width follows, and where the fade over the
+// content beneath it starts. Read from computed styles (test/app-render.ts); jsdom does no layout, so true layout and paint
+// are the owner's RDP walkthrough.
+async function inputFloats() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), form = () => view.container.querySelector('form[aria-label="Message Exo"]');
+  const input = () => form()?.querySelector('textarea'), reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
+  const until = async (what, ok) => { for (const end = Date.now() + 20000; !ok();) { if (Date.now() > end) throw new Error(`timed out waiting for ${what}`); await new Promise(r => setTimeout(r, 50)); } };
+  const name = el => el === main() ? 'the scrolling surface (main "Exosurface")' : el?.matches('form') ? 'the input itself' : el ? `the page's column (max-width ${getComputedStyle(el).maxWidth})` : 'the window';
+  try {
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: 'draw: Week plan' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    console.log('sent: "draw: Week plan"');
+    await until('the drawn page', () => !!main().querySelector('[data-surface]') && reply()?.textContent?.startsWith('Exo ('));
+    const page = main().querySelector('[data-surface]'), held = pinnedToBottom(form()), col = column(page), own = column(form());
+    const after = held && !!(page.compareDocumentPosition(held.pinned) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const start = held ? fadeStart(held.pinned) : null, middle = held ? centeredIn(form(), held.pinned) : false;
+    console.log('--- the input on the surface view ---');
+    console.log(`pinned:  ${held ? `sticky at bottom ${getComputedStyle(held.pinned).bottom} of ${name(held.scroller)}, stays in view while the page scrolls` : 'NOT pinned'}`);
+    console.log(`flow:    ${after ? 'after the page, in the same column: the page\'s last lines scroll clear above it' : 'NOT after the page'}`);
+    console.log(`column:  the page sits in ${name(col)}; the input's width follows ${name(own)} (${own === col ? 'the same column, not the window' : 'NOT the page\'s column'})`);
+    console.log(`fade:    ${start === null ? 'NONE' : `starts ${start * 100}% down the floating box, clear to opaque at its bottom edge`}; the input ${middle ? 'is centred in that box, so the fade starts at the input\'s middle' : 'is NOT centred in it'}`);
+    fireEvent.change(input(), { target: { value: 'plan the week, with Friday off' } });
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the second reply', () => reply()?.textContent?.endsWith(': plan the week, with Friday off'));
+    console.log(`send:    still works; reply ${JSON.stringify(reply().textContent)}, input value ${JSON.stringify(input().value)}`);
+    const ok = held && held.scroller === main() && held.scroller.contains(page) && after && col && own === col && start === 0.5 && middle && input().value === '';
+    if (!ok) throw new Error('input-floats failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'input-floats': inputFloats };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

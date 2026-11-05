@@ -38,6 +38,13 @@ export const exoTheme=`
 .exo-pill span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exo-follow{font:inherit;font-size:.8rem;border:0;background:none;color:var(--exo-accent-ink);cursor:pointer;padding:.3rem .2rem;text-decoration:underline;text-underline-offset:3px}
 .exo-frame{width:100%;max-width:46rem;margin-inline:auto}
+/* The input floats over the bottom of the scrolling surface in the page's column (S11); it sits last in the column, so
+   the page's last lines scroll clear above it, and the content beneath it fades out from its middle down. */
+.exo-canvas{overflow:auto}
+.exo-frame{display:flex;flex-direction:column;min-height:100%}
+.exo-dock{position:sticky;bottom:0;z-index:2;margin-top:auto;padding-top:.9rem;padding-bottom:.9rem}
+.exo-fade{position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;background-color:var(--exo-paper);mask-image:linear-gradient(to bottom,transparent 50%,#000)}
+.exo-input{position:relative;margin:0;padding:.35rem;border-radius:.9rem;background-color:var(--exo-paper);box-shadow:0 1px 6px color-mix(in oklab,var(--exo-ink) 10%,transparent)}
 .exo-stage-grid{display:grid;gap:2.5rem;grid-template-columns:minmax(0,1fr);align-items:start}
 /* Context sits beside the stage only when both get a readable width; otherwise it stacks below. */
 @container exo-canvas (min-width:1180px){

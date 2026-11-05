@@ -58,6 +58,68 @@ const painted = (s: CSSStyleDeclaration) =>
   ['Top', 'Right', 'Bottom', 'Left'].some(side => !['', 'none', 'hidden'].includes((s as any)[`border${side}Style`]) && !['0', '0px'].includes((s as any)[`border${side}Width`]))
   || !['', 'transparent', 'rgba(0, 0, 0, 0)', 'initial'].includes(s.backgroundColor) || !['', 'none', 'initial'].includes(s.backgroundImage)
   || !['', 'none', 'initial'].includes(s.boxShadow);
+const zero = (v: string) => ['0', '0px'].includes(v);
+const scrolls = (s: CSSStyleDeclaration) => [s.overflow, s.overflowY].some(v => ['auto', 'scroll'].includes(v));
+/** What holds an element over the bottom of the region that scrolls around it: the element or its nearest ancestor kept
+ *  against that region's bottom edge while it scrolls (sticky at bottom 0), and the region. A sticky box stays in the flow,
+ *  so it takes its own height at the end of its column and the content above it can scroll clear of it. null when nothing
+ *  holds it there, or when it is fixed to the window rather than the surface. */
+export function pinnedToBottom(el: Element): { pinned: Element; scroller: Element } | null {
+  for (let at: Element | null = el; at; at = at.parentElement) {
+    const own = css(at);
+    if (own.position === 'fixed') return null;
+    if (own.position !== 'sticky' || !zero(own.bottom)) continue;
+    for (let up = at.parentElement; up; up = up.parentElement) if (scrolls(css(up))) return { pinned: at, scroller: up };
+    return null;
+  }
+  return null;
+}
+const held = (s: CSSStyleDeclaration) => !['', 'none', '100%'].includes(s.maxWidth) || !['', 'auto', '100%'].includes(s.width);
+/** The box whose width an element's width follows: the element itself when it holds a width of its own (a width or a
+ *  max-width), else its nearest ancestor that does; null when nothing but the window bounds it. */
+export function column(el: Element): Element | null {
+  for (let at: Element | null = el; at; at = at.parentElement) if (held(css(at))) return at;
+  return null;
+}
+// The top-level, comma-separated arguments of a CSS function value.
+const args = (value: string) => {
+  const out: string[] = []; let depth = 0, cur = '';
+  for (const ch of value) { if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; continue; } if (ch === '(') depth++; if (ch === ')') depth--; cur += ch; }
+  return [...out, cur.trim()];
+};
+const clear = (color: string) => color === 'transparent' || /^rgba\(.*,\s*0\)$/.test(color);
+/** Where a top-to-bottom gradient, clear at first and opaque at the bottom edge, begins (a fraction of the box's height). */
+function gradientStart(value: string): number | null {
+  const m = /^linear-gradient\((.*)\)$/.exec(value.trim()); if (!m) return null;
+  const parts = args(m[1]); if (/^(to |-?[\d.]+(deg|turn|rad))/.test(parts[0])) { if (!['to bottom', '180deg', '0.5turn'].includes(parts.shift()!)) return null; }
+  const stop = (s: string) => { const at = /\s(-?[\d.]+)%$/.exec(s); return { color: at ? s.slice(0, at.index).trim() : s, at: at ? Number(at[1]) / 100 : null }; };
+  const first = stop(parts[0]), last = stop(parts.at(-1)!);
+  if (parts.length < 2 || !clear(first.color) || clear(last.color) || (last.at !== null && last.at !== 1)) return null;
+  return first.at ?? 0;
+}
+/** Where the fade over the content beneath a floating box begins, as a fraction of the box's height from its top: a
+ *  top-to-bottom gradient from clear to opaque at the box's bottom edge, painted as its background or masking a painted
+ *  layer, on the box itself or on a layer placed over its whole area. null when nothing fades. */
+export function fadeStart(box: Element): number | null {
+  const covers = (e: Element) => { const s = css(e); return s.position === 'absolute' && [s.top, s.right, s.bottom, s.left].every(zero); };
+  for (const layer of [box, ...[...box.children].filter(covers)]) {
+    const s = css(layer), mask = s.getPropertyValue('mask-image') || s.getPropertyValue('-webkit-mask-image');
+    const start = gradientStart(s.backgroundImage) ?? (mask && !clear(s.backgroundColor) && s.backgroundColor !== '' ? gradientStart(mask) : null);
+    if (start !== null) return start;
+  }
+  return null;
+}
+const spacing = (s: CSSStyleDeclaration, side: 'Top' | 'Bottom') => [s[`margin${side}`], s[`padding${side}`], s[`border${side}Width`]].map(v => parseFloat(v) || 0).reduce((a, b) => a + b, 0);
+/** Whether an element's vertical middle is its container's: every box from the element up to (not including) the container
+ *  is the only in-flow child of its parent, with equal space above and below it, and so is the container's own padding. */
+export function centeredIn(el: Element, container: Element): boolean {
+  const inFlow = (e: Element) => { const s = css(e); return s.display !== 'none' && !['absolute', 'fixed'].includes(s.position); };
+  for (let at: Element = el; at !== container; at = at.parentElement!) {
+    if (!at.parentElement) return false;
+    const s = css(at); if (spacing(s, 'Top') !== spacing(s, 'Bottom') || [...at.parentElement.children].filter(inFlow).length !== 1) return false;
+  }
+  const s = css(container); return parseFloat(s.paddingTop) === parseFloat(s.paddingBottom) && parseFloat(s.borderTopWidth || '0') === parseFloat(s.borderBottomWidth || '0');
+}
 /** Whether an element is drawn in a box: it, anything inside it, or any element between it and `within` (inclusive) has a
  *  border, a background or a shadow. */
 export function boxed(el: Element, within: Element): boolean {
