@@ -102,11 +102,11 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike') throw new Error('Only an Exo thread can be bound');
       return bindThread(threadId);
     },
-    // Exo is working from a send until the thread's journal holds a newer message from the person and the owner's turn
-    // has ended; while it works, the block shows that and none of the previous turn's words.
+    // Exo is working from a send until the thread's journal holds a newer message from the person and Exo's reply to it,
+    // and the owner's turn has ended (Pi journals before the owner reports the turn running); while it works, the block shows that and none of the previous turn's words.
     exo_block: async ({ threadId }) => {
       const turn = latestTurn(sessionOf(threadId)), sent = awaiting.get(threadId);
-      if (sent !== undefined && sent !== turn.userEntry) awaiting.delete(threadId);
+      if (sent !== undefined && sent !== turn.userEntry && turn.ended) awaiting.delete(threadId);
       const working = awaiting.has(threadId) || ownerWorking(threadId);
       // While it works, the one line of what Exo is doing right now (E9), when the owner has one; never after the reply.
       const activity = working ? ownerActivity(threadId) : undefined;

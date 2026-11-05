@@ -5,13 +5,15 @@ import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
 
-export type LatestTurn = { userEntry: string | null; words: string };
+/** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
+export type LatestTurn = { userEntry: string | null; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
 /** The latest turn in a Pi session journal: the last person's message entry and Exo's words after it. Reads backwards. */
 export function latestTurn(sessionFile: string | undefined): LatestTurn {
-  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, words: '' };
+  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, words: '', ended: false };
   const fd = openSync(sessionFile, 'r'), said: string[] = [];
+  let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -30,11 +32,11 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
-        if (entry.message?.role === 'user') return { userEntry: String(entry.id), words: said.reverse().filter(Boolean).join('\n\n') };
-        if (entry.message?.role === 'assistant') said.push(text(entry.message));
+        if (entry.message?.role === 'user') return { userEntry: String(entry.id), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
+        if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
       }
     }
-    return { userEntry: null, words: said.reverse().filter(Boolean).join('\n\n') };
+    return { userEntry: null, words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }
 }
 

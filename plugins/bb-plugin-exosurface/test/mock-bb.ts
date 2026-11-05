@@ -29,8 +29,8 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
 // a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs; a "steps: <topic>" prompt is
 // answered in several steps: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
-// with no bold headline (as Claude's summaries may come), then the reply. Each step lasts about a second.
-const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+// with no bold headline (as Claude's summaries may come), then the reply. It holds each step until stepsTurn has seen its line.
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,rmSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
@@ -55,14 +55,15 @@ export default function optchat(pi){
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.startsWith('steps: ')){const topic=said.slice(7).trim(),at=context.messages.at(-1)?.role;
+     const hold=async n=>{const gate=join(process.env.OPTCHAT_HOME,'steps',topic+'-'+n);for(let i=0;i<1200&&!existsSync(gate);i++)await sleep(25);rmSync(gate,{force:true});};
      const think=async deltas=>{const block={type:'thinking',thinking:''},i=message.content.push(block)-1;stream.push({type:'thinking_start',contentIndex:i,partial:message});
-      for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(150);}
-      stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});await sleep(800);};
-     if(at==='user'){await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);
+      for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(50);}
+      stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});};
+     if(at==='user'){await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);await hold(1);
       const toolCall={type:'toolCall',id:'read_'+Date.now(),name:'read',arguments:{path:topic+'.md'}};message.content.push(toolCall);message.stopReason='toolUse';
       stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
       stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-     await sleep(1000);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);}
+     await hold(2);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(3);}
     if(said.startsWith('slow:'))await sleep(3000);
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
@@ -210,4 +211,20 @@ export function ownerRequest(f: Fixture, value: object) {
       socket.write(JSON.stringify({ id: 'probe', ...value }) + '\n');
     });
   });
+}
+
+/** A "steps: <topic>" send on a surface (the fake model above): records each change of what the surface's exo_block reports
+ * until Exo's turn has ended. The model holds each step until its line has been seen here, so none is missed under load. */
+export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}) {
+  const blocks: any[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
+  mkdirSync(gates, { recursive: true });
+  await f.rpc.exo_send({ threadId, text: `steps: ${topic}` });
+  for (let waited = 0; ; waited += 25) {
+    if (waited > 60000) throw new Error(`Exo's turn did not end: ${JSON.stringify(blocks)}`);
+    const block = await f.rpc.exo_block({ threadId });
+    if (JSON.stringify(block) !== JSON.stringify(blocks.at(-1))) { blocks.push(block); seen(block); }
+    for (const lines = new Set(blocks.map(b => b.activity).filter(Boolean)).size; released < lines;) writeFileSync(join(gates, `${topic}-${++released}`), '');
+    if (!block.working) return blocks;
+    await new Promise(r => setTimeout(r, 25));
+  }
 }
