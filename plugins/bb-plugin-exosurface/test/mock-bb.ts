@@ -27,7 +27,9 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // OptChat as Pi sees it: --optchat-profile, one Pi per profile (lock.sock answering "<profile> · PID <pid> · ..."), the
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
-// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs.
+// a "slow:" prompt is answered after 3 s, long enough to open another surface while it runs; a "steps: <topic>" prompt is
+// answered in several steps: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
+// with no bold headline (as Claude's summaries may come), then the reply. Each step lasts about a second.
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
@@ -52,11 +54,20 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+    if(said.startsWith('steps: ')){const topic=said.slice(7).trim(),at=context.messages.at(-1)?.role;
+     const think=async deltas=>{const block={type:'thinking',thinking:''},i=message.content.push(block)-1;stream.push({type:'thinking_start',contentIndex:i,partial:message});
+      for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(150);}
+      stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});await sleep(800);};
+     if(at==='user'){await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);
+      const toolCall={type:'toolCall',id:'read_'+Date.now(),name:'read',arguments:{path:topic+'.md'}};message.content.push(toolCall);message.stopReason='toolUse';
+      stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
+      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+     await sleep(1000);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);}
     if(said.startsWith('slow:'))await sleep(3000);
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
-    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
+    if(!said.startsWith('quiet:')){const at=message.content.push({type:'text',text})-1;stream.push({type:'text_start',contentIndex:at,partial:message});stream.push({type:'text_delta',contentIndex:at,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:at,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
 

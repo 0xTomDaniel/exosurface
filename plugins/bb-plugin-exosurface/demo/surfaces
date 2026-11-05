@@ -3,7 +3,8 @@
 // harness (test/mock-bb.ts): server.ts RPC (canonical_setup, thread_bind), host.ts provider bridge and the release owner
 // (legacy/primary) on the real Pi CLI; fake BB, OptChat and model at the boundary. Needs build:owner and build:runtime.
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
-import { rmSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
 import { renderedApp } from '../test/app-render.ts';
 
@@ -172,7 +173,37 @@ async function parallel() {
   }
 }
 
-const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel };
+// #84 (spec E9): a send Exo answers in several steps (fake model: reasoning headed "**Planning the garden**", a read of
+// garden.md, reasoning with no bold headline, the reply). Prints each line the exo_block RPC reports while Exo works, then
+// what it reports once the turn ends.
+async function activityLine() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const t0 = Date.now(), at = () => `${String(Date.now() - t0).padStart(6)}ms`;
+  try {
+    writeFileSync(join(f.vault, 'garden.md'), '# The garden\n');
+    const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+    const text = 'steps: garden', lines = [];
+    await f.rpc.exo_send({ threadId: 'primary', text }); console.log(`${at()}  sent: ${JSON.stringify(text)}`);
+    let block, last = '';
+    for (let i = 0; ; i++) {
+      if (i > 1200) throw new Error('Exo\'s turn did not end');
+      block = await f.rpc.exo_block({ threadId: 'primary' });
+      if (!block.working) break;
+      if (block.activity && block.activity !== last) { last = block.activity; lines.push(last); console.log(`${at()}  working, activity: ${JSON.stringify(last)}`); }
+      await new Promise(r => setTimeout(r, 25));
+    }
+    console.log(`${at()}  turn ended: words ${JSON.stringify(block.words)}, activity: ${'activity' in block ? JSON.stringify(block.activity) : 'none'}`);
+    if (lines.length < 2) throw new Error(`activity-line failed: the line never changed (${lines.length} line(s))`);
+    if ('activity' in block || block.words !== `Exo (${f.setup.profile}): ${text}`) throw new Error('activity-line failed: the line survived the reply, or no reply');
+  } finally {
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
+const SCENARIOS = { 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, 'activity-line': activityLine };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

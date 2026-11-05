@@ -8,7 +8,7 @@ import { consumeCanonicalInitialization } from './src/canonical-control.ts';
 import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
-import { latestTurn, ownerWorking, sessionOf } from './src/exo-turn.ts';
+import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-turn.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
@@ -20,7 +20,7 @@ export const rpcContract = defineRpcContract({
   attach_child: { input: z.object({ threadId: z.string(), childId: z.string() }), output: z.object({ threadId: z.string() }) },
   thread_bind: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/) }).strict(), output: z.object({ threadId: z.string(), profile: z.string() }) },
   // The surface view's Exo block and input (#69): Exo's words from the thread's latest turn, and a send from the input.
-  exo_block: { input: z.object({ threadId: z.string() }).strict(), output: z.object({ working: z.boolean(), words: z.string() }) },
+  exo_block: { input: z.object({ threadId: z.string() }).strict(), output: z.object({ working: z.boolean(), words: z.string(), activity: z.string().optional() }) },
   exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
   // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
@@ -108,7 +108,9 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       const turn = latestTurn(sessionOf(threadId)), sent = awaiting.get(threadId);
       if (sent !== undefined && sent !== turn.userEntry) awaiting.delete(threadId);
       const working = awaiting.has(threadId) || ownerWorking(threadId);
-      return { working, words: working ? '' : turn.words };
+      // While it works, the one line of what Exo is doing right now (E9), when the owner has one; never after the reply.
+      const activity = working ? ownerActivity(threadId) : undefined;
+      return { working, words: working ? '' : turn.words, ...(activity ? { activity } : {}) };
     },
     exo_send: async ({ threadId, text }) => {
       validatePrompt(text);

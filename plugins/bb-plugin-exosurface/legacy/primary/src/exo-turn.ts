@@ -46,5 +46,13 @@ export function ownerWorking(threadId: string) {
   return state.threadId === threadId ? !!state.streaming : !!state.threads?.[threadId]?.streaming;
 }
 
+/** The owner's one line of what Exo is doing right now on this thread (spec pages-and-activity E9), if any. */
+export function ownerActivity(threadId: string): string | undefined {
+  const file = join(HOME, 'owner', 'state.json');
+  if (!existsSync(file)) return undefined;
+  const state = load(file), activity = state.threadId === threadId ? state.activity : state.threads?.[threadId]?.activity;
+  return typeof activity === 'string' && activity ? activity : undefined;
+}
+
 /** The thread's own Pi session journal, as its binding names it (the host records it once the thread's Pi starts). */
 export const sessionOf = (threadId: string): string | undefined => binding(threadId)?.sessionFile;
