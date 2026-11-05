@@ -162,8 +162,11 @@
       "pr": null
     },
     "acceptance-opening": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 89,
+      "record": "20261105T015744Z-57c6e641",
+      "commit": "c76a8ef163256843a3f690963237a70551840e9a",
+      "tests": []
     },
     "acceptance-input-floats": {
       "status": "planned",
@@ -174,8 +177,11 @@
       "pr": null
     },
     "acceptance-name-header": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 89,
+      "record": "20261105T015854Z-18098e2d",
+      "commit": "c76a8ef163256843a3f690963237a70551840e9a",
+      "tests": []
     },
     "acceptance-auto-name": {
       "status": "planned",
