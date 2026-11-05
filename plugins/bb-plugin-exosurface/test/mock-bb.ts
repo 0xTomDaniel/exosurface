@@ -28,7 +28,7 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // optchat.profile session entry. The model: a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
 // a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
-// runs however long that takes.
+// runs however long that takes ("hold: quiet: ..." is a held turn with no words).
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
@@ -59,7 +59,7 @@ export default function optchat(pi){
     if(said.startsWith('hold:'))while(!existsSync(join(process.env.OPTCHAT_HOME,'release',name)))await sleep(25);
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(let i=0;i<100&&readdirSync(turns).length<2;i++)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    if(!said.startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
+    if(!said.replace(/^hold: /,'').startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
     stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;

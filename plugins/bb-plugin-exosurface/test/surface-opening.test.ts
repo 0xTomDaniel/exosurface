@@ -6,7 +6,7 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
-import { renderedApp } from './app-render.ts';
+import { renderedApp, rightAligned, boxed } from './app-render.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -41,15 +41,6 @@ async function send(text: string) {
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
 }
 const before = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-/** Whether an element, or any element between it and the page, is drawn as a box: a border, a card or a callout. */
-const boxed = (el: HTMLElement) => {
-  for (let at: HTMLElement | null = el; at && at !== main(); at = at.parentElement) {
-    const style = getComputedStyle(at), cls = at.getAttribute('class') ?? '';
-    if (/\b(border|rounded|shadow|card|callout)\S*/.test(cls) || ['Top', 'Right', 'Bottom', 'Left'].some(s => !['', 'none', 'hidden'].includes((style as any)[`border${s}Style`]))) return true;
-    if (['note', 'alert', 'dialog'].includes(at.getAttribute('role') ?? '') || at.tagName === 'ASIDE' || at.tagName === 'BLOCKQUOTE') return true;
-  }
-  return false;
-};
 
 test('after a second send and Exo\'s finished turn: the name, the second message as a bubble, Exo\'s reply as plain text, then the page; nothing of the first message', async () => {
   await send('draw: Week plan');
@@ -67,9 +58,9 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   // Screen order: the title, the bubble, the reply, the page's content; one scrolling region holds them all.
   assert.ok(before(title()!, bubble()!) && before(bubble()!, reply()!) && before(reply()!, page), main().innerHTML);
   assert.ok(main().contains(bubble()) && main().contains(page));
-  // The bubble sits on the right; the reply is plain text, not in a box.
-  assert.equal(getComputedStyle(bubble()!).marginLeft, 'auto');
-  assert.equal(boxed(reply()!), false);
+  // The bubble sits on the right; the reply is plain text, not in a box (computed styles; layout: the owner's RDP walkthrough).
+  assert.equal(rightAligned(bubble()!), true);
+  assert.equal(boxed(reply()!, block()!), false);
   // Nothing of the first message or its reply.
   assert.equal(view.container.textContent!.includes('draw: Week plan'), false);
   assert.equal(input()!.value, '');
