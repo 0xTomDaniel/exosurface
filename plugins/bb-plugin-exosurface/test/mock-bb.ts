@@ -93,6 +93,17 @@ export default function optchat(pi){
 }`;
 
 type Hook = (context: unknown) => Promise<{ action: string; message?: string }>;
+// BB 0.48's rpc host, as PluginRpc.register documents it (@get-bb/plugin-sdk bundled-types/bb-plugin-sdk.d.ts); its refusal
+// is thrown here.
+function checkedRpc(method: string, schema: { input: any; output: any } | undefined, handler: (input: unknown) => Promise<any>) {
+  if (!schema) throw new Error(`mock BB: rpc ${method} registered without a contract entry`);
+  const validated = async (side: 'input' | 'output', value: unknown) => {
+    const r = await schema[side]['~standard'].validate(value);
+    if (r.issues) throw new Error(`mock BB: rpc ${method} ${side} invalid: ${JSON.stringify(r.issues)}`);
+    return r.value;
+  };
+  return async (input: unknown) => validated('output', await handler(await validated('input', input)));
+}
 /** server.ts (package.json bb.server) registered against a mock BB; its RPC handlers and its message.dispatch hook. */
 async function serverRpc(vault: string) {
   const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
@@ -131,7 +142,7 @@ async function serverRpc(vault: string) {
   const bb: any = { providers: { register() {} }, background: { service(name: string, s: { start: (signal: AbortSignal) => Promise<void> }) { services.push({ name, start: s.start }); } }, realtime: { publish(channel: string, payload: unknown) { realtime.deliver?.(channel, payload); } }, ui: { registerMentionProvider() {} },
     events: { on(name: string, handler: (payload: any) => unknown) { (listeners[name] ??= []).push(handler); } },
     log: Object.fromEntries(['debug', 'info', 'warn', 'error'].map(level => [level, (m: string) => { logs.push(`${level}: ${m}`); }])),
-    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
+    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(contract: Record<string, { input: any; output: any }>, h: typeof handlers) { for (const [method, handler] of Object.entries(h)) handlers[method] = checkedRpc(method, contract[method], handler); } },
     sdk: {
       threads: {
         async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return [...threads.values()]; },
