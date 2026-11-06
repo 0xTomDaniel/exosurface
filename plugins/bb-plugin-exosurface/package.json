@@ -17,8 +17,8 @@
     "build:runtime": "node build-runtime.mjs"
   },
   "bb": {
-    "name": "Exosurface",
-    "description": "Existing primary Exo/OptChat and A2UI experience, consolidated; releaseReady remains false",
+    "name": "Exo",
+    "description": "Exo: surfaces of pages and the memory behind them; releaseReady remains false",
     "host": "./host.ts",
     "server": "./server.ts",
     "app": "./app.tsx",
