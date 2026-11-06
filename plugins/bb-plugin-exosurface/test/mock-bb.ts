@@ -108,6 +108,8 @@ async function serverRpc(vault: string) {
     logRequest(threadId, text, initiator, senderThreadId, 'tell');
     provider.deliver!(threadId, text);
   };
+  // BB faults a test sets: the next `threadGet` reads of a thread (bb.sdk.threads.get) fail as a lost connection does.
+  const faults = { threadGet: 0 };
   const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
   // BB's thread lifecycle events (bb.events) and the plugin's log lines.
   const listeners: Record<string, ((payload: any) => unknown)[]> = {}, logs: string[] = [];
@@ -122,7 +124,7 @@ async function serverRpc(vault: string) {
     experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
     sdk: {
       threads: {
-        async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return [...threads.values()]; },
+        async get({ threadId }: { threadId: string }) { if (faults.threadGet > 0) { faults.threadGet--; throw new Error('mock BB: connection lost'); } return thread(threadId); }, async list() { return [...threads.values()]; },
         async update({ threadId, title }: { threadId: string; title?: string | null }) {
           const t = thread(threadId); if (title !== undefined) t.title = title;
           if (!threads.has(threadId)) others.set(threadId, t);
@@ -188,11 +190,12 @@ async function serverRpc(vault: string) {
   /** The person's queued message sent with BB's explicit Send-now: BB skips the dispatch pass for it by design (BB 0.48
    *  dispatch: `if (!sendNow && hasMessageDispatchHooks())`), then logs the request (author "user") and starts the turn. */
   const sendNow = (threadId: string, text: string) => { logRequest(threadId, text, 'user', null, 'tell'); provider.deliver!(threadId, text); };
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults };
 }
 
-/** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
-export async function liveFixture() {
+/** Exo installed and not set up (#130): the plugin registered on a mock BB with the installer's local config, no set-up
+ *  run yet. Sets EXO_CONFIG. */
+export async function installedFixture() {
   if (!existsSync(join(PLUGIN, 'dist', 'canonical-initialization.js')) || !existsSync(join(PLUGIN, 'dist', 'optchat-init.js'))) throw new Error('Run npm run build:owner && npm run build:runtime first (the packaged runtime is what the owner launches)');
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'exo-live-')));
   const home = join(root, 's'), optchatHome = join(root, 'o'), vault = join(root, 'v'), optchat = join(root, 'optchat');
@@ -206,15 +209,21 @@ export async function liveFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow } = await serverRpc(vault);
-  const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
-  // The person's own instructions, written after setup: every Exo thread must read exactly these.
-  writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults } = await serverRpc(vault);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, optchat, piCli: PI_CLI, config, rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
-type Fixture = Awaited<ReturnType<typeof liveFixture>>;
+type Fixture = Awaited<ReturnType<typeof installedFixture>>;
+
+/** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
+export async function liveFixture() {
+  const f = await installedFixture();
+  const setup = await f.rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault: f.vault, piCli: f.piCli, optchat: f.optchat, authorizeInitialization: true });
+  // The person's own instructions, written after setup: every Exo thread must read exactly these.
+  writeFileSync(join(f.optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
+  return { ...f, setup };
+}
 
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 

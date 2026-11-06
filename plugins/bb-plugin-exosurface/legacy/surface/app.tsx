@@ -18,7 +18,7 @@ import {exoTheme} from './lib/exo-theme';
 import {ExoBlock,SurfaceInput,onSend} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 import {SurfaceTitle} from './src/surface-title';
-import {Settings} from './src/settings';
+import {Settings,SetUpFirst} from './src/settings';
 import {renameStyle} from './src/surface-rename';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The catalogs pages render with: their elements under this bundle's own tag names (src/bundle-tags.ts).
@@ -198,14 +198,16 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
 }
 // The surfaces view (#68): the sidebar and the surface in view. Home (null) is the primary thread's page state as before.
 // Settings (#129, spec T3, T4) show in its place; the surface stays mounted underneath, hidden, so closing settings or
-// opening it from the sidebar puts it back as the person left it.
+// opening it from the sidebar puts it back as the person left it. Until Exo is set up, only settings offering set-up show
+// (#130, spec T5).
+function ExoTab(){return <SetUpFirst><SurfacesPanel/></SetUpFirst>;}
 function SurfacesPanel(){
  const[inView,setInView]=useState<string|null>(null),[settings,setSettings]=useState(false);
  const open=(threadId:string|null)=>{setInView(threadId);setSettings(false);};
  return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
 }
 export default definePluginApp(app=>{
- app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:SurfacesPanel});
+ app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:ExoTab});
  app.slots.messageDirective({id:'exo-surface',component:ExoSurfaceCard});
  app.composer.customize({id:'exo-bring-back',scopes:['thread'],banners:[{id:'bring-back',chrome:'bare',component:BringBackPill}],actions:[{id:'bring-back-cancel',component:BringBackCancel}]});
 });

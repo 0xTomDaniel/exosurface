@@ -33,6 +33,8 @@ test('opening the Exo tab shows the sidebar and Home, with the input shown', asy
     thread_list: async () => ({ threads: [{ threadId: 'primary', title: 'Home', home: true }] }),
     workspace: async () => home,
     exo_block: async () => ({ working: false, words: '' }),
+    // Exo is set up (#130: until then the tab shows only settings).
+    canonical_setup_status: async () => ({ stage: 'bound' }),
   } });
   try {
     const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
