@@ -41,17 +41,21 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: 'steps: garden' } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
-  // Each sample: the line's text, and as strings what keeps it one line and announced, and the shimmer and fixed one-line
-  // height jsdom computes for it from the app's own stylesheet; the block holds nothing else meanwhile. The first sample also
-  // keeps what that stylesheet's source declares for the line (the gradient, the reduced-motion rule: values jsdom drops).
+  // Each sample: the line's text, and as strings what keeps it one line and announced, the fixed one-line height, and the
+  // shimmer jsdom computes from the app's own stylesheet: on the element inside the line that paints the text, sized to the
+  // text (an inline-block), not on the full-width line. The block holds nothing else meanwhile. The first sample also keeps
+  // what that stylesheet's source declares for the shimmering element (the gradient, its size, the reduced-motion rule:
+  // values jsdom drops).
   const shown: string[] = [];
   let source: ReturnType<typeof declared> = [], canvas: CSSStyleDeclaration | null = null;
   const line = () => {
     const s = status(); if (!s) return undefined;
     const css = getComputedStyle(s);
-    if (!canvas) { source = declared(s); canvas = getComputedStyle(s.closest('main[aria-label="Exosurface"]')!); }
+    const shimmer = [s, ...s.querySelectorAll('*')].find(e => animation(getComputedStyle(e).animation)) ?? s, glyphs = getComputedStyle(shimmer);
+    if (!canvas) { source = declared(shimmer); canvas = getComputedStyle(s.closest('main[aria-label="Exosurface"]')!); }
     shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow,
-      animation: animation(css.animation), clip: css.getPropertyValue('background-clip'), color: css.color, lineHeight: css.lineHeight, height: css.height }));
+      inside: shimmer !== s && shimmer.textContent === s.textContent, sized: glyphs.display,
+      animation: animation(glyphs.animation), clip: glyphs.getPropertyValue('background-clip'), color: glyphs.color, lineHeight: css.lineHeight, height: css.height }));
     return s.textContent!;
   };
   const lines = await stepsShown(f, 'garden', line, () => status() === null && !!reply()?.textContent);
@@ -60,7 +64,7 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   assert.equal(samples.length, 1, `the line's presentation changed between steps: ${JSON.stringify(samples)}`);
   const [sample] = samples;
   assert.deepEqual({ ...sample, animation: undefined, lineHeight: undefined, height: undefined },
-    { alone: true, live: 'polite', wrap: 'nowrap', overflow: 'hidden', ellipsis: 'ellipsis', clip: 'text', color: 'rgba(0, 0, 0, 0)', animation: undefined, lineHeight: undefined, height: undefined });
+    { alone: true, live: 'polite', wrap: 'nowrap', overflow: 'hidden', ellipsis: 'ellipsis', inside: true, sized: 'inline-block', clip: 'text', color: 'rgba(0, 0, 0, 0)', animation: undefined, lineHeight: undefined, height: undefined });
   // The shimmer: one named animation, 1.5 to 2 s a sweep, looping while the line shows, moving the gradient under the text.
   assert.ok(sample.animation && sample.animation.infinite && sample.animation.seconds >= 1.5 && sample.animation.seconds <= 2, `animation: ${JSON.stringify(sample.animation)}`);
   assert.ok(keyframed(view.container.ownerDocument, sample.animation.name).includes('background-position'), `@keyframes ${sample.animation.name} moves no background`);
@@ -73,9 +77,20 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   const stops = [...new Set([...gradient.matchAll(/var\((--[\w-]+)/g)].map(m => m[1]))];
   assert.ok(stops.length >= 2 && !/#[0-9a-f]{3,8}\b|rgb|hsl|oklch\(/i.test(gradient), `gradient: ${gradient}`);
   for (const stop of stops) assert.notEqual(canvas!.getPropertyValue(stop).trim(), '', `${stop} is not defined on the canvas`);
+  // A narrow band: the brighter stop rises from and falls back to the base between two stops at most 15% of the text's width
+  // apart (stop positions are a share of the gradient, which is background-size wide against the text).
+  const size = Number(/^(\d+(?:\.\d+)?)%/.exec(always.filter(d => d.property === 'background-size').at(-1)?.value ?? '')?.[1] ?? NaN) / 100;
+  const at = [...gradient.matchAll(/var\((--[\w-]+)\)[^,]*?\s(\d+(?:\.\d+)?)%/g)].map(m => ({ stop: m[1], at: Number(m[2]) / 100 }));
+  const base = at[0]?.stop, peak = at.findIndex(x => x.stop !== base), back = at.findIndex((x, i) => i > peak && x.stop === base);
+  const band = (at[back]?.at - at[peak - 1]?.at) * size;
+  assert.ok(band > 0 && band <= 0.15, `band ${band} of the text's width: ${gradient}, size ${size}`);
   // Under prefers-reduced-motion: reduce the stylesheet stops that animation on this same element (jsdom applies no @media
   // rule, so the rule is read from the source the app put in the document).
   assert.deepEqual(source.filter(d => /prefers-reduced-motion:\s*reduce/.test(d.media) && d.property === 'animation').map(d => d.value), ['none']);
+  // and paints the text plainly in the theme's base colour: no gradient through it, a colour that is a theme var.
+  const still = source.filter(d => /prefers-reduced-motion:\s*reduce/.test(d.media));
+  assert.deepEqual(still.filter(d => ['background', 'background-image'].includes(d.property)).map(d => d.value), ['none'], JSON.stringify(still));
+  assert.match(still.filter(d => d.property === 'color').at(-1)?.value ?? '', /^var\(--exo-[\w-]+\)$/, JSON.stringify(still));
   // After the turn ends no element shimmers.
   assert.deepEqual([...view.container.querySelectorAll('*')].filter(e => animation(getComputedStyle(e).animation)?.name === sample.animation.name), []);
   // acceptance-live-activity-ends: the reply, and no activity line.

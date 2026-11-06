@@ -616,7 +616,7 @@ async function activityBlock() {
     let last;
     const line = () => {
       const shown = reply()?.textContent ?? '';
-      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Reading your message' ? ' (activity line: the first step, before any model event)' : ' (activity line)'}${status() ? `, shimmer: ${getComputedStyle(status()).animation}` : ''}`); }
+      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Reading your message' ? ' (activity line: the first step, before any model event)' : ' (activity line)'}${status() ? `, shimmer: ${getComputedStyle(status().firstElementChild ?? status()).animation}` : ''}`); }
       return status() ? shown : undefined;
     };
     const lines = await stepsShown(f, 'garden', line, () => !status() && !!reply()?.textContent);
