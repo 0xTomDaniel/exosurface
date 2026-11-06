@@ -45,7 +45,7 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   await until('the drawn page', () => !!main().querySelector('[data-surface]'));
   await send('plan the week, with Friday off');
   // While Exo works, the bubble is the message just sent and the block's one working line follows it.
-  await until('the working block', () => bubble()?.textContent === 'plan the week, with Friday off' && reply()?.textContent === 'Exo is working on this page…');
+  await until('the working block', () => bubble()?.textContent === 'plan the week, with Friday off' && reply()?.textContent === 'Reading your message');
   assert.equal(block()!.querySelectorAll('[role="status"]').length, 1);
   await until('the second reply', () => reply()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
 

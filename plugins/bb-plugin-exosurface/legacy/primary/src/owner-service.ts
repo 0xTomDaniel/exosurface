@@ -13,6 +13,7 @@ import { freshCanonicalReceipt } from './canonical-fresh.ts';
 import { updateFeedback } from './overview.ts';
 import { OWNER_DIR, OWNER_SOCKET } from './owner-client.ts';
 import { headline, step } from './activity.ts';
+import { FIRST_STEP } from './first-step.ts';
 // An intent receipt is not an owner binding. Refuse incomplete setup before
 // loading the canonical pointer; the normal existing-session route is unchanged.
 if (existsSync(join(HOME, 'canonical-fresh.json'))) freshCanonicalReceipt(HOME, CANONICAL_HOME, CANONICAL_PROFILE);
@@ -59,11 +60,12 @@ function outgoing(lane: Lane, event: any, checkpoint?: number) {
   while (lane.tail.length > 4000 || lane.tailBytes > 8 * 1024 * 1024) lane.tailBytes -= JSON.stringify(lane.tail.shift()).length;
   if (lane.attached && lane.client) write(lane.client, value);
 }
-/** Keeps the lane's line of what Exo is doing (spec pages-and-activity E9): set by reasoning and tool steps, cleared at a
- * turn's start and end. True when the line changed. */
+/** Keeps the lane's line of what Exo is doing (spec pages-and-activity E9): the first step at a turn's start, then set by
+ * reasoning and tool steps, cleared at its end. True when the line changed. */
 function noteActivity(lane: Lane, e: any) {
   const before = lane.activity, m = e.type === 'message_update' ? e.assistantMessageEvent : undefined;
-  if (e.type === 'agent_start' || e.type === 'agent_settled') lane.activity = undefined;
+  if (e.type === 'agent_start') lane.activity = FIRST_STEP;
+  else if (e.type === 'agent_settled') lane.activity = undefined;
   else if (e.type === 'tool_execution_start') lane.activity = step(String(e.toolName ?? ''), e.args);
   else if (m?.type === 'thinking_start') lane.thinking = '';
   else if (m?.type === 'thinking_delta' || m?.type === 'thinking_end') {

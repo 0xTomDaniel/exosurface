@@ -11,6 +11,7 @@ import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
 import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-turn.ts';
+import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
@@ -174,8 +175,9 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       const turn = latestTurn(sessionOf(threadId)), sent = awaiting.get(threadId);
       if (sent !== undefined && sent.entry !== turn.userEntry && turn.ended) awaiting.delete(threadId);
       const working = awaiting.has(threadId) || ownerWorking(threadId);
-      // While it works, the one line of what Exo is doing right now (E9), when the owner has one; never after the reply.
-      const activity = working ? ownerActivity(threadId) : undefined;
+      // While it works, the one line of what Exo is doing right now (E9): the owner's, else (sent, the owner's turn not yet
+      // started) the turn's first step; never after the reply.
+      const activity = working ? ownerActivity(threadId) ?? FIRST_STEP : undefined;
       // Until the journal holds the message just sent, the person's latest message is the one the input sent.
       return { working, said: awaiting.get(threadId)?.text ?? turn.said, words: working ? '' : turn.words, ...(activity ? { activity } : {}) };
     },
