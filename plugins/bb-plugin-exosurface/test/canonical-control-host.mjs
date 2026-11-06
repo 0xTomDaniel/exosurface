@@ -23,7 +23,7 @@ if (process.argv[4] === '--build') {
   const { handleLine } = await import(pathToFileURL(join(out, 'host.mjs')));
   let id = 0;
   const request = (method, params) => new Promise((resolve, reject) => { const current = ++id, timeout = setTimeout(() => reject(Error('host test timeout')), 2000); pending.set(current, value => { clearTimeout(timeout); resolve(value); }); handleLine(JSON.stringify({ jsonrpc: '2.0', id: current, method, params })); });
-  const options = { model: 'exo-opus-5-5', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
+  const options = { model: 'exo-opus-5-5', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: {} };
   const start = { threadId: 'host-thread', cwd: cfg.vault, options, instructionMode: 'append' };
   const input = [{ type: 'text', text: `/exosurface-initialize ${operationId}` }];
   assert.ok((await request('thread/start', { ...start, input })).result, 'thread/start consumes control without owner');

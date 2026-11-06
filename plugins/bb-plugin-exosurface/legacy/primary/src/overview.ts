@@ -26,9 +26,9 @@ export function createOverview(list: () => Promise<any[]>, get: (id: string) => 
       // The owner's state for this thread: the primary's lane, or a bound thread's own (state.threads[id], #67).
       const owner = all && all.threadId !== t.id ? all.threads?.[t.id] : all;
       return { id: t.id, title: t.title, status: owner?.ready ? owner.streaming ? 'running' : 'idle' : t.status,
-        parentThreadId: t.parentThreadId, profile: state?.profile ?? null, childId: state?.childId ?? null,
-        runtimeKind: state?.runtimeKind ?? 'offline', feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
-        children: state?.profile && !state.childId ? runs(state.profile, state.runtimeKind ?? 'offline', 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
+        parentThreadId: t.parentThreadId, profile: state?.profile ?? null,
+        feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
+        children: state?.runtimeKind === 'canonical' && !state.childId ? runs(state.profile, 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
     }) };
   };
 }
