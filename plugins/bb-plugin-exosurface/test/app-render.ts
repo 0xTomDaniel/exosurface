@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parse, walk, generate, type CssNode } from 'css-tree';
+import { resolve as resolveColor, convert } from '@asamuzakjp/css-color';
 
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
@@ -205,60 +206,22 @@ export function gradientStops(text: string): { color: string; at: number | null 
     return { color: (at === null ? g : g.slice(0, -1)).map(n => generate(n)).join(' '), at };
   });
 }
-// The colour a theme paints: a CSS colour text with its var() resolved (custom property values from `vars`, else the
-// var()'s fallback), evaluated as a browser does for the forms the app's and BB's stylesheets use (#hex, rgb(), oklab(),
-// oklch(), color-mix() in srgb or oklab); any other form throws. Colours are held as linear-light sRGB.
-type Rgb = [number, number, number];
-const decode = (c: number) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4, encode = (c: number) => c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055;
-const fromOklab = ([L, a, b]: Rgb): Rgb => {
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
-  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
-};
-export const toOklab = ([r, g, b]: Rgb): Rgb => {
-  const [l, m, s] = [0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b, 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b, 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b].map(Math.cbrt);
-  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
-};
-function substitute(text: string, vars: Record<string, string>, depth = 0): string {
-  if (depth > 20) throw new Error(`var() cycle in ${text}`);
-  const at = text.lastIndexOf('var(');
-  if (at < 0) return text;
-  let end = at + 4; for (let open = 1; open; end++) { if (end >= text.length) throw new Error(`unbalanced ${text}`); open += text[end] === '(' ? 1 : text[end] === ')' ? -1 : 0; }
-  const inner = text.slice(at + 4, end - 1), comma = inner.indexOf(','), name = (comma < 0 ? inner : inner.slice(0, comma)).trim();
-  const own = vars[name]?.trim(), fallback = comma < 0 ? undefined : inner.slice(comma + 1).trim();
-  if (!own && fallback === undefined) throw new Error(`${name} is not defined`);
-  return substitute(text.slice(0, at) + substitute(own || fallback!, vars, depth + 1) + text.slice(end), vars, depth + 1);
+// The colour a theme paints, worked out by @asamuzakjp/css-color (jsdom's own colour engine): var() resolved from `vars`,
+// color-mix() and every colour space as a browser does. It answers an unresolvable or invalid colour with transparent,
+// which no theme colour here is, so that answer throws.
+type Theme = Record<string, string>;
+const options = (vars: Theme) => ({ customProperty: { callback: (name: string) => vars[name]?.trim() || undefined } });
+/** A colour text as a theme paints it, its var() resolved from `vars`: an opaque CSS colour. */
+export function themeColor(text: string, vars: Theme): string {
+  const color = resolveColor(text, options(vars));
+  if (!color || convert.colorToXyz(color)[3] === 0) throw new Error(`not one opaque colour with these theme values: ${text}`);
+  return color;
 }
-const number = (n: CssNode, percent = 1) => n.type === 'Percentage' ? Number(n.value) / 100 * percent : n.type === 'Number' ? Number(n.value) : NaN;
-function evaluate(n: CssNode): Rgb {
-  if (n.type === 'Hash') { const h = n.value.length <= 4 ? [...n.value.slice(0, 3)].map(c => c + c).join('') : n.value.slice(0, 6); return [0, 2, 4].map(i => decode(parseInt(h.slice(i, i + 2), 16) / 255)) as Rgb; }
-  if (n.type !== 'Function') throw new Error(`colour form ${generate(n)} not supported`);
-  const args = [...n.children].filter(c => c.type !== 'Operator' || c.value !== ',');
-  if (['rgb', 'rgba'].includes(n.name)) return args.slice(0, 3).map(c => decode(number(c, 255) / 255)) as Rgb;
-  if (n.name === 'oklab') return fromOklab([number(args[0]), number(args[1], 0.4), number(args[2], 0.4)]);
-  if (n.name === 'oklch') { const L = number(args[0]), C = number(args[1], 0.4), h = Number((args[2] as any).value) * Math.PI / 180; return fromOklab([L, C * Math.cos(h), C * Math.sin(h)]); }
-  if (n.name === 'color-mix') {
-    const groups: CssNode[][] = [[]];
-    n.children.forEach(c => { if (c.type === 'Operator' && c.value === ',') groups.push([]); else groups.at(-1)!.push(c); });
-    const space = groups[0].map(c => c.type === 'Identifier' ? c.name : '?').join(' ');
-    const sides = groups.slice(1).map(g => ({ color: evaluate(g.find(c => c.type !== 'Percentage')!), p: g.find(c => c.type === 'Percentage') }));
-    let [p1, p2] = sides.map(s => s.p ? number(s.p) : NaN);
-    if (isNaN(p1) && isNaN(p2)) p1 = p2 = 0.5; else if (isNaN(p1)) p1 = 1 - p2; else if (isNaN(p2)) p2 = 1 - p1;
-    const w = p1 / (p1 + p2), into = space === 'in oklab' ? toOklab : space === 'in srgb' ? (c: Rgb) => c.map(encode) as Rgb : null;
-    if (!into) throw new Error(`color-mix ${space} not supported`);
-    const [a, b] = sides.map(s => into(s.color)), mixed = a.map((v, i) => v * w + b[i] * (1 - w)) as Rgb;
-    return space === 'in oklab' ? fromOklab(mixed) : mixed.map(decode) as Rgb;
-  }
-  throw new Error(`colour form ${n.name}() not supported`);
-}
-/** A colour text as a theme paints it (linear-light sRGB), its var() resolved from `vars`. */
-export function themeColor(text: string, vars: Record<string, string>): Rgb {
-  const resolved = substitute(text, vars), node = value(resolved);
-  if (!node) throw new Error(`not one colour: ${resolved}`);
-  return evaluate(node);
-}
-/** WCAG 2 contrast ratio between two linear-light sRGB colours. */
-export function contrast(a: Rgb, b: Rgb): number {
-  const [hi, lo] = [a, b].map(c => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]).sort((x, y) => y - x);
+/** A colour's OKLab coordinates [L, a, b]. */
+export const toOklab = (color: string): [number, number, number] => convert.colorToOklab(color).slice(0, 3) as [number, number, number];
+/** WCAG 2 contrast ratio between two colours, from their relative luminance (CIE XYZ Y, D65). */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [a, b].map(c => convert.colorToXyz(c)[1]).sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 const timing = new Set(['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end', 'normal', 'reverse', 'alternate', 'alternate-reverse', 'none', 'forwards', 'backwards', 'both', 'running', 'paused', 'infinite']);
