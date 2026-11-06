@@ -29,9 +29,9 @@ export function createOverview(list: () => Promise<any[]>, get: (id: string) => 
       const infoFile = join(HOME, 'runtime-info', `${t.id}.json`);
       const info = state?.runtimeKind === 'canonical' && existsSync(infoFile) ? load(infoFile) : undefined;
       return { id: t.id, title: t.title, status: owner?.ready ? owner.streaming ? 'running' : 'idle' : t.status,
-        parentThreadId: t.parentThreadId, profile: state?.profile ?? null, childId: state?.childId ?? null,
-        runtimeKind: state?.runtimeKind ?? 'offline', ready: !!owner?.ready && alive(all?.ownerPid), model: info?.model ? `${info.model.provider}/${info.model.id}` : null, feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
-        children: state?.profile && !state.childId ? runs(state.profile, state.runtimeKind ?? 'offline', 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
+        parentThreadId: t.parentThreadId, profile: state?.profile ?? null,
+        ready: !!owner?.ready && alive(all?.ownerPid), model: info?.model ? `${info.model.provider}/${info.model.id}` : null, feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
+        children: state?.runtimeKind === 'canonical' && !state.childId ? runs(state.profile, 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
     }) };
   };
 }
