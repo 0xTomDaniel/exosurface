@@ -213,12 +213,18 @@
       "pr": null
     },
     "acceptance-one-tab": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261106T185001Z-129d10aa",
+      "commit": "0d9850581c733a80f47f4d24b4eede36abe09264",
+      "tests": []
     },
     "acceptance-tab-opens-home": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261106T185123Z-d0b0a77b",
+      "commit": "0d9850581c733a80f47f4d24b4eede36abe09264",
+      "tests": []
     },
     "acceptance-plugin-name": {
       "status": "planned",
