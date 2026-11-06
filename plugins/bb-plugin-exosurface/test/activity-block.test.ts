@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { liveFixture, owner, bridge, stepsShown } from './mock-bb.ts';
 import { waiter, settled } from './wait.ts';
 import { reapOnExit } from './reap.ts';
-import { renderedApp, declared, keyframed, animation } from './app-render.ts';
+import { renderedApp, declared, keyframed, animation, gradientStops, themeColor, contrast, toOklab } from './app-render.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -71,7 +71,7 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   // No layout shift: a set line height and a set box height, the same whatever the step text (one sample for all steps).
   assert.ok(!['', 'normal'].includes(sample.lineHeight) && !['', 'auto'].includes(sample.height), `line-height ${sample.lineHeight}, height ${sample.height}`);
   // Legible in both BB themes: the gradient painted through the text is the theme's own colours, every stop a var() the
-  // canvas defines (from BB's light or dark host colours), at least two of them (the quiet text and a brighter band).
+  // canvas defines (from BB's light or dark host colours), at least two of them (the quiet text and a band).
   const always = source.filter(d => !d.media);
   const gradient = always.filter(d => d.property === 'background-image' || d.property === 'background').map(d => d.value).filter(v => v.includes('linear-gradient')).at(-1) ?? '';
   const stops = [...new Set([...gradient.matchAll(/var\((--[\w-]+)/g)].map(m => m[1]))];
@@ -80,10 +80,29 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   // A narrow band: the brighter stop rises from and falls back to the base between two stops at most 15% of the text's width
   // apart (stop positions are a share of the gradient, which is background-size wide against the text).
   const size = Number(/^(\d+(?:\.\d+)?)%/.exec(always.filter(d => d.property === 'background-size').at(-1)?.value ?? '')?.[1] ?? NaN) / 100;
-  const at = [...gradient.matchAll(/var\((--[\w-]+)\)[^,]*?\s(\d+(?:\.\d+)?)%/g)].map(m => ({ stop: m[1], at: Number(m[2]) / 100 }));
+  const at = gradientStops(gradient).map(x => ({ stop: x.color, at: x.at ?? NaN }));
   const base = at[0]?.stop, peak = at.findIndex(x => x.stop !== base), back = at.findIndex((x, i) => i > peak && x.stop === base);
   const band = (at[back]?.at - at[peak - 1]?.at) * size;
   assert.ok(band > 0 && band <= 0.15, `band ${band} of the text's width: ${gradient}, size ${size}`);
+  // The band moves the text toward the page background (owner re-check on #85): in BB's light and dark themes alike, each
+  // band stop, resolved with that theme's colours, is nearer the background (OKLab distance) and contrasts less with it
+  // than the base text colour does, yet stays readable: at least 2:1 against the background. Theme values: BB 0.48's own
+  // stylesheet (app/dist/assets/index-*.css, `:root,.light` and `.dark`); the app's vars from its stylesheet on the canvas.
+  const bb = {
+    light: { '--canvas': 'oklch(100% 0 0)', '--ink': 'oklch(32.11% 0 0)', '--muted-foreground': 'oklch(44% 0 0)' },
+    dark: { '--canvas': 'oklch(19.5% 0 0)', '--ink': 'oklch(81% 0 0)', '--muted-foreground': 'oklch(78% 0 0)' },
+  };
+  const bands = [...new Set(at.filter(x => x.stop !== base).map(x => x.stop))];
+  for (const [theme, colours] of Object.entries(bb)) {
+    const vars: Record<string, string> = new Proxy({ ...colours, '--background': 'var(--canvas)', '--foreground': 'var(--ink)' } as Record<string, string>, { get: (o, k: string) => o[k] ?? canvas!.getPropertyValue(k) });
+    const paper = themeColor('var(--exo-paper)', vars), quiet = themeColor(base!, vars), ok = toOklab(paper);
+    const far = (c: ReturnType<typeof themeColor>) => Math.hypot(...toOklab(c).map((v, i) => v - ok[i]));
+    for (const stop of bands) {
+      const glyph = themeColor(stop, vars), shown = `${theme}: band ${stop} ${contrast(glyph, paper).toFixed(2)}:1 on the background, base ${base} ${contrast(quiet, paper).toFixed(2)}:1`;
+      assert.ok(far(glyph) < far(quiet) && contrast(glyph, paper) < contrast(quiet, paper), `the band is not nearer the background than the base: ${shown}`);
+      assert.ok(contrast(glyph, paper) >= 2, `the band is unreadable: ${shown}`);
+    }
+  }
   // Under prefers-reduced-motion: reduce the stylesheet stops that animation on this same element (jsdom applies no @media
   // rule, so the rule is read from the source the app put in the document).
   assert.deepEqual(source.filter(d => /prefers-reduced-motion:\s*reduce/.test(d.media) && d.property === 'animation').map(d => d.value), ['none']);

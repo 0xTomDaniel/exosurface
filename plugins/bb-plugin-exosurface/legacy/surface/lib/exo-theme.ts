@@ -27,12 +27,12 @@ export const exoTheme=`
 .exo-bubble{margin:0 0 .9rem;margin-left:auto;width:fit-content;max-width:80%;padding:.5rem .85rem;border-radius:1.1rem;background:color-mix(in oklab,var(--exo-ink) 7%,var(--exo-paper));white-space:pre-wrap;overflow-wrap:anywhere}
 /* The Exo block's activity line (E9) stays one line: a long one ends in an ellipsis instead of wrapping. */
 .exo-activity{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* While it shows, a narrow band of the theme's ink sweeps left to right across the quiet text (gradient painted through the
+/* While it shows, a narrow band of the quiet colour half-mixed into the page background sweeps left to right across the quiet text (gradient painted through the
    glyphs), on a fixed one-line box so a new step's text moves nothing. The gradient sits on a span sized to the text, not the
    full-width line: the band is 1/8 of the text wide; the 125% tile repeats and moves one tile a pass, so as the band leaves
    the text the next one enters. Theme colours only, so it reads in BB light and dark. */
 .exo-activity{line-height:1.5;height:1.5em;color:var(--exo-quiet)}
-.exo-shimmer{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top;color:transparent;background-image:linear-gradient(90deg,var(--exo-quiet) 45%,var(--exo-ink) 49%,var(--exo-ink) 51%,var(--exo-quiet) 55%);background-size:125% 100%;background-repeat:repeat-x;background-position:500% 0;-webkit-background-clip:text;background-clip:text;animation:exo-shimmer 1.6s linear infinite}
+.exo-shimmer{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top;color:transparent;background-image:linear-gradient(90deg,var(--exo-quiet) 45%,color-mix(in oklab,var(--exo-quiet) 50%,var(--exo-paper)) 49%,color-mix(in oklab,var(--exo-quiet) 50%,var(--exo-paper)) 51%,var(--exo-quiet) 55%);background-size:125% 100%;background-repeat:repeat-x;background-position:500% 0;-webkit-background-clip:text;background-clip:text;animation:exo-shimmer 1.6s linear infinite}
 @keyframes exo-shimmer{from{background-position:500% 0}to{background-position:0 0}}
 .exo-status{font-size:.82rem;color:var(--exo-quiet);margin:0 0 1rem;display:flex;align-items:center;gap:.5rem}
 .exo-status:empty{margin:0}
