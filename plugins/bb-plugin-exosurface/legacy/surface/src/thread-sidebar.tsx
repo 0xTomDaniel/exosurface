@@ -9,8 +9,9 @@ import {useRpc,useRealtime} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
 import {useRename,RenameField,RenameButton} from './surface-rename';
 type Row={threadId:string;title:string;home:boolean};
+// Settings (#129, spec T3): one button below the tree, not a surface; while settings are open no surface is marked in view.
 /** `inView` is the thread in view; null is Home. */
-export function ThreadSidebar({inView,onView}:{inView:string|null;onView:(threadId:string|null)=>void}){
+export function ThreadSidebar({inView,onView,settings,onSettings}:{inView:string|null;onView:(threadId:string|null)=>void;settings:boolean;onSettings:()=>void}){
  const rpc=useRpc<typeof rpcContract>();
  const[threads,setThreads]=useState<Row[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const refresh=useCallback(()=>rpc.call('thread_list',null).then(v=>{setThreads(v.threads);setError('');},e=>setError(String(e))),[rpc]);
@@ -18,7 +19,7 @@ export function ThreadSidebar({inView,onView}:{inView:string|null;onView:(thread
  // A surface named from its first message (#82, spec N7) or renamed: the server signals it; the list is read again.
  useRealtime('surface-names',()=>{void refresh();});
  const create=async()=>{setBusy(true);setError('');try{const made=await rpc.call('thread_new',null);onView(made.threadId);await refresh();}catch(e){setError(String(e));}finally{setBusy(false);}};
- const current=(t:Row)=>t.home?inView===null:inView===t.threadId;
+ const current=(t:Row)=>!settings&&(t.home?inView===null:inView===t.threadId);
  const rename=useRename(()=>refresh());
  const edit=(t:Row)=>{if(t.home)return;rename.start(t.threadId,t.title);setError('');};
  return <nav aria-label="Surfaces" className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border p-3 text-sm">
@@ -28,6 +29,7 @@ export function ThreadSidebar({inView,onView}:{inView:string|null;onView:(thread
    <button type="button" aria-current={current(t)?'page':undefined} onClick={()=>onView(t.home?null:t.threadId)} onDoubleClick={()=>edit(t)} className={`w-full min-w-0 truncate rounded-md px-3 py-1.5 text-left hover:bg-muted${current(t)?' bg-muted font-medium':''}`}>{t.title}</button>
    {!t.home&&<RenameButton title={t.title} onClick={()=>edit(t)}/>}</>}
   </li>)}</ul>
+  <button type="button" aria-current={settings?'page':undefined} onClick={onSettings} className={`mt-auto rounded-md px-3 py-1.5 text-left hover:bg-muted${settings?' bg-muted font-medium':''}`}>Settings</button>
   {(rename.error||error)&&<p role="alert" className="text-destructive">{rename.error||error}</p>}
  </nav>;
 }
