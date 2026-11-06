@@ -201,12 +201,18 @@
       "tests": []
     },
     "acceptance-live-activity": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 90,
+      "record": "20261106T220102Z-2ac96184",
+      "commit": "e40744027479e65911696857658e1f2a8eae52f3",
+      "tests": []
     },
     "acceptance-live-activity-ends": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 90,
+      "record": "20261106T220224Z-944c7483",
+      "commit": "e40744027479e65911696857658e1f2a8eae52f3",
+      "tests": []
     },
     "acceptance-press-to-top": {
       "status": "planned",
