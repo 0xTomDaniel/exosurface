@@ -1,6 +1,6 @@
 {
   "spec": "pages-and-activity.spec.html",
-  "accepted_commit": "3666191",
+  "accepted_commit": "1dcd1d40c2227828cde24a2a80693a926bc805fc",
   "criteria": {
     "acceptance-no-chat": {
       "status": "built",
@@ -162,34 +162,53 @@
       "pr": null
     },
     "acceptance-opening": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 89,
+      "record": "20261105T035717Z-88b2a10d",
+      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
+      "tests": []
     },
     "acceptance-input-floats": {
       "status": "planned",
       "pr": null
     },
     "acceptance-one-page-in-view": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 89,
+      "record": "20261105T040055Z-578d7846",
+      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
+      "tests": []
     },
     "acceptance-name-header": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T204005Z-0bde1c3d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
+      "tests": []
     },
     "acceptance-auto-name": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T203747Z-89206fe2",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
+      "tests": []
     },
     "acceptance-rename": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T203907Z-f777bc8d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
+      "tests": []
     },
     "acceptance-live-activity": {
       "status": "planned",
       "pr": null
     },
     "acceptance-live-activity-ends": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-press-to-top": {
       "status": "planned",
       "pr": null
     }

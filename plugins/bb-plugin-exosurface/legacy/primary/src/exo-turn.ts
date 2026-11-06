@@ -1,4 +1,5 @@
-// What a surface's Exo block shows (spec pages-and-activity E1-E4), for any Exo thread: Exo's words from its latest turn,
+// What a surface's Exo block shows (spec pages-and-activity E1-E4, E8), for any Exo thread: the person's latest message and
+// Exo's words from that turn,
 // read from the thread's own Pi session (the authoritative journal the owner projects to BB), and whether Exo is working.
 // Earlier turns stay in that journal and in BB's thread; nothing here keeps or shows them.
 import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
@@ -6,12 +7,12 @@ import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
 
 /** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
-export type LatestTurn = { userEntry: string | null; words: string; ended: boolean };
+export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
-/** The latest turn in a Pi session journal: the last person's message entry and Exo's words after it. Reads backwards. */
+/** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards. */
 export function latestTurn(sessionFile: string | undefined): LatestTurn {
-  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, words: '', ended: false };
+  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r'), said: string[] = [];
   let replied: boolean | undefined;
   try {
@@ -32,11 +33,11 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
-        if (entry.message?.role === 'user') return { userEntry: String(entry.id), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
+        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
         if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
       }
     }
-    return { userEntry: null, words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
+    return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }
 }
 
