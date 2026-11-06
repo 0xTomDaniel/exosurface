@@ -49,3 +49,11 @@ test('two surfaces working at once: each exo_block reports its own line, never t
   assert.deepEqual(lines(second), ['Planning the cabin', 'Reading the cabin note', 'Now I can answer about the cabin.']);
   assert.deepEqual([home.at(-1), second.at(-1)], [{ working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' }, { working: false, said: 'steps: cabin', words: `Exo (${profile}): steps: cabin` }]);
 });
+
+test('a note whose name already ends in "note" or "notes" is named once, not with the noun doubled', async () => {
+  for (const topic of ['notes', 'week note', 'Garden-Notes']) {
+    writeFileSync(join(f.vault, `${topic}.md`), `# ${topic}\n`);
+    const seen = await stepsTurn(f, 'primary', topic);
+    assert.equal(lines(seen)[1], `Reading the ${topic}`);
+  }
+});

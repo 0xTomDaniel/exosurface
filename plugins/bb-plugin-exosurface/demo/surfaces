@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, owner, bridge, stepsTurn } from '../test/mock-bb.ts';
+import { liveFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
 import { reapOnExit } from '../test/reap.ts';
@@ -596,7 +596,47 @@ async function activityLine() {
   }
 }
 
-const SCENARIOS = { 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine };
+// #85 (spec E9, amends E4): the same multi-step send from the rendered surface view. Prints the Exo block's text each time it
+// changes while Exo works, then what the block shows once the turn ends: the reply alone, no activity line.
+async function activityBlock() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const t0 = Date.now(), at = () => `${String(Date.now() - t0).padStart(6)}ms`;
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), status = () => reply()?.querySelector('[role="status"]');
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea'), until = waiter();
+  try {
+    writeFileSync(join(f.vault, 'garden.md'), '# The garden\n');
+    const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+    const text = 'steps: garden';
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    console.log(`${at()}  sent: ${JSON.stringify(text)}`);
+    let last;
+    const line = () => {
+      const shown = reply()?.textContent ?? '';
+      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Exo is working on this page…' ? ' (working, no step yet: E4 fallback)' : ' (activity line)'}`); }
+      return status() && shown !== 'Exo is working on this page…' ? shown : undefined;
+    };
+    const lines = await stepsShown(f, 'garden', line, () => !status() && !!reply()?.textContent);
+    line();
+    const after = reply().textContent, survived = !!status();
+    console.log(`${at()}  turn ended: Exo block ${JSON.stringify(after)}, activity line: ${survived ? 'STILL SHOWN' : 'none'}`);
+    if (new Set(lines).size < 2) throw new Error(`activity-block failed: the line never changed (${lines.length} line(s))`);
+    if (survived || after !== `Exo (${f.setup.profile}): ${text}`) throw new Error('activity-block failed: the line survived the reply, or no reply');
+  } finally {
+    view.unmount(); close();
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running; fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+const SCENARIOS = { 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

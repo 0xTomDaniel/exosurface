@@ -25,6 +25,8 @@ export const exoTheme=`
 .exo-topline h1{font-family:var(--exo-display);font-size:1rem;font-weight:650;letter-spacing:-.005em;margin:0}
 .exo-topline p{margin:0;font-size:.8rem;color:var(--exo-quiet)}
 .exo-bubble{margin:0 0 .9rem;margin-left:auto;width:fit-content;max-width:80%;padding:.5rem .85rem;border-radius:1.1rem;background:color-mix(in oklab,var(--exo-ink) 7%,var(--exo-paper));white-space:pre-wrap;overflow-wrap:anywhere}
+/* The Exo block's activity line (E9) stays one line: a long one ends in an ellipsis instead of wrapping. */
+.exo-activity{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .exo-status{font-size:.82rem;color:var(--exo-quiet);margin:0 0 1rem;display:flex;align-items:center;gap:.5rem}
 .exo-status:empty{margin:0}
 .exo-status[data-busy="true"]::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--exo-accent);animation:exo-breathe 1.6s ease-in-out infinite}

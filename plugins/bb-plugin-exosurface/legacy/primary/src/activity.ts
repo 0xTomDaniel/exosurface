@@ -16,8 +16,13 @@ export function headline(thinking: string, ended: boolean): string | undefined {
 }
 
 const str = (v: unknown) => typeof v === 'string' && v.trim() ? v.trim() : undefined;
-/** A file named for a person: a note by its name ("the garden note"), any other file by its file name. */
-const file = (path: string) => { const name = basename(path); return extname(name).toLowerCase() === '.md' ? `the ${name.slice(0, -3)} note` : name; };
+/** A file named for a person: a note by its name ("the garden note"), any other file by its file name. A name that already
+ *  ends in the noun ("notes", "meeting note") is not given it twice ("the notes", not "the notes note"). */
+const file = (path: string) => {
+  const name = basename(path), title = name.slice(0, -extname(name).length);
+  if (extname(name).toLowerCase() !== '.md') return name;
+  return /(^|[^a-z])notes?$/i.test(title) ? `the ${title}` : `the ${title} note`;
+};
 
 /** A tool step in plain words, such as "Reading the garden note" or "Searching the web for garden layouts". */
 export function step(toolName: string, args: unknown): string {
