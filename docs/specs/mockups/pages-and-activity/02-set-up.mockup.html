@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Set-up - mockup</title>
+<style>
+  [data-mockup-frame] {
+    --exo-ink: #1d2128; --exo-paper: #ffffff; --exo-quiet: #646b78; --exo-line: #dde1e7;
+    --exo-accent: #3e5fd8;
+    --exo-wash: color-mix(in oklab, #1d2128 3.5%, #ffffff);
+    --exo-display: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif;
+    --exo-text: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--exo-paper); color: var(--exo-ink); font-family: var(--exo-text); font-size: 15px; line-height: 1.6;
+    border: 1px solid var(--exo-line); display: flex; margin: 0 0 2rem;
+  }
+  [data-mockup-frame="desktop"] { width: 1440px; min-height: 600px; }
+  [data-mockup-frame="phone"] { width: 390px; min-height: 600px; flex-direction: column; }
+  .bb-nav { width: 64px; border-right: 1px solid var(--exo-line); background: var(--exo-wash); padding: 1rem .5rem; display: flex; flex-direction: column; gap: .6rem; align-items: center; font-size: .75rem; color: var(--exo-quiet); }
+  .bb-nav .bb-tab { padding: .4rem .3rem; border-radius: 8px; text-align: center; }
+  .bb-nav .bb-tab-on { background: var(--exo-paper); color: var(--exo-ink); font-weight: 650; border: 1px solid var(--exo-line); }
+  .exo-setup { flex: 1; padding: 2rem; max-width: 640px; }
+  .exo-setup h1 { font-family: var(--exo-display); font-size: 1.1rem; font-weight: 650; margin: 0 0 .3rem; }
+  .exo-setup p { color: var(--exo-quiet); margin: 0 0 1.2rem; font-size: .9rem; }
+  .exo-field { display: block; font-size: .85rem; font-weight: 550; margin-bottom: .9rem; }
+  .exo-field span { display: block; margin-top: .25rem; padding: .5rem .7rem; border: 1px solid var(--exo-line); border-radius: 8px; font-weight: 400; font-size: .9rem; overflow-wrap: anywhere; }
+  .exo-primary { font: inherit; font-weight: 600; background: var(--exo-accent); color: #fff; border: 0; border-radius: 8px; padding: .5rem .95rem; }
+  .exo-phone-bar { padding: .7rem 1rem; border-bottom: 1px solid var(--exo-line); background: var(--exo-wash); font-family: var(--exo-display); font-weight: 650; }
+  [data-mockup-frame="phone"] .exo-setup { padding: 1rem; }
+</style>
+<script defer src="../../.viz/runtime.js"></script>
+</head>
+<body>
+<section data-mockup-frame="desktop" data-anchor="desktop" data-illustrates="tab-set-up acceptance-first-run">
+  <nav class="bb-nav" data-anchor="desktop-bb-nav" data-illustrates="tab-one">
+    <span class="bb-tab">Chats</span>
+    <span class="bb-tab bb-tab-on">Exo</span>
+  </nav>
+  <main class="exo-setup" data-anchor="desktop-setup" data-illustrates="tab-set-up acceptance-set-up">
+    <h1>Settings</h1>
+    <p>Exo is not set up yet. Check what Exo will use, then set it up once.</p>
+    <div class="exo-field" data-anchor="desktop-project">Project<span>Personal</span></div>
+    <div class="exo-field" data-anchor="desktop-workspace">Workspace<span>~/Exocortex</span></div>
+    <div class="exo-field" data-anchor="desktop-pi">Pi<span>Found with BB</span></div>
+    <div class="exo-field" data-anchor="desktop-optchat">OptChat<span>~/code/OptChat</span></div>
+    <button type="button" class="exo-primary" data-anchor="desktop-set-up" data-illustrates="acceptance-set-up">Set up Exo</button>
+  </main>
+</section>
+<section data-mockup-frame="phone" data-anchor="phone" data-illustrates="tab-set-up acceptance-first-run">
+  <div class="exo-phone-bar" data-anchor="phone-bar" data-illustrates="tab-one">Exo</div>
+  <main class="exo-setup" data-anchor="phone-setup" data-illustrates="tab-set-up acceptance-set-up">
+    <h1>Settings</h1>
+    <p>Exo is not set up yet. Check what Exo will use, then set it up once.</p>
+    <div class="exo-field" data-anchor="phone-project">Project<span>Personal</span></div>
+    <div class="exo-field" data-anchor="phone-workspace">Workspace<span>~/Exocortex</span></div>
+    <div class="exo-field" data-anchor="phone-pi">Pi<span>Found with BB</span></div>
+    <div class="exo-field" data-anchor="phone-optchat">OptChat<span>~/code/OptChat</span></div>
+    <button type="button" class="exo-primary" data-anchor="phone-set-up" data-illustrates="acceptance-set-up">Set up Exo</button>
+  </main>
+</section>
+</body>
+</html>
