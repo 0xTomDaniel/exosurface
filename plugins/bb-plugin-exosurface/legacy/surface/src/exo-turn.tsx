@@ -31,7 +31,7 @@ export function ExoBlock({threadId}:{threadId:string|null}){
  },[threadId,rpc]);
  return <section aria-label="Exo" data-exo-block="" className="exo-block mb-6 text-sm">
   {block?.said?<p data-exo-said="" className="exo-bubble">{block.said}</p>:null}
-  <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" className="exo-activity" style={{color:'var(--exo-quiet)'}}>{block.activity??FIRST_STEP}</p>
+  <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" className="exo-activity">{block.activity??FIRST_STEP}</p>
    :block?.words?<Markdown content={block.words}/>:null}</div>
   {error&&<p role="alert" className="text-destructive">{error}</p>}
  </section>;
