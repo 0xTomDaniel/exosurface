@@ -2,6 +2,7 @@
 // meaning tones; colour encodes meaning only. Rounded display face for a calm,
 // companionable voice; system text face for reading; tabular numerals for data.
 // Orbit blue / trail teal nod to the Exomachina orbital reference (not adopted brand).
+import {bundleTag} from '../src/bundle-tags';
 export const exoTheme=`
 .exo-canvas{
  --exo-ink:var(--foreground,#1d2128);--exo-paper:var(--background,#fff);--exo-quiet:var(--muted-foreground,#646b78);--exo-line:var(--border,#dde1e7);
@@ -23,10 +24,15 @@ export const exoTheme=`
 .exo-topline{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:.9rem}
 .exo-topline h1{font-family:var(--exo-display);font-size:1rem;font-weight:650;letter-spacing:-.005em;margin:0}
 .exo-topline p{margin:0;font-size:.8rem;color:var(--exo-quiet)}
+.exo-bubble{margin:0 0 .9rem;margin-left:auto;width:fit-content;max-width:80%;padding:.5rem .85rem;border-radius:1.1rem;background:color-mix(in oklab,var(--exo-ink) 7%,var(--exo-paper));white-space:pre-wrap;overflow-wrap:anywhere}
 .exo-status{font-size:.82rem;color:var(--exo-quiet);margin:0 0 1rem;display:flex;align-items:center;gap:.5rem}
 .exo-status:empty{margin:0}
 .exo-status[data-busy="true"]::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--exo-accent);animation:exo-breathe 1.6s ease-in-out infinite}
 .exo-shelf{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0 0 1.4rem}
+/* The top area (title, page strip) is set off from the Exo block and page below by one hairline: no box, not sticky. */
+.exo-top{margin-bottom:1.1rem;padding-bottom:.75rem;border-bottom-width:1px;border-bottom-style:solid;border-bottom-color:var(--exo-line)}
+.exo-top .exo-topline{margin-bottom:0}
+.exo-top .exo-shelf{margin:.6rem 0 0}
 .exo-more{font:inherit;font-size:.8rem;border:0;background:none;color:var(--exo-quiet);cursor:pointer;padding:.3rem .3rem}
 .exo-more:hover{color:var(--exo-ink)}
 .exo-shelf>span{font-size:.8rem;color:var(--exo-quiet);margin-right:.2rem}
@@ -37,27 +43,25 @@ export const exoTheme=`
 .exo-pill span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exo-follow{font:inherit;font-size:.8rem;border:0;background:none;color:var(--exo-accent-ink);cursor:pointer;padding:.3rem .2rem;text-decoration:underline;text-underline-offset:3px}
 .exo-frame{width:100%;max-width:46rem;margin-inline:auto}
+/* The input floats over the bottom of the scrolling surface in the page's column (S11); it sits last in the column, so
+   the page's last lines scroll clear above it, and the content beneath it fades out from its middle down. */
+.exo-canvas{overflow:auto}
+.exo-frame{display:flex;flex-direction:column;min-height:100%}
+.exo-dock{position:sticky;bottom:0;z-index:2;margin-top:auto;padding-top:.9rem;padding-bottom:.9rem}
+.exo-fade{position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;background-color:var(--exo-paper);mask-image:linear-gradient(to bottom,transparent 50%,#000)}
+.exo-input{position:relative;margin:0;padding:.35rem;border-radius:.9rem;background-color:var(--exo-paper);box-shadow:0 1px 6px color-mix(in oklab,var(--exo-ink) 10%,transparent)}
 .exo-stage-grid{display:grid;gap:2.5rem;grid-template-columns:minmax(0,1fr);align-items:start}
-/* Context sits beside the stage only when both get a readable width; otherwise it stacks below. */
-@container exo-canvas (min-width:1180px){
- .exo-frame:has(.exo-stage-grid.has-beside){max-width:74rem}
- .exo-stage-grid.has-beside{grid-template-columns:minmax(0,46rem) minmax(20rem,25rem);justify-content:center;gap:3rem}
-}
 .exo-stage{min-width:0}
 .exo-stage.exo-enter{animation:exo-enter .32s cubic-bezier(.2,.7,.2,1)}
-.exo-beside{display:grid;gap:1.25rem;min-width:0;font-size:.94em}
-.exo-beside .a2ui-text h1{font-size:1.3rem}.exo-beside .a2ui-text h2{font-size:1.1rem}
-.exo-beside>section{padding:1rem 1.1rem;border-radius:12px;background:var(--exo-wash)}
 .exo-hidden{display:none!important}
-.exo-legacy-grid{display:grid;gap:2rem}
 @keyframes exo-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes exo-breathe{0%,100%{opacity:.35}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.exo-stage.exo-enter,.exo-status[data-busy="true"]::before,.exo-tl-now .exo-tl-mark::after{animation:none}}
 /* Basic catalog polish */
 .exo-generated .a2ui-text{overflow-wrap:break-word}
 /* Rows wrap instead of squashing: each item keeps a readable minimum width. */
-.exo-generated a2ui-basic-row{flex-wrap:wrap;gap:var(--a2ui-row-gap,.9rem)}
-.exo-generated a2ui-basic-row>:not(a2ui-basic-button){flex:1 1 12rem;min-width:0}
+.exo-generated ${bundleTag('a2ui-basic-row')}{flex-wrap:wrap;gap:var(--a2ui-row-gap,.9rem)}
+.exo-generated ${bundleTag('a2ui-basic-row')}>:not(${bundleTag('a2ui-basic-button')}){flex:1 1 12rem;min-width:0}
 .exo-generated .a2ui-text h1{font-family:var(--exo-display);font-size:1.75rem;line-height:1.15;font-weight:680;letter-spacing:-.02em;margin:0 0 .25rem;text-wrap:balance}
 .exo-generated .a2ui-text h2{font-family:var(--exo-display);font-size:1.22rem;line-height:1.25;font-weight:650;letter-spacing:-.01em;margin:.9rem 0 .15rem;text-wrap:balance}
 .exo-generated .a2ui-text h3,.exo-generated .a2ui-text h4{font-size:1rem;line-height:1.35;font-weight:650;margin:.5rem 0 .1rem}

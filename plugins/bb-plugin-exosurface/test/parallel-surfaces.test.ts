@@ -1,11 +1,12 @@
 // #70 (spec pages-and-activity S6, S9, F5): Exo works on several surfaces at once and never switches the surface in view.
 // The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send
 // goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat,
-// the model ("slow:" answers once the test releases it; "together" answers only while another surface's turn runs too, else "ALONE").
+// the model ("hold:" answers only once the test releases it; "together" answers only while another surface's turn runs too, else "ALONE").
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { liveFixture, owner, bridge, release } from './mock-bb.ts';
+import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { settled, waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
 const f = await liveFixture();
@@ -34,15 +35,11 @@ after(async () => {
 const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
 const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent ?? '');
 const open = (title: string) => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title)!);
-const block = () => view.container.querySelector('section[aria-label="Exo"]') as HTMLElement | null;
+// Exo's words in the surface's Exo block (since #79 the block opens with the person's message as a bubble above them).
+const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const pageText = () => view.container.textContent;
-async function until(what: string, ok: () => boolean, ms = 20000) {
-  for (let waited = 0; !ok(); waited += 50) {
-    if (waited > ms) throw new Error(`Timed out waiting for ${what}; in view: ${current()}; page: ${pageText()}`);
-    await new Promise(r => setTimeout(r, 50));
-  }
-}
+const until = waiter(() => `in view: ${current()}; page: ${pageText()}`);
 async function send(text: string) {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: text } });
@@ -53,7 +50,7 @@ let surface = '', profile = '';
 
 test('send on Home, open another surface before Exo finishes, Home\'s turn ends: the other surface stays in view', async () => {
   await until('Home in view', () => current().join() === 'Home');
-  await send('slow: plan the week');
+  await send('hold: plan the week');
   await until('Home\'s block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
   fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
   await until('the new surface in view', () => current().join() === 'New surface');
@@ -62,11 +59,11 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
   assert.equal((await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   profile = f.piRuns().at(-1).profile;
   assert.equal(host.turn('primary').end, undefined, 'Home\'s turn was still running when the other surface opened');
-  release(f, 'slow');
-  await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): slow: plan the week'));
+  f.release(f.setup.profile); // Home's turn may end now, with the other surface in view
+  await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): hold: plan the week'));
   // Home's block has caught up with its finished turn (its owner state and journal), then one more full poll of the page.
-  for (let i = 0; i < 100 && (await f.rpc.exo_block({ threadId: 'primary' })).working; i++) await new Promise(r => setTimeout(r, 50));
-  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, words: 'Exo (exo-optchat): slow: plan the week' });
+  await settled(async () => !(await f.rpc.exo_block({ threadId: 'primary' })).working, 10000);
+  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'hold: plan the week', words: 'Exo (exo-optchat): hold: plan the week' });
   await new Promise(r => setTimeout(r, 5500));
   assert.deepEqual([...new Set(inView.slice(opened))], ['New surface']);
   // Home's turn reached the app over realtime while the other surface was in view.
@@ -83,7 +80,7 @@ test('send on a surface, open Home before Exo finishes, send on Home: each Exo b
   await until('Home in view', () => current().join() === 'Home');
   const home = inView.length;
   // Per-surface working status: Home shows its own last reply, not the other surface's busy state.
-  await until('Home\'s own block', () => block()?.textContent === 'Exo (exo-optchat): slow: plan the week');
+  await until('Home\'s own block', () => block()?.textContent === 'Exo (exo-optchat): hold: plan the week');
   const statuses = Object.fromEntries((await f.rpc.overview(null)).threads.map((t: any) => [t.id, t.status]));
   assert.deepEqual([statuses.primary, statuses[surface]], ['idle', 'running']);
   // S9: Home's send is never refused, queued or gated by the other surface's turn.
@@ -96,8 +93,11 @@ test('send on a surface, open Home before Exo finishes, send on Home: each Exo b
   await new Promise(r => setTimeout(r, 1000));
   assert.deepEqual([...new Set(inView.slice(home))], ['Home']);
   assert.ok(published.some(p => p.channel === 'surface-thread' && p.threadId === surface && p.at >= home), JSON.stringify(published));
-  open('New surface');
-  await until('the surface in view', () => current().join() === 'New surface');
+  // After its first turn the surface has its name from the namer (#82, spec N7): the fixture's model answers it.
+  const named = f.model.state.reply;
+  await until('the surface named', () => [...sidebar().querySelectorAll('li button')].some(b => b.textContent === named));
+  open(named);
+  await until('the surface in view', () => current().join() === named);
   await until('the surface\'s reply in its block', () => block()?.textContent === `Exo (${profile}): together: book the cabin`);
   assert.equal(pageText().includes('plan the week'), false);
   open('Home');

@@ -12,6 +12,8 @@ import { save } from '../src/store.ts';
 import { startOwner } from '../src/owner-runtime.ts';
 import { ownerConnection } from '../src/owner-client.ts';
 import { fixtureCleanup } from './fixture-cleanup.ts';
+import { settled } from './wait.ts';
+import { PARENT_WATCH, reaped, reapOnExit } from './reap.ts';
 
 const model = { provider: 'fixture', model: 'mock', thinking: 'medium' as const };
 function fixture(t: any) {
@@ -98,7 +100,10 @@ writeFileSync(join(process.env.EXO_PAGE_STATE,'fixture-pi.pid'),String(process.p
 process.on('exit',code=>writeFileSync(join(process.env.EXO_PAGE_STATE,'fixture-pi-exit.json'),JSON.stringify({pid:process.pid,code})));
 const dir=join(process.env.OPTCHAT_HOME,'profiles','exo');mkdirSync(dir,{recursive:true});const lock=createServer(s=>s.end('exo · PID '+process.pid+' · fixture'));await new Promise(r=>lock.listen(join(dir,'lock.sock'),r));
 const out=x=>console.log(JSON.stringify(x));for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);out({type:'response',id:r.id,success:true,data:{}});if(r.type==='prompt'){if(r.message==='detached owner proof')await new Promise(r=>setTimeout(r,250));out({type:'message_end',message:{role:'assistant',content:[{type:'text',text:r.message}]}});out({type:'agent_end'});}}lock.close();`);
-  const owner = await startOwner(config); cleanup.beforeRemove(async () => { const pid = Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')); await owner.close(); assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir, 'fixture-pi-exit.json'), 'utf8')), {pid,code:0}); cleanup.verifyGone(pid); });
+  const owner = await startOwner(config);
+  // The owner runs in this process; the Pi it starts is reaped even if this process is killed.
+  await settled(() => existsSync(join(config.stateDir, 'fixture-pi.pid')), 10000, 10); reapOnExit(Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')));
+  cleanup.beforeRemove(async () => { const pid = Number(readFileSync(join(config.stateDir, 'fixture-pi.pid'), 'utf8')); await owner.close(); assert.deepEqual(JSON.parse(readFileSync(join(config.stateDir, 'fixture-pi-exit.json'), 'utf8')), {pid,code:0}); cleanup.verifyGone(pid); });
   const text = 'x'.repeat(1800), events: any[] = []; let finish: () => void; const done = new Promise<void>(r => { finish = r; });
   const client = ownerConnection(config, e => { events.push(e); if (e.type === 'agent_end') finish(); }); cleanup.beforeRemove(() => client.close());
   await assert.rejects(client.send('unrelated', 'prompt', text), /Not the primary/);
@@ -113,9 +118,9 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
   const hostFile = resolve(import.meta.dirname, '../dist/first-run-shell-host.js');
   assert.ok(existsSync(hostFile), 'Run isolated bb plugin build before this integration test');
   const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(hostFile).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
-  const host = spawn(process.execPath, ['--input-type=module', '-e', shim], { cwd: config.vault,
+  const host = spawn(process.execPath, [...PARENT_WATCH, '--input-type=module', '-e', shim], { cwd: config.vault,
     env: { HOME: config.vault, TMPDIR: config.vault, PATH: '/usr/bin:/bin', EXO_CONFIG: config.file }, stdio: ['pipe', 'pipe', 'pipe'] });
-  cleanup.child(host);
+  cleanup.child(reaped(host));
   let output = '', errors = ''; host.stdout.on('data', b => { output += b; }); host.stderr.on('data', b => { errors += b; });
   host.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'thread/start', params: {
     threadId: 'primary', cwd: config.vault, instructionMode: 'append', options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null },
@@ -124,7 +129,7 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
     threadId: 'primary', providerThreadId: 'exo:primary', clientRequestId: 'creq_23456789ab',
     options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null }, input: [{ type: 'text', text: proof }],
   } }) + '\n');
-  for (let i = 0; i < 100 && (!output.includes('compiled provider proof') || !output.includes('turn.boundary')); i++) await new Promise(r => setTimeout(r, 20));
+  await settled(() => output.includes('compiled provider proof') && output.includes('turn.boundary'), 10000, 20);
   assert.match(output, /compiled provider proof/, errors);
   assert.match(output, /turn.boundary/);
   assert.equal(output.split('\n').filter(Boolean).map(line => JSON.parse(line)).some(v => v.error), false, output);
@@ -133,12 +138,12 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
     threadId: 'primary', providerThreadId: 'exo:primary', clientRequestId: 'creq_23456789ac',
     options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null }, input: [{ type: 'text', text: 'detached owner proof' }],
   } }) + '\n');
-  for (let i = 0; i < 100 && !JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy; i++) await new Promise(r => setTimeout(r, 10));
+  await settled(() => JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, 10000, 10);
   assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, true);
   await assert.rejects(client.send('primary', 'prompt', 'must not be admitted while busy'), /Owner is busy/);
   assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, true, 'rejected prompt cannot clear admitted turn');
   host.kill(); // Simulated view/bridge loss must not abort independently owned Pi work.
-  for (let i = 0; i < 100 && (JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body !== 'detached owner proof' || JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy); i++) await new Promise(r => setTimeout(r, 10));
+  await settled(() => JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body === 'detached owner proof' && !JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, 10000, 10);
   assert.equal(JSON.parse(readFileSync(join(config.stateDir, 'response-page.json'), 'utf8')).body, 'detached owner proof');
   assert.equal(JSON.parse(readFileSync(layout(config.stateDir).ownerState, 'utf8')).busy, false);
 
@@ -173,16 +178,16 @@ test('BB nonempty initialization input settles locally without Pi, auth, binding
   save(join(config.stateDir, 'bb-thread-intent.json'), { key, providerId: 'exosurface', projectId: 'project-1', threadId: 'new-primary', status: 'created' });
   const hostFile = resolve(import.meta.dirname, '../dist/first-run-shell-host.js');
   const shim = `import{createInterface}from'node:readline';const{handleLine}=await import(${JSON.stringify(pathToFileURL(hostFile).href)});for await(const line of createInterface({input:process.stdin}))handleLine(line);`;
-  const host = spawn(process.execPath, ['--input-type=module', '-e', shim], { cwd: config.vault,
+  const host = spawn(process.execPath, [...PARENT_WATCH, '--input-type=module', '-e', shim], { cwd: config.vault,
     env: { HOME: config.vault, TMPDIR: config.vault, PATH: '/usr/bin:/bin', EXO_CONFIG: config.file }, stdio: ['pipe', 'pipe', 'pipe'] });
-  cleanup.child(host); let output = '', errors = '';
+  cleanup.child(reaped(host)); let output = '', errors = '';
   host.stdout.on('data', b => { output += b; }); host.stderr.on('data', b => { errors += b; });
   host.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'thread/start', params: {
     threadId: 'new-primary', cwd: config.vault, instructionMode: 'append',
     options: { permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null },
     input: [{ type: 'text', text: `EXOSURFACE_INITIALIZE:${key}` }],
   } }) + '\n');
-  for (let i = 0; i < 100 && !output.includes('turn.boundary'); i++) await new Promise(r => setTimeout(r, 10));
+  await settled(() => output.includes('turn.boundary'), 10000, 10);
   assert.match(output, /turn.boundary/, errors); assert.doesNotMatch(output, /Not sent|"failed"|"error"/);
   assert.equal(existsSync(config.piCli), false); assert.equal(existsSync(config.agentDir), false);
   assert.equal(existsSync(layout(config.stateDir).ownerDir), false);

@@ -1,6 +1,7 @@
 // Machine-specific locations are never committed: they come from a local JSON file
 // (EXO_CONFIG, default ~/.config/exo/exosurface.json), with "~/" expanded. Missing values are
 // empty strings here and rejected by `requireLocal` where a process is actually launched.
+// One non-path key: "namer", the surface naming model, read fresh at each naming by surface-name.ts (namerChoice).
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
