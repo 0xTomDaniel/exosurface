@@ -7,10 +7,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderedApp } from './app-render.ts';
+import { waiter } from './wait.ts';
 
 const { kit, app, close } = await renderedApp();
 after(close);
-const { waitFor, within, screen } = kit.testing;
+const { within, screen } = kit.testing;
 
 test('the plugin app registers one nav panel, titled "Exo"; none titled "Exosurface" and no proof panel', () => {
   const titles: string[] = app.navPanels.map((p: any) => String(p.title));
@@ -36,10 +37,17 @@ test('opening the Exo tab shows the sidebar and Home, with the input shown', asy
   try {
     const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
     const inView = () => sidebar().getAllByRole('button').filter((b: any) => b.getAttribute('aria-current') === 'page').map((b: any) => String(b.textContent));
-    await waitFor(() => assert.deepEqual(sidebar().getAllByRole('listitem').map((li: any) => String(li.textContent)), ['Home']));
+    const entries = (): string[] => screen.queryByRole('navigation', { name: 'Surfaces' }) ? sidebar().queryAllByRole('listitem').map((li: any) => String(li.textContent)) : [];
+    const pages = () => document.querySelectorAll('section[data-surface="week"]').length;
+    const inputs = () => document.querySelectorAll('form[aria-label="Message Exo"] textarea:not([disabled])').length;
+    const until = waiter(() => `sidebar ${JSON.stringify(entries())}; Home pages ${pages()}; enabled inputs ${inputs()}`);
+    await until('the sidebar listing Home', () => entries().join('|') === 'Home');
+    assert.deepEqual(entries(), ['Home']);
     assert.deepEqual(inView(), ['Home']);
-    await waitFor(() => assert.equal(document.querySelectorAll('section[data-surface="week"]').length, 1));
-    await waitFor(() => assert.equal(document.querySelectorAll('form[aria-label="Message Exo"] textarea:not([disabled])').length, 1));
+    await until('the Home page', () => pages() === 1);
+    assert.equal(pages(), 1);
+    await until('the enabled input', () => inputs() === 1);
+    assert.equal(inputs(), 1);
   } finally { view.unmount(); }
 });
 
