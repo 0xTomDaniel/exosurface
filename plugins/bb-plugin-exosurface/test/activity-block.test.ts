@@ -36,7 +36,6 @@ const reply = () => view.container.querySelector('section[aria-label="Exo"] [dat
 const status = () => reply()?.querySelector('[role="status"]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const until = waiter(() => `Exo block: ${reply()?.textContent}`);
-const FALLBACK = 'Exo is working on this page…';
 
 test('a send Exo answers in several steps: the Exo block shows one line of what Exo does, changing as it goes, then only the reply', async () => {
   await until('the input to take a message', () => !!input() && !input()!.disabled);
@@ -45,16 +44,44 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   // Each sample: the line's text, and as strings what keeps it one line and announced; the block holds nothing else meanwhile.
   const shown: string[] = [];
   const line = () => {
-    const s = status(); if (!s || s.textContent === FALLBACK) return undefined;
+    const s = status(); if (!s) return undefined;
     const css = getComputedStyle(s);
     shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow }));
     return s.textContent!;
   };
   const lines = await stepsShown(f, 'garden', line, () => status() === null && !!reply()?.textContent);
-  assert.deepEqual(lines, ['Planning the garden', 'Reading the garden note', 'Now I can answer about the garden.']);
+  assert.deepEqual(lines, ['Reading your message', 'Planning the garden', 'Reading the garden note', 'Now I can answer about the garden.']);
   assert.deepEqual([...new Set(shown)], [JSON.stringify({ alone: true, live: 'polite', wrap: 'nowrap', overflow: 'hidden', ellipsis: 'ellipsis' })]);
   // acceptance-live-activity-ends: the reply, and no activity line.
   assert.equal(reply()!.textContent, `Exo (${f.setup.profile}): steps: garden`);
   assert.equal(status(), null);
   assert.equal(input()!.value, '');
+});
+
+test('a send on a new surface whose turn the provider fails before any step: the Exo block shows one line from the send until the turn ends, then none', async () => {
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
+  fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
+  await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
+  // BB starts the spawned thread with its first message, as it does after spawn.
+  const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
+  assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+  await until('the new surface to take a message', () => !!input() && !input()!.disabled && reply()?.textContent === '');
+  const profile = f.piRuns().at(-1).profile, opened = host.deltas(fresh).filter(d => d.kind === 'turn.open').length;
+  // The provider fails the turn once released: no reasoning, no tool step, no words, only an error.
+  fireEvent.change(input()!, { target: { value: 'hold: fail: create a design for a flying car' } });
+  fireEvent.click(view.getByRole('button', { name: 'Send' }));
+  await until('BB to take the send', () => input()!.value === '');
+  // Each sample: the activity line on screen and whether it is the block's one element, from the send until the bridge
+  // reports the turn's end; the provider holds the turn for 3 s of wall-clock time first.
+  const samples: string[] = [], sample = () => { const s = status(); samples.push(JSON.stringify(s ? { line: s.textContent, alone: reply()!.children.length === 1 } : null)); };
+  for (const held = Date.now() + 3000; Date.now() < held;) { sample(); await new Promise(r => setTimeout(r, 25)); }
+  f.release(profile);
+  const ended = () => { const d = host.deltas(fresh), open = d.filter(x => x.kind === 'turn.open')[opened]; return !!open && d.slice(d.indexOf(open)).some(x => x.kind === 'turn.boundary'); };
+  for (const end = Date.now() + 30000; !ended();) { if (Date.now() > end) throw new Error('the failed turn did not end'); sample(); await new Promise(r => setTimeout(r, 25)); }
+  // E9: before (here: without) any streamed reasoning or tool step, the line names the step Exo is taking in plain words,
+  // never E4's bare "working" (owner ruling on #85), and never nothing.
+  assert.deepEqual([...new Set(samples)], [JSON.stringify({ line: 'Reading your message', alone: true })]);
+  // acceptance-live-activity-ends: once the turn has ended, no line (the failed turn has no words to show).
+  await until('the line to go once the turn has ended', () => status() === null);
+  assert.equal(reply()!.textContent, '');
 });

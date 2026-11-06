@@ -32,8 +32,9 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // optchat.profile session entry. The model: a "call: <JSON>" prompt makes that one update_exosurface call; a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
 // a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
-// runs however long that takes ("hold: quiet: ..." is a held turn with no words); a "steps: <topic>" prompt is
-// answered in several steps: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
+// runs however long that takes ("hold: quiet: ..." is a held turn with no words); a "fail:" prompt gets a turn the provider
+// fails before any streamed reasoning, tool call or words ("hold: fail: ..." fails once released); a "steps: <topic>" prompt is
+// answered in several steps, once the turn's first step ("Reading your message") has been seen: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
 // with no bold headline (as Claude's summaries may come), then the reply. It holds each step until stepsTurn has seen its line.
 const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,rmSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
@@ -67,11 +68,11 @@ export default function optchat(pi){
      const think=async deltas=>{const block={type:'thinking',thinking:''},i=message.content.push(block)-1;stream.push({type:'thinking_start',contentIndex:i,partial:message});
       for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(50);}
       stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});};
-     if(at==='user'){await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);await hold(1);
+     if(at==='user'){await hold(1);await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);await hold(2);
       const toolCall={type:'toolCall',id:'read_'+Date.now(),name:'read',arguments:{path:topic+'.md'}};message.content.push(toolCall);message.stopReason='toolUse';
       stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
       stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
-     await hold(2);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(3);}
+     await hold(3);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(4);}
     // "draw <ref>: <title>" draws a page about that topic as page <ref>; "draw <ref>: <title> beside <other>" also asks for
     // page <other> beside it. It tries revision 0 and, told the surface is further on, draws again on that revision.
     const page=/^draw ([a-z]+): (.+?)(?: beside ([a-z]+))?$/.exec(said),stale=messages.at(-1)?.role==='toolResult'?/the surface is at revision (\\d+)/.exec(textOf(messages.at(-1))):null;
@@ -85,6 +86,7 @@ export default function optchat(pi){
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.startsWith('hold:'))for(const end=Date.now()+60000;!existsSync(join(process.env.OPTCHAT_HOME,'release',name))&&Date.now()<end;)await sleep(25);
+    if(said.replace(/^hold: /,'').startsWith('fail:')){message.stopReason='error';message.errorMessage='This model does not support that setting.';stream.push({type:'error',reason:'error',error:message});stream.end();return;}
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(const end=Date.now()+5000;readdirSync(turns).length<2&&Date.now()<end;)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
     if(!said.replace(/^hold: /,'').startsWith('quiet:')){const at=message.content.push({type:'text',text})-1;stream.push({type:'text_start',contentIndex:at,partial:message});stream.push({type:'text_delta',contentIndex:at,delta:text,partial:message});

@@ -148,7 +148,7 @@ async function parallel() {
     console.log(`--- two overlapping turns (fake model answers a "together" turn only while another surface's turn runs, else "ALONE") ---`);
     await new Promise(r => setTimeout(r, 100)); watching = true; // the sampler has seen Home in view
     await send('together: plan the week');
-    await until('Home working', () => block()?.textContent === 'Exo is working on this page…');
+    await until('Home working', () => block()?.textContent === 'Reading your message');
     click('New surface'); did = 'opened New surface while Home\'s turn runs';
     await until('the new surface', () => current() === 'New surface');
     await send('together: book the cabin');
@@ -165,7 +165,7 @@ async function parallel() {
     await until('the new surface\'s reply', () => block()?.textContent?.startsWith('Exo (') || block()?.textContent?.startsWith('ALONE'));
     const theirs = block().textContent; console.log(`New surface: ${JSON.stringify(theirs)}`);
     click('Home'); did = 'went back to Home';
-    await until('Home\'s reply', () => current() === 'Home' && !!block()?.textContent && block().textContent !== 'Exo is working on this page…');
+    await until('Home\'s reply', () => current() === 'Home' && !!block()?.textContent && block().textContent !== 'Reading your message');
     const home = block().textContent; console.log(`Home:        ${JSON.stringify(home)}`);
     const ok = stayed && overlap && home === `Exo (${f.setup.profile}): together: plan the week` && theirs === `Exo (${profile}): together: book the cabin`;
     if (!ok) throw new Error('parallel failed');
@@ -200,7 +200,7 @@ async function opening() {
     const sends = ['draw week: Week plan', 'draw beds: Garden beds', 'add a row of tomatoes'], latest = sends.at(-1);
     let scroll = '';
     for (const text of sends) {
-      await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
+      await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Reading your message');
       // The person has scrolled down the surface before the latest send (jsdom: the scroll container's position only).
       if (text === latest) main().scrollTop = 400;
       const was = main().scrollTop, asked = browser.scrolls.length;
@@ -208,7 +208,7 @@ async function opening() {
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
       if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send, requested ${JSON.stringify(browser.scrolls.slice(asked))}`; console.log(`  ${scroll}`);
-        await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
+        await until('the working block', () => reply()?.textContent === 'Reading your message'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
       await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
     await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
@@ -616,8 +616,8 @@ async function activityBlock() {
     let last;
     const line = () => {
       const shown = reply()?.textContent ?? '';
-      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Exo is working on this page…' ? ' (working, no step yet: E4 fallback)' : ' (activity line)'}`); }
-      return status() && shown !== 'Exo is working on this page…' ? shown : undefined;
+      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Reading your message' ? ' (activity line: the first step, before any model event)' : ' (activity line)'}`); }
+      return status() ? shown : undefined;
     };
     const lines = await stepsShown(f, 'garden', line, () => !status() && !!reply()?.textContent);
     line();
