@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { liveFixture, owner, bridge, stepsShown } from './mock-bb.ts';
 import { waiter, settled } from './wait.ts';
 import { reapOnExit } from './reap.ts';
-import { renderedApp } from './app-render.ts';
+import { renderedApp, declared, keyframed, animation } from './app-render.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -41,17 +41,43 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   await until('the input to take a message', () => !!input() && !input()!.disabled);
   fireEvent.change(input()!, { target: { value: 'steps: garden' } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
-  // Each sample: the line's text, and as strings what keeps it one line and announced; the block holds nothing else meanwhile.
+  // Each sample: the line's text, and as strings what keeps it one line and announced, and the shimmer and fixed one-line
+  // height jsdom computes for it from the app's own stylesheet; the block holds nothing else meanwhile. The first sample also
+  // keeps what that stylesheet's source declares for the line (the gradient, the reduced-motion rule: values jsdom drops).
   const shown: string[] = [];
+  let source: ReturnType<typeof declared> = [], canvas: CSSStyleDeclaration | null = null;
   const line = () => {
     const s = status(); if (!s) return undefined;
     const css = getComputedStyle(s);
-    shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow }));
+    if (!canvas) { source = declared(s); canvas = getComputedStyle(s.closest('main[aria-label="Exosurface"]')!); }
+    shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow,
+      animation: animation(css.animation), clip: css.getPropertyValue('background-clip'), color: css.color, lineHeight: css.lineHeight, height: css.height }));
     return s.textContent!;
   };
   const lines = await stepsShown(f, 'garden', line, () => status() === null && !!reply()?.textContent);
   assert.deepEqual(lines, ['Reading your message', 'Planning the garden', 'Reading the garden note', 'Now I can answer about the garden.']);
-  assert.deepEqual([...new Set(shown)], [JSON.stringify({ alone: true, live: 'polite', wrap: 'nowrap', overflow: 'hidden', ellipsis: 'ellipsis' })]);
+  const samples = [...new Set(shown)].map(s => JSON.parse(s));
+  assert.equal(samples.length, 1, `the line's presentation changed between steps: ${JSON.stringify(samples)}`);
+  const [sample] = samples;
+  assert.deepEqual({ ...sample, animation: undefined, lineHeight: undefined, height: undefined },
+    { alone: true, live: 'polite', wrap: 'nowrap', overflow: 'hidden', ellipsis: 'ellipsis', clip: 'text', color: 'rgba(0, 0, 0, 0)', animation: undefined, lineHeight: undefined, height: undefined });
+  // The shimmer: one named animation, 1.5 to 2 s a sweep, looping while the line shows, moving the gradient under the text.
+  assert.ok(sample.animation && sample.animation.infinite && sample.animation.seconds >= 1.5 && sample.animation.seconds <= 2, `animation: ${JSON.stringify(sample.animation)}`);
+  assert.ok(keyframed(view.container.ownerDocument, sample.animation.name).includes('background-position'), `@keyframes ${sample.animation.name} moves no background`);
+  // No layout shift: a set line height and a set box height, the same whatever the step text (one sample for all steps).
+  assert.ok(!['', 'normal'].includes(sample.lineHeight) && !['', 'auto'].includes(sample.height), `line-height ${sample.lineHeight}, height ${sample.height}`);
+  // Legible in both BB themes: the gradient painted through the text is the theme's own colours, every stop a var() the
+  // canvas defines (from BB's light or dark host colours), at least two of them (the quiet text and a brighter band).
+  const always = source.filter(d => !d.media);
+  const gradient = always.filter(d => d.property === 'background-image' || d.property === 'background').map(d => d.value).filter(v => v.includes('linear-gradient')).at(-1) ?? '';
+  const stops = [...new Set([...gradient.matchAll(/var\((--[\w-]+)/g)].map(m => m[1]))];
+  assert.ok(stops.length >= 2 && !/#[0-9a-f]{3,8}\b|rgb|hsl|oklch\(/i.test(gradient), `gradient: ${gradient}`);
+  for (const stop of stops) assert.notEqual(canvas!.getPropertyValue(stop).trim(), '', `${stop} is not defined on the canvas`);
+  // Under prefers-reduced-motion: reduce the stylesheet stops that animation on this same element (jsdom applies no @media
+  // rule, so the rule is read from the source the app put in the document).
+  assert.deepEqual(source.filter(d => /prefers-reduced-motion:\s*reduce/.test(d.media) && d.property === 'animation').map(d => d.value), ['none']);
+  // After the turn ends no element shimmers.
+  assert.deepEqual([...view.container.querySelectorAll('*')].filter(e => animation(getComputedStyle(e).animation)?.name === sample.animation.name), []);
   // acceptance-live-activity-ends: the reply, and no activity line.
   assert.equal(reply()!.textContent, `Exo (${f.setup.profile}): steps: garden`);
   assert.equal(status(), null);

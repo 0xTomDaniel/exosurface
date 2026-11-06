@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { parse, type CssNode } from 'css-tree';
+import { parse, walk, generate, type CssNode } from 'css-tree';
 
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
@@ -156,6 +156,53 @@ export function centeredIn(el: Element, container: Element): boolean {
     const s = css(at); if (spacing(s, 'Top') !== spacing(s, 'Bottom') || [...at.parentElement.children].filter(inFlow).length !== 1) return false;
   }
   const s = css(container); return parseFloat(s.paddingTop) === parseFloat(s.paddingBottom) && parseFloat(s.borderTopWidth || '0') === parseFloat(s.borderBottomWidth || '0');
+}
+// jsdom's CSSOM drops a declaration whose value holds var() (a gradient in theme colours) and its cascade applies no @media
+// rule, so what the app's stylesheets say about an element is also read from their source text: the <style> elements the app
+// put in the document, parsed by css-tree, each rule matched to the element by the browser's own selector matching.
+/** Every declaration the document's <style> text gives an element, in source order, with the @media condition it sits under
+ *  ('' when none). A selector list matches when any one selector in it does. */
+export function declared(el: Element): { media: string; property: string; value: string }[] {
+  const out: { media: string; property: string; value: string }[] = [];
+  for (const sheet of el.ownerDocument.querySelectorAll('style')) {
+    walk(parse(sheet.textContent ?? ''), {
+      visit: 'Rule',
+      enter(this: { atrule: CssNode | null }, rule: CssNode) {
+        if (rule.type !== 'Rule' || rule.prelude.type !== 'SelectorList') return;
+        const at = this.atrule;
+        if (at && (at.type !== 'Atrule' || at.name !== 'media')) return;
+        const matches = [...rule.prelude.children].some(s => { try { return el.matches(generate(s)); } catch { return false; } });
+        if (!matches) return;
+        const media = at && at.type === 'Atrule' && at.prelude ? generate(at.prelude) : '';
+        rule.block.children.forEach(d => { if (d.type === 'Declaration') out.push({ media, property: d.property, value: generate(d.value) }); });
+      },
+    });
+  }
+  return out;
+}
+/** The properties a named @keyframes rule in the document's <style> text sets, across its frames. */
+export function keyframed(doc: Document, name: string): string[] {
+  const props = new Set<string>();
+  for (const sheet of doc.querySelectorAll('style')) walk(parse(sheet.textContent ?? ''), {
+    visit: 'Atrule',
+    enter(at: CssNode) {
+      if (at.type !== 'Atrule' || !/keyframes$/.test(at.name) || !at.prelude || generate(at.prelude) !== name || !at.block) return;
+      walk(at.block, { visit: 'Declaration', enter(d: CssNode) { if (d.type === 'Declaration') props.add(d.property); } });
+    },
+  });
+  return [...props];
+}
+const timing = new Set(['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end', 'normal', 'reverse', 'alternate', 'alternate-reverse', 'none', 'forwards', 'backwards', 'both', 'running', 'paused', 'infinite']);
+/** An animation shorthand as computed (one animation): its name, its duration in seconds (the first time in it) and whether
+ *  it loops forever; null when it names no animation. */
+export function animation(text: string): { name: string; seconds: number; infinite: boolean } | null {
+  let v: CssNode; try { v = parse(text, { context: 'value' }); } catch { return null; }
+  if (v.type !== 'Value') return null;
+  const parts = [...v.children];
+  const name = parts.find(n => n.type === 'Identifier' && !timing.has(n.name)), time = parts.find(n => n.type === 'Dimension' && ['s', 'ms'].includes(n.unit));
+  if (!name || name.type !== 'Identifier') return null;
+  const seconds = time && time.type === 'Dimension' ? Number(time.value) / (time.unit === 'ms' ? 1000 : 1) : 0;
+  return { name: name.name, seconds, infinite: parts.some(n => n.type === 'Identifier' && n.name === 'infinite') };
 }
 /** Whether an element is drawn in a box: it, anything inside it, or any element between it and `within` (inclusive) has a
  *  border, a background or a shadow. */
