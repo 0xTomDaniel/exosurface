@@ -8,7 +8,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { liveFixture, owner } from './mock-bb.ts';
+import { bridge, liveFixture, owner } from './mock-bb.ts';
 import { reapOnExit } from './reap.ts';
 import { settled, waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
@@ -17,8 +17,11 @@ const f = await liveFixture();
 const ownerProcess = await owner(f);
 const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
 const panel = app.navPanels.find((p: any) => p.title === 'Exo');
+// host.ts as BB runs it, started by the model-switch test below.
+let host: ReturnType<typeof bridge> | undefined;
 after(async () => {
   close();
+  if (host) { host.child.kill('SIGTERM'); if (!(await settled(() => host!.child.exitCode !== null || host!.child.signalCode !== null, 15000))) throw new Error(`host.ts still running; fixture kept at ${f.root}`); }
   // The owner and the Pi it started, each seen gone by a wall-clock deadline before the fixture is removed.
   const pis = f.piRuns().map(r => r.pid as number); for (const pid of pis) reapOnExit(pid);
   const alive = (pid: number) => { try { process.kill(pid, 0); return true; } catch (e) { return (e as NodeJS.ErrnoException).code !== 'ESRCH'; } };
@@ -44,7 +47,7 @@ function screenOf(view: any) {
     pages: () => all('main[aria-label="Exo"] section[data-surface]').map(s => String(s.getAttribute('aria-label'))),
     /** What settings show: each term with its value, in order. */
     facts: () => [...(settings()?.querySelectorAll('dt') ?? [])].map(dt => [String(dt.textContent), String(dt.nextElementSibling?.textContent)]),
-    press: (name: string, within: () => Element | null) => { const b = [...(within()?.querySelectorAll('button') ?? [])].find(b => b.textContent === name && shown(b)); assert.ok(b, `no button "${name}"`); fireEvent.click(b); },
+    press: (name: string, within: () => Element | null) => { const b = [...(within()?.querySelectorAll('button') ?? [])].find(b => b.textContent === name && shown(b)); if (!b) throw new Error(`no button "${name}"`); fireEvent.click(b); },
   };
 }
 
@@ -56,16 +59,15 @@ test('with Exo set up, pressing Settings shows set up, the model, running and th
     await until('the sidebar listing Home, Home in view', () => s.listed().join('|') === 'Home' && s.surfaceShown() === 1);
     // T3: one Settings button, below the tree (after the surfaces in screen order), not a surface in the list.
     const buttons = [...s.sidebar()!.querySelectorAll('button')].filter(b => b.textContent === 'Settings');
-    assert.equal(buttons.length, 1);
-    assert.equal(buttons[0].closest('li'), null);
+    assert.deepEqual(buttons.map(b => b.closest('li') !== null), [false]);
     const lastRow = [...s.sidebar()!.querySelectorAll('li')].at(-1)!;
-    assert.ok(lastRow.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING, 'Settings follows the tree');
+    assert.equal(!!(lastRow.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings follows the tree');
     s.press('Settings', s.sidebar);
     await until('settings with the owner\'s status', () => s.facts().length === 4 && s.facts().every(([, v]) => v !== 'Loading…'));
     assert.deepEqual(s.facts(), [['Set-up', 'Exo is set up'], ['Model', 'anthropic/claude-opus-5-5'], ['Running', 'Exo is running'], ['Owner profile', 'exo-optchat']]);
     // In place of the surface in view, beside the sidebar.
     assert.equal(s.surfaceShown(), 0);
-    assert.ok(s.sidebar() && shown(s.sidebar()!));
+    assert.equal(!!s.sidebar() && shown(s.sidebar()!), true);
     // No input anywhere in view, and no control in settings but Close.
     assert.equal(s.all('input, textarea, select, [contenteditable="true"], [role="textbox"]').length, 0);
     assert.deepEqual([...s.settings()!.querySelectorAll('button, a, [role="button"]')].filter(shown).map(b => String(b.textContent)), ['Close']);
@@ -115,5 +117,24 @@ test('on a surface other than Home, Settings then Close shows that surface with 
     await until('the surface back', () => !s.settings() && s.surfaceShown() === 1);
     assert.deepEqual(s.inView(), ['Garden trip']);
     assert.deepEqual(s.pages(), ['Week plan']);
+  } finally { view.unmount(); }
+});
+
+// T4, "the model it runs on": the person picks Sol in BB's model picker and sends; host.ts switches the running Pi
+// (set_model, model-selection.ts) and Settings, opened after, show Sol, not the model Exo started on.
+test('after the person picks Sol in BB and sends, Settings show Sol as the model Exo runs on', async () => {
+  host = bridge(f);
+  assert.equal((await host.start('primary')).error ?? null, null);
+  host.send('primary', 'hello on Sol', 'exo-gpt-6-1-sol');
+  await host.settled(['primary']);
+  assert.deepEqual(host.turn('primary').replies, ['Exo (exo-optchat): hello on Sol']);
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
+  const s = screenOf(view);
+  const until = waiter(() => `settings ${JSON.stringify(s.facts())}`);
+  try {
+    await until('the sidebar', () => s.listed().length > 0);
+    s.press('Settings', s.sidebar);
+    await until('settings with the owner\'s status', () => s.facts().length === 4 && s.facts().every(([, v]) => v !== 'Loading…'));
+    assert.deepEqual(s.facts().find(([term]) => term === 'Model'), ['Model', 'openai-codex/gpt-6.1-sol']);
   } finally { view.unmount(); }
 });
