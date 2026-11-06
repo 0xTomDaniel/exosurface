@@ -1,7 +1,9 @@
 import { defineRpcContract, type BbPluginApi, type JsonValue } from '@get-bb/plugin-sdk';
 import { z } from 'zod';
-import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT } from './src/state.ts';
-import { local, LOCAL_CONFIG } from './src/local-config.ts';
+import { binding, runs, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, feedback, save, bindingFile, HOME, CANONICAL_HOME, CANONICAL_PROFILE, SOURCE, load, isBoundThread, mainModel, NEW_THREAD_PROMPT, PI_CLI } from './src/state.ts';
+import { local, LOCAL_CONFIG, requireLocal } from './src/local-config.ts';
+import { NEW_SURFACE, NAME_RECORD, namerChoice, personsFirst, personsFirstInLog, EVENT_PAGE, replyTo, namePrompt, callNamer, personName, type NameRecord } from './src/surface-name.ts';
+import type { ModelChoice } from '../../src/config.ts';
 import { canonicalSetup, setupStatus, recoverSetupLock, type CanonicalSetupPorts } from './src/canonical-setup.ts';
 import { canonicalBBNativeAdapter, canonicalSystemPorts, vaultHost } from './src/canonical-system.ts';
 import { consumeCanonicalInitialization } from './src/canonical-control.ts';
@@ -27,6 +29,8 @@ export const rpcContract = defineRpcContract({
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
   // New surface (spec S7): a new top-level Exo thread, bound to its own profile before its provider starts.
   thread_new: { input: z.null(), output: z.object({ threadId: z.string() }) },
+  // The person's rename of a surface from the sidebar (#83, spec N5, N7): any surface but Home, any time.
+  thread_rename: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/), name: z.string().max(1000) }).strict(), output: z.object({ threadId: z.string(), title: z.string() }) },
 });
 import { createOverview } from './src/overview.ts';
 export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc), setupPorts?: CanonicalSetupPorts) {
@@ -54,7 +58,13 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       return { action: 'proceed' };
     }
     const attach = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(ctx.input.text.trim());
-    if (!attach) return { action: 'proceed' };
+    // The person's message on a surface (BB's author "user"; in a grouped dispatch, the person's rows): the first one starts
+    // the naming beside Exo's turn, never holding the send. An agent's or the system's message starts nothing.
+    if (!attach) {
+      const person = ctx.initiator === 'user' ? ctx.input.text : ctx.initiator === 'mixed' ? personsFirst((ctx.queuedMessages ?? []).filter(m => m.initiator === 'user').map(m => ({ type: 'client/turn/requested', data: { initiator: 'user', input: m.content } })), NEW_THREAD_PROMPT) : undefined;
+      if (person !== undefined) void nameSurface(ctx.thread.id, person);
+      return { action: 'proceed' };
+    }
     if (!ctx.thread.parentThreadId) return { action: 'reject', message: 'Child attachment requires its native main owner.' };
     const parent = binding(ctx.thread.parentThreadId);
     if (parent?.runtimeKind && parent.runtimeKind !== 'offline') return { action: 'reject', message: 'Linked child projections are disabled for the live trial; native reports go only through OptChat.' };
@@ -64,6 +74,61 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     save(bindingFile(ctx.thread.id), { providerThreadId: `exo:${attach[1]}:${attach[2]}`, profile: attach[1], childId: attach[2], cursor: current?.cursor ?? 0 });
     return { action: 'proceed' };
   });
+  // Surface auto-name (#82; the rule: src/surface-name.ts). Acts only on a bound surface still titled "New surface" with no
+  // name record; the name is the BB thread title the sidebar lists, the record on its plugin metadata. Home is never bound.
+  const naming = new Set<string>();
+  // A surface's name writes (Exo's after its naming call, the person's rename) run one at a time per thread, each reading
+  // the record first: a rename that lands while a naming call is in flight wins, and Exo never writes over it.
+  const writes = new Map<string, Promise<unknown>>();
+  const nameWrite = <T>(threadId: string, write: () => Promise<T>): Promise<T> => {
+    const next = (writes.get(threadId) ?? Promise.resolve()).catch(() => {}).then(write);
+    writes.set(threadId, next);
+    return next.finally(() => { if (writes.get(threadId) === next) writes.delete(threadId); });
+  };
+  /** The surface's name if it is no longer Exo's to give: a title other than "New surface", or any name record. */
+  const named = async (threadId: string) => {
+    const title = (await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE;
+    if (title !== NEW_SURFACE) return title;
+    const held = (await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD] as NameRecord | undefined;
+    return held ? ('name' in held ? held.name : title) : undefined;
+  };
+  /** `sent`: the person's message being dispatched, their first when BB's event log holds none of theirs yet. */
+  const nameSurface = async (threadId: string, sent?: string) => {
+    if (naming.has(threadId) || !isBoundThread(threadId)) return;
+    naming.add(threadId);
+    try {
+      if (((await bb.sdk.threads.get({ threadId })).title || NEW_SURFACE) !== NEW_SURFACE) return;
+      if ((await bb.sdk.threads.getPluginMetadata({ threadId }))?.[NAME_RECORD]) return;
+      const first = await personsFirstInLog(afterSeq => bb.sdk.threads.events.list({ threadId, types: ['client/turn/requested'], order: 'asc', limit: String(EVENT_PAGE), ...(afterSeq ? { afterSeq } : {}) }), NEW_THREAD_PROMPT);
+      const message = first ?? (sent?.trim() ? sent : undefined);
+      if (message === undefined) return; // no message from the person yet (only New surface's start, an agent's or the system's)
+      const turn = { message, reply: await replyTo(sessionOf(threadId), message) };
+      const record = (value: NameRecord) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: value } });
+      let choice: ModelChoice | undefined;
+      try {
+        choice = namerChoice(LOCAL_CONFIG).choice;
+        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), cwd: HOME });
+        const used = choice;
+        const person = await nameWrite(threadId, async () => {
+          const person = await named(threadId);
+          if (person !== undefined) return person;
+          await bb.sdk.threads.update({ threadId, title: name });
+          await record({ by: 'exo', state: 'named', name, model: `${used.provider}/${used.model}`, thinking: used.thinking, at: new Date().toISOString(), ...(usage ? { usage } : {}) });
+        });
+        if (person !== undefined) { bb.log.info(`Surface ${threadId} keeps the person's name "${person}": Exo's "${name}" is dropped`); return; }
+        bb.log.info(`Surface ${threadId} named "${name}" by ${choice.provider}/${choice.model} thinking ${choice.thinking}${usage ? ` (${usage.input} in, ${usage.output} out tokens)` : ''}`);
+        bb.realtime.publish('surface-names', { threadId, title: name });
+      } catch (e) {
+        const reason = (e instanceof Error ? e.message : String(e)).replace(/\s+/g, ' ').slice(0, 400);
+        bb.log.warn(`Surface ${threadId} keeps "${NEW_SURFACE}": naming failed${choice ? ` on ${choice.provider}/${choice.model} thinking ${choice.thinking}` : ''}: ${reason}`);
+        await nameWrite(threadId, async () => { if ((await named(threadId)) === undefined) await record({ by: 'exo', state: 'failed', reason, ...(choice ? { model: `${choice.provider}/${choice.model}`, thinking: choice.thinking } : {}), at: new Date().toISOString() }); });
+      }
+    } catch (e) { bb.log.error(`Surface ${threadId} naming check failed: ${e instanceof Error ? e.message : String(e)}`); }
+    finally { naming.delete(threadId); }
+  };
+  // Fallback only: BB runs message.dispatch on every send but a person's Send-now on a queued row (that bypasses the hook
+  // by design), so a first message sent that way is named once its turn ends, from the person's first message in BB's log.
+  bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
   const attaching = new Map<string, Promise<{ threadId: string }>>();
   const awaiting = new Map<string, { entry: string | null; text: string }>(); // thread -> its latest person's entry when the input sent, and what it sent
   registerRpc(rpcContract, {
@@ -136,6 +201,21 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       const thread = await bb.sdk.threads.spawn({ projectId: home.projectId, environment: { type: 'reuse', environmentId: home.environmentId }, providerId: 'exo-spike', model: mainModel(), reasoningLevel: 'high', permissionMode: 'full', title: 'New surface', prompt: NEW_THREAD_PROMPT });
       bindThread(thread.id);
       return { threadId: thread.id };
+    },
+    // The person's name: the BB thread title every view shows, and the record (by person) that keeps Exo from naming it.
+    thread_rename: async ({ threadId, name }) => {
+      const title = personName(name);
+      const pointer = join(HOME, 'canonical-thread.json');
+      if (existsSync(pointer) && load(pointer).threadId === threadId) throw new Error('Home keeps its name');
+      const thread = await bb.sdk.threads.get({ threadId }).catch(() => undefined);
+      if (!thread || thread.providerId !== 'exo-spike' || thread.parentThreadId || !isBoundThread(threadId)) throw new Error('Only an Exo surface can be renamed');
+      await nameWrite(threadId, async () => {
+        await bb.sdk.threads.updatePluginMetadata({ threadId, set: { [NAME_RECORD]: { by: 'person', state: 'named', name: title, at: new Date().toISOString() } satisfies NameRecord } });
+        await bb.sdk.threads.update({ threadId, title });
+      });
+      bb.log.info(`Surface ${threadId} renamed "${title}" by the person`);
+      bb.realtime.publish('surface-names', { threadId, title });
+      return { threadId, title };
     },
   });
 }

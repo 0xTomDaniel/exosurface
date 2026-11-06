@@ -40,7 +40,7 @@ export function pluginRoot(from = import.meta.url): string {
   throw new Error('bb-plugin-exosurface package root not found');
 }
 
-function modelChoice(value: unknown): value is ModelChoice {
+export function modelChoice(value: unknown): value is ModelChoice {
   const v = value as Record<string, unknown> | null;
   return !!v && typeof v === 'object' && typeof v.provider === 'string' && !!v.provider.trim() && typeof v.model === 'string' && !!v.model.trim()
     && THINKING.includes(v.thinking as Thinking);

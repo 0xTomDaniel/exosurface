@@ -181,18 +181,24 @@
     },
     "acceptance-name-header": {
       "status": "built",
-      "pr": 89,
-      "record": "20261105T035819Z-44d19186",
-      "commit": "39bbe5a792ade50ea9b939b247d7d9c36e92ec5f",
+      "pr": 91,
+      "record": "20261105T204005Z-0bde1c3d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
       "tests": []
     },
     "acceptance-auto-name": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T203747Z-89206fe2",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
+      "tests": []
     },
     "acceptance-rename": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 91,
+      "record": "20261105T203907Z-f777bc8d",
+      "commit": "84f4eaf9781346cd258d536d12fa62ef01a0d164",
+      "tests": []
     },
     "acceptance-live-activity": {
       "status": "planned",
