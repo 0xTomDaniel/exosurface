@@ -18,6 +18,7 @@ import {exoTheme} from './lib/exo-theme';
 import {ExoBlock,SurfaceInput,onSend} from './src/exo-turn';
 import {ThreadSidebar} from './src/thread-sidebar';
 import {SurfaceTitle} from './src/surface-title';
+import {Settings} from './src/settings';
 import {renameStyle} from './src/surface-rename';
 type Local={id:string;nativeFocus:string|undefined}|null;
 // The catalogs pages render with: their elements under this bundle's own tag names (src/bundle-tags.ts).
@@ -181,7 +182,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  },[ticks,busy,state?.threadId,rpc]);
  return <div className="flex h-full min-h-0 flex-col">
   <style>{documentStyle+exoTheme+renameStyle}</style>
-  <main ref={scroller} aria-label="Exosurface" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
+  <main ref={scroller} aria-label="Exo" className="exo-canvas min-h-[45%] min-w-0 flex-1 overflow-auto px-8 pt-6" style={{containerType:'inline-size',containerName:'exo-canvas'}}><div className="exo-frame">
    <div className="exo-top">
     <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
@@ -196,9 +197,12 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  </div>;
 }
 // The surfaces view (#68): the sidebar and the surface in view. Home (null) is the primary thread's page state as before.
+// Settings (#129, spec T3, T4) show in its place; the surface stays mounted underneath, hidden, so closing settings or
+// opening it from the sidebar puts it back as the person left it.
 function SurfacesPanel(){
- const[inView,setInView]=useState<string|null>(null);
- return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={setInView}/><div className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div></div>;
+ const[inView,setInView]=useState<string|null>(null),[settings,setSettings]=useState(false);
+ const open=(threadId:string|null)=>{setInView(threadId);setSettings(false);};
+ return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
 }
 export default definePluginApp(app=>{
  app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:SurfacesPanel});

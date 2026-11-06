@@ -16,7 +16,7 @@ const homePage = () => ({ ...empty('primary'), revision: 1, delivery: { epoch: '
   { version: 'v0.9', updateComponents: { surfaceId: 'week', components: [{ id: 'root', component: 'Text', text: HOME_PAGE }] } },
 ] }, updates: [], preview: null } });
 /** Home's page as rendered on the canvas: its surface section. */
-const homeShown = () => document.querySelector('main[aria-label="Exosurface"] section[data-surface="week"]') !== null;
+const homeShown = () => document.querySelector('main[aria-label="Exo"] section[data-surface="week"]') !== null;
 const input = () => document.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 
 test('New surface puts a new surface in view with one empty page; the sidebar lists Home, then the new surface', async () => {
