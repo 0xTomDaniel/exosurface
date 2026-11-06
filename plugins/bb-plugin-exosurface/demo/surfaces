@@ -5,7 +5,8 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, owner, bridge } from '../test/mock-bb.ts';
+import { liveFixture, installedFixture, owner, bridge } from '../test/mock-bb.ts';
+import { exoTab } from '../test/exo-tab.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
 import { reapOnExit } from '../test/reap.ts';
@@ -42,7 +43,7 @@ async function newSurface() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f), { kit, app, close } = await renderedApp();
   const { fireEvent, waitFor, within, screen } = kit.testing;
   const panel = app.navPanels.find(p => p.path === 'surface');
-  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: { thread_list: f.rpc.thread_list, thread_new: f.rpc.thread_new, workspace: f.rpc.workspace, exo_block: f.rpc.exo_block, exo_send: f.rpc.exo_send } });
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: { thread_list: f.rpc.thread_list, thread_new: f.rpc.thread_new, workspace: f.rpc.workspace, exo_block: f.rpc.exo_block, exo_send: f.rpc.exo_send, canonical_setup_status: f.rpc.canonical_setup_status } });
   try {
     const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
     const listed = () => sidebar().getAllByRole('listitem').map(li => li.textContent);
@@ -653,7 +654,38 @@ async function settings() {
   }
 }
 
-const SCENARIOS = { settings, 'one-tab': oneTab, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
+// #130: the Exo tab on a fresh fixture, Exo installed and not set up: settings offering set-up; the person presses Set up
+// Exo and, once set-up finishes, the tab shows the sidebar and Home with the input. Rendered app on the real server RPCs.
+async function firstRun() {
+  const f = await installedFixture();
+  const { kit, app, close } = await renderedApp();
+  const view = kit.renderSlot(app.navPanels.find(p => p.title === 'Exo'), { subPath: '' }, { rpc: f.rpc });
+  const s = exoTab(view, kit.testing.fireEvent), until = waiter(s.describe);
+  try {
+    await until('settings offering set-up', () => s.fields().length === 4 && s.setUpButton() !== null);
+    console.log(`Exo tab opened (not set up): settings ${s.settingsShown() ? 'shown' : 'NOT shown'}; sidebar ${s.sidebarShown() ? 'SHOWN' : 'none'}; surface ${s.surfaceShown() ? 'SHOWN' : 'none'}; input ${s.inputs() ? 'SHOWN' : 'none'}`);
+    for (const line of s.text()) console.log(`  ${line}`);
+    for (const [label, value, editable] of s.fields()) console.log(`  ${label.padEnd(10)} ${value}${editable ? '' : ' (fixed)'}`);
+    console.log(`  button: ${s.setUpButton()}`);
+    const first = s.settingsShown() === 1 && !s.sidebarShown() && !s.surfaceShown() && !s.inputs() && s.setUpButton() === 'Set up Exo';
+    const t0 = Date.now(); s.press('Set up Exo'); console.log('pressed Set up Exo');
+    await until('the sidebar and Home with the input', () => s.listed().join('|') === 'Home' && s.inView().join('|') === 'Home' && s.input() !== null, 60000);
+    const status = await f.rpc.canonical_setup_status(null);
+    console.log(`set-up finished in ${Date.now() - t0} ms: stage ${status.stage}; BB conversations created ${f.spawns.length}`);
+    console.log(`Exo tab: sidebar ${s.listed().join(', ')}; in view ${s.inView().join(', ')}; settings ${s.settingsShown() ? 'SHOWN' : 'none'}; surface ${s.surfaceShown() ? 'shown' : 'NONE'}; input ${s.input() === '' ? 'shown, empty' : JSON.stringify(s.input())}`);
+    if (!first || status.stage !== 'bound' || f.spawns.length !== 1 || s.input() !== '' || s.settingsShown() || s.surfaceShown() !== 1) throw new Error('first-run failed');
+  } finally {
+    view.unmount(); close();
+    // Any Pi set-up started, observed gone before the fixture's removal.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    if (await settled(() => !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`Pi still running (${pis.filter(alive).join(', ')}); fixture kept at ${f.root}`); process.exitCode = 1; }
+    await f.model.close();
+  }
+}
+
+const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
