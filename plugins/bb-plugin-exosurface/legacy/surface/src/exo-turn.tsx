@@ -1,6 +1,7 @@
 // The surface view's Exo block and input (#69, #79; spec pages-and-activity S1, S2, E1-E4, E7, E8), for whichever thread is
 // in view. The block opens the page: the person's latest message as a bubble, then only Exo's words from that turn as plain
-// text, or that Exo is working; the person never writes in it.
+// text, or while Exo works one line of what it is doing (E9: the exo_block activity, else that Exo is working); the person
+// never writes in it.
 // The input sends a turn on the thread and is empty again once BB accepts it. There is no transcript: earlier turns
 // stay in the thread.
 // It floats over the bottom of the surface in the page's column (#80, S11): the page scrolls beneath it, and the content
@@ -9,7 +10,7 @@ import {useCallback,useEffect,useState,type FormEvent,type KeyboardEvent} from '
 import {Markdown,useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
 
-type Block={working:boolean;said:string;words:string};
+type Block={working:boolean;said:string;words:string;activity?:string};
 // A send from the input refreshes the block of that thread at once (both are mounted in the same surface view).
 const sent=new Set<(threadId:string,text:string)=>void>();
 /** Calls `listener` on each send BB accepted from the input (not on a page press, a poll or a turn ending); returns the unsubscribe. */
@@ -29,7 +30,7 @@ export function ExoBlock({threadId}:{threadId:string|null}){
  },[threadId,rpc]);
  return <section aria-label="Exo" data-exo-block="" className="exo-block mb-6 text-sm">
   {block?.said?<p data-exo-said="" className="exo-bubble">{block.said}</p>:null}
-  <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" style={{color:'var(--exo-quiet)'}}>Exo is working on this page…</p>
+  <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" className="exo-activity" style={{color:'var(--exo-quiet)'}}>{block.activity??'Exo is working on this page…'}</p>
    :block?.words?<Markdown content={block.words}/>:null}</div>
   {error&&<p role="alert" className="text-destructive">{error}</p>}
  </section>;

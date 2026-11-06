@@ -318,3 +318,19 @@ export async function stepsTurn(f: Fixture, threadId: string, topic: string, see
     await new Promise(r => setTimeout(r, 25));
   }
 }
+
+/** stepsTurn as the person sees it: after a "steps: <topic>" send from the rendered surface view, samples `line` (the activity
+ * line on screen, undefined when it shows none) until `done` holds, releasing each held step of the fake model once a new
+ * line has been seen on screen. Returns each line seen, in order. Wall-clock (Date.now()) deadline. */
+export async function stepsShown(f: Fixture, topic: string, line: () => string | undefined, done: () => boolean, ms = 60000) {
+  const lines: string[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
+  mkdirSync(gates, { recursive: true });
+  for (const end = Date.now() + ms; ;) {
+    const now = line();
+    if (now !== undefined && now !== lines.at(-1)) lines.push(now);
+    for (const count = new Set(lines).size; released < count;) writeFileSync(join(gates, `${topic}-${++released}`), '');
+    if (done()) return lines;
+    if (Date.now() > end) throw new Error(`Exo's turn did not end on screen; lines seen: ${JSON.stringify(lines)}`);
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
