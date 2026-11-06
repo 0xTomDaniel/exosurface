@@ -25,7 +25,7 @@ export function createOverview(list: () => Promise<any[]>, get: (id: string) => 
       const all = state?.runtimeKind === 'canonical' && existsSync(ownerFile) ? load(ownerFile) : undefined;
       // The owner's state for this thread: the primary's lane, or a bound thread's own (state.threads[id], #67).
       const owner = all && all.threadId !== t.id ? all.threads?.[t.id] : all;
-      // The model as the thread's own Pi reports it on start (live.ts runtime info), the one Exo runs on (#129, settings).
+      // The model as the thread's own Pi reports it on start and on each model switch (live.ts runtime info), the one Exo runs on (#129, settings).
       const infoFile = join(HOME, 'runtime-info', `${t.id}.json`);
       const info = state?.runtimeKind === 'canonical' && existsSync(infoFile) ? load(infoFile) : undefined;
       return { id: t.id, title: t.title, status: owner?.ready ? owner.streaming ? 'running' : 'idle' : t.status,

@@ -46,8 +46,9 @@ export default function optchat(pi){
   if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
  });
  pi.on('session_shutdown',()=>{lock?.close();});
- pi.registerProvider('anthropic',{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-anthropic',
-  models:[{id:'claude-opus-5-5',name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
+ // Opus and Sol (state.ts EXO_MODELS, the models picked in BB), each answered by this offline stream.
+ for(const[provider,id]of[['anthropic','claude-opus-5-5'],['openai-codex','gpt-6.1-sol']])pi.registerProvider(provider,{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-'+provider,
+  models:[{id,name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
    void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
@@ -270,7 +271,8 @@ export function bridge(f: Fixture) {
       if (answer.result) providers.set(threadId, answer.result.providerThreadId);
       return answer;
     },
-    send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
+    /** turn/start as BB sends the person's message; `model`, the one picked in BB's model picker (default Opus). */
+    send: (threadId: string, text: string, model = options.model) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options: { ...options, model }, input: [{ type: 'text', text }] }),
     async settled(threadIds: string[], ms = 20000) {
       if (!(await settled(() => threadIds.every(t => turn(t).end), ms, 20))) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
     },

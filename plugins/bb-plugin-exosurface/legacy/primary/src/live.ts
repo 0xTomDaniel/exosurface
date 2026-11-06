@@ -17,6 +17,8 @@ export default function live(pi: ExtensionAPI) {
     return data;
   };
   pi.on('session_start', (_e, ctx) => { info(ctx); });
+  // A model picked in BB reaches the running Pi as set_model (model-selection.ts): Pi emits model_select, not session_start.
+  pi.on('model_select', (_e, ctx) => { info(ctx); });
   pi.registerCommand('exo-info', { description: 'Inspect Exo runtime identity/resources without a model call', handler: async (_args, ctx) => {
     const data = info(ctx);
     ctx.ui.setStatus('exo-runtime', `${data.model?.provider}/${data.model?.id} · ${data.skills.length} skills · exo-optchat`);
