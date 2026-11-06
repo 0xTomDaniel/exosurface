@@ -10,7 +10,6 @@ const entries={
  'owner-service':'legacy/primary/release-owner.ts',
  live:'legacy/primary/src/live.ts',
  'canonical-initialization':'legacy/primary/src/canonical-initialization.ts',
- fixture:'legacy/primary/src/fixture.ts',
  'workspace-extension':'legacy/surface/src/workspace-extension.ts',
  'workspace-frame':'legacy/surface/src/workspace-frame.ts',
 };

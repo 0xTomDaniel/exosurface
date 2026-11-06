@@ -240,7 +240,7 @@ export function bridge(f: Fixture) {
     const value = JSON.parse(l); lines.push({ at: Date.now() - t0, value });
     if (value.method === 'thread/delta' && value.params.deltas.some((d: any) => d.kind === 'turn.boundary')) void f.idle(value.params.threadId);
   } } });
-  const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
+  const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: {} };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {
     if (await settled(() => lines.some(l => l.value.id === n), ms, 20)) return lines.find(l => l.value.id === n)!.value;
