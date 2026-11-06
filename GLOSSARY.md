@@ -2,6 +2,16 @@
 
 What the person and Exo share: surfaces of pages and one input, where each surface's activity is its thread. Words, visuals and presses are senses of one exchange, and every one of them is kept as faithfully as the others. The behaviour is specified in [pages and activity](docs/specs/pages-and-activity.spec.html).
 
+## The Exo tab
+
+**Exo tab**:
+The one tab in BB where the person works with Exo: the sidebar, the surface in view, and settings. Exo is its surfaces and the memory behind them.
+_Avoid_: Exosurface tab, proof tab
+
+**Settings**:
+The screen, opened from the sidebar, where the person sets Exo up and sees how it runs: whether it is set up, its model, whether it is running, and its owner profile. Not a surface; it has no input.
+_Avoid_: diagnostics, proof page, debug panel
+
 ## The surface
 
 **Surface** (Exosurface in full):
