@@ -215,15 +215,15 @@
     "acceptance-one-tab": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T191322Z-8d97b08e",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T211643Z-d855cdf9",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     },
     "acceptance-tab-opens-home": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T191443Z-6a72a34a",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T211813Z-49935b62",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     },
     "acceptance-plugin-name": {
@@ -233,29 +233,29 @@
     "acceptance-settings-shows": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T191540Z-bbfc0081",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T211915Z-6cb6581a",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     },
     "acceptance-settings-close": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T191719Z-f130f5f0",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T212102Z-f846dd9d",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     },
     "acceptance-first-run": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T191941Z-c95039f1",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T212332Z-e2f640b6",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     },
     "acceptance-set-up": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T192040Z-2b8b6ad2",
-      "commit": "0dd021183876f71d9498b143a9e762111d269cce",
+      "record": "20261106T212547Z-775bb8cc",
+      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
       "tests": []
     }
   }
