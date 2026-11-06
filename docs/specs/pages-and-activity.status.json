@@ -1,6 +1,6 @@
 {
   "spec": "pages-and-activity.spec.html",
-  "accepted_commit": "1dcd1d40c2227828cde24a2a80693a926bc805fc",
+  "accepted_commit": "9cd9ffa22c401f2c56fdbb5d64aca05cb9a56e6c",
   "criteria": {
     "acceptance-no-chat": {
       "status": "built",
@@ -209,6 +209,34 @@
       "pr": null
     },
     "acceptance-press-to-top": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-one-tab": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-tab-opens-home": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-plugin-name": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-settings-shows": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-settings-close": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-first-run": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-set-up": {
       "status": "planned",
       "pr": null
     }

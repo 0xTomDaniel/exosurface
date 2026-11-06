@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Settings - mockup</title>
+<style>
+  [data-mockup-frame] {
+    --exo-ink: #1d2128; --exo-paper: #ffffff; --exo-quiet: #646b78; --exo-line: #dde1e7;
+    --exo-accent: #3e5fd8; --exo-good: #1c8c80;
+    --exo-wash: color-mix(in oklab, #1d2128 3.5%, #ffffff);
+    --exo-display: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif;
+    --exo-text: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--exo-paper); color: var(--exo-ink); font-family: var(--exo-text); font-size: 15px; line-height: 1.6;
+    border: 1px solid var(--exo-line); display: flex; margin: 0 0 2rem;
+  }
+  [data-mockup-frame="desktop"] { width: 1440px; min-height: 640px; }
+  [data-mockup-frame="phone"] { width: 390px; min-height: 640px; flex-direction: column; }
+  .bb-nav { width: 64px; border-right: 1px solid var(--exo-line); background: var(--exo-wash); padding: 1rem .5rem; display: flex; flex-direction: column; gap: .6rem; align-items: center; font-size: .75rem; color: var(--exo-quiet); }
+  .bb-nav .bb-tab { padding: .4rem .3rem; border-radius: 8px; text-align: center; }
+  .bb-nav .bb-tab-on { background: var(--exo-paper); color: var(--exo-ink); font-weight: 650; border: 1px solid var(--exo-line); }
+  .exo-side { width: 260px; border-right: 1px solid var(--exo-line); padding: 1rem; display: flex; flex-direction: column; gap: .3rem; }
+  .exo-side h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--exo-quiet); margin: .9rem 0 .2rem; font-weight: 600; }
+  .exo-side .exo-row { padding: .3rem .5rem; border-radius: 6px; font-size: .9rem; }
+  .exo-side .exo-row-nest { padding-left: 1.5rem; }
+  .exo-side .exo-settings-button { margin-top: auto; padding: .45rem .6rem; border-radius: 8px; border: 1px solid var(--exo-line); background: var(--exo-wash); font: inherit; font-size: .9rem; color: var(--exo-ink); text-align: left; }
+  .exo-settings { flex: 1; padding: 1.5rem 2rem; max-width: 720px; }
+  .exo-settings-top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--exo-line); padding-bottom: .75rem; margin-bottom: 1.2rem; }
+  .exo-settings-top h1 { font-family: var(--exo-display); font-size: 1.1rem; font-weight: 650; margin: 0; }
+  .exo-close { font: inherit; font-size: .85rem; border: 1px solid var(--exo-line); background: transparent; color: var(--exo-ink); border-radius: 8px; padding: .3rem .8rem; }
+  .exo-facts { display: grid; grid-template-columns: 11rem 1fr; gap: .55rem 1rem; margin: 0; }
+  .exo-facts dt { color: var(--exo-quiet); font-size: .9rem; }
+  .exo-facts dd { margin: 0; font-size: .95rem; }
+  .exo-ok::before { content: "\25CF"; color: var(--exo-good); margin-right: .4rem; }
+  .exo-phone-bar { display: flex; justify-content: space-between; align-items: center; padding: .7rem 1rem; border-bottom: 1px solid var(--exo-line); background: var(--exo-wash); font-size: .85rem; }
+  .exo-phone-bar strong { font-family: var(--exo-display); }
+  [data-mockup-frame="phone"] .exo-settings { padding: 1rem; }
+  [data-mockup-frame="phone"] .exo-facts { grid-template-columns: 1fr; gap: .1rem; }
+  [data-mockup-frame="phone"] .exo-facts dd { margin-bottom: .7rem; }
+</style>
+<script defer src="../../.viz/runtime.js"></script>
+</head>
+<body>
+<section data-mockup-frame="desktop" data-anchor="desktop" data-illustrates="tab-one tab-settings-shows">
+  <nav class="bb-nav" data-anchor="desktop-bb-nav" data-illustrates="tab-one acceptance-one-tab">
+    <span class="bb-tab">Chats</span>
+    <span class="bb-tab bb-tab-on">Exo</span>
+  </nav>
+  <aside class="exo-side" data-anchor="desktop-sidebar" data-illustrates="tab-settings-button sidebar-surfaces">
+    <span class="exo-row">Home</span>
+    <h3>Needs you</h3>
+    <span class="exo-row">Weekend trip</span>
+    <h3>Surfaces</h3>
+    <span class="exo-row">Garden plan</span>
+    <span class="exo-row exo-row-nest">Backyard</span>
+    <span class="exo-row">Weekend trip</span>
+    <button type="button" class="exo-settings-button" data-anchor="desktop-settings-button" data-illustrates="tab-settings-button">Settings</button>
+  </aside>
+  <main class="exo-settings" data-anchor="desktop-settings" data-illustrates="tab-settings-shows acceptance-settings-shows boundary-settings">
+    <div class="exo-settings-top">
+      <h1>Settings</h1>
+      <button type="button" class="exo-close" data-anchor="desktop-close" data-illustrates="acceptance-settings-close">Close</button>
+    </div>
+    <dl class="exo-facts" data-anchor="desktop-facts">
+      <dt>Set-up</dt><dd class="exo-ok">Exo is set up</dd>
+      <dt>Model</dt><dd>Claude Opus 5.5</dd>
+      <dt>Running</dt><dd class="exo-ok">Exo is running</dd>
+      <dt>Owner profile</dt><dd>exo-optchat</dd>
+    </dl>
+  </main>
+</section>
+<section data-mockup-frame="phone" data-anchor="phone" data-illustrates="tab-one tab-settings-shows">
+  <div class="exo-phone-bar" data-anchor="phone-bar" data-illustrates="tab-one">
+    <strong>Exo</strong>
+    <button type="button" class="exo-close" data-anchor="phone-close" data-illustrates="acceptance-settings-close">Close</button>
+  </div>
+  <main class="exo-settings" data-anchor="phone-settings" data-illustrates="tab-settings-shows acceptance-settings-shows">
+    <div class="exo-settings-top"><h1>Settings</h1></div>
+    <dl class="exo-facts" data-anchor="phone-facts">
+      <dt>Set-up</dt><dd class="exo-ok">Exo is set up</dd>
+      <dt>Model</dt><dd>Claude Opus 5.5</dd>
+      <dt>Running</dt><dd class="exo-ok">Exo is running</dd>
+      <dt>Owner profile</dt><dd>exo-optchat</dd>
+    </dl>
+  </main>
+</section>
+</body>
+</html>
