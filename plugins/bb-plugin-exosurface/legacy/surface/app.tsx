@@ -201,7 +201,7 @@ function SurfacesPanel(){
  return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={setInView}/><div className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div></div>;
 }
 export default definePluginApp(app=>{
- app.slots.navPanel({id:'surface',path:'surface',title:'Exosurface',icon:'PanelsTopLeft',component:SurfacesPanel});
+ app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:SurfacesPanel});
  app.slots.messageDirective({id:'exo-surface',component:ExoSurfaceCard});
  app.composer.customize({id:'exo-bring-back',scopes:['thread'],banners:[{id:'bring-back',chrome:'bare',component:BringBackPill}],actions:[{id:'bring-back-cancel',component:BringBackCancel}]});
 });
