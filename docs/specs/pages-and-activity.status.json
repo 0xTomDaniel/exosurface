@@ -213,49 +213,49 @@
       "pr": null
     },
     "acceptance-one-tab": {
-      "status": "built",
-      "pr": 133,
-      "record": "20261106T211643Z-d855cdf9",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
-      "tests": []
+      "status": "planned",
+      "pr": null
     },
     "acceptance-tab-opens-home": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T211813Z-49935b62",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
+      "record": "20261107T024210Z-8f8afe39",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
       "tests": []
     },
     "acceptance-plugin-name": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261107T024357Z-a69a0115",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
+      "tests": []
     },
     "acceptance-settings-shows": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T211915Z-6cb6581a",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
+      "record": "20261107T024520Z-638a8571",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
       "tests": []
     },
     "acceptance-settings-close": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T212102Z-f846dd9d",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
+      "record": "20261107T024642Z-e5f10733",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
       "tests": []
     },
     "acceptance-first-run": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T212332Z-e2f640b6",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
+      "record": "20261107T024858Z-2b1b0f6f",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
       "tests": []
     },
     "acceptance-set-up": {
       "status": "built",
       "pr": 133,
-      "record": "20261106T212547Z-775bb8cc",
-      "commit": "c11902248fa7205a52bcf80c80a221db64e9015f",
+      "record": "20261107T025123Z-d3a4a988",
+      "commit": "04b9eb9df6e9f3a32c837e0789d4924e42facba1",
       "tests": []
     }
   }
