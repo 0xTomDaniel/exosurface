@@ -43,15 +43,17 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   await send('draw: Week plan');
   await until('the first reply', () => reply()?.textContent === 'Exo (exo-optchat): draw: Week plan');
   await until('the drawn page', () => !!main().querySelector('[data-surface]'));
-  await send('plan the week, with Friday off');
+  // The fake model holds this turn ("hold:", test/mock-bb.ts) until the working block has been seen, so it cannot finish first.
+  await send('hold: plan the week, with Friday off');
   // While Exo works, the bubble is the message just sent and the block's one working line follows it.
-  await until('the working block', () => bubble()?.textContent === 'plan the week, with Friday off' && reply()?.textContent === 'Exo is working on this page…');
+  await until('the working block', () => bubble()?.textContent === 'hold: plan the week, with Friday off' && reply()?.textContent === 'Reading your message');
   assert.equal(block()!.querySelectorAll('[role="status"]').length, 1);
-  await until('the second reply', () => reply()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
+  f.release('exo-optchat');
+  await until('the second reply', () => reply()?.textContent === 'Exo (exo-optchat): hold: plan the week, with Friday off');
 
   const page = main().querySelector('[data-surface]') as HTMLElement;
   assert.equal(title()!.textContent, 'Home');
-  assert.equal(bubble()!.textContent, 'plan the week, with Friday off');
+  assert.equal(bubble()!.textContent, 'hold: plan the week, with Friday off');
   // Screen order: the title, the bubble, the reply, the page's content; one scrolling region holds them all.
   assert.ok(before(title()!, bubble()!) && before(bubble()!, reply()!) && before(reply()!, page), main().innerHTML);
   assert.ok(main().contains(bubble()) && main().contains(page));
