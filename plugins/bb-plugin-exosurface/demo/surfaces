@@ -5,7 +5,8 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
+import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
+import { exoTab } from '../test/exo-tab.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
 import { reapOnExit } from '../test/reap.ts';
@@ -42,7 +43,7 @@ async function newSurface() {
   const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f), { kit, app, close } = await renderedApp();
   const { fireEvent, waitFor, within, screen } = kit.testing;
   const panel = app.navPanels.find(p => p.path === 'surface');
-  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: { thread_list: f.rpc.thread_list, thread_new: f.rpc.thread_new, workspace: f.rpc.workspace, exo_block: f.rpc.exo_block, exo_send: f.rpc.exo_send } });
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: { thread_list: f.rpc.thread_list, thread_new: f.rpc.thread_new, workspace: f.rpc.workspace, exo_block: f.rpc.exo_block, exo_send: f.rpc.exo_send, canonical_setup_status: f.rpc.canonical_setup_status } });
   try {
     const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
     const listed = () => sidebar().getAllByRole('listitem').map(li => li.textContent);
@@ -55,7 +56,7 @@ async function newSurface() {
     if (started.error) throw new Error(started.error.message);
     await waitFor(async () => { if (!(await f.rpc.workspace({ deployment: 'main', threadId: fresh, cursor: null })).ready) throw new Error('not ready'); }, { timeout: 15000 });
     const current = sidebar().getAllByRole('button').filter(b => b.getAttribute('aria-current') === 'page').map(b => b.textContent);
-    const main = document.querySelector('main[aria-label="Exosurface"]');
+    const main = document.querySelector('main[aria-label="Exo"]');
     const pages = main.querySelectorAll('[data-surface]').length, page = await f.rpc.workspace({ deployment: 'main', threadId: fresh, cursor: null });
     const inputs = [...document.querySelectorAll('textarea, input[type=text], [role=textbox]')].filter(e => !e.closest('nav'));
     const chat = document.body.textContent.includes(`ThreadChat stub (${fresh})`);
@@ -305,7 +306,7 @@ async function inputFloats() {
   const main = () => view.container.querySelector('main'), form = () => view.container.querySelector('form[aria-label="Message Exo"]');
   const input = () => form()?.querySelector('textarea'), reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]');
   const until = waiter();
-  const name = el => el === main() ? 'the scrolling surface (main "Exosurface")' : el?.matches('form') ? 'the input itself' : el ? `the page's column (max-width ${getComputedStyle(el).maxWidth})` : 'the window';
+  const name = el => el === main() ? 'the scrolling surface (main "Exo")' : el?.matches('form') ? 'the input itself' : el ? `the page's column (max-width ${getComputedStyle(el).maxWidth})` : 'the window';
   try {
     await until('the input', () => input() && !input().disabled);
     fireEvent.change(input(), { target: { value: 'draw: Week plan' } });
@@ -636,7 +637,123 @@ async function activityBlock() {
   }
 }
 
-const SCENARIOS = { 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
+// #128: Exo is one BB tab named "Exo" and BB lists the plugin as "Exo" (package.json bb.name); the tab opens on the sidebar
+// and Home with the input shown. Rendered app (package.json bb.app) on the real server RPCs; Home has a page Exo drew.
+async function oneTab() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  host.send('primary', 'draw week: Week plan'); await host.settled(['primary']);
+  const { kit, app, close } = await renderedApp();
+  const titles = app.navPanels.map(p => String(p.title)), name = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf8')).bb.name;
+  console.log(`nav panels: ${titles.map(t => JSON.stringify(t)).join(', ')} (${titles.length})`);
+  console.log(`plugin display name (package.json bb.name): ${JSON.stringify(name)}`);
+  const panel = app.navPanels.find(p => p.title === 'Exo');
+  if (!panel) { close(); throw new Error('no panel titled "Exo"'); }
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
+  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]');
+  const entries = () => [...(sidebar()?.querySelectorAll('li') ?? [])].map(li => li.textContent);
+  const inView = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent);
+  const page = () => view.container.querySelector('section[data-surface]')?.getAttribute('aria-label') ?? null;
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const until = waiter(() => `sidebar ${entries().join(', ')}; in view ${inView().join(', ')}; page ${JSON.stringify(page())}; input ${input() ? 'shown' : 'none'}`);
+  try {
+    await until('the sidebar, Home and its input', () => entries().join('|') === 'Home' && page() === 'Week plan' && input() && !input().disabled, 20000);
+    console.log(`Exo tab opened: sidebar ${entries().join(', ')}; in view ${inView().join(', ')}`);
+    console.log(`  Home page: ${JSON.stringify(page())}`);
+    console.log(`  input: ${input() && !input().disabled ? 'shown' : 'NOT shown'}`);
+    const ok = titles.join('|') === 'Exo' && name === 'Exo' && inView().join('|') === 'Home';
+    if (!ok) throw new Error('one-tab failed');
+  } finally {
+    view.unmount(); close();
+    // The fixture's processes, observed gone before its removal as in badArguments' teardown.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+// #129: the Exo tab on a set-up fixture; the person presses Settings (below the tree), reads what settings show, then closes
+// them and the surface in view is back with its page. Rendered app (package.json bb.app) on the real server RPCs.
+async function settings() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  host.send('primary', 'draw week: Week plan'); await host.settled(['primary']);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.title === 'Exo'), { subPath: '' }, { rpc: f.rpc });
+  const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
+  const all = selector => [...view.container.querySelectorAll(selector)].filter(shown);
+  const sidebar = () => all('nav[aria-label="Surfaces"]')[0];
+  const panel = () => all('main[aria-label="Settings"]')[0];
+  const inView = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent);
+  const surface = () => all('main[aria-label="Exo"]').length;
+  const page = () => all('main[aria-label="Exo"] section[data-surface]').map(s => s.getAttribute('aria-label'));
+  const facts = () => [...(panel()?.querySelectorAll('dt') ?? [])].map(dt => [dt.textContent, dt.nextElementSibling?.textContent]);
+  const press = (name, within) => fireEvent.click([...within().querySelectorAll('button')].find(b => b.textContent === name));
+  const until = waiter(() => `in view ${JSON.stringify(inView())}; surface shown ${surface()}; page ${JSON.stringify(page())}; settings ${JSON.stringify(facts())}`);
+  try {
+    await until('Home with its page', () => inView().join() === 'Home' && page().join() === 'Week plan');
+    console.log(`Exo tab: in view ${inView().join(', ')}; page ${page().join(', ')}; sidebar buttons ${[...sidebar().querySelectorAll('button')].map(b => JSON.stringify(b.textContent)).join(', ')}`);
+    press('Settings', sidebar);
+    await until('settings with the owner\'s status', () => facts().length === 4 && facts().every(([, v]) => v !== 'Loading…'));
+    console.log(`pressed Settings: surface shown ${surface() ? 'yes' : 'no'}; settings show:`);
+    for (const [term, value] of facts()) console.log(`  ${term}: ${value}`);
+    const controls = [...panel().querySelectorAll('button, a, [role="button"]')].map(b => b.textContent), inputs = all('input, textarea, select, [contenteditable="true"], [role="textbox"]').length;
+    console.log(`  controls: ${controls.map(c => JSON.stringify(c)).join(', ')}; inputs in view: ${inputs}`);
+    const shownFacts = facts().map(([, v]) => v);
+    if (shownFacts[0] !== 'Exo is set up' || shownFacts[2] !== 'Exo is running' || shownFacts[1] === 'Not reported yet' || surface()) throw new Error('settings do not show a set-up, running Exo in place of the surface');
+    press('Close', panel);
+    await until('the surface back', () => !panel() && surface() === 1);
+    console.log(`closed settings: in view ${inView().join(', ')}; page ${page().join(', ')}`);
+    if (inView().join() !== 'Home' || page().join() !== 'Week plan' || controls.join() !== 'Close' || inputs !== 0) throw new Error('settings failed');
+  } finally {
+    view.unmount(); close();
+    // The fixture's processes, observed gone before its removal as in oneTab's teardown.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+// #130: the Exo tab on a fresh fixture, Exo installed and not set up: settings offering set-up; the person presses Set up
+// Exo and, once set-up finishes, the tab shows the sidebar and Home with the input. Rendered app on the real server RPCs.
+async function firstRun() {
+  const f = await installedFixture();
+  const { kit, app, close } = await renderedApp();
+  const view = kit.renderSlot(app.navPanels.find(p => p.title === 'Exo'), { subPath: '' }, { rpc: f.rpc });
+  const s = exoTab(view, kit.testing.fireEvent), until = waiter(s.describe);
+  try {
+    await until('settings offering set-up', () => s.fields().length === 4 && s.setUpButton() !== null);
+    console.log(`Exo tab opened (not set up): settings ${s.settingsShown() ? 'shown' : 'NOT shown'}; sidebar ${s.sidebarShown() ? 'SHOWN' : 'none'}; surface ${s.surfaceShown() ? 'SHOWN' : 'none'}; input ${s.inputs() ? 'SHOWN' : 'none'}`);
+    for (const line of s.text()) console.log(`  ${line}`);
+    for (const [label, value, editable] of s.fields()) console.log(`  ${label.padEnd(10)} ${value}${editable ? '' : ' (fixed)'}`);
+    console.log(`  button: ${s.setUpButton()}`);
+    const first = s.settingsShown() === 1 && !s.sidebarShown() && !s.surfaceShown() && !s.inputs() && s.setUpButton() === 'Set up Exo';
+    const t0 = Date.now(); s.press('Set up Exo'); console.log('pressed Set up Exo');
+    await until('the sidebar and Home with the input', () => s.listed().join('|') === 'Home' && s.inView().join('|') === 'Home' && s.input() !== null, 60000);
+    const status = await f.rpc.canonical_setup_status(null);
+    console.log(`set-up finished in ${Date.now() - t0} ms: stage ${status.stage}; BB conversations created ${f.spawns.length}`);
+    console.log(`Exo tab: sidebar ${s.listed().join(', ')}; in view ${s.inView().join(', ')}; settings ${s.settingsShown() ? 'SHOWN' : 'none'}; surface ${s.surfaceShown() ? 'shown' : 'NONE'}; input ${s.input() === '' ? 'shown, empty' : JSON.stringify(s.input())}`);
+    if (!first || status.stage !== 'bound' || f.spawns.length !== 1 || s.input() !== '' || s.settingsShown() || s.surfaceShown() !== 1) throw new Error('first-run failed');
+  } finally {
+    view.unmount(); close();
+    // Any Pi set-up started, observed gone before the fixture's removal.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    if (await settled(() => !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`Pi still running (${pis.filter(alive).join(', ')}); fixture kept at ${f.root}`); process.exitCode = 1; }
+    await f.model.close();
+  }
+}
+
+const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

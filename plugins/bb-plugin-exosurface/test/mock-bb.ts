@@ -49,8 +49,9 @@ export default function optchat(pi){
   if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
  });
  pi.on('session_shutdown',()=>{lock?.close();});
- pi.registerProvider('anthropic',{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-anthropic',
-  models:[{id:'claude-opus-5-5',name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
+ // Opus and Sol (state.ts EXO_MODELS, the models picked in BB), each answered by this offline stream.
+ for(const[provider,id]of[['anthropic','claude-opus-5-5'],['openai-codex','gpt-6.1-sol']])pi.registerProvider(provider,{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-'+provider,
+  models:[{id,name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
    void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
@@ -133,6 +134,8 @@ async function serverRpc(vault: string) {
     logRequest(threadId, text, initiator, senderThreadId, 'tell');
     provider.deliver!(threadId, text);
   };
+  // BB faults a test sets: the next `threadGet` reads of a thread (bb.sdk.threads.get) fail as a lost connection does.
+  const faults = { threadGet: 0 };
   const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
   // BB's thread lifecycle events (bb.events) and the plugin's log lines.
   const listeners: Record<string, ((payload: any) => unknown)[]> = {}, logs: string[] = [];
@@ -147,7 +150,7 @@ async function serverRpc(vault: string) {
     experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(contract: Record<string, { input: any; output: any }>, h: typeof handlers) { for (const [method, handler] of Object.entries(h)) handlers[method] = checkedRpc(method, contract[method], handler); } },
     sdk: {
       threads: {
-        async get({ threadId }: { threadId: string }) { return thread(threadId); }, async list() { return [...threads.values()]; },
+        async get({ threadId }: { threadId: string }) { if (faults.threadGet > 0) { faults.threadGet--; throw new Error('mock BB: connection lost'); } return thread(threadId); }, async list() { return [...threads.values()]; },
         async update({ threadId, title }: { threadId: string; title?: string | null }) {
           const t = thread(threadId); if (title !== undefined) t.title = title;
           if (!threads.has(threadId)) others.set(threadId, t);
@@ -213,11 +216,12 @@ async function serverRpc(vault: string) {
   /** The person's queued message sent with BB's explicit Send-now: BB skips the dispatch pass for it by design (BB 0.48
    *  dispatch: `if (!sendNow && hasMessageDispatchHooks())`), then logs the request (author "user") and starts the turn. */
   const sendNow = (threadId: string, text: string) => { logRequest(threadId, text, 'user', null, 'tell'); provider.deliver!(threadId, text); };
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults };
 }
 
-/** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
-export async function liveFixture() {
+/** Exo installed and not set up (#130): the plugin registered on a mock BB with the installer's local config, no set-up
+ *  run yet. Sets EXO_CONFIG. */
+export async function installedFixture() {
   if (!existsSync(join(PLUGIN, 'dist', 'canonical-initialization.js')) || !existsSync(join(PLUGIN, 'dist', 'optchat-init.js'))) throw new Error('Run npm run build:owner && npm run build:runtime first (the packaged runtime is what the owner launches)');
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'exo-live-')));
   const home = join(root, 's'), optchatHome = join(root, 'o'), vault = join(root, 'v'), optchat = join(root, 'optchat');
@@ -231,15 +235,21 @@ export async function liveFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow } = await serverRpc(vault);
-  const setup = await rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault, piCli: PI_CLI, optchat, authorizeInitialization: true });
-  // The person's own instructions, written after setup: every Exo thread must read exactly these.
-  writeFileSync(join(optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults } = await serverRpc(vault);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, config, rpc, setup, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, optchat, piCli: PI_CLI, config, rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
-type Fixture = Awaited<ReturnType<typeof liveFixture>>;
+type Fixture = Awaited<ReturnType<typeof installedFixture>>;
+
+/** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
+export async function liveFixture() {
+  const f = await installedFixture();
+  const setup = await f.rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault: f.vault, piCli: f.piCli, optchat: f.optchat, authorizeInitialization: true });
+  // The person's own instructions, written after setup: every Exo thread must read exactly these.
+  writeFileSync(join(f.optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
+  return { ...f, setup };
+}
 
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 
@@ -265,7 +275,7 @@ export function bridge(f: Fixture) {
     const value = JSON.parse(l); lines.push({ at: Date.now() - t0, value });
     if (value.method === 'thread/delta' && value.params.deltas.some((d: any) => d.kind === 'turn.boundary')) void f.idle(value.params.threadId);
   } } });
-  const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: { runtimeKind: 'canonical' } };
+  const options = { model: 'exo-opus-5-5', reasoningLevel: 'high', permissionMode: 'full', permissionScope: 'full', approvalReviewer: null, permissionEscalation: null, providerOptions: {} };
   const request = (method: string, params: object) => { const n = ++id; child.stdin!.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n'); return n; };
   const response = async (n: number, ms = 15000) => {
     if (await settled(() => lines.some(l => l.value.id === n), ms, 20)) return lines.find(l => l.value.id === n)!.value;
@@ -286,7 +296,8 @@ export function bridge(f: Fixture) {
       if (answer.result) providers.set(threadId, answer.result.providerThreadId);
       return answer;
     },
-    send: (threadId: string, text: string) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options, input: [{ type: 'text', text }] }),
+    /** turn/start as BB sends the person's message; `model`, the one picked in BB's model picker (default Opus). */
+    send: (threadId: string, text: string, model = options.model) => request('turn/start', { threadId, providerThreadId: providers.get(threadId), clientRequestId: `creq_abcdefghi${'23456789'[id % 8]}`, options: { ...options, model }, input: [{ type: 'text', text }] }),
     async settled(threadIds: string[], ms = 20000) {
       if (!(await settled(() => threadIds.every(t => turn(t).end), ms, 20))) throw new Error(`Turns did not settle: ${JSON.stringify(lines.map(l => l.value))}\n${errors}`);
     },

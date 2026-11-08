@@ -219,32 +219,53 @@
       "pr": null
     },
     "acceptance-one-tab": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T200236Z-143c259b",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-tab-opens-home": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T200424Z-87013e87",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-plugin-name": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T200554Z-7c015398",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-settings-shows": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T200735Z-918eec45",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-settings-close": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T201025Z-f539aa29",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-first-run": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T201257Z-53b60c3e",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     },
     "acceptance-set-up": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 133,
+      "record": "20261108T201512Z-4c8f2b5d",
+      "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
+      "tests": []
     }
   }
 }
