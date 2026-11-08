@@ -127,3 +127,42 @@ test('a press or an edit over the bounds is refused in plain words; nothing is c
   assert.equal(f.sends.length, sent);
   assert.equal(turns(), before);
 });
+
+test('an edit whose page command is exactly 20000 units is saved; one unit more is refused in plain words, the page unchanged', async () => {
+  assert.ok(surfaceId, 'needs the drawn page');
+  const path = button.action.event.context[Object.keys(button.action.event.context)[0]].path;
+  const revision = (await pages()).revision, mutationId = randomUUID();
+  // The page command the edit becomes, as written to the owner:
+  // {"revision":R,"surfaceId":"S","updates":[{"path":"P","value":"A"},{"path":"P","value":"B"}],"mutationId":"M","source":"edit"}
+  // Its fixed characters, counted by hand: 12+14+13+9+11+3+9+11+3+15+18 = 118.
+  const fixed = 118 + String(revision).length + surfaceId.length + 2 * path.length + mutationId.length, b = 'b'.repeat(9000);
+  const a = 'a'.repeat(20000 - fixed - b.length);
+  assert.ok(a.length <= 16384, `each value within the input bound (${a.length})`);
+  assert.deepEqual(await f.rpc.edit({ threadId: 'primary', revision, surfaceId, updates: [{ path, value: a }, { path, value: b }], mutationId }), { revision: revision + 1 });
+  const sent = f.sends.length, before = turns();
+  await assert.rejects(f.rpc.edit({ threadId: 'primary', revision: revision + 1, surfaceId, updates: [{ path, value: a + 'a' }, { path, value: b }], mutationId: randomUUID() }),
+    { message: 'Page command exceeds 20000 serialized UTF-16 units. Nothing was changed or sent.' });
+  assert.equal((await pages()).revision, revision + 1);
+  assert.equal(f.sends.length, sent);
+  assert.equal(turns(), before);
+});
+
+test('a press on an earlier version (bring-back) over the bounds is refused in plain words; nothing is brought back or sent', async () => {
+  assert.ok(surfaceId, 'needs the drawn page');
+  const path = button.action.event.context[Object.keys(button.action.event.context)[0]].path;
+  const revision = (await pages()).revision, before = turns(), sent = f.sends.length;
+  assert.ok(revision > 1, 'the page as first drawn (revision 1) is an earlier version now');
+  const press = (context: Record<string, string>) => f.rpc.action({ threadId: 'primary', revision, rewind: { surface: surfaceId, revision: 1 }, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: [CATALOG] } } } });
+  const keys = Object.keys(button.action.event.context);
+  // The person typed 16,385 characters into the earlier version before pressing: the bring-back carries them.
+  await f.rpc.pending({ threadId: 'primary', op: 'set', version: { surface: surfaceId, revision: 1 }, updates: [{ path, value: 'x'.repeat(16385) }] });
+  await assert.rejects(press(Object.fromEntries(keys.map(k => [k, 'short']))),
+    { message: 'The typed text is 16385 characters; a page input holds at most 16384. Nothing was changed or sent.' });
+  await f.rpc.pending({ threadId: 'primary', op: 'clear' });
+  // The press itself over its bound, on the earlier version.
+  await assert.rejects(press(Object.fromEntries(keys.map(k => [k, 'x'.repeat(16385)]))),
+    { message: /^This press carries \d+ characters with its typed text; a press carries at most 16384\. Nothing was sent; shorten the text and press again\.$/ });
+  assert.equal((await pages()).revision, revision);
+  assert.equal(f.sends.length, sent);
+  assert.equal(turns(), before);
+});
