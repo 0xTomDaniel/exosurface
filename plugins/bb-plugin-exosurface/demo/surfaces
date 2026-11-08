@@ -612,9 +612,13 @@ async function pressToTop() {
     if (!ok) throw new Error('press-to-top failed');
   } finally {
     view.unmount(); close();
-    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
-    await new Promise(r => setTimeout(r, 1000));
-    rmSync(f.root, { recursive: true, force: true });
+    // As bad-arguments: the bridge, the owner and its Pi runs each seen gone by a wall-clock deadline, else the fixture stays.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
   }
 }
 
