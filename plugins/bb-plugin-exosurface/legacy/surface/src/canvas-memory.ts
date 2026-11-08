@@ -5,6 +5,7 @@
 import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 import {surfaceSnapshot} from './snapshot-format.ts';
+import {pressLine} from './press-line.ts';
 const plain=(s:unknown)=>String(s??'').replace(/[*_`#>]/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
 const cut=(s:string,n:number)=>s.length>n?s.slice(0,n-1)+'…':s;
 const literal=(v:unknown)=>typeof v==='string'?v:typeof v==='number'?String(v):'';
@@ -62,7 +63,7 @@ export function describePress(s:Snapshot,action:{surfaceId:string;sourceComponen
   let shown:string;if(input.component==='ChoicePicker')shown=(value as string[]).map(x=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'none';
   else if(input.component==='CheckBox')shown=value?'yes':'no';else if(input.component==='TextField')shown=value?`“${String(value)}”`:'(empty)';else shown=String(value);
   parts.push(`${cut(plain(input.label),60)}: ${shown}`);}
- return `▸ ${surfaceTitle(nodes,action.surfaceId)} · ${label}${parts.length?' — '+parts.join(' · '):''}`;
+ return pressLine(surfaceTitle(nodes,action.surfaceId),label,parts);
 }
 /** Submitted bound values as a native data patch, applied by code before Exo's turn. */
 export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponentId:string;context:Record<string,unknown>}){

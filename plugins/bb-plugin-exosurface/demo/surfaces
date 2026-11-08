@@ -622,6 +622,45 @@ async function pressToTop() {
   }
 }
 
+// #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label): on a drawn page the
+// person presses its Book button; after Exo's turn, the Exo block's bubble (its text, right-aligned as the person's) and Exo's
+// reply to the press below it as plain text. Presentation from computed styles (test/app-render.ts); true layout: the
+// owner's RDP walkthrough.
+async function pressBubble() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const block = () => view.container.querySelector('section[aria-label="Exo"]'), said = () => block()?.querySelector('[data-exo-said]'), reply = () => block()?.querySelector('[data-exo-reply]');
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent.trim() === 'Book');
+  const until = waiter(() => `page: ${main()?.textContent}`);
+  try {
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: 'draw: Week plan' } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the drawn page with its Book button, idle', () => !!book() && !book().closest('[inert]') && said()?.textContent === 'draw: Week plan' && !!reply()?.textContent?.endsWith(': draw: Week plan'));
+    console.log('--- on the drawn page "Week plan": Who "Ada", then press Book ---');
+    fireEvent.input(main().querySelector('[data-surface] input'), { target: { value: 'Ada' } });
+    fireEvent.click(book());
+    await until('Exo\'s reply to the press', () => !!reply()?.textContent?.includes('▸') && reply().textContent.includes('Ada'));
+    const bubble = said().textContent, right = rightAligned(said()), below = !!(said().compareDocumentPosition(reply()) & Node.DOCUMENT_POSITION_FOLLOWING), plain = !boxed(reply(), block());
+    console.log(`bubble ${JSON.stringify(bubble)}  (${right ? 'right-aligned as the person\'s' : 'NOT right-aligned'})`);
+    console.log(`reply  ${JSON.stringify(reply().textContent)}  (${below ? 'below the bubble' : 'NOT below the bubble'}, ${plain ? 'plain text, no box' : 'IN A BOX'})`);
+    if (!(bubble === 'Book' && right && below && plain)) throw new Error('press-bubble failed');
+  } finally {
+    view.unmount(); close();
+    // The bridge, the owner and the Pi the owner started, each seen gone by a wall-clock deadline before the fixture is
+    // removed; else its state stays for diagnosis.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
 // #143 (#31; owner ruling 2026-11-06): the person types a long multiline note into a page's textbox and presses Apply;
 // the note Exo received (the press message in its Pi session) against the note typed: lengths and the note's last words.
 async function pressNotes() {
@@ -672,7 +711,7 @@ async function pressNotes() {
   }
 }
 
-const SCENARIOS = { 'press-notes': pressNotes, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
+const SCENARIOS = { 'press-notes': pressNotes, 'press-bubble': pressBubble, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

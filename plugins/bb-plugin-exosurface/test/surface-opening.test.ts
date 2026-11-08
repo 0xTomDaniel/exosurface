@@ -108,6 +108,19 @@ test('a press on its page and a send both scroll the surface back to its top thr
   } finally { browser.reducedMotion = false; }
 });
 
+test('after a press and Exo\'s finished turn, the person\'s bubble is the button\'s label, right-aligned, and Exo\'s reply to the press is plain text below it', async () => {
+  // #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label, never the press line).
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+  await until('the page\'s Book button, idle', () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled);
+  fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: 'Ada' } });
+  fireEvent.click(book()!);
+  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && reply()!.textContent!.includes('Ada'));
+  assert.equal(bubble()?.textContent, 'Book');
+  assert.equal(rightAligned(bubble()!), true);
+  assert.equal(before(bubble()!, reply()!), true);
+  assert.equal(boxed(reply()!, block()!), false);
+});
+
 test('a press on an earlier version of the page, opened from its card in the chat, scrolls the surface back to its top through the same eased scroll', async () => {
   // Owner ruling 2026-11-05 on #138 (F6: every press, an earlier-version press included). The person clicks the chat card
   // of the page as first drawn (revision 1, since edited by the presses above), the surface shows that earlier version, and
@@ -128,7 +141,7 @@ test('a press on an earlier version of the page, opened from its card in the cha
     const asked = browser.scrolls.length;
     fireEvent.input(main().querySelector('[data-surface] input')!, { target: { value: 'Ada' } });
     fireEvent.click(book()!);
-    await until('the press turn\'s reply, back on the live page', () => !earlier() && !!bubble()?.textContent?.startsWith('▸') && bubble()!.textContent!.includes('Ada') && !!reply()?.textContent?.startsWith('Exo (exo-optchat): '));
+    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && reply()!.textContent!.includes('Brought back'));
     const pressed = { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
     assert.ok(pressed.top === 0 && pressed.asked === '[{"top":0,"behavior":"smooth"}]', `after a press on the earlier version: ${JSON.stringify(pressed)}`);
   } finally { chat.unmount(); }
