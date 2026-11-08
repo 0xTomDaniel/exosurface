@@ -41,7 +41,7 @@ const count = (haystack: string, needle: string) => haystack.split(needle).lengt
 test('after a send and Exo\'s finished turn, the Exo block shows the reply, the input is shown and empty, and no chat shows', async () => {
   await send('plan the week');
   // E4: while Exo works, its block says so.
-  await until('the block to say Exo is working', () => reply()?.textContent === 'Exo is working on this page…');
+  await until('the block to say Exo is working', () => reply()?.textContent === 'Reading your message');
   await until('Exo\'s reply in the block', () => reply()?.textContent === 'Exo (exo-optchat): plan the week');
   assert.equal(input()!.value, '');
   // S1: no chat column and no transcript; the person's message is on screen only as the block's bubble and in Exo's words echoing it.
@@ -64,7 +64,7 @@ test('after a second send on the same topic, the Exo block shows only the reply 
 test('a turn in which Exo says nothing leaves the Exo block empty', async () => {
   // Held until the block has been seen saying Exo is working, so the turn cannot end before the block shows it.
   await send('hold: quiet: only redraw the page');
-  await until('the block to say Exo is working', () => reply()?.textContent === 'Exo is working on this page…');
+  await until('the block to say Exo is working', () => reply()?.textContent === 'Reading your message');
   f.release(f.setup.profile);
   // The provider bridge reports the third turn's end to BB; then the block has caught up with it.
   const ended = () => { const d = host.deltas('primary'), third = d.filter(x => x.kind === 'turn.open')[2]; return !!third && d.slice(d.indexOf(third)).some(x => x.kind === 'turn.boundary'); };

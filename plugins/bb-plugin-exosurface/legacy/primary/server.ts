@@ -10,7 +10,8 @@ import { consumeCanonicalInitialization } from './src/canonical-control.ts';
 import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
-import { latestTurn, ownerWorking, sessionOf } from './src/exo-turn.ts';
+import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-turn.ts';
+import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
@@ -22,7 +23,7 @@ export const rpcContract = defineRpcContract({
   thread_bind: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/) }).strict(), output: z.object({ threadId: z.string(), profile: z.string() }) },
   // The surface view's Exo block and input (#69, #79): the person's latest message (said) and Exo's words from that turn,
   // and a send from the input. With `page`, the page in view: that page's own latest turn (#134).
-  exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string() }) },
+  exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
   exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
   // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
@@ -138,14 +139,17 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike') throw new Error('Only an Exo thread can be bound');
       return bindThread(threadId);
     },
-    // Exo is working from a send until the thread's journal holds a newer message from the person and the owner's turn
-    // has ended; while it works, the block shows that and none of the previous turn's words.
+    // Exo is working from a send until the thread's journal holds a newer message from the person and Exo's reply to it,
+    // and the owner's turn has ended (Pi journals before the owner reports the turn running); while it works, the block shows that and none of the previous turn's words.
     exo_block: async ({ threadId, page }) => {
       const latest = latestTurn(sessionOf(threadId)), turn = page === undefined ? latest : latestTurn(sessionOf(threadId), page), sent = awaiting.get(threadId);
-      if (sent !== undefined && sent.entry !== latest.userEntry) awaiting.delete(threadId);
+      if (sent !== undefined && sent.entry !== latest.userEntry && latest.ended) awaiting.delete(threadId);
       const working = awaiting.has(threadId) || ownerWorking(threadId);
+      // While it works, the one line of what Exo is doing right now (E9): the owner's, else (sent, the owner's turn not yet
+      // started) the turn's first step; never after the reply.
+      const activity = working ? ownerActivity(threadId) ?? FIRST_STEP : undefined;
       // Until the journal holds the message just sent, the person's latest message is the one the input sent.
-      return { working, said: awaiting.get(threadId)?.text ?? turn.said, words: working ? '' : turn.words };
+      return { working, said: awaiting.get(threadId)?.text ?? turn.said, words: working ? '' : turn.words, ...(activity ? { activity } : {}) };
     },
     exo_send: async ({ threadId, text }) => {
       validatePrompt(text);

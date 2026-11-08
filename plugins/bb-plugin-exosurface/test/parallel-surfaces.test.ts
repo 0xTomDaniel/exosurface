@@ -51,7 +51,7 @@ let surface = '', profile = '';
 test('send on Home, open another surface before Exo finishes, Home\'s turn ends: the other surface stays in view', async () => {
   await until('Home in view', () => current().join() === 'Home');
   await send('hold: plan the week');
-  await until('Home\'s block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
+  await until('Home\'s block to say Exo is working', () => block()?.textContent === 'Reading your message');
   fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
   await until('the new surface in view', () => current().join() === 'New surface');
   const opened = inView.length;
@@ -75,7 +75,7 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
 
 test('send on a surface, open Home before Exo finishes, send on Home: each Exo block holds its own reply', async () => {
   await send('together: book the cabin');
-  await until('the surface\'s block to say Exo is working', () => block()?.textContent === 'Exo is working on this page…');
+  await until('the surface\'s block to say Exo is working', () => block()?.textContent === 'Reading your message');
   open('Home');
   await until('Home in view', () => current().join() === 'Home');
   const home = inView.length;

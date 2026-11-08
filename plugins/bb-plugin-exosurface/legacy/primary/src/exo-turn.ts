@@ -6,7 +6,8 @@ import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
 
-export type LatestTurn = { userEntry: string | null; said: string; words: string };
+/** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
+export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
 /** The pages a page change names: those it drew or edited (its cards), and the page on stage after it (layout focus, else
@@ -21,9 +22,10 @@ const changed = (message: any) => {
  *  With `page`, the latest turn on that page (spec E1, E8): one that drew or edited it, or that changed no page while it was
  *  on stage; none when no turn is on it. */
 export function latestTurn(sessionFile: string | undefined, page?: string): LatestTurn {
-  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '' };
+  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r');
   let said: string[] = [], pages: string[] | undefined, focus: string | undefined, quiet: LatestTurn | undefined;
+  let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -43,22 +45,22 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
         if (entry.message?.role === 'user') {
-          const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
+          const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
           if (page === undefined) return turn;
           // A turn that changed no page is on the page on stage when it ran: the next earlier change says which.
           if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; }
           if (pages?.includes(page)) return turn;
           if (!pages) quiet ??= turn;
-          said = []; pages = undefined; focus = undefined;
+          said = []; pages = undefined; focus = undefined; replied = undefined;
           continue;
         }
-        if (entry.message?.role === 'assistant') said.push(text(entry.message));
+        if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
         const change = changed(entry.message);
         if (change) { focus ??= change.focus; pages = [...(pages ?? []), ...change.pages]; }
       }
     }
-    if (page !== undefined) return { userEntry: null, said: '', words: '' };
-    return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n') };
+    if (page !== undefined) return { userEntry: null, said: '', words: '', ended: false };
+    return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }
 }
 
@@ -68,6 +70,14 @@ export function ownerWorking(threadId: string) {
   if (!existsSync(file)) return false;
   const state = load(file);
   return state.threadId === threadId ? !!state.streaming : !!state.threads?.[threadId]?.streaming;
+}
+
+/** The owner's one line of what Exo is doing right now on this thread (spec pages-and-activity E9), if any. */
+export function ownerActivity(threadId: string): string | undefined {
+  const file = join(HOME, 'owner', 'state.json');
+  if (!existsSync(file)) return undefined;
+  const state = load(file), activity = state.threadId === threadId ? state.activity : state.threads?.[threadId]?.activity;
+  return typeof activity === 'string' && activity ? activity : undefined;
 }
 
 /** The thread's own Pi session journal, as its binding names it (the host records it once the thread's Pi starts). */

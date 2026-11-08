@@ -12,6 +12,8 @@ import { runtimeLaunch, assertNativeOwner } from './runtime.ts';
 import { freshCanonicalReceipt } from './canonical-fresh.ts';
 import { updateFeedback } from './overview.ts';
 import { OWNER_DIR, OWNER_SOCKET } from './owner-client.ts';
+import { headline, step } from './activity.ts';
+import { FIRST_STEP } from './first-step.ts';
 // An intent receipt is not an owner binding. Refuse incomplete setup before
 // loading the canonical pointer; the normal existing-session route is unchanged.
 if (existsSync(join(HOME, 'canonical-fresh.json'))) freshCanonicalReceipt(HOME, CANONICAL_HOME, CANONICAL_PROFILE);
@@ -23,6 +25,8 @@ type Lane = {
   threadId: string; profile: string; sessionFile: string; cursorFile: string; pi: PiRpc;
   ready: boolean; streaming: boolean; client?: Socket; attached: boolean; sequence: number;
   tail: any[]; tailBytes: number; checkpoints: Map<number, number>; acknowledged: number; startup: Promise<void>;
+  /** What Exo is doing right now (activity.ts), while it works; the reasoning block it is read from. */
+  activity?: string; thinking?: string;
 };
 const lanes = new Map<string, Lane>();
 const size = (file: string) => existsSync(file) ? statSync(file).size : 0;
@@ -35,12 +39,12 @@ let shuttingDown = false;
 const lanePrimary = () => lanes.get(primary);
 const state = (error?: string) => {
   const p = lanePrimary();
-  save(join(OWNER_DIR, 'state.json'), { version: 2, ready: p?.ready ?? false, streaming: p?.streaming ?? false, ownerPid: process.pid, piPid: p?.pi?.pid,
+  save(join(OWNER_DIR, 'state.json'), { version: 2, ready: p?.ready ?? false, streaming: p?.streaming ?? false, activity: p?.activity, ownerPid: process.pid, piPid: p?.pi?.pid,
     threadId: primary, profile: CANONICAL_PROFILE, sessionFile: original.sessionFile, clients: p?.attached ? 1 : 0,
-    threads: Object.fromEntries([...lanes.values()].filter(l => l.threadId !== primary).map(l => [l.threadId, { profile: l.profile, ready: l.ready, streaming: l.streaming, piPid: l.pi?.pid, clients: l.attached ? 1 : 0 }])),
+    threads: Object.fromEntries([...lanes.values()].filter(l => l.threadId !== primary).map(l => [l.threadId, { profile: l.profile, ready: l.ready, streaming: l.streaming, activity: l.activity, piPid: l.pi?.pid, clients: l.attached ? 1 : 0 }])),
     updatedAt: new Date().toISOString(), ...(error ? { error } : {}) });
   // Each bound thread's own pages folder carries its lane's state, as the primary's HOME carries the primary's (#68).
-  for (const l of lanes.values()) if (l.threadId !== primary) save(join(threadPagesHome(l.threadId), 'owner', 'state.json'), { version: 2, ready: l.ready, streaming: l.streaming, ownerPid: process.pid, piPid: l.pi?.pid,
+  for (const l of lanes.values()) if (l.threadId !== primary) save(join(threadPagesHome(l.threadId), 'owner', 'state.json'), { version: 2, ready: l.ready, streaming: l.streaming, activity: l.activity, ownerPid: process.pid, piPid: l.pi?.pid,
     threadId: l.threadId, profile: l.profile, sessionFile: l.sessionFile, clients: l.attached ? 1 : 0, updatedAt: new Date().toISOString(), ...(error ? { error } : {}) });
 };
 const write = (socket: Socket, value: any) => {
@@ -56,7 +60,23 @@ function outgoing(lane: Lane, event: any, checkpoint?: number) {
   while (lane.tail.length > 4000 || lane.tailBytes > 8 * 1024 * 1024) lane.tailBytes -= JSON.stringify(lane.tail.shift()).length;
   if (lane.attached && lane.client) write(lane.client, value);
 }
+/** Keeps the lane's line of what Exo is doing (spec pages-and-activity E9): the first step at a turn's start, then set by
+ * reasoning and tool steps, cleared at its end. True when the line changed. */
+function noteActivity(lane: Lane, e: any) {
+  const before = lane.activity, m = e.type === 'message_update' ? e.assistantMessageEvent : undefined;
+  if (e.type === 'agent_start') lane.activity = FIRST_STEP;
+  else if (e.type === 'agent_settled') lane.activity = undefined;
+  else if (e.type === 'tool_execution_start') lane.activity = step(String(e.toolName ?? ''), e.args);
+  else if (m?.type === 'thinking_start') lane.thinking = '';
+  else if (m?.type === 'thinking_delta' || m?.type === 'thinking_end') {
+    lane.thinking = m.type === 'thinking_end' && typeof m.content === 'string' ? m.content : (lane.thinking ?? '') + (typeof m.delta === 'string' ? m.delta : '');
+    lane.activity = headline(lane.thinking, m.type === 'thinking_end') ?? lane.activity;
+  }
+  return lane.activity !== before;
+}
 function onEvent(lane: Lane, e: any) {
+  // Read before the stream is thinned for BB; owner state carries the line on each change (turn start and end write it anyway).
+  if (noteActivity(lane, e) && e.type !== 'agent_start' && e.type !== 'agent_settled') state();
   // Thinking/argument partial snapshots aren't needed by this presentation.
   if (e.type === 'message_update') {
     if (e.assistantMessageEvent?.type !== 'text_delta') return;
