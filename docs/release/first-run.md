@@ -99,14 +99,17 @@ cd "$PLUGIN"
 
 There are two locked installs (`npm ci` in the plugin root and `legacy/surface`), not a workspace-wide dependency flattening. BB rebuilds local plugin entries and writes build outputs. Keep the source/dependencies available and writable; a read-only archive or `dist/` alone is not installable by this route.
 
-Registration creates the **Exosurface** plugin (`exosurface`) and `exo-spike` provider. Open its page in BB; route `/plugins/exosurface/proof`. Do not install both historical plugins alongside the consolidated one for a fresh instance. A normal desktop installation does not require creating a second server.
+Registration creates the **Exo** plugin (id `exosurface`) and `exo-spike` provider. Open the **Exo** tab in BB's sidebar; route `/plugins/exosurface/surface`. Do not install both historical plugins alongside the consolidated one for a fresh instance. A normal desktop installation does not require creating a second server.
 
 ## Initialize and start the owner
 
 **These are the implemented sequence and pending real-desktop test steps, not a claim that the sequence has been demonstrated end to end.**
 
 1. In BB add a normal project whose folder is **exactly** your Exocortex vault path. Initialization runs the conversation on that project's source machine and refuses any other project (including *Personal*) before changing anything.
-2. Open **Initialize a fresh Exo owner** in Exosurface. Confirm project, workspace, public Pi CLI and OptChat paths; review the checkbox authorizing one native conversation and a labelled user initialization record, without inference; click **Initialize Exo**.
+2. Open the **Exo** tab. Until Exo is set up it shows only **Settings**, offering set-up. Confirm **Project**, **Workspace**, **Pi** (the public Pi CLI) and **OptChat**, each filled in where Exo finds it and changeable; then click **Set up Exo**, which authorizes one native conversation and a labelled user initialization record, without inference. A set-up that stops part way shows **Resume set-up** in the same settings, with the values it started with; resume it there.
+
+   Exo opens on set-up until its set-up record (`<primaryStateDir>/canonical-setup.json`) says `bound`; then the tab opens on the sidebar and Home, and the sidebar's **Settings** button shows Set-up, Model, Running and Owner profile. An existing install keeps working, with no new set-up, when its `canonical-setup.json` stage is `bound` and its bindings are canonical.
+
 3. Wait for setup to reach `bound`. `ownerReady: false` at this stage is intentional: initialization does not start the retained owner or authenticate a provider. If setup reports an uncertain creation outcome, stop and reconcile it; do not start a replacement operation or delete its journal.
 4. Authenticate only the setup-created private Pi directory via normal Pi `/login`. Do not copy another instance's `auth.json` or inherit API keys. Use the paths from your configuration; set the variables below explicitly, with no placeholders left:
 

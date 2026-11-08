@@ -16,7 +16,7 @@ const homePage = () => ({ ...empty('primary'), revision: 1, delivery: { epoch: '
   { version: 'v0.9', updateComponents: { surfaceId: 'week', components: [{ id: 'root', component: 'Text', text: HOME_PAGE }] } },
 ] }, updates: [], preview: null } });
 /** Home's page as rendered on the canvas: its surface section. */
-const homeShown = () => document.querySelector('main[aria-label="Exosurface"] section[data-surface="week"]') !== null;
+const homeShown = () => document.querySelector('main[aria-label="Exo"] section[data-surface="week"]') !== null;
 const input = () => document.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 
 test('New surface puts a new surface in view with one empty page; the sidebar lists Home, then the new surface', async () => {
@@ -27,6 +27,8 @@ test('New surface puts a new surface in view with one empty page; the sidebar li
     thread_new: async () => { threads.push({ threadId: 'thread-2', title: 'New surface', home: false }); return { threadId: 'thread-2' }; },
     workspace: async (input: any) => input.threadId ? empty(input.threadId) : homePage(),
     exo_block: async () => ({ working: false, words: '' }),
+    // Exo is set up (#130: until then the tab shows only settings).
+    canonical_setup_status: async () => ({ stage: 'bound' }),
   } });
   const sidebar = () => within(screen.getByRole('navigation', { name: 'Surfaces' }));
   const listed = () => sidebar().getAllByRole('listitem').map((li: any) => li.textContent);

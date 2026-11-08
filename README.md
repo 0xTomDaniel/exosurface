@@ -6,7 +6,7 @@ A shared, adaptive interface for you and your personal agent: conversation and p
 
 **Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
-The source build, BB registration and the real **Initialize Exo** step (native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. In that instance a real conversation (GPT-6.1 Sol via a ChatGPT sign-in), a page with a textbox and button, a button action and a reopen after restarting BB and the owner also worked once. This is a working-spike claim on one Mac, not an end-to-end installation guarantee; a physically fresh Mac has not been tried.
+The source build, BB registration and the real **Initialize Exo** step (since replaced by **Set up Exo** in the Exo tab's settings; native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. In that instance a real conversation (GPT-6.1 Sol via a ChatGPT sign-in), a page with a textbox and button, a button action and a reopen after restarting BB and the owner also worked once. This is a working-spike claim on one Mac, not an end-to-end installation guarantee; a physically fresh Mac has not been tried.
 
 ### What is included?
 
@@ -62,11 +62,13 @@ From the same terminal/plugin directory as step 2, with BB running:
 "$NODE" "$BB_CLI" plugin install "$PLUGIN" --yes --json
 ```
 
-This registers **Exosurface** (`exosurface`, with provider `exo-spike`). Keep the checkout and dependencies available: local installation is not a self-contained binary bundle. Do not copy only `dist/` or install from a read-only archive. The normal desktop route does not require starting a second BB server.
+This registers the plugin **Exo** (id `exosurface`, with provider `exo-spike`). Keep the checkout and dependencies available: local installation is not a self-contained binary bundle. Do not copy only `dist/` or install from a read-only archive. The normal desktop route does not require starting a second BB server.
 
-### 5. Initialize, authenticate and start Exo
+### 5. Set up, authenticate and start Exo
 
-Open **Exo** in BB's sidebar (plugin route `/plugins/exosurface/proof`). In **Initialize a fresh Exo owner**, select the project for your workspace (not *Personal*), check the paths, review the consent, then choose **Initialize Exo**. It authorizes one native conversation and a labelled initialization record **without model inference**. Do not start a second operation or delete recovery records to get around an uncertain result.
+Open the **Exo** tab in BB's sidebar (plugin route `/plugins/exosurface/surface`). Until Exo is set up, the tab shows only **Settings**, offering set-up: in **Project** select the project for your workspace (not *Personal*), then check **Workspace**, **Pi** and **OptChat**, each filled in where Exo finds it and changeable, then choose **Set up Exo**. Pressing it authorizes one native conversation and a labelled initialization record **without model inference**. A set-up that stops part way shows **Resume set-up** in the same settings, with the values it started with; resume it there. Do not start a second operation or delete recovery records to get around an uncertain result.
+
+Exo opens on set-up until its set-up record (`<primaryStateDir>/canonical-setup.json`) says `bound`; then the tab opens on the sidebar and Home, and the sidebar's **Settings** button shows Set-up, Model, Running and Owner profile. An existing install keeps working, with no new set-up, when its `canonical-setup.json` stage is `bound` and its bindings are canonical.
 
 Initialization and owner startup are separate. Once setup reports `bound`, authenticate the model provider in the **setup-created private Pi directory** (signing in with ChatGPT under Pi 1.1? see [`primarySolProvider`](docs/release/first-run.md#initialize-and-start-the-owner)), then start the retained owner in a separate terminal. The [step-by-step guide](docs/release/first-run.md#initialize-and-start-the-owner) supplies the environment and commands. A running BB view is not the owner process; automatic launchd provisioning is not included in this spike.
 
