@@ -5,7 +5,6 @@
 import {moduleIds,moduleNodes,moduleData,inputBindings,atPath,type Snapshot} from './workspace.ts';
 import {surfaceTitle} from './stage.ts';
 import {surfaceSnapshot} from './snapshot-format.ts';
-import {pressLine} from './press-line.ts';
 const plain=(s:unknown)=>String(s??'').replace(/[*_`#>]/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
 const cut=(s:string,n:number)=>s.length>n?s.slice(0,n-1)+'…':s;
 const literal=(v:unknown)=>typeof v==='string'?v:typeof v==='number'?String(v):'';
@@ -55,15 +54,20 @@ export function outlineCanvas(s:Snapshot,limit=7000):string{
  const rest=ids.filter(id=>id!==focus&&!beside.includes(id));if(rest.length)lines.push('[earlier] '+rest.map(id=>`${id} "${surfaceTitle(moduleNodes(s,id),id)}"`).join(', '));
  return cut(lines.join('\n'),limit);
 }
+/** The pressed button's label, as its press line names it. */
+export function pressedLabel(s:Snapshot,action:{surfaceId:string;sourceComponentId:string}):string{
+ const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId);
+ return plain(literal(nodes.find(n=>n.id===button?.child)?.text))||action.sourceComponentId;
+}
 /** "What the person did": a readable line for a button press, labels instead of keys. */
 export function describePress(s:Snapshot,action:{surfaceId:string;sourceComponentId:string;context:Record<string,unknown>}):string{
- const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId),label=plain(literal(nodes.find(n=>n.id===button?.child)?.text))||action.sourceComponentId;
+ const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId),label=pressedLabel(s,action);
  const bindings=inputBindings(s,action.surfaceId),offered=button?.action?.event?.context??{},parts:string[]=[];
  for(const[key,v]of Object.entries(offered)){const path=(v as any)?.path;if(!path)continue;const input=bindings.get(path),value=action.context[key];if(!input)continue;
   let shown:string;if(input.component==='ChoicePicker')shown=(value as string[]).map(x=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'none';
   else if(input.component==='CheckBox')shown=value?'yes':'no';else if(input.component==='TextField')shown=value?`“${String(value)}”`:'(empty)';else shown=String(value);
   parts.push(`${cut(plain(input.label),60)}: ${shown}`);}
- return pressLine(surfaceTitle(nodes,action.surfaceId),label,parts);
+ return `▸ ${surfaceTitle(nodes,action.surfaceId)} · ${label}${parts.length?' — '+parts.join(' · '):''}`;
 }
 /** Submitted bound values as a native data patch, applied by code before Exo's turn. */
 export function boundUpdates(s:Snapshot,action:{surfaceId:string;sourceComponentId:string;context:Record<string,unknown>}){

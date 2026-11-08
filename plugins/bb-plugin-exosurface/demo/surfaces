@@ -623,7 +623,7 @@ async function pressToTop() {
 }
 
 // #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label): on a drawn page the
-// person presses its Book button; after Exo's turn, the Exo block's bubble (its text, right-aligned as the person's) and Exo's
+// person presses its button labelled "Keep — later · Book", a label holding the press line's own separators; after Exo's turn, the Exo block's bubble (its text, right-aligned as the person's) and Exo's
 // reply to the press below it as plain text. Presentation from computed styles (test/app-render.ts); true layout: the
 // owner's RDP walkthrough.
 async function pressBubble() {
@@ -634,20 +634,22 @@ async function pressBubble() {
   const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
   const block = () => view.container.querySelector('section[aria-label="Exo"]'), said = () => block()?.querySelector('[data-exo-said]'), reply = () => block()?.querySelector('[data-exo-reply]');
-  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent.trim() === 'Book');
+  const label = 'Keep — later · Book', book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent.trim() === label);
   const until = waiter(() => `page: ${main()?.textContent}`);
   try {
     await until('the input', () => input() && !input().disabled);
-    fireEvent.change(input(), { target: { value: 'draw: Week plan' } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
-    await until('the drawn page with its Book button, idle', () => !!book() && !book().closest('[inert]') && said()?.textContent === 'draw: Week plan' && !!reply()?.textContent?.endsWith(': draw: Week plan'));
-    console.log('--- on the drawn page "Week plan": Who "Ada", then press Book ---');
+    const snapshot = `- region "Week plan" [ref=week]:\n  - textbox "Who" [ref=who]\n  - button ${JSON.stringify(label)} [ref=book] [action=book] [sends=who]`;
+    host.send('primary', `call: ${JSON.stringify({ baseRevision: 0, snapshot })}`);
+    await until('the drawn page with its button, idle', () => !!book() && !book().closest('[inert]') && !!input() && !input().disabled && !!reply()?.textContent?.startsWith('Exo (exo-optchat): call: '));
+    console.log(`--- on the drawn page "Week plan": Who "Ada", then press ${JSON.stringify(label)} ---`);
     fireEvent.input(main().querySelector('[data-surface] input'), { target: { value: 'Ada' } });
     fireEvent.click(book());
     await until('Exo\'s reply to the press', () => !!reply()?.textContent?.includes('▸') && reply().textContent.includes('Ada'));
     const bubble = said().textContent, right = rightAligned(said()), below = !!(said().compareDocumentPosition(reply()) & Node.DOCUMENT_POSITION_FOLLOWING), plain = !boxed(reply(), block());
     console.log(`bubble ${JSON.stringify(bubble)}  (${right ? 'right-aligned as the person\'s' : 'NOT right-aligned'})`);
     console.log(`reply  ${JSON.stringify(reply().textContent)}  (${below ? 'below the bubble' : 'NOT below the bubble'}, ${plain ? 'plain text, no box' : 'IN A BOX'})`);
-    if (!(bubble === 'Book' && right && below && plain)) throw new Error('press-bubble failed');
+    console.log(`bubble equals the button's label ${JSON.stringify(label)}: ${bubble === label ? 'yes' : 'NO'}`);
+    if (!(bubble === label && right && below && plain)) throw new Error('press-bubble failed');
   } finally {
     view.unmount(); close();
     // The bridge, the owner and the Pi the owner started, each seen gone by a wall-clock deadline before the fixture is

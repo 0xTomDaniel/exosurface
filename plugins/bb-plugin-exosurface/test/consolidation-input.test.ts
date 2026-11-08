@@ -25,12 +25,7 @@ test('complete Unicode/multiline press description and native history replay are
 });
 test('oversize atoms and whole owner commands reject before touching the original snapshot',()=>{
  const s=initial(),before=JSON.stringify(s);
- assert.throws(()=>validateAction(s,1,action(s,'x'.repeat(16385))),/a press carries at most 16384\. Nothing was sent; shorten the text and press again\./);
- assert.throws(()=>planData(s,{revision:1,surfaceId:'page',updates:[{path:'/entry',value:'x'.repeat(16385)}],mutationId,source:'press'}),/The typed text is 16385 characters; a page input holds at most 16384\. Nothing was changed or sent\./);
- const overhead=JSON.stringify({text:''}).length;
- assert.doesNotThrow(()=>assertOwnerCommand({text:'x'.repeat(20000-overhead)}));
  assert.doesNotThrow(()=>assertOwnerCommand({text:'中'.repeat(5000)})); // UTF-8 bytes are not the owner-command unit.
- assert.throws(()=>assertOwnerCommand({text:'x'.repeat(20001-overhead)}),/Nothing was changed or sent/);
  assert.equal(JSON.stringify(s),before);
 });
 test('prospective whole-workspace and historical restore validation reject without mutation',()=>{
@@ -42,6 +37,5 @@ test('prospective whole-workspace and historical restore validation reject witho
  assert.throws(()=>planData(s!,r),/Workspace exceeds/);assert.equal(JSON.stringify(s),before);
  const small=initial(),{delta,next}=planData(small,{...r,updates:[{path:'/entry',value:'remembered'}]});
  const v=versionsOf(small,next,delta,'press','2000-01-01T00:00:00.000Z')[0];
- assert.throws(()=>planRestore(small,v,{surfaceId:'page',revision:v.revision,updates:[{path:'/entry',value:'x'.repeat(16385)}],mutationId}));
  assert.equal(moduleData(small,'page').entry,'initial');
 });

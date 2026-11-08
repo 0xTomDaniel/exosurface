@@ -157,6 +157,13 @@ const server = createServer(socket => {
             const after = rev();
             write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
           }
+          if (m.type === 'canvas-press') {
+            // A press's button label (legacy/surface/src/press-line.ts), journaled in that thread's Pi just before the press is sent.
+            const page = m.threadId === primary ? p : await laneFor(m.threadId);
+            if (page.streaming || JSON.stringify(m.request).length > 20000) throw new Error('Idle Exo page command required');
+            await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line }) });
+            write(socket, { kind: 'response', id: m.id, ok: true, data: {} }); return;
+          }
           if (m.type === 'hello') {
             const target = await laneFor(m.threadId);
             lane = target; target.client?.destroy(); target.client = socket; target.attached = false; state();

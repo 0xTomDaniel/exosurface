@@ -5,11 +5,8 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { liveFixture, owner, bridge, modelRequests } from './mock-bb.ts';
 import { settled } from './wait.ts';
-import { canvasSection } from '../legacy/surface/src/canvas-doc.ts';
-import { snapshotToA2ui } from '../legacy/surface/src/snapshot-format.ts';
-import { validateSnapshot } from '../legacy/surface/src/workspace.ts';
 
 const f = await liveFixture();
 const ownerProcess = await owner(f);
@@ -94,13 +91,39 @@ test('a press near the press bound: Exo\'s prompt holds the whole note', async (
   assert.ok(prompt.includes(`“${long}”`), `Exo received ${prompt.length} characters, ending ${JSON.stringify(prompt.slice(-80))}`);
 });
 
-test('the page state sent with each request (the outline): a saved note too long for it is never cut silently', () => {
-  // The outline frame is attached by OptChat's context_with_system, which the fake OptChat does not run: its text is read here.
-  const page = (note: string) => validateSnapshot({ revision: 3, layout: { focus: 'ct' }, messages: snapshotToA2ui(`- region "Carried tasks" [ref=ct]:\n  - textbox "Batch notes" [ref=note] [multiline]: ${note.replace(/\n/g, '\\n')}\n  - button "Apply" [ref=apply] [action=apply] [sends=note]`) });
-  const short = canvasSection(page(NOTE))!;
+test('the page state sent with each request (the outline): a saved note too long for it is never cut silently', async () => {
+  assert.ok(surfaceId, 'needs the drawn page');
+  // The person saves a note on the page (edit RPC), then sends a message; the page state is what the model received with it.
+  const path = button.action.event.context[Object.keys(button.action.event.context)[0]].path;
+  async function sentWith(note: string) {
+    await f.rpc.edit({ threadId: 'primary', revision: (await pages()).revision, surfaceId, updates: [{ path, value: note }], mutationId: randomUUID() });
+    const before = turns();
+    host.send('primary', 'what does the page say?');
+    await until('the turn after the edit', () => turns() > before);
+    const state = modelRequests(f).at(-1)!.messages.findLast((m: any) => m.role === 'user' && textOf(m).startsWith('Machine state of the surface'));
+    return textOf(state);
+  }
+  const short = await sentWith(NOTE);
   assert.ok(short.includes(NOTE.replace(/\n/g, '\\n')), 'a note that fits is in the outline whole');
   const long = [2, 3, 4, 5, 6, 7].map(n => NOTE.replace('Batch 2 review', `Batch ${n} review`)).join('\n\n');
-  const outline = canvasSection(page(long))!;
+  const outline = await sentWith(long);
   assert.ok(!outline.endsWith('…'), `no silent cut; ends ${JSON.stringify(outline.slice(-120))}`);
   assert.match(outline, /\n\[The outline stops here: the pages run to \d+ characters, more than the 12000 it holds\. read_exosurface with a page's ref shows it in full, typed text included\.\]$/);
+});
+
+test('a press or an edit over the bounds is refused in plain words; nothing is changed or sent', async () => {
+  assert.ok(surfaceId, 'needs the drawn page');
+  const path = button.action.event.context[Object.keys(button.action.event.context)[0]].path;
+  const revision = (await pages()).revision, before = turns(), sent = f.sends.length, over = 'x'.repeat(16385);
+  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, over]));
+  await assert.rejects(f.rpc.action({ threadId: 'primary', revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: [CATALOG] } } } }),
+    { message: /^This press carries \d+ characters with its typed text; a press carries at most 16384\. Nothing was sent; shorten the text and press again\.$/ });
+  await assert.rejects(f.rpc.edit({ threadId: 'primary', revision, surfaceId, updates: [{ path, value: over }], mutationId: randomUUID() }),
+    { message: 'The typed text is 16385 characters; a page input holds at most 16384. Nothing was changed or sent.' });
+  // One edit whose updates together run past the page command bound (20,000 units), each update within the input bound.
+  await assert.rejects(f.rpc.edit({ threadId: 'primary', revision, surfaceId, updates: [{ path, value: 'y'.repeat(10000) }, { path, value: 'z'.repeat(10000) }], mutationId: randomUUID() }),
+    { message: 'Page command exceeds 20000 serialized UTF-16 units. Nothing was changed or sent.' });
+  assert.equal((await pages()).revision, revision);
+  assert.equal(f.sends.length, sent);
+  assert.equal(turns(), before);
 });
