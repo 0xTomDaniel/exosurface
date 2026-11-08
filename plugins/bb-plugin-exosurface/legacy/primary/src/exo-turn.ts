@@ -7,15 +7,17 @@ import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
 import { PRESS_ENTRY } from '../../surface/src/press-line.ts';
 
-export type LatestTurn = { userEntry: string | null; said: string; words: string };
+/** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
+export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards.
  *  A button press shows as the button's label (spec pages-and-activity F6): the press entry journaled before its message. */
 export function latestTurn(sessionFile: string | undefined): LatestTurn {
-  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '' };
+  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r'), said: string[] = [];
   let turn: LatestTurn | undefined;
+  let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -36,11 +38,11 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (turn && entry.type === 'custom' && entry.customType === PRESS_ENTRY) return entry.data?.line === turn.said ? { ...turn, said: String(entry.data.label) } : turn;
         if (entry.type !== 'message') continue;
         if (turn) return turn;
-        if (entry.message?.role === 'user') { turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') }; continue; }
-        if (entry.message?.role === 'assistant') said.push(text(entry.message));
+        if (entry.message?.role === 'user') { turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false }; continue; }
+        if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
       }
     }
-    return turn ?? { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n') };
+    return turn ?? { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }
 }
 
@@ -50,6 +52,14 @@ export function ownerWorking(threadId: string) {
   if (!existsSync(file)) return false;
   const state = load(file);
   return state.threadId === threadId ? !!state.streaming : !!state.threads?.[threadId]?.streaming;
+}
+
+/** The owner's one line of what Exo is doing right now on this thread (spec pages-and-activity E9), if any. */
+export function ownerActivity(threadId: string): string | undefined {
+  const file = join(HOME, 'owner', 'state.json');
+  if (!existsSync(file)) return undefined;
+  const state = load(file), activity = state.threadId === threadId ? state.activity : state.threads?.[threadId]?.activity;
+  return typeof activity === 'string' && activity ? activity : undefined;
 }
 
 /** The thread's own Pi session journal, as its binding names it (the host records it once the thread's Pi starts). */

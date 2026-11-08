@@ -115,7 +115,8 @@ test('a press or an edit over the bounds is refused in plain words; nothing is c
   assert.ok(surfaceId, 'needs the drawn page');
   const path = button.action.event.context[Object.keys(button.action.event.context)[0]].path;
   const revision = (await pages()).revision, before = turns(), sent = f.sends.length, over = 'x'.repeat(16385);
-  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, over]));
+  // Each value at the input bound (BB's rpc contract refuses one longer before the server); the press as a whole runs past its bound.
+  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, 'x'.repeat(16384)]));
   await assert.rejects(f.rpc.action({ threadId: 'primary', revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: [CATALOG] } } } }),
     { message: /^This press carries \d+ characters with its typed text; a press carries at most 16384\. Nothing was sent; shorten the text and press again\.$/ });
   await assert.rejects(f.rpc.edit({ threadId: 'primary', revision, surfaceId, updates: [{ path, value: over }], mutationId: randomUUID() }),
@@ -160,7 +161,7 @@ test('a press on an earlier version (bring-back) over the bounds is refused in p
     { message: 'The typed text is 16385 characters; a page input holds at most 16384. Nothing was changed or sent.' });
   await f.rpc.pending({ threadId: 'primary', op: 'clear' });
   // The press itself over its bound, on the earlier version.
-  await assert.rejects(press(Object.fromEntries(keys.map(k => [k, 'x'.repeat(16385)]))),
+  await assert.rejects(press(Object.fromEntries(keys.map(k => [k, 'x'.repeat(16384)]))),
     { message: /^This press carries \d+ characters with its typed text; a press carries at most 16384\. Nothing was sent; shorten the text and press again\.$/ });
   assert.equal((await pages()).revision, revision);
   assert.equal(f.sends.length, sent);

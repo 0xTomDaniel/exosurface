@@ -32,8 +32,11 @@ export const instructions=d=>readFileSync(join(d,'AGENTS.md'),'utf8');`;
 // optchat.profile session entry. The model: a "call: <JSON>" prompt makes that one update_exosurface call; a "together" prompt is answered only once another profile's turn is running
 // too, so a refused or queued second turn leaves the first unanswered ("ALONE"); a "quiet:" prompt gets a turn with no words;
 // a "hold:" prompt is answered only once the test releases that profile's turn (release()), so another surface opens while it
-// runs however long that takes ("hold: quiet: ..." is a held turn with no words).
-const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+// runs however long that takes ("hold: quiet: ..." is a held turn with no words); a "fail:" prompt gets a turn the provider
+// fails before any streamed reasoning, tool call or words ("hold: fail: ..." fails once released); a "steps: <topic>" prompt is
+// answered in several steps, once the turn's first step ("Reading your message") has been seen: a reasoning summary headed "**Planning the <topic>**", a read of <topic>.md, then reasoning
+// with no bold headline (as Claude's summaries may come), then the reply. It holds each step until stepsTurn has seen its line.
+const FAKE_OPTCHAT = `import{createServer}from'node:net';import{appendFileSync,existsSync,mkdirSync,readdirSync,readFileSync,rmSync,writeFileSync}from'node:fs';import{join}from'node:path';
 import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
@@ -65,6 +68,16 @@ export default function optchat(pi){
      const toolCall={type:'toolCall',id:'draw_'+Date.now(),name:'update_exosurface',arguments:{baseRevision:0,snapshot:'- region '+JSON.stringify(title)+' [ref=trip]:\\n  - textbox "Who" [ref=who]: Ada\\n  - button "Book" [ref=book] [action=book] [sends=who]'}};
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+    if(said.startsWith('steps: ')){const topic=said.slice(7).trim(),at=messages.at(-1)?.role;
+     const hold=async n=>{const gate=join(process.env.OPTCHAT_HOME,'steps',topic+'-'+n);for(const end=Date.now()+60000;!existsSync(gate)&&Date.now()<end;)await sleep(25);rmSync(gate,{force:true});};
+     const think=async deltas=>{const block={type:'thinking',thinking:''},i=message.content.push(block)-1;stream.push({type:'thinking_start',contentIndex:i,partial:message});
+      for(const delta of deltas){block.thinking+=delta;stream.push({type:'thinking_delta',contentIndex:i,delta,partial:message});await sleep(50);}
+      stream.push({type:'thinking_end',contentIndex:i,content:block.thinking,partial:message});};
+     if(at==='user'){await hold(1);await think(['**Planning the '+topic+'**','\\n\\n','I should read the note first.']);await hold(2);
+      const toolCall={type:'toolCall',id:'read_'+Date.now(),name:'read',arguments:{path:topic+'.md'}};message.content.push(toolCall);message.stopReason='toolUse';
+      stream.push({type:'toolcall_start',contentIndex:message.content.length-1,partial:message});stream.push({type:'toolcall_end',contentIndex:message.content.length-1,toolCall,partial:message});
+      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
+     await hold(3);await think(['Now I can answer about the ',topic+'. ','A short reply will do.']);await hold(4);}
     // "draw <ref>: <title>" draws a page about that topic as page <ref>; "draw <ref>: <title> beside <other>" also asks for
     // page <other> beside it. It tries revision 0 and, told the surface is further on, draws again on that revision.
     const page=/^draw ([a-z]+): (.+?)(?: beside ([a-z]+))?$/.exec(said),stale=messages.at(-1)?.role==='toolResult'?/the surface is at revision (\\d+)/.exec(textOf(messages.at(-1))):null;
@@ -78,14 +91,26 @@ export default function optchat(pi){
      message.content.push(toolCall);message.stopReason='toolUse';stream.push({type:'toolcall_start',contentIndex:0,partial:message});stream.push({type:'toolcall_end',contentIndex:0,toolCall,partial:message});
      stream.push({type:'done',reason:'toolUse',message});stream.end();return;}
     if(said.startsWith('hold:'))for(const end=Date.now()+60000;!existsSync(join(process.env.OPTCHAT_HOME,'release',name))&&Date.now()<end;)await sleep(25);
+    if(said.replace(/^hold: /,'').startsWith('fail:')){message.stopReason='error';message.errorMessage='This model does not support that setting.';stream.push({type:'error',reason:'error',error:message});stream.end();return;}
     if(said.includes('together')){mkdirSync(turns,{recursive:true});writeFileSync(join(turns,name),'');for(const end=Date.now()+5000;readdirSync(turns).length<2&&Date.now()<end;)await sleep(50);}
     const text=(said.includes('together')&&readdirSync(turns).length<2?'ALONE: ':'Exo ('+name+'): ')+said;
-    if(!said.replace(/^hold: /,'').startsWith('quiet:')){message.content.push({type:'text',text});stream.push({type:'text_start',contentIndex:0,partial:message});stream.push({type:'text_delta',contentIndex:0,delta:text,partial:message});
-    stream.push({type:'text_end',contentIndex:0,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
+    if(!said.replace(/^hold: /,'').startsWith('quiet:')){const at=message.content.push({type:'text',text})-1;stream.push({type:'text_start',contentIndex:at,partial:message});stream.push({type:'text_delta',contentIndex:at,delta:text,partial:message});
+    stream.push({type:'text_end',contentIndex:at,content:text,partial:message});}stream.push({type:'done',reason:'stop',message});stream.end();})();
    return stream;}});
 }`;
 
 type Hook = (context: unknown) => Promise<{ action: string; message?: string }>;
+// BB 0.48's rpc host, as PluginRpc.register documents it (@get-bb/plugin-sdk bundled-types/bb-plugin-sdk.d.ts); its refusal
+// is thrown here.
+function checkedRpc(method: string, schema: { input: any; output: any } | undefined, handler: (input: unknown) => Promise<any>) {
+  if (!schema) throw new Error(`mock BB: rpc ${method} registered without a contract entry`);
+  const validated = async (side: 'input' | 'output', value: unknown) => {
+    const r = await schema[side]['~standard'].validate(value);
+    if (r.issues) throw new Error(`mock BB: rpc ${method} ${side} invalid: ${JSON.stringify(r.issues)}`);
+    return r.value;
+  };
+  return async (input: unknown) => validated('output', await handler(await validated('input', input)));
+}
 /** server.ts (package.json bb.server) registered against a mock BB; its RPC handlers and its message.dispatch hook. */
 async function serverRpc(vault: string) {
   const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
@@ -126,7 +151,7 @@ async function serverRpc(vault: string) {
   const bb: any = { providers: { register() {} }, background: { service(name: string, s: { start: (signal: AbortSignal) => Promise<void> }) { services.push({ name, start: s.start }); } }, realtime: { publish(channel: string, payload: unknown) { realtime.deliver?.(channel, payload); } }, ui: { registerMentionProvider() {} },
     events: { on(name: string, handler: (payload: any) => unknown) { (listeners[name] ??= []).push(handler); } },
     log: Object.fromEntries(['debug', 'info', 'warn', 'error'].map(level => [level, (m: string) => { logs.push(`${level}: ${m}`); }])),
-    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(_c: unknown, h: typeof handlers) { Object.assign(handlers, h); } },
+    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(contract: Record<string, { input: any; output: any }>, h: typeof handlers) { for (const [method, handler] of Object.entries(h)) handlers[method] = checkedRpc(method, contract[method], handler); } },
     sdk: {
       threads: {
         async get({ threadId }: { threadId: string }) { if (faults.threadGet > 0) { faults.threadGet--; throw new Error('mock BB: connection lost'); } return thread(threadId); }, async list() { return [...threads.values()]; },
@@ -295,4 +320,36 @@ export function ownerRequest(f: Fixture, value: object) {
       socket.write(JSON.stringify({ id: 'probe', ...value }) + '\n');
     });
   });
+}
+
+/** A "steps: <topic>" send on a surface (the fake model above): records each change of what the surface's exo_block reports
+ * until Exo's turn has ended. The model holds each step until its line has been seen here, so none is missed under load. */
+export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}) {
+  const blocks: any[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
+  mkdirSync(gates, { recursive: true });
+  await f.rpc.exo_send({ threadId, text: `steps: ${topic}` });
+  for (const end = Date.now() + 60000; ;) {
+    if (Date.now() > end) throw new Error(`Exo's turn did not end: ${JSON.stringify(blocks)}`);
+    const block = await f.rpc.exo_block({ threadId });
+    if (JSON.stringify(block) !== JSON.stringify(blocks.at(-1))) { blocks.push(block); seen(block); }
+    for (const lines = new Set(blocks.map(b => b.activity).filter(Boolean)).size; released < lines;) writeFileSync(join(gates, `${topic}-${++released}`), '');
+    if (!block.working) return blocks;
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
+
+/** stepsTurn as the person sees it: after a "steps: <topic>" send from the rendered surface view, samples `line` (the activity
+ * line on screen, undefined when it shows none) until `done` holds, releasing each held step of the fake model once a new
+ * line has been seen on screen. Returns each line seen, in order. Wall-clock (Date.now()) deadline. */
+export async function stepsShown(f: Fixture, topic: string, line: () => string | undefined, done: () => boolean, ms = 60000) {
+  const lines: string[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
+  mkdirSync(gates, { recursive: true });
+  for (const end = Date.now() + ms; ;) {
+    const now = line();
+    if (now !== undefined && now !== lines.at(-1)) lines.push(now);
+    for (const count = new Set(lines).size; released < count;) writeFileSync(join(gates, `${topic}-${++released}`), '');
+    if (done()) return lines;
+    if (Date.now() > end) throw new Error(`Exo's turn did not end on screen; lines seen: ${JSON.stringify(lines)}`);
+    await new Promise(r => setTimeout(r, 25));
+  }
 }
