@@ -9,10 +9,21 @@ import { HOME, binding, load } from './state.ts';
 export type LatestTurn = { userEntry: string | null; said: string; words: string };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
-/** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards. */
-export function latestTurn(sessionFile: string | undefined): LatestTurn {
+/** The pages a page change names: those it drew or edited (its cards), and the page on stage after it (layout focus, else
+ *  the last page it created or redesigned; undefined when it moved nothing). */
+const changed = (message: any) => {
+  const details = message?.role === 'toolResult' && message.toolName === 'update_exosurface' && !message.isError ? message.details : undefined;
+  const ids = (details?.delta?.messages ?? []).map((m: any) => m?.createSurface?.surfaceId ?? m?.updateComponents?.surfaceId).filter(Boolean);
+  return details?.delta ? { pages: (details.cards ?? []).map((c: any) => c.surface) as string[], focus: (details.delta.layout?.focus ?? ids.at(-1)) as string | undefined } : undefined;
+};
+
+/** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards.
+ *  With `page`, the latest turn on that page (spec E1, E8): one that drew or edited it, or that changed no page while it was
+ *  on stage; none when no turn is on it. */
+export function latestTurn(sessionFile: string | undefined, page?: string): LatestTurn {
   if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '' };
-  const fd = openSync(sessionFile, 'r'), said: string[] = [];
+  const fd = openSync(sessionFile, 'r');
+  let said: string[] = [], pages: string[] | undefined, focus: string | undefined, quiet: LatestTurn | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -31,10 +42,22 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
-        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
+        if (entry.message?.role === 'user') {
+          const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
+          if (page === undefined) return turn;
+          // A turn that changed no page is on the page on stage when it ran: the next earlier change says which.
+          if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; }
+          if (pages?.includes(page)) return turn;
+          if (!pages) quiet ??= turn;
+          said = []; pages = undefined; focus = undefined;
+          continue;
+        }
         if (entry.message?.role === 'assistant') said.push(text(entry.message));
+        const change = changed(entry.message);
+        if (change) { focus ??= change.focus; pages = [...(pages ?? []), ...change.pages]; }
       }
     }
+    if (page !== undefined) return { userEntry: null, said: '', words: '' };
     return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n') };
   } finally { closeSync(fd); }
 }

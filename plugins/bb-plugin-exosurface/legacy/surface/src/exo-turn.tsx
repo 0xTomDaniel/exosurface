@@ -15,18 +15,19 @@ const sent=new Set<(threadId:string,text:string)=>void>();
 /** Calls `listener` on each send BB accepted from the input (not on a page press, a poll or a turn ending); returns the unsubscribe. */
 export function onSend(listener:(threadId:string,text:string)=>void){sent.add(listener);return()=>{sent.delete(listener);};}
 
-export function ExoBlock({threadId}:{threadId:string|null}){
+/** `page`: the page in view, whose own latest turn the block shows (#134); none, the thread's latest turn. */
+export function ExoBlock({threadId,page}:{threadId:string|null;page?:string}){
  const rpc=useRpc<typeof rpcContract>();
  const[block,setBlock]=useState<Block|null>(null),[error,setError]=useState('');
  useEffect(()=>{
   setBlock(null);setError('');if(!threadId)return;
   let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,working=false;
-  const read=async()=>{clearTimeout(timer);try{const b=await rpc.call('exo_block',{threadId});if(stopped)return;working=b.working;setBlock(b);setError('');}catch(e){if(!stopped)setError(String(e));}
+  const read=async()=>{clearTimeout(timer);try{const b=await rpc.call('exo_block',{threadId,...(page?{page}:{})});if(stopped)return;working=b.working;setBlock(b);setError('');}catch(e){if(!stopped)setError(String(e));}
    finally{if(!stopped)timer=setTimeout(read,working?1000:4000);}};
   const onSent=(id:string,text:string)=>{if(id===threadId){working=true;setBlock({working:true,said:text,words:''});void read();}};
   sent.add(onSent);void read();
   return()=>{stopped=true;clearTimeout(timer);sent.delete(onSent);};
- },[threadId,rpc]);
+ },[threadId,page,rpc]);
  return <section aria-label="Exo" data-exo-block="" className="exo-block mb-6 text-sm">
   {block?.said?<p data-exo-said="" className="exo-bubble">{block.said}</p>:null}
   <div data-exo-reply="" className="exo-reply max-w-prose">{block?.working?<p role="status" aria-live="polite" style={{color:'var(--exo-quiet)'}}>Exo is working on this page…</p>
