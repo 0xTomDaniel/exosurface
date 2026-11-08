@@ -43,18 +43,21 @@ for(const graph of Object.values(graphs))for(const input of graph.inputs){
 }
 // BB's frontend build does not expose an esbuild input manifest. Conservatively retain
 // notices for the entire locked installed graph too (a superset, not proof of loading).
-function installedPackages(modules){
+// Only what a production install puts there on every platform: lock entries neither dev nor os/cpu-specific, so the
+// tracked release.json is the same bytes after any full `npm ci` on Linux or macOS (#139).
+const shipped=project=>{const lock=JSON.parse(readFileSync(join(project,'package-lock.json'),'utf8')).packages;return dir=>{const entry=lock[relative(project,dir).replaceAll('\\','/')];return !!entry&&!entry.dev&&!entry.os&&!entry.cpu;};};
+function installedPackages(modules,ships){
  if(!existsSync(modules))return;
  for(const ent of readdirSync(modules,{withFileTypes:true})){
   if(!ent.isDirectory())continue; // workspace links are handled by their explicit source tree below.
   const dir=join(modules,ent.name);
-  if(ent.name.startsWith('@')){installedPackages(dir);continue;}
-  if(existsSync(join(dir,'package.json'))){const pkg=JSON.parse(readFileSync(join(dir,'package.json'),'utf8'));if(pkg.name&&pkg.version)packages.set(dir,{name:pkg.name,version:pkg.version,license:pkg.license});}
-  installedPackages(join(dir,'node_modules'));
+  if(ent.name.startsWith('@')){installedPackages(dir,ships);continue;}
+  if(existsSync(join(dir,'package.json'))&&ships(dir)){const pkg=JSON.parse(readFileSync(join(dir,'package.json'),'utf8'));if(pkg.name&&pkg.version)packages.set(dir,{name:pkg.name,version:pkg.version,license:pkg.license});}
+  installedPackages(join(dir,'node_modules'),ships);
  }
 }
-installedPackages(join(root,'node_modules'));
-installedPackages(join(root,'legacy/surface/node_modules'));
+installedPackages(join(root,'node_modules'),shipped(root));
+installedPackages(join(root,'legacy/surface/node_modules'),shipped(join(root,'legacy/surface')));
 for(const [dir,pkg] of packages){
  const dest=join(root,'resources/licenses',pkg.name.replaceAll('/','_')+'-'+pkg.version);mkdirSync(dest,{recursive:true});
  writeFileSync(join(dest,'package.json'),JSON.stringify(pkg,null,2)+'\n');
