@@ -117,12 +117,12 @@ function launch(threadId: string, profile: string, sessionFile: string | undefin
       socket.once('error', () => resolve(false)); socket.once('timeout', () => { socket.destroy(); resolve(true); });
     });
     if (busy) throw new Error('An existing native owner must release normally before service startup');
-    const run = runtimeLaunch(profile, 'canonical', threadId, sessionFile);
+    const run = runtimeLaunch(profile, threadId, sessionFile);
     requireLocal(PI_CLI, 'piCli'); requireLocal(VAULT, 'vault');
     lane.pi = new PiRpc(PI_CLI, run.args, VAULT, run.env, e => {
       try { onEvent(lane, e); } catch { state('View/feedback projection failed; Pi remains independent'); }
     }, () => { lane.ready = false; lost(lane); });
-    const native = await lane.pi.send('get_state'); await assertNativeOwner(profile, 'canonical', lane.pi.pid);
+    const native = await lane.pi.send('get_state'); await assertNativeOwner(profile, lane.pi.pid);
     if (sessionFile ? native.sessionFile !== sessionFile : typeof native.sessionFile !== 'string') throw new Error('Native session mismatch');
     lane.sessionFile = native.sessionFile;
     const info = load(join(HOME,'runtime-info',`${threadId}.json`));

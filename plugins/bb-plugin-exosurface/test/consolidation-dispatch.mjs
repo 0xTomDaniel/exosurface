@@ -21,16 +21,6 @@ let cases=1,socket;const requests=[];
 try{
  assert.deepEqual(await dispatch(context()),{action:'proceed'});cases++;
  assert.deepEqual(await dispatch(context({thread:{id:'fixture-child',providerId:'other'},input:{text:'/attach fixture run-one'}})),{action:'proceed'});cases++;
- assert.deepEqual(await dispatch(context({input:{text:'/attach fixture run-one'}})),{action:'reject',message:'Child attachment requires its native main owner.'});cases++;
- write(join(state,'bindings/fixture-parent.json'),{profile:'fixture',runtimeKind:'canonical'});
- const attach=context({thread:{id:'fixture-child',providerId:'exo-spike',parentThreadId:'fixture-parent'},input:{text:'/attach fixture run-one'}});
- assert.match((await dispatch(attach)).message,/disabled for the live trial/);cases++;
- write(join(state,'bindings/fixture-parent.json'),{profile:'fixture',runtimeKind:'offline'});
- write(join(state,'profiles/fixture/runs/run-one.optchat.json'),{id:'run-one'});
- assert.deepEqual(await dispatch(attach),{action:'proceed'});
- assert.deepEqual(JSON.parse(readFileSync(join(state,'bindings/fixture-child.json'))),{providerThreadId:'exo:fixture:run-one',profile:'fixture',childId:'run-one',cursor:0});cases++;
- write(join(state,'bindings/fixture-child.json'),{profile:'other',childId:'run-one'});
- assert.match((await dispatch(attach)).message,/Cannot rebind/);cases++;
  // Real surface fallback must preserve start-turn filtering and owner request/removal.
  write(join(state,'canonical-thread.json'),{threadId:'fixture-child'});
  const pending=join(state,'workspace/pending-restore.json');
@@ -40,7 +30,7 @@ try{
  mkdirSync(join(state,'owner'),{recursive:true});socket=createServer(s=>{let data='';s.on('data',chunk=>{data+=chunk;const i=data.indexOf('\n');if(i<0)return;const request=JSON.parse(data.slice(0,i));requests.push(request);s.end(JSON.stringify({id:request.id,ok:true})+'\n');});});
  await new Promise(r=>socket.listen(join(state,'owner/rpc.sock'),r));
  // Primary reject must short-circuit before surface's pending restore.
- assert.equal((await dispatch(context({input:{text:'/attach fixture run-one'}}))).action,'reject');assert.ok(existsSync(pending));assert.equal(requests.length,0);cases++;
+ assert.equal((await dispatch(context({thread:{id:'fixture-child',providerId:'exo-spike',parentThreadId:'fixture-parent'},input:{text:'/exosurface-new-surface'}}))).action,'reject');assert.ok(existsSync(pending));assert.equal(requests.length,0);cases++;
  assert.deepEqual(await dispatch(context({attempt:'start-turn'})),{action:'proceed'});assert.ok(!existsSync(pending));assert.equal(requests.length,1);assert.equal(requests[0].type,'canvas-restore');assert.equal(requests[0].threadId,'fixture-child');assert.deepEqual(requests[0].request.updates,[]);cases++;
  // Surface's existing owner-error handling remains local to that handler, not composition.
  await new Promise(r=>socket.close(r));socket=null;write(pending,value);

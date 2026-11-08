@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -8,11 +7,10 @@ import {
   threadResumeParamsSchema, threadStopParamsSchema, turnStartParamsSchema, turnSteerParamsSchema,
   type ThreadDelta,
 } from '@get-bb/plugin-sdk/provider-bridge';
-import { PiRpc } from './src/pi-rpc.ts';
 import { OwnerClient } from './src/owner-client.ts';
 import { updateFeedback } from './src/overview.ts';
-import { HOME, PI_CLI, MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL, isExoModel, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, threadProfile, isBoundThread, NEW_THREAD_PROMPT, runs, childMessages, feedback, type RuntimeKind } from './src/state.ts';
-import { runtimeLaunch, prepareRuntime, assertNativeOwner } from './src/runtime.ts';
+import { HOME, CANONICAL_MODEL, SOL_MODEL, CANONICAL_PROFILE, VAULT, load, save, binding, bindingFile, threadProfile, isBoundThread, NEW_THREAD_PROMPT } from './src/state.ts';
+import { prepareRuntime, assertNativeOwner } from './src/runtime.ts';
 import { promptWithPrimaryModel } from './src/model-selection.ts';
 import { consumeCanonicalInitialization, consumeAdmittedCanonicalStart } from './src/canonical-control.ts';
 import { setupStatus } from './src/canonical-setup.ts';
@@ -21,8 +19,8 @@ const io = createBridgeIo<any>();
 const sessions = new Map<string, Session>();
 type Session = {
   threadId: string; profile: string; providerThreadId: string; cwd: string;
-  rpc?: PiRpc | OwnerClient; closing: boolean; open: boolean; failed: boolean; serial: number;
-  messageKey?: string; childId?: string; cursor: number; poll?: NodeJS.Timeout; runtimeKind: RuntimeKind;
+  rpc?: OwnerClient; closing: boolean; open: boolean; failed: boolean; serial: number;
+  messageKey?: string;
 };
 const emit = (s: Session, deltas: ThreadDelta[]) => io.send({ jsonrpc: '2.0', method: 'thread/delta', params: { threadId: s.threadId, deltas } });
 const text = (content: any) => typeof content === 'string' ? content : (content ?? []).filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n');
@@ -85,77 +83,63 @@ function event(s: Session, e: any) {
   }
   if (e.type === 'extension_error') { s.failed = true; message(s, `[Pi extension error] ${e.error}`); }
 }
-async function construct(threadId: string, cwd: string, providerThreadId?: string, attach?: { profile: string; childId: string }, runtimeKind: RuntimeKind = 'offline') {
+async function construct(threadId: string, cwd: string, providerThreadId?: string) {
   // Personal BB threads have a managed artifact workspace. Exo's local Adapter
   // deliberately roots Pi in the vault, like the existing pi-optchat launcher.
   // Only full-permission mode is advertised; this is not a workspace sandbox.
-  if (runtimeKind !== 'offline') cwd = VAULT;
-  if (runtimeKind !== 'offline' && attach) throw new Error('Linked child projections are disabled outside the offline proof');
+  cwd = VAULT;
   // A thread bound to its own canonical profile (thread-profiles.ts) runs beside the primary, never as it.
-  const bound = binding(threadId), own = runtimeKind === 'canonical' && bound?.runtimeKind === 'canonical' && bound.profile === threadProfile(threadId);
-  if (runtimeKind === 'canonical') {
-    const file = join(HOME, 'canonical-thread.json');
-    if (existsSync(file) && load(file).threadId !== threadId && !own) throw new Error(`Open the existing canonical BB conversation ${load(file).threadId}; do not start another owner thread`);
-  }
+  const bound = binding(threadId), own = bound?.runtimeKind === 'canonical' && bound.profile === threadProfile(threadId);
+  const file = join(HOME, 'canonical-thread.json');
+  if (existsSync(file) && load(file).threadId !== threadId && !own) throw new Error(`Open the existing canonical BB conversation ${load(file).threadId}; do not start another owner thread`);
   if (sessions.has(threadId)) throw new Error('Thread already has an attached runtime');
-  let profile = attach?.profile ?? (providerThreadId ? providerThreadId.split(':')[1] : runtimeKind === 'canonical' ? (own ? bound.profile : CANONICAL_PROFILE) : `${runtimeKind === 'live' ? 'live-' : ''}${randomUUID().replaceAll('-', '').slice(0, 20)}`);
+  let profile = providerThreadId ? providerThreadId.split(':')[1] : own ? bound.profile : CANONICAL_PROFILE;
   if (!/^[a-z0-9_-]{1,64}$/.test(profile)) throw new Error('Invalid profile identity');
-  const childId = attach?.childId ?? (providerThreadId?.split(':')[2] !== 'main' ? providerThreadId?.split(':')[2] : undefined);
+  const childId = providerThreadId?.split(':')[2] !== 'main' ? providerThreadId?.split(':')[2] : undefined;
   const handle = `exo:${profile}:${childId ?? 'main'}`;
   if ([...sessions.values()].some(s => s.providerThreadId === handle)) throw new Error('This provider session already belongs to a BB thread');
   const old = binding(threadId);
-  if (old && (old.runtimeKind ?? 'offline') !== runtimeKind) throw new Error('Cannot switch a persisted proof conversation between fixture and live models; create a separate thread');
-  if (runtimeKind === 'canonical' && ((profile !== CANONICAL_PROFILE && !(own && profile === bound.profile)) || childId)) throw new Error('Canonical route requires the existing main exo-optchat identity');
-  if (runtimeKind === 'live' && (!profile.startsWith('live-') || childId)) throw new Error('Live trial cannot claim the existing personal profile or a linked child');
-  if (!childId && old?.sessionFile && !providerThreadId) throw new Error('Existing spike conversation must resume its provider identity, not start a new profile on an old transcript');
+  if (old && old.runtimeKind !== 'canonical') throw new Error('This conversation is not bound to the canonical Exo runtime; create a separate thread');
+  if ((profile !== CANONICAL_PROFILE && !(own && profile === bound.profile)) || childId) throw new Error('Canonical route requires the existing main exo-optchat identity');
+  if (old?.sessionFile && !providerThreadId) throw new Error('Existing spike conversation must resume its provider identity, not start a new profile on an old transcript');
   if (providerThreadId && old?.providerThreadId && old.providerThreadId !== providerThreadId) throw new Error('Provider identity does not match saved binding');
-  const s: Session = { threadId, profile, providerThreadId: handle, cwd, closing: false, open: false, failed: false, serial: Date.now(), childId, cursor: old?.cursor ?? 0, runtimeKind };
+  const s: Session = { threadId, profile, providerThreadId: handle, cwd, closing: false, open: false, failed: false, serial: Date.now() };
   sessions.set(threadId, s);
   io.send({ jsonrpc: '2.0', method: 'thread/identity', params: { threadId, providerThreadId: handle } });
   emit(s, [{ kind: 'session.reset' }]);
   try {
-    if (childId) {
-      if (!runs(profile).some(r => r.id === childId)) throw new Error('No native OptChat child with that identity');
-    } else {
-      // The canonical owner is a separate process that validates/launches its own runtime; BB's copied host
-      // artifact has no packaged runtime beside it, so only non-canonical kinds launch Pi here.
-      // Canonical still validates the profile/generation here (fail closed) before attaching to the owner.
-      const launch = runtimeKind === 'canonical' ? (prepareRuntime(profile, runtimeKind), undefined) : runtimeLaunch(profile, runtimeKind, threadId, old?.sessionFile);
-      const lost = (error: Error) => {
-        if (!s.closing) { audit(s, 'unexpected-exit'); io.send({ jsonrpc: '2.0', method: 'error', params: { threadId, message: error.message } }); if (s.open) settle(s, 'failed'); }
-      };
-      s.rpc = runtimeKind === 'canonical'
-        ? await OwnerClient.open(threadId, e => event(s, e), lost)
-        : new PiRpc(PI_CLI, launch!.args, cwd, launch!.env, e => event(s, e), lost);
-      const state = await s.rpc.send('get_state');
-      const commands = await s.rpc.send('get_commands');
-      await assertNativeOwner(profile, runtimeKind, s.rpc.pid);
-      // Whole-history get_entries RPC would eventually exceed any frame bound.
-      // Canonical diagnostics expose only the branch's profile binding.
-      const bound = runtimeKind === 'canonical'
-        ? load(join(HOME, 'runtime-info', `${threadId}.json`)).boundProfile === profile
-        : (await s.rpc.send('get_entries')).entries.some((e: any) => e.type === 'custom' && e.customType === 'optchat.profile' && e.data?.name === profile);
-      if (!bound) throw new Error('OptChat did not bind the requested profile; refusing a false-ready runtime');
-      save(bindingFile(threadId), { providerThreadId: handle, profile, runtimeKind, sessionFile: state.sessionFile, commands: commands?.commands?.map((c: any) => ({ name: c.name, description: c.description })), cursor: 0 });
-      if (runtimeKind === 'canonical' && !own) save(join(HOME, 'canonical-thread.json'), { threadId, profile, providerThreadId: handle, sessionFile: state.sessionFile });
-      audit(s, runtimeKind === 'canonical' ? 'view-attached' : 'owner-started', { sessionId: state.sessionId });
-      if (runtimeKind === 'canonical') await s.rpc.send('attach');
-    }
+    // The canonical owner is a separate process that validates/launches its own runtime; BB's copied host
+    // artifact has no packaged runtime beside it. It still validates the profile/generation here (fail closed)
+    // before attaching to the owner.
+    prepareRuntime(profile);
+    const lost = (error: Error) => {
+      if (!s.closing) { audit(s, 'unexpected-exit'); io.send({ jsonrpc: '2.0', method: 'error', params: { threadId, message: error.message } }); if (s.open) settle(s, 'failed'); }
+    };
+    s.rpc = await OwnerClient.open(threadId, e => event(s, e), lost);
+    const state = await s.rpc.send('get_state');
+    const commands = await s.rpc.send('get_commands');
+    await assertNativeOwner(profile, s.rpc.pid);
+    // Whole-history get_entries RPC would eventually exceed any frame bound.
+    // Canonical diagnostics expose only the branch's profile binding.
+    if (load(join(HOME, 'runtime-info', `${threadId}.json`)).boundProfile !== profile) throw new Error('OptChat did not bind the requested profile; refusing a false-ready runtime');
+    save(bindingFile(threadId), { providerThreadId: handle, profile, runtimeKind: 'canonical', sessionFile: state.sessionFile, commands: commands?.commands?.map((c: any) => ({ name: c.name, description: c.description })), cursor: 0 });
+    if (!own) save(join(HOME, 'canonical-thread.json'), { threadId, profile, providerThreadId: handle, sessionFile: state.sessionFile });
+    audit(s, 'view-attached', { sessionId: state.sessionId });
+    await s.rpc.send('attach');
     // Settle startup status before accepting the first submitted prompt.
     if (s.open) settle(s);
-    if (childId) { save(bindingFile(threadId), { providerThreadId: handle, profile, childId, cursor: s.cursor }); audit(s, 'child-view-attached', { childId }); }
     return s;
   } catch (error) { await close(s); throw error; }
 }
 async function close(s: Session) {
-  s.closing = true; if (s.poll) clearInterval(s.poll);
-  await s.rpc?.close(); sessions.delete(s.threadId); audit(s, s.runtimeKind === 'canonical' ? 'view-detached' : 'owner-released');
+  s.closing = true;
+  await s.rpc?.close(); sessions.delete(s.threadId); audit(s, 'view-detached');
 }
 // New surface (#68): the thread_new RPC's first message only bound the thread at admission; no turn reaches Pi.
-const newSurface = (s: Session, input: any[] | undefined) => s.runtimeKind === 'canonical' && isBoundThread(s.threadId) && (input ?? []).map((i: any) => i.text ?? '').join('').trim() === NEW_THREAD_PROMPT;
+const newSurface = (s: Session, input: any[] | undefined) => isBoundThread(s.threadId) && (input ?? []).map((i: any) => i.text ?? '').join('').trim() === NEW_THREAD_PROMPT;
 async function selectedPrompt(s: Session, picked: unknown, input: any[], requestId?: string) {
   const send = () => prompt(s, input, requestId);
-  if (s.runtimeKind !== 'canonical' || s.childId || !s.rpc) return send();
+  if (!s.rpc) return send();
   return promptWithPrimaryModel(s.rpc, picked, async () => {
     audit(s, 'model-verified', { model: picked });
     return send();
@@ -164,11 +148,6 @@ async function selectedPrompt(s: Session, picked: unknown, input: any[], request
 async function prompt(s: Session, input: any[], requestId?: string) {
   if (input.some(p => p.type !== 'text')) throw new Error('Attachments are outside this spike');
   const value = input.map(p => p.text).join('');
-  if (s.childId) {
-    if (value !== '/refresh' && !value.startsWith('/attach ')) throw new Error('Child projection is read-only in this spike; use native tell from its owner');
-    if (requestId) emit(s, [{ kind: 'input.accepted', clientRequestId: requestId }]);
-    project(s); settle(s); return;
-  }
   const response = await s.rpc!.send('prompt', { message: value });
   audit(s, 'prompt-response', { disposition: response?.disposition });
   if (requestId) emit(s, [{ kind: 'input.accepted', clientRequestId: requestId }]);
@@ -177,17 +156,10 @@ async function prompt(s: Session, input: any[], requestId?: string) {
     if (!state.isStreaming && !state.isCompacting && !state.pendingMessageCount) settle(s);
   }
 }
-function project(s: Session) {
-  if (!s.childId || s.closing) return;
-  const messages = childMessages(s.profile, s.childId);
-  for (const m of messages.slice(s.cursor)) if (text(m.content)) message(s, text(m.content));
-  s.cursor = messages.length;
-  save(bindingFile(s.threadId), { providerThreadId: s.providerThreadId, profile: s.profile, childId: s.childId, cursor: s.cursor });
-}
 const schemas: Record<string, any> = { initialize: initializeParamsSchema, 'model/list': modelListParamsSchema, 'thread/start': threadStartParamsSchema, 'thread/resume': threadResumeParamsSchema, 'thread/stop': threadStopParamsSchema, 'turn/start': turnStartParamsSchema, 'turn/steer': turnSteerParamsSchema };
 async function request(id: string | number, method: string, p: any) {
   if (method === 'initialize') return io.sendResult(id, { protocolVersion: PROVIDER_BRIDGE_PROTOCOL_VERSION, capabilities: { grammarVersions: [THREAD_DELTA_GRAMMAR_V3, THREAD_DELTA_GRAMMAR_V3], sessionRestore: true, fork: 'none', threadArchive: false, threadRename: false, threadGoalClear: false, approvalEnforcedBy: 'provider', steerMode: 'queue' } });
-  if (method === 'model/list') return io.sendResult(id, { models: [MODEL, LIVE_MODEL, CANONICAL_MODEL, SOL_MODEL], selectedOnlyModels: [] });
+  if (method === 'model/list') return io.sendResult(id, { models: [CANONICAL_MODEL, SOL_MODEL], selectedOnlyModels: [] });
   if (method === 'thread/start' || method === 'turn/start') {
     const setupOperation = p.options?.providerOptions?.canonicalSetupOperation;
     const setup = method === 'thread/start' && !p.input?.length && typeof setupOperation === 'string' && setupStatus(HOME)?.stage !== 'bound'
@@ -211,18 +183,13 @@ async function request(id: string | number, method: string, p: any) {
     }
   }
   if (method === 'thread/start' || method === 'thread/resume') {
-    const initial = (p.input ?? []).filter((i: any) => i.type === 'text').map((i: any) => i.text).join('');
-    const match = /^\/attach ([a-z0-9_-]+) ([a-zA-Z0-9-]+)$/.exec(initial);
-    const attachment = p.options.providerOptions?.attachment;
-    const runtimeKind: RuntimeKind = p.options.providerOptions?.runtimeKind === 'canonical' || isExoModel(p.options.model) ? 'canonical' : p.options.providerOptions?.runtimeKind === 'live' || p.options.model === LIVE_MODEL.id ? 'live' : 'offline';
-    const s = await construct(p.threadId, p.cwd, providerThreadId, attachment ?? (match ? { profile: match[1], childId: match[2] } : undefined), runtimeKind);
+    const s = await construct(p.threadId, p.cwd, providerThreadId);
     io.sendResult(id, { providerThreadId: s.providerThreadId, sessionRestorable: true });
     if (p.input?.length && newSurface(s, p.input)) settle(s);
     else if (p.input?.length) {
       try { await selectedPrompt(s, p.options?.model, p.input); }
       catch (error) { message(s, `[Rejected] ${error instanceof Error ? error.message : String(error)}`); settle(s, 'failed'); }
     }
-    if (s.childId) s.poll = setInterval(() => { try { const before = s.cursor; project(s); if (s.cursor !== before) settle(s); } catch { audit(s, 'child-projection-error'); } }, 250);
     return;
   }
   let s = sessions.get(p.threadId);
@@ -230,10 +197,9 @@ async function request(id: string | number, method: string, p: any) {
   // ordinary turn may attach ONLY the committed fresh canonical binding.
   if (!s && method === 'turn/start' && setupStatus(HOME)?.stage === 'bound') {
     const canonical = binding(p.threadId), journal = setupStatus(HOME);
-    if (journal?.threadId === p.threadId && canonical?.runtimeKind === 'canonical') s = await construct(p.threadId, VAULT, canonical.providerThreadId, undefined, 'canonical');
+    if (journal?.threadId === p.threadId && canonical?.runtimeKind === 'canonical') s = await construct(p.threadId, VAULT, canonical.providerThreadId);
   }
   if (!s) throw new Error('No attached spike runtime; resume first');
-  if (p.options?.providerOptions?.runtimeKind && p.options.providerOptions.runtimeKind !== s.runtimeKind) throw new Error('Cannot change fixture/live runtime on an existing conversation');
   if (method === 'turn/start') {
     io.sendResult(id, {});
     if (newSurface(s, p.input)) { if (p.clientRequestId) emit(s, [{ kind: 'input.accepted', clientRequestId: p.clientRequestId }]); settle(s); return; }
@@ -245,8 +211,7 @@ async function request(id: string | number, method: string, p: any) {
     if (!s.rpc || !s.open) return io.sendError(id, -32003, 'No active main turn to steer');
     const value = p.input.map((i: any) => i.text ?? '').join('');
     const send = () => s.rpc!.send('prompt', { message: value, streamingBehavior: 'steer' });
-    if (s.runtimeKind === 'canonical' && !s.childId) await promptWithPrimaryModel(s.rpc, p.options?.model, send);
-    else await send();
+    await promptWithPrimaryModel(s.rpc, p.options?.model, send);
     if (p.clientRequestId) emit(s, [{ kind: 'input.accepted', clientRequestId: p.clientRequestId }]);
     return io.sendResult(id, {});
   }
