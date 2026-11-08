@@ -163,7 +163,9 @@ export default function workspace(pi:ExtensionAPI){
     const next=applyDelta(current,delta),focus=next.layout?.focus??moduleIds(next).at(-1);
     const cards=[...change.drawn.map(surface=>({surface,action:'drew' as Action,revision:next.revision})),...change.edited.map(surface=>({surface,action:'edited' as Action,revision:next.revision}))];
     const said=[change.drawn.length&&`drew page ${change.drawn.join(', ')}`,change.edited.length&&`edited page ${change.edited.join(', ')}`,change.deleted.length&&`withdrew page ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
-    return {content:[{type:'text',text:`Surface revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired}};
+    // stage: the page on stage after this change as applyDelta settled it (withdrawal fallback included), null when none;
+    // the Exo block reads it to place a later turn that changed no page (#134).
+    return {content:[{type:'text',text:`Surface revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired,stage:focus??null}};
    }catch(error){
     // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
     const issues=(error as any)?.issues as {path:(string|number)[];message:string}[]|undefined;

@@ -333,6 +333,16 @@ async function exoBlockOwnPage() {
     await show('earlier page opened from the page strip', 'Week plan');
     fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
     await show('back to the current topic', 'Garden plan');
+    // Exo withdraws the garden page (revision 2 to 3); the stage falls back to the week page, and a message that draws
+    // nothing is on it.
+    const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
+    fireEvent.change(input(), { target: { value: withdraw } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the garden page withdrawn', () => inView() === 'Week plan' && input() && !input().disabled);
+    console.log(`sent ${JSON.stringify(withdraw)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+    const quiet = 'and the hedge along the path';
+    fireEvent.change(input(), { target: { value: quiet } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    own['Week plan'] = quiet;
+    await show('after Exo withdrew the page in view, a message that draws nothing', 'Week plan');
     if (!ok) throw new Error('exo-block-own-page failed');
   } finally {
     view.unmount(); close();

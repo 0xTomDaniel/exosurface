@@ -10,12 +10,16 @@ import { HOME, binding, load } from './state.ts';
 export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
-/** The pages a page change names: those it drew or edited (its cards), and the page on stage after it (layout focus, else
- *  the last page it created or redesigned; undefined when it moved nothing). */
-const changed = (message: any) => {
-  const details = message?.role === 'toolResult' && message.toolName === 'update_exosurface' && !message.isError ? message.details : undefined;
+/** The pages a page change names: those it drew or edited (its cards), and the page on stage after it: the stage the
+ *  change recorded as applied (withdrawal fallback included; null, no page), else, in a journal written before it recorded
+ *  that, layout focus or the last page it created or redesigned (undefined when it moved nothing). A bring-back puts its
+ *  page on stage and draws no page of the turn's. */
+const changed = (entry: any) => {
+  if (entry.type === 'custom' && entry.customType === 'exosurface-composition-commit' && entry.data?.source === 'canvas-restore')
+    return { pages: undefined, focus: entry.data.delta?.layout?.focus as string | undefined };
+  const message = entry.message, details = message?.role === 'toolResult' && message.toolName === 'update_exosurface' && !message.isError ? message.details : undefined;
   const ids = (details?.delta?.messages ?? []).map((m: any) => m?.createSurface?.surfaceId ?? m?.updateComponents?.surfaceId).filter(Boolean);
-  return details?.delta ? { pages: (details.cards ?? []).map((c: any) => c.surface) as string[], focus: (details.delta.layout?.focus ?? ids.at(-1)) as string | undefined } : undefined;
+  return details?.delta ? { pages: (details.cards ?? []).map((c: any) => c.surface) as string[], focus: (details.stage !== undefined ? details.stage : details.delta.layout?.focus ?? ids.at(-1)) as string | null | undefined } : undefined;
 };
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards.
@@ -24,7 +28,7 @@ const changed = (message: any) => {
 export function latestTurn(sessionFile: string | undefined, page?: string): LatestTurn {
   if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r');
-  let said: string[] = [], pages: string[] | undefined, focus: string | undefined, quiet: LatestTurn | undefined;
+  let said: string[] = [], pages: string[] | undefined, focus: string | null | undefined, quiet: LatestTurn | undefined;
   let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
@@ -43,6 +47,8 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
       for (const line of parts.reverse()) {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
+        const change = changed(entry);
+        if (change) { if (focus === undefined) focus = change.focus; if (change.pages) pages = [...(pages ?? []), ...change.pages]; }
         if (entry.type !== 'message') continue;
         if (entry.message?.role === 'user') {
           const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
@@ -55,8 +61,6 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
           continue;
         }
         if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
-        const change = changed(entry.message);
-        if (change) { focus ??= change.focus; pages = [...(pages ?? []), ...change.pages]; }
       }
     }
     if (page !== undefined) return { userEntry: null, said: '', words: '', ended: false };
