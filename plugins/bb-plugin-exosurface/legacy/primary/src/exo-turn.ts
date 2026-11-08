@@ -5,9 +5,12 @@
 import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
+import { pressLabel } from '../../surface/src/press-line.ts';
 
 export type LatestTurn = { userEntry: string | null; said: string; words: string };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
+/** The person's words in their message; a button press shows as the button's label (spec pages-and-activity F6). */
+const personSaid = (message: any) => { const said = typeof message.content === 'string' ? message.content : text(message); return pressLabel(said) ?? said; };
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards. */
 export function latestTurn(sessionFile: string | undefined): LatestTurn {
@@ -31,7 +34,7 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
-        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
+        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: personSaid(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
         if (entry.message?.role === 'assistant') said.push(text(entry.message));
       }
     }
