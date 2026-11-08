@@ -108,6 +108,19 @@ test('a press on its page and a send both scroll the surface back to its top thr
   } finally { browser.reducedMotion = false; }
 });
 
+test('after a press and Exo\'s finished turn, the person\'s bubble is the button\'s label, right-aligned, and Exo\'s reply to the press is plain text below it', async () => {
+  // #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label, never the press line).
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+  await until('the page\'s Book button, idle', () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled);
+  fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: 'Ada' } });
+  fireEvent.click(book()!);
+  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && reply()!.textContent!.includes('Ada'));
+  assert.equal(bubble()?.textContent, 'Book');
+  assert.equal(rightAligned(bubble()!), true);
+  assert.equal(before(bubble()!, reply()!), true);
+  assert.equal(boxed(reply()!, block()!), false);
+});
+
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
   const made = (await f.rpc.thread_new(null)).threadId;
   f.retitle(made, 'Garden plan');
