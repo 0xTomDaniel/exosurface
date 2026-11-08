@@ -203,15 +203,15 @@
     "acceptance-live-activity": {
       "status": "built",
       "pr": 90,
-      "record": "20261106T221406Z-8ad675da",
-      "commit": "e9e7f1424ad01f66b943d2ef38b6edcb84b9cc68",
+      "record": "20261108T220240Z-0cba7330",
+      "commit": "cdd590b93ae4cabffdec19bcdb623faeb19bcd04",
       "tests": []
     },
     "acceptance-live-activity-ends": {
       "status": "built",
       "pr": 90,
-      "record": "20261106T221538Z-63347dfd",
-      "commit": "e9e7f1424ad01f66b943d2ef38b6edcb84b9cc68",
+      "record": "20261108T220351Z-f375fc68",
+      "commit": "cdd590b93ae4cabffdec19bcdb623faeb19bcd04",
       "tests": []
     },
     "acceptance-press-to-top": {
