@@ -52,7 +52,7 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
     const s = status(); if (!s) return undefined;
     const css = getComputedStyle(s);
     const shimmer = [s, ...s.querySelectorAll('*')].find(e => animation(getComputedStyle(e).animation)) ?? s, glyphs = getComputedStyle(shimmer);
-    if (!canvas) { source = declared(shimmer); canvas = getComputedStyle(s.closest('main[aria-label="Exosurface"]')!); }
+    if (!canvas) { source = declared(shimmer); canvas = getComputedStyle(s.closest('main[aria-label="Exo"]')!); }
     shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow,
       inside: shimmer !== s && shimmer.textContent === s.textContent, sized: glyphs.display,
       animation: animation(glyphs.animation), clip: glyphs.getPropertyValue('background-clip'), color: glyphs.color, lineHeight: css.lineHeight, height: css.height }));
