@@ -25,12 +25,21 @@ export function createOverview(list: () => Promise<any[]>, get: (id: string) => 
       const all = state?.runtimeKind === 'canonical' && existsSync(ownerFile) ? load(ownerFile) : undefined;
       // The owner's state for this thread: the primary's lane, or a bound thread's own (state.threads[id], #67).
       const owner = all && all.threadId !== t.id ? all.threads?.[t.id] : all;
+      // The model as the thread's own Pi reports it on start and on each model switch (live.ts runtime info), the one Exo runs on (#129, settings).
+      const infoFile = join(HOME, 'runtime-info', `${t.id}.json`);
+      const info = state?.runtimeKind === 'canonical' && existsSync(infoFile) ? load(infoFile) : undefined;
       return { id: t.id, title: t.title, status: owner?.ready ? owner.streaming ? 'running' : 'idle' : t.status,
-        parentThreadId: t.parentThreadId, profile: state?.profile ?? null, childId: state?.childId ?? null,
-        runtimeKind: state?.runtimeKind ?? 'offline', feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
-        children: state?.profile && !state.childId ? runs(state.profile, state.runtimeKind ?? 'offline', 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
+        parentThreadId: t.parentThreadId, profile: state?.profile ?? null,
+        ready: !!owner?.ready && alive(all?.ownerPid), model: info?.model ? `${info.model.provider}/${info.model.id}` : null, feedback: feedback(t.id), commands: state?.commands?.map((c: any) => c.name) ?? [],
+        children: state?.runtimeKind === 'canonical' && !state.childId ? runs(state.profile, 50).map(r => ({ id: r.id, state: r.state, report: r.report ?? null })) : [] };
     }) };
   };
+}
+
+/** Whether the owner process that wrote its state is still there: a crashed owner leaves `ready` behind. */
+function alive(pid: unknown) {
+  if (typeof pid !== 'number') return false;
+  try { process.kill(pid, 0); return true; } catch (e) { return (e as NodeJS.ErrnoException).code === 'EPERM'; }
 }
 
 export function updateFeedback(threadId: string, e: any) {

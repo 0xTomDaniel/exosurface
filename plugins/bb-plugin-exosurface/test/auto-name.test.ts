@@ -62,7 +62,7 @@ test('a new surface is named from its first message by the namer\'s answer, in t
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
-  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   /** The surface's title at the top of the view (the header's text). */
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
@@ -115,7 +115,7 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
-  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
   const { fireEvent } = kit.testing;
@@ -161,7 +161,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
-  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
   const { fireEvent } = kit.testing;
@@ -219,7 +219,7 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
-  const entries = () => [...sidebar().querySelectorAll('li')].map(li => li.textContent);
+  const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
   const { fireEvent } = kit.testing;
