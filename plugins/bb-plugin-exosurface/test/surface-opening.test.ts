@@ -163,3 +163,23 @@ test('a surface whose stored name is "Garden plan" shows "Garden plan" as its ti
   await until('Home as the title', () => title()?.textContent === 'Home');
   assert.deepEqual(headings().filter(h => h?.includes('Exosurface')), []);
 });
+
+test('a press on a button whose label holds " — " or " · " shows exactly that label as the person\'s bubble; a typed message that looks like a press shows as typed', async () => {
+  // Review of PR #146 (F6, acceptance-press-to-top: the bubble carries the button's label, never a rewritten one).
+  // Each button sends the page's note, so each press commits it and the next press is on a new revision.
+  const snapshot = '- region "Plan · Week" [ref=pw]:\n  - textbox "Note" [ref=note]\n  - button "Keep — later" [ref=later] [action=later] [sends=note]\n  - button "Plan · Keep" [ref=plankeep] [action=plan] [sends=note]';
+  const revision = (await f.rpc.workspace({ deployment: 'main', cursor: null })).revision;
+  await until('the input idle', () => !!input() && !input()!.disabled);
+  host.send('primary', `call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
+  const button = (label: string) => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === label) as HTMLButtonElement | undefined;
+  for (const [label, note] of [['Keep — later', 'first'], ['Plan · Keep', 'second']]) {
+    await until(`the ${label} button, idle`, () => !!button(label) && !button(label)!.closest('[inert]') && !!input() && !input()!.disabled);
+    fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: note } });
+    fireEvent.click(button(label)!);
+    await until(`Exo's reply to the ${label} press`, () => reply()?.textContent === `Exo (exo-optchat): ▸ Plan · Week · ${label} — Note: “${note}”`);
+    assert.equal(bubble()?.textContent, label);
+  }
+  await send('▸ Plan · Keep');
+  await until('the reply to the typed message', () => reply()?.textContent === 'Exo (exo-optchat): ▸ Plan · Keep');
+  assert.equal(bubble()?.textContent, '▸ Plan · Keep');
+});
