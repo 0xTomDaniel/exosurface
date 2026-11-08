@@ -116,3 +116,16 @@ test('each page\'s Exo block shows the person\'s latest message on that page and
   assert.equal(reply()!.textContent, `Exo (${profile}): and the roses by the fence`);
   assert.equal(count(block()!.textContent!, 'Week'), 0);
 });
+
+test('after Exo withdraws the page in view, a message that draws nothing shows in the Exo block of the page that comes back into view', async () => {
+  // #134 review: week drawn, then garden; Exo withdraws garden (revision 2 to 3) and the stage falls back to week; the next
+  // message draws nothing, so it is on week, the page in view.
+  const profile = f.piRuns().at(-1).profile, said = () => block()?.querySelector('[data-exo-said]')?.textContent ?? '';
+  const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
+  await send(withdraw);
+  await until('the garden page withdrawn and the week page in view', () => !pageText().includes('Garden plan') && pageText().includes('Week plan'));
+  await send('and the hedge along the path');
+  await until('the week page\'s latest message and Exo\'s reply in its block', () => reply()?.textContent === `Exo (${profile}): and the hedge along the path`);
+  assert.equal(said(), 'and the hedge along the path');
+  assert.equal(count(block()!.textContent!, 'draw week'), 0);
+});
