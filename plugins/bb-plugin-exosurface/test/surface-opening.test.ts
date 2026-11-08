@@ -5,7 +5,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { waiter } from './wait.ts';
 import { renderedApp, rightAligned, boxed } from './app-render.ts';
@@ -63,38 +62,49 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   assert.equal(input()!.value, '');
 });
 
-test('a send scrolls the surface back to its top, eased (instantly under reduced motion); a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
-  // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout or scrolling: through the browser stand-ins of
-  // test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that the
-  // request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then showing
-  // on screen, are the owner's RDP re-check.
-  // The press is the one the page's button sends, through the action RPC: the app hears of it only by its turn and the
-  // polls that follow.
+test('a press on its page and a send both scroll the surface back to its top through the one eased scroll (instantly under reduced motion); Exo\'s turn ending and a poll leave the scroll where it was', async () => {
+  // Owner walkthrough on PR #89 (spec E8, F1/F4) and owner ruling 2026-11-05 on #138 (F6, acceptance-press-to-top: a
+  // press must not jump, it eases exactly like a send). jsdom does no layout or scrolling: through the browser stand-ins
+  // of test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that
+  // the request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then
+  // showing on screen, are the owner's RDP re-check.
+  // The press is the person clicking the page's Book button in the rendered surface.
   const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
-  scroller.scrollTop = 400;
-  assert.ok(scroller.scrollTop === 400, `scrolled down: ${scroller.scrollTop}`);
-  const asked = browser.scrolls.length, request = () => JSON.stringify(browser.scrolls.slice(asked));
-  const drawn = (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint;
-  const surfaceId = drawn.messages.find((m: any) => m.createSurface).createSurface.surfaceId, at = revision();
-  const button = drawn.messages.flatMap((m: any) => m.updateComponents?.components ?? []).find((n: any) => n.action?.event);
-  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, 'Grace']));
-  const pressed = await f.rpc.action({ threadId: 'primary', revision: drawn.revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json'] } } } });
-  assert.ok(pressed.accepted === true, JSON.stringify(pressed));
-  await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
-  assert.ok(scroller.scrollTop === 400 && request() === '[]', `after a press, Exo's turn and polls: ${scroller.scrollTop}, scrolls asked ${request()}`);
-  await send('and Saturday too');
-  await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Saturday too');
-  assert.ok(main() === scroller && scroller.scrollTop === 0 && request() === '[{"top":0,"behavior":"smooth"}]', `after a send: ${scroller.scrollTop}, scrolls asked ${request()}`);
-  await until('the send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Saturday too');
-  // The person asked their system for reduced motion: the next send jumps to the top instead.
-  browser.reducedMotion = true; scroller.scrollTop = 400;
-  const before = browser.scrolls.length;
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+  const idle = () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled;
+  // Each step starts scrolled down, below the first screen; it returns the scrolls the surface asked for during it.
+  async function step(what: string, act: () => Promise<void>) {
+    scroller.scrollTop = 400;
+    assert.ok(scroller.scrollTop === 400, `scrolled down before ${what}: ${scroller.scrollTop}`);
+    const asked = browser.scrolls.length;
+    await act();
+    return { top: scroller.scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
+  }
+  async function press(who: string) {
+    await until('the page\'s Book button, idle', idle);
+    const at = revision(), field = main().querySelector('[data-surface] input') as HTMLInputElement;
+    fireEvent.input(field, { target: { value: who } });
+    fireEvent.click(book()!);
+    // Exo's turn on the press ends and the pressed page is polled in; neither scrolls again.
+    await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
+  }
+  async function sent(text: string) {
+    await send(text);
+    await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === text);
+    await until('the send\'s reply', () => reply()?.textContent === `Exo (exo-optchat): ${text}`);
+  }
+  const eased = '[{"top":0,"behavior":"smooth"}]', instant = '[{"top":0,"behavior":"auto"}]';
+  const pressed = await step('a press', () => press('Grace'));
+  assert.ok(main() === scroller && pressed.top === 0 && pressed.asked === eased, `after a press, Exo's turn and polls: ${JSON.stringify(pressed)}`);
+  const send1 = await step('a send', () => sent('and Saturday too'));
+  assert.ok(main() === scroller && send1.top === 0 && send1.asked === eased, `after a send: ${JSON.stringify(send1)}`);
+  // The person asked their system for reduced motion: a press and a send both jump to the top instead.
+  browser.reducedMotion = true;
   try {
-    await send('and Sunday');
-    await until('the second send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Sunday');
-    const jumped = JSON.stringify(browser.scrolls.slice(before));
-    assert.ok(scroller.scrollTop === 0 && jumped === '[{"top":0,"behavior":"auto"}]', `after a send with reduced motion: ${scroller.scrollTop}, scrolls asked ${jumped}`);
-    await until('the second send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Sunday');
+    const pressed2 = await step('a press with reduced motion', () => press('Lin'));
+    assert.ok(pressed2.top === 0 && pressed2.asked === instant, `after a press with reduced motion: ${JSON.stringify(pressed2)}`);
+    const send2 = await step('a send with reduced motion', () => sent('and Sunday'));
+    assert.ok(send2.top === 0 && send2.asked === instant, `after a send with reduced motion: ${JSON.stringify(send2)}`);
   } finally { browser.reducedMotion = false; }
 });
 
