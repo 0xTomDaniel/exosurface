@@ -13,7 +13,6 @@
     "dist/*.css",
     "dist/*.json",
     "resources/**",
-    "legacy/primary/app.tsx",
     "legacy/primary/host.ts",
     "legacy/primary/server.ts",
     "legacy/primary/src/canonical-fresh.ts",
