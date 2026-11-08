@@ -4,7 +4,8 @@
 // RPCs and events, host.ts bridge, the release owner, real Pi); fake at the boundaries: BB, OptChat and the models.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
+import { rmSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
 import { waiter, settled } from './wait.ts';
@@ -209,4 +210,54 @@ test('acceptance-rename: the title at the top renames the surface in view (doubl
   assert.equal((header().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement).value, 'Backyard');
   fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
   assert.equal(title(), 'Backyard');
+});
+
+/** The Pi agent folder (PI_CODING_AGENT_DIR) of the namer's Pi while it runs: the child of this process that has one in its
+ *  environment (the bridge and the owner do not). Linux /proc, as test/reap.ts. */
+function namerFolder() {
+  for (const pid of readdirSync('/proc').filter(d => /^\d+$/.test(d))) {
+    try {
+      if (Number(readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ').at(-1)!.split(' ')[1]) !== process.pid) continue;
+      const dir = /(?:^|\0)PI_CODING_AGENT_DIR=([^\0]*)/.exec(readFileSync(`/proc/${pid}/environ`, 'utf8'))?.[1];
+      if (dir) return dir;
+    } catch {} // a process gone meanwhile
+  }
+  return undefined;
+}
+
+test('a namer Pi that exits leaving a lock in its agent folder does not hold up the next surface\'s start; that folder holds no copied credentials and is gone after the naming', async () => {
+  f.model.state.reply = 'Garden shed';
+  const made = await newSurface();
+  const asked = f.model.requests.length;
+  f.model.state.hold = true;
+  await turn(made, 'Clear out the garden shed');
+  await until('the naming call in flight', () => f.model.requests.length > asked);
+  let folder: string | undefined;
+  await until('the namer\'s Pi found', () => (folder = namerFolder()) !== undefined);
+  // Credentials are referenced (the key by command), never copied: no literal key, no auth.json holding any.
+  const providers = Object.values(JSON.parse(readFileSync(join(folder!, 'models.json'), 'utf8')).providers ?? {}) as { apiKey?: unknown }[];
+  assert.ok(providers.length > 0, 'the namer\'s provider is configured');
+  assert.deepEqual(providers.map(p => typeof p.apiKey === 'string' && p.apiKey.startsWith('!')), providers.map(() => true), 'every key is a reference');
+  const auth = join(folder!, 'auth.json');
+  assert.deepEqual(existsSync(auth) ? JSON.parse(readFileSync(auth, 'utf8')) : {}, {}, 'no credential in an auth.json');
+  // What a namer Pi exiting between Pi's lock mkdir and its registration leaves behind (#147): an orphan, fresh lock.
+  mkdirSync(join(folder!, 'models-store.json.lock'));
+  f.model.release();
+  await until('the namer has named it', () => f.logs.some(l => l.includes(made) && l.includes('named "Garden shed"')));
+  // The next surface's Pi starts at once: its thread/start answers inside the bridge's deadline (newSurface).
+  await newSurface();
+  await until('the namer\'s folder removed', () => !existsSync(folder!));
+});
+
+test('the namer\'s agent folder takes its provider from the primary agent folder\'s models.json with credentials by reference only: a literal key or header is never copied', async () => {
+  const { namerAgentDir } = await import('../legacy/primary/src/surface-name.ts');
+  const primary = join(f.root, 'primary-agent'); mkdirSync(primary);
+  writeFileSync(join(primary, 'models.json'), JSON.stringify({ providers: {
+    openai: { baseUrl: 'http://127.0.0.1:1/v1', apiKey: 'sk-literal-secret', headers: { 'x-team': '$TEAM_ID', 'x-token': 'literal-token' } },
+    anthropic: { baseUrl: 'http://127.0.0.1:1', apiKey: '!security find-generic-password -w' } } }));
+  const literal = namerAgentDir(f.home, primary, 'openai'), byCommand = namerAgentDir(f.home, primary, 'anthropic');
+  assert.deepEqual(JSON.parse(readFileSync(join(literal, 'models.json'), 'utf8')), { providers: { openai: { baseUrl: 'http://127.0.0.1:1/v1', headers: { 'x-team': '$TEAM_ID' } } } });
+  assert.deepEqual(JSON.parse(readFileSync(join(byCommand, 'models.json'), 'utf8')), { providers: { anthropic: { baseUrl: 'http://127.0.0.1:1', apiKey: '!security find-generic-password -w' } } });
+  assert.deepEqual([readdirSync(literal), readdirSync(byCommand)], [['models.json'], ['models.json']], 'nothing but models.json: no auth.json, no key file');
+  for (const dir of [literal, byCommand]) rmSync(dir, { recursive: true, force: true });
 });

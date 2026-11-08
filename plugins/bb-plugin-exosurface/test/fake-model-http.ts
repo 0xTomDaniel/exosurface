@@ -56,7 +56,8 @@ export async function fakeModelHttp() {
     /** Writes models.json in a Pi agent folder so Pi's built-in openai and anthropic providers reach this server. */
     agentDir(dir: string) {
       mkdirSync(dir, { recursive: true });
-      const at = { apiKey: 'fixture-not-a-secret' };
+      // The key by command, as an installed agent folder references its credentials (Pi runs `!` values in a shell).
+      const at = { apiKey: '!printf fixture-not-a-secret' };
       writeFileSync(join(dir, 'models.json'), JSON.stringify({ providers: { openai: { baseUrl: `http://127.0.0.1:${port}/v1`, ...at }, anthropic: { baseUrl: `http://127.0.0.1:${port}`, ...at } } }));
     },
     close: () => new Promise<void>(ok => { server.closeAllConnections(); server.close(() => ok()); }),
