@@ -31,7 +31,8 @@ const until = (what: string, ok: () => boolean | Promise<boolean>) => wait(what,
 const unchanged = async (changed: () => boolean | Promise<boolean>) => !(await settled(changed, 1500));
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
 const sidebar = () => within(view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement);
-const entries = () => sidebar().queryAllByRole('listitem').map((li: any) => li.textContent as string);
+// The sidebar shows once the tab has read that Exo is set up (#130).
+const entries = () => view.container.querySelector('nav[aria-label="Surfaces"]') ? sidebar().queryAllByRole('listitem').map((li: any) => li.textContent as string) : [];
 /** The title at the top of the surface in view (the header's text). */
 const title = () => view.container.querySelector('main h1')?.textContent ?? null;
 /** Whether the sidebar shows an element of this role and name (a plain value to assert on, never the element). */
