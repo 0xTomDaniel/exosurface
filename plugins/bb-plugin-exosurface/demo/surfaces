@@ -618,7 +618,57 @@ async function pressToTop() {
   }
 }
 
-const SCENARIOS = { 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
+// #143 (#31; owner ruling 2026-11-06): the person types a long multiline note into a page's textbox and presses Apply;
+// the note Exo received (the press message in its Pi session) against the note typed: lengths and the note's last words.
+async function pressNotes() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), box = () => main()?.querySelector('[data-surface] textarea');
+  const apply = () => [...(main()?.querySelectorAll('[data-surface] button') ?? [])].find(b => b.textContent.trim() === 'Apply');
+  const until = waiter(() => `page: ${main()?.textContent?.slice(0, 300)}`);
+  const prompts = () => { const file = f.piRuns()[0]?.sessionFile; return file ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)).filter(e => e.type === 'message' && e.message.role === 'user').map(e => typeof e.message.content === 'string' ? e.message.content : e.message.content.filter(p => p.type === 'text').map(p => p.text).join('')) : []; };
+  const note = [
+    'Batch 2 review, carried tasks from C7. I went through each one with the calendar open and the inbox beside it.',
+    'The dentist reschedule is done; I called on Tuesday and they moved it to the 14th at 9:30, so close that one and drop the reminder. The gutter quote from Hal is still waiting on him; he said end of the month, so leave it open but push the check-in to the 30th.',
+    'Insurance renewal: the paperwork came in the mail and it is on the desk in the blue folder. I have not read it yet. Keep it active and put it at the top of next week, it needs an hour with no interruptions.',
+    'The garden bed order can wait until spring. Archive it with a note that the cedar boards were the ones we liked, the 2x10 ones from the yard on Pine Street.',
+    'Car registration was renewed online on the 3rd, receipt is in the email folder "car". Close it. The oil change is overdue by maybe 800 miles; make that a new task for this weekend.',
+    'Mom\'s birthday: the gift is ordered and arrives Friday. Card still needs writing. Move "write card" to Thursday evening so it goes out with the Saturday mail.',
+    'Library books are due on the 12th, two of them are not finished. Renew both online instead of returning them, and keep the task until the renewal shows on the account.',
+    'Bank: the duplicate charge from the hotel was refunded, I saw it on the statement. Close it, but keep the hotel booking task open because the second night still shows as pending and I want that confirmed in writing.',
+    'Taxes: the 1099 from the brokerage has not arrived. Leave it open with a check date of the 20th; if it is still missing then, write to them, and copy the accountant so she knows why the appointment may move.',
+    'School forms for the field trip: signed and in the backpack. Close it. The permission slip for swimming is a separate form and has not come home yet; keep that one open until Wednesday and ask the teacher if it is still missing.',
+    'Unticked items in this batch are not done just because I did not tick them. Keep active in C7 -- just because it isn\'t checked, doesn\'t mean you close it. Ask me about any you are unsure of before moving anything to the archive, once everything worked well.',
+  ].join('\n\n'), last = 'once everything worked well.';
+  try {
+    const snapshot = '- region "Carried tasks" [ref=ct]:\n  - textbox "Batch 2 notes" [ref=note] [multiline]\n  - button "Apply" [ref=apply] [action=apply] [sends=note]';
+    host.send('primary', `call: ${JSON.stringify({ baseRevision: 0, snapshot })}`);
+    await until('the drawn page with its notes box and Apply', () => !!box() && !!apply() && !apply().closest('[inert]') && !apply().disabled);
+    const asked = prompts().length;
+    fireEvent.input(box(), { target: { value: note } });
+    console.log(`typed into "Batch 2 notes": ${note.length} characters, ${note.split('\n').length} lines, ending ${JSON.stringify(note.slice(-40))}`);
+    fireEvent.click(apply());
+    await until('the press to reach Exo', () => prompts().slice(asked).some(p => p.startsWith('▸')));
+    const press = prompts().slice(asked).find(p => p.startsWith('▸')), open = press.indexOf('“'), received = press.slice(open + 1, press.lastIndexOf('”'));
+    console.log(`Exo received: ${JSON.stringify(press.slice(0, open + 30))}… (${press.length} characters in all)`);
+    console.log(`typed ${note.length}, received ${received.length}: ${received.length === note.length ? 'equal' : 'NOT EQUAL'}`);
+    console.log(`last words ${JSON.stringify(last)} in what Exo received: ${press.includes(last) ? 'found' : 'MISSING'}; cut mark "…" in the note: ${received.includes('…') ? 'YES' : 'none'}`);
+    if (received !== note || !press.includes(last)) throw new Error('press-notes failed');
+  } finally {
+    view.unmount(); close();
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running (bridge ${ended(host.child) ? 'gone' : 'alive'}, owner ${ended(ownerProcess) ? 'gone' : 'alive'}, Pi ${pis.filter(alive).join(', ') || 'gone'}); fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+const SCENARIOS = { 'press-notes': pressNotes, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

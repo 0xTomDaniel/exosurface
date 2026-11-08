@@ -12,7 +12,9 @@ export const MAX_BYTES=40*1024, MAX_SURFACES=8, MAX_SENDS=24;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
 const identifier=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
-const atom=z.union([z.string().max(2000),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
+// A press is bounded as a whole (MAX_ACTION_UNITS, validateAction); a person's typed text may fill it (#31, #143).
+export const MAX_ACTION_UNITS=16384;
+const atom=z.union([z.string().max(MAX_ACTION_UNITS),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
 export const actionSchema=z.object({name:identifier,surfaceId:identifier,sourceComponentId:identifier,timestamp:z.string().datetime(),context:z.record(identifier,atom)}).strict();
 export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(2).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
 export type Snapshot=z.infer<typeof snapshotSchema>;
@@ -47,6 +49,7 @@ export function inputBindings(s:Snapshot,id:string):Map<string,any>{
 }
 export function inputSignature(n:any){return JSON.stringify({component:n.component,path:n.value.path,variant:n.variant,options:n.options?.map((o:any)=>o.value),min:n.min,max:n.max});}
 export function validateInput(n:any,value:unknown){
+ if(n.component==='TextField'&&typeof value==='string'&&value.length>MAX_ACTION_UNITS)throw Error(`The typed text is ${value.length} characters; a page input holds at most ${MAX_ACTION_UNITS}. Nothing was changed or sent.`);
  atom.parse(value);
  if(n.component==='TextField'&&typeof value==='string')return value;
  if(n.component==='CheckBox'&&typeof value==='boolean')return value;
@@ -135,7 +138,7 @@ export function latestSnapshot(branch:readonly any[]):Snapshot|null{
 export function validateAction(snapshot:Snapshot,revision:number,raw:unknown){
  if(snapshot.incomplete)throw Error('Workspace is still being composed');
  if(snapshot.revision!==revision)throw Error('Stale workspace action; refresh before trying again');
- if(JSON.stringify(raw).length>16384)throw Error('Action exceeds bound');
+ const units=JSON.stringify(raw).length;if(units>MAX_ACTION_UNITS)throw Error(`This press carries ${units} characters with its typed text; a press carries at most ${MAX_ACTION_UNITS}. Nothing was sent; shorten the text and press again.`);
  const a=actionSchema.parse(raw),c=moduleNodes(snapshot,a.surfaceId).find(n=>n.id===a.sourceComponentId);
  if(c?.action?.event?.name!==a.name)throw Error('Action not offered by this component');
  const offered=c.action.event.context,bindings=inputBindings(snapshot,a.surfaceId);
