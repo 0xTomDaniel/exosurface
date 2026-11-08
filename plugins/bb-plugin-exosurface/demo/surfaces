@@ -3,9 +3,9 @@
 // harness (test/mock-bb.ts): server.ts RPC (canonical_setup, thread_bind), host.ts provider bridge and the release owner
 // (legacy/primary) on the real Pi CLI; fake BB, OptChat and model at the boundary. Needs build:owner and build:runtime.
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
-import { readFileSync, rmSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, installedFixture, owner, bridge } from '../test/mock-bb.ts';
+import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
 import { exoTab } from '../test/exo-tab.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
@@ -149,7 +149,7 @@ async function parallel() {
     console.log(`--- two overlapping turns (fake model answers a "together" turn only while another surface's turn runs, else "ALONE") ---`);
     await new Promise(r => setTimeout(r, 100)); watching = true; // the sampler has seen Home in view
     await send('together: plan the week');
-    await until('Home working', () => block()?.textContent === 'Exo is working on this page…');
+    await until('Home working', () => block()?.textContent === 'Reading your message');
     click('New surface'); did = 'opened New surface while Home\'s turn runs';
     await until('the new surface', () => current() === 'New surface');
     await send('together: book the cabin');
@@ -166,7 +166,7 @@ async function parallel() {
     await until('the new surface\'s reply', () => block()?.textContent?.startsWith('Exo (') || block()?.textContent?.startsWith('ALONE'));
     const theirs = block().textContent; console.log(`New surface: ${JSON.stringify(theirs)}`);
     click('Home'); did = 'went back to Home';
-    await until('Home\'s reply', () => current() === 'Home' && !!block()?.textContent && block().textContent !== 'Exo is working on this page…');
+    await until('Home\'s reply', () => current() === 'Home' && !!block()?.textContent && block().textContent !== 'Reading your message');
     const home = block().textContent; console.log(`Home:        ${JSON.stringify(home)}`);
     const ok = stayed && overlap && home === `Exo (${f.setup.profile}): together: plan the week` && theirs === `Exo (${profile}): together: book the cabin`;
     if (!ok) throw new Error('parallel failed');
@@ -201,7 +201,7 @@ async function opening() {
     const sends = ['draw week: Week plan', 'draw beds: Garden beds', 'add a row of tomatoes'], latest = sends.at(-1);
     let scroll = '';
     for (const text of sends) {
-      await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Exo is working on this page…');
+      await until('the input', () => input() && !input().disabled && reply()?.textContent !== 'Reading your message');
       // The person has scrolled down the surface before the latest send (jsdom: the scroll container's position only).
       if (text === latest) main().scrollTop = 400;
       const was = main().scrollTop, asked = browser.scrolls.length;
@@ -209,7 +209,7 @@ async function opening() {
       fireEvent.click(view.getByRole('button', { name: 'Send' }));
       console.log(`sent: ${JSON.stringify(text)}`);
       if (text === latest) { await until('the send accepted', () => input().value === '' && said()?.textContent === text); scroll = `scrolled ${was} -> ${main().scrollTop} after send, requested ${JSON.stringify(browser.scrolls.slice(asked))}`; console.log(`  ${scroll}`);
-        await until('the working block', () => reply()?.textContent === 'Exo is working on this page…'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
+        await until('the working block', () => reply()?.textContent === 'Reading your message'); console.log(`  while working: bubble ${JSON.stringify(said()?.textContent)}, block ${JSON.stringify(reply().textContent)}`); }
       await until(`the reply to ${JSON.stringify(text)}`, () => said()?.textContent === text && !!reply()?.textContent?.startsWith('Exo (') && reply().textContent.endsWith(`: ${text}`));
     }
     await until('the drawn page', () => !!main().querySelector('[data-surface]')?.firstElementChild?.tagName.includes('-'));
@@ -569,6 +569,74 @@ async function badArguments() {
   }
 }
 
+// #84 (spec E9): a send Exo answers in several steps (fake model: reasoning headed "**Planning the garden**", a read of
+// garden.md, reasoning with no bold headline, the reply; each step held until its line is seen). Prints each line the exo_block RPC reports while Exo works, then
+// what it reports once the turn ends.
+async function activityLine() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const t0 = Date.now(), at = () => `${String(Date.now() - t0).padStart(6)}ms`;
+  try {
+    writeFileSync(join(f.vault, 'garden.md'), '# The garden\n');
+    const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+    const text = 'steps: garden', lines = [];
+    console.log(`${at()}  sending: ${JSON.stringify(text)}`);
+    const blocks = await stepsTurn(f, 'primary', 'garden', b => { if (b.working && b.activity && b.activity !== lines.at(-1)) { lines.push(b.activity); console.log(`${at()}  working, activity: ${JSON.stringify(b.activity)}`); } });
+    const block = blocks.at(-1);
+    console.log(`${at()}  turn ended: words ${JSON.stringify(block.words)}, activity: ${'activity' in block ? JSON.stringify(block.activity) : 'none'}`);
+    if (lines.length < 2) throw new Error(`activity-line failed: the line never changed (${lines.length} line(s))`);
+    if ('activity' in block || block.words !== `Exo (${f.setup.profile}): ${text}`) throw new Error('activity-line failed: the line survived the reply, or no reply');
+  } finally {
+    // As bad-arguments: the bridge, the owner and its Pis seen gone by a wall-clock deadline, else the fixture is kept.
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running; fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+// #85 (spec E9, amends E4): the same multi-step send from the rendered surface view. Prints the Exo block's text each time it
+// changes while Exo works, then what the block shows once the turn ends: the reply alone, no activity line.
+async function activityBlock() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const t0 = Date.now(), at = () => `${String(Date.now() - t0).padStart(6)}ms`;
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]'), status = () => reply()?.querySelector('[role="status"]');
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea'), until = waiter();
+  try {
+    writeFileSync(join(f.vault, 'garden.md'), '# The garden\n');
+    const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+    const text = 'steps: garden';
+    await until('the input', () => input() && !input().disabled);
+    fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    console.log(`${at()}  sent: ${JSON.stringify(text)}`);
+    let last;
+    const line = () => {
+      const shown = reply()?.textContent ?? '';
+      if (shown !== last) { last = shown; console.log(`${at()}  Exo block: ${JSON.stringify(shown)}${!status() ? '' : shown === 'Reading your message' ? ' (activity line: the first step, before any model event)' : ' (activity line)'}${status() ? `, shimmer: ${getComputedStyle(status().firstElementChild ?? status()).animation}` : ''}`); }
+      return status() ? shown : undefined;
+    };
+    const lines = await stepsShown(f, 'garden', line, () => !status() && !!reply()?.textContent);
+    line();
+    const after = reply().textContent, survived = !!status();
+    console.log(`${at()}  turn ended: Exo block ${JSON.stringify(after)}, activity line: ${survived ? 'STILL SHOWN' : 'none'}`);
+    if (new Set(lines).size < 2) throw new Error(`activity-block failed: the line never changed (${lines.length} line(s))`);
+    if (survived || after !== `Exo (${f.setup.profile}): ${text}`) throw new Error('activity-block failed: the line survived the reply, or no reply');
+  } finally {
+    view.unmount(); close();
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running; fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
 // #128: Exo is one BB tab named "Exo" and BB lists the plugin as "Exo" (package.json bb.name); the tab opens on the sidebar
 // and Home with the input shown. Rendered app (package.json bb.app) on the real server RPCs; Home has a page Exo drew.
 async function oneTab() {
@@ -685,7 +753,7 @@ async function firstRun() {
   }
 }
 
-const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename };
+const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }
