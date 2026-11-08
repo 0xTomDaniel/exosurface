@@ -76,7 +76,7 @@ Initialization and owner startup are separate. Once setup reports `bound`, authe
 
 With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. This sequence passed once in the isolated test; repeat it on your own install.
 
-Known limits: textboxes/atoms are capped at **2,000 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
+Known limits: a typed value (textbox/atom), and a press with its typed text, are capped at **16,384 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
 
 ## Repo boundaries
 
