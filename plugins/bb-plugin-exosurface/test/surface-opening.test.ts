@@ -69,16 +69,16 @@ test('a press on its page and a send both scroll the surface back to its top thr
   // the request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then
   // showing on screen, are the owner's RDP re-check.
   // The press is the person clicking the page's Book button in the rendered surface.
-  const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
+  const revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
   const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
   const idle = () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled;
   // Each step starts scrolled down, below the first screen; it returns the scrolls the surface asked for during it.
   async function step(what: string, act: () => Promise<void>) {
-    scroller.scrollTop = 400;
-    assert.ok(scroller.scrollTop === 400, `scrolled down before ${what}: ${scroller.scrollTop}`);
+    main().scrollTop = 400;
+    assert.equal(main().scrollTop, 400, `scrolled down before ${what}`);
     const asked = browser.scrolls.length;
     await act();
-    return { top: scroller.scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
+    return { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
   }
   async function press(who: string) {
     await until('the page\'s Book button, idle', idle);
@@ -95,9 +95,9 @@ test('a press on its page and a send both scroll the surface back to its top thr
   }
   const eased = '[{"top":0,"behavior":"smooth"}]', instant = '[{"top":0,"behavior":"auto"}]';
   const pressed = await step('a press', () => press('Grace'));
-  assert.ok(main() === scroller && pressed.top === 0 && pressed.asked === eased, `after a press, Exo's turn and polls: ${JSON.stringify(pressed)}`);
+  assert.ok(pressed.top === 0 && pressed.asked === eased, `after a press, Exo's turn and polls: ${JSON.stringify(pressed)}`);
   const send1 = await step('a send', () => sent('and Saturday too'));
-  assert.ok(main() === scroller && send1.top === 0 && send1.asked === eased, `after a send: ${JSON.stringify(send1)}`);
+  assert.ok(send1.top === 0 && send1.asked === eased, `after a send: ${JSON.stringify(send1)}`);
   // The person asked their system for reduced motion: a press and a send both jump to the top instead.
   browser.reducedMotion = true;
   try {
@@ -119,6 +119,32 @@ test('after a press and Exo\'s finished turn, the person\'s bubble is the button
   assert.equal(rightAligned(bubble()!), true);
   assert.equal(before(bubble()!, reply()!), true);
   assert.equal(boxed(reply()!, block()!), false);
+});
+
+test('a press on an earlier version of the page, opened from its card in the chat, scrolls the surface back to its top through the same eased scroll', async () => {
+  // Owner ruling 2026-11-05 on #138 (F6: every press, an earlier-version press included). The person clicks the chat card
+  // of the page as first drawn (revision 1, since edited by the presses above), the surface shows that earlier version, and
+  // they press its Book button; as above, what the surface asks its scroll container for and its scrollTop.
+  const card = /::exo-surface\{surface="([^"]+)" revision="1" action="drew"\}/;
+  const drawn = host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean)!;
+  assert.ok(drawn, 'the chat card of the drawn page');
+  const directive = app.messageDirectives.find((d: any) => d.id === 'exo-surface');
+  const chat = kit.renderSlot(directive, { attributes: { surface: drawn[1], revision: '1', action: 'drew' }, message: { threadId: 'primary' } }, { rpc: f.rpc });
+  try {
+    const earlier = () => [...main().querySelectorAll('[role="status"]')].some(s => s.textContent?.startsWith('Earlier version'));
+    const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+    await until('the input idle', () => !!input() && !input()!.disabled);
+    fireEvent.click(chat.container.querySelector('button')!);
+    await until('the earlier version with its Book button', () => earlier() && !!book() && !book()!.closest('[inert]'));
+    main().scrollTop = 400;
+    assert.equal(main().scrollTop, 400, 'scrolled down before the press');
+    const asked = browser.scrolls.length;
+    fireEvent.input(main().querySelector('[data-surface] input')!, { target: { value: 'Ada' } });
+    fireEvent.click(book()!);
+    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && reply()!.textContent!.includes('Brought back'));
+    const pressed = { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
+    assert.ok(pressed.top === 0 && pressed.asked === '[{"top":0,"behavior":"smooth"}]', `after a press on the earlier version: ${JSON.stringify(pressed)}`);
+  } finally { chat.unmount(); }
 });
 
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
