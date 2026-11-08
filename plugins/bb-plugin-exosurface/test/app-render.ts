@@ -7,7 +7,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { parse, type CssNode } from 'css-tree';
+import { parse, walk, generate, type CssNode } from 'css-tree';
+import { resolve as resolveColor, convert } from '@asamuzakjp/css-color';
 
 const PLUGIN = resolve(import.meta.dirname, '..');
 const modules = join(PLUGIN, 'node_modules');
@@ -156,6 +157,84 @@ export function centeredIn(el: Element, container: Element): boolean {
     const s = css(at); if (spacing(s, 'Top') !== spacing(s, 'Bottom') || [...at.parentElement.children].filter(inFlow).length !== 1) return false;
   }
   const s = css(container); return parseFloat(s.paddingTop) === parseFloat(s.paddingBottom) && parseFloat(s.borderTopWidth || '0') === parseFloat(s.borderBottomWidth || '0');
+}
+// jsdom's CSSOM drops a declaration whose value holds var() (a gradient in theme colours) and its cascade applies no @media
+// rule, so what the app's stylesheets say about an element is also read from their source text: the <style> elements the app
+// put in the document, parsed by css-tree, each rule matched to the element by the browser's own selector matching.
+/** Every declaration the document's <style> text gives an element, in source order, with the @media condition it sits under
+ *  ('' when none). A selector list matches when any one selector in it does. */
+export function declared(el: Element): { media: string; property: string; value: string }[] {
+  const out: { media: string; property: string; value: string }[] = [];
+  for (const sheet of el.ownerDocument.querySelectorAll('style')) {
+    walk(parse(sheet.textContent ?? ''), {
+      visit: 'Rule',
+      enter(this: { atrule: CssNode | null }, rule: CssNode) {
+        if (rule.type !== 'Rule' || rule.prelude.type !== 'SelectorList') return;
+        const at = this.atrule;
+        if (at && (at.type !== 'Atrule' || at.name !== 'media')) return;
+        const matches = [...rule.prelude.children].some(s => { try { return el.matches(generate(s)); } catch { return false; } });
+        if (!matches) return;
+        const media = at && at.type === 'Atrule' && at.prelude ? generate(at.prelude) : '';
+        rule.block.children.forEach(d => { if (d.type === 'Declaration') out.push({ media, property: d.property, value: generate(d.value) }); });
+      },
+    });
+  }
+  return out;
+}
+/** The properties a named @keyframes rule in the document's <style> text sets, across its frames. */
+export function keyframed(doc: Document, name: string): string[] {
+  const props = new Set<string>();
+  for (const sheet of doc.querySelectorAll('style')) walk(parse(sheet.textContent ?? ''), {
+    visit: 'Atrule',
+    enter(at: CssNode) {
+      if (at.type !== 'Atrule' || !/keyframes$/.test(at.name) || !at.prelude || generate(at.prelude) !== name || !at.block) return;
+      walk(at.block, { visit: 'Declaration', enter(d: CssNode) { if (d.type === 'Declaration') props.add(d.property); } });
+    },
+  });
+  return [...props];
+}
+/** A linear-gradient's colour stops, split at its top-level commas (css-tree's AST): each stop's colour as written and its
+ *  position as a fraction (null when it has none). The direction, when given, is not a stop. */
+export function gradientStops(text: string): { color: string; at: number | null }[] {
+  const only = value(text);
+  if (!only || only.type !== 'Function' || only.name !== 'linear-gradient') return [];
+  const groups: CssNode[][] = [[]];
+  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push([]); else groups.at(-1)!.push(n); });
+  const direction = (g: CssNode[]) => g.some(n => n.type === 'Dimension' && /deg|turn|rad/.test(n.unit)) || (g[0]?.type === 'Identifier' && g[0].name === 'to');
+  return groups.filter(g => g.length && !direction(g)).map(g => {
+    const p = g.at(-1)!, at = g.length > 1 && p.type === 'Percentage' ? Number(p.value) / 100 : null;
+    return { color: (at === null ? g : g.slice(0, -1)).map(n => generate(n)).join(' '), at };
+  });
+}
+// The colour a theme paints, worked out by @asamuzakjp/css-color (jsdom's own colour engine): var() resolved from `vars`,
+// color-mix() and every colour space as a browser does. It answers an unresolvable or invalid colour with transparent,
+// which no theme colour here is, so that answer throws.
+type Theme = Record<string, string>;
+const options = (vars: Theme) => ({ customProperty: { callback: (name: string) => vars[name]?.trim() || undefined } });
+/** A colour text as a theme paints it, its var() resolved from `vars`: an opaque CSS colour. */
+export function themeColor(text: string, vars: Theme): string {
+  const color = resolveColor(text, options(vars));
+  if (!color || convert.colorToXyz(color)[3] === 0) throw new Error(`not one opaque colour with these theme values: ${text}`);
+  return color;
+}
+/** A colour's OKLab coordinates [L, a, b]. */
+export const toOklab = (color: string): [number, number, number] => convert.colorToOklab(color).slice(0, 3) as [number, number, number];
+/** WCAG 2 contrast ratio between two colours, from their relative luminance (CIE XYZ Y, D65). */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [a, b].map(c => convert.colorToXyz(c)[1]).sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+const timing = new Set(['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end', 'normal', 'reverse', 'alternate', 'alternate-reverse', 'none', 'forwards', 'backwards', 'both', 'running', 'paused', 'infinite']);
+/** An animation shorthand as computed (one animation): its name, its duration in seconds (the first time in it) and whether
+ *  it loops forever; null when it names no animation. */
+export function animation(text: string): { name: string; seconds: number; infinite: boolean } | null {
+  let v: CssNode; try { v = parse(text, { context: 'value' }); } catch { return null; }
+  if (v.type !== 'Value') return null;
+  const parts = [...v.children];
+  const name = parts.find(n => n.type === 'Identifier' && !timing.has(n.name)), time = parts.find(n => n.type === 'Dimension' && ['s', 'ms'].includes(n.unit));
+  if (!name || name.type !== 'Identifier') return null;
+  const seconds = time && time.type === 'Dimension' ? Number(time.value) / (time.unit === 'ms' ? 1000 : 1) : 0;
+  return { name: name.name, seconds, infinite: parts.some(n => n.type === 'Identifier' && n.name === 'infinite') };
 }
 /** Whether an element is drawn in a box: it, anything inside it, or any element between it and `within` (inclusive) has a
  *  border, a background or a shadow. */

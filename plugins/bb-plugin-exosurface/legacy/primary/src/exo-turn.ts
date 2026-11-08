@@ -6,13 +6,15 @@ import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
 
-export type LatestTurn = { userEntry: string | null; said: string; words: string };
+/** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
+export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
 const text = (message: any) => (Array.isArray(message?.content) ? message.content : []).filter((p: any) => p?.type === 'text' && typeof p.text === 'string').map((p: any) => p.text).join('');
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards. */
 export function latestTurn(sessionFile: string | undefined): LatestTurn {
-  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '' };
+  if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r'), said: string[] = [];
+  let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -31,11 +33,11 @@ export function latestTurn(sessionFile: string | undefined): LatestTurn {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (entry.type !== 'message') continue;
-        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n') };
-        if (entry.message?.role === 'assistant') said.push(text(entry.message));
+        if (entry.message?.role === 'user') return { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
+        if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
       }
     }
-    return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n') };
+    return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }
 }
 
@@ -45,6 +47,14 @@ export function ownerWorking(threadId: string) {
   if (!existsSync(file)) return false;
   const state = load(file);
   return state.threadId === threadId ? !!state.streaming : !!state.threads?.[threadId]?.streaming;
+}
+
+/** The owner's one line of what Exo is doing right now on this thread (spec pages-and-activity E9), if any. */
+export function ownerActivity(threadId: string): string | undefined {
+  const file = join(HOME, 'owner', 'state.json');
+  if (!existsSync(file)) return undefined;
+  const state = load(file), activity = state.threadId === threadId ? state.activity : state.threads?.[threadId]?.activity;
+  return typeof activity === 'string' && activity ? activity : undefined;
 }
 
 /** The thread's own Pi session journal, as its binding names it (the host records it once the thread's Pi starts). */
