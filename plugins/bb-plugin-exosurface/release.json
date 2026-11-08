@@ -145,10 +145,6 @@
       "sha256": "69c016f01e3650f206c20bd82a689187d0d2571ec342ee712eaf9a97217d29b7"
     },
     {
-      "path": "resources/licenses/@earendil-works_pi-ai-1.1.0/package.json",
-      "sha256": "dbd5b5652fbe6f931d5cef6cb28f4d433e1a1ee426f1508176b8531d9982f65e"
-    },
-    {
       "path": "resources/licenses/@get-bb_plugin-sdk-0.6.15/package.json",
       "sha256": "3a96202f693128fcf0d6264ba92469b697a348023c966c3396f74a7189a3f137"
     },
@@ -383,14 +379,6 @@
     {
       "path": "resources/licenses/mdurl-2.1.0/package.json",
       "sha256": "08998ec17f77cbc3e63cb251bcce49378935c0807899a30622da7a7d23e795ea"
-    },
-    {
-      "path": "resources/licenses/partial-json-0.1.7/LICENSE",
-      "sha256": "cd519ad3d7e012427f978dfb2e3b92ee403d189d7b859ba6bf68fd7e12ca456f"
-    },
-    {
-      "path": "resources/licenses/partial-json-0.1.7/package.json",
-      "sha256": "7a215b649aef661d2478faed2573fb0d5f255147107226f3d7592dce433d0a3e"
     },
     {
       "path": "resources/licenses/path-key-3.1.1/license",
