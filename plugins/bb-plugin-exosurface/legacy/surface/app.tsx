@@ -147,10 +147,10 @@ function BringBackCancel(){
   className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">↺ <span aria-hidden="true">✕</span></button>;
 }
 // threadId: a bound thread in view (a surface other than Home, #68); its own page state, envelopes naming it only.
-function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:string}){
+function SurfacePage({deployment,threadId,local,setLocal}:{deployment:'clone'|'main';threadId?:string;local:Local;setLocal:(value:Local)=>void}){
  const channel=threadId?'surface-thread':deployment==='clone'?'workspace':'surface-main',clone=deployment==='clone',other=(payload:unknown)=>!!threadId&&(payload as any)?.threadId!==threadId;
  const rpc=useRpc<typeof rpcContract>();type Status=Awaited<ReturnType<typeof getState>>;
- const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0),[local,setLocal]=useState<Local>(null);
+ const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0);
  const saving=useRef(false),anyRewind=useRewind(),rewind=anyRewind&&(anyRewind.deployment??'clone')===deployment?anyRewind:null;
  useRealtime('pending-restore',v=>{if(!v)setRewind(null);});
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
@@ -207,8 +207,11 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
 function ExoTab(){return <SetUpFirst><SurfacesPanel/></SetUpFirst>;}
 function SurfacesPanel(){
  const[inView,setInView]=useState<string|null>(null),[settings,setSettings]=useState(false);
+ const[selections,setSelections]=useState<Record<string,Local>>({});
+ const selectedKey=inView??'home',local=selections[selectedKey]??null;
+ const setLocal=(value:Local)=>setSelections(previous=>({...previous,[selectedKey]:value}));
  const open=(threadId:string|null)=>{setInView(threadId);setSettings(false);};
- return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
+ return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined} local={local} setLocal={setLocal}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
 }
 export default definePluginApp(app=>{
  app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:ExoTab});

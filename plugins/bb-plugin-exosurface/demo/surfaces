@@ -390,6 +390,14 @@ async function exoBlockSentPage() {
     fireEvent.click(pills().find(b => b.textContent === 'Plum plan'));
     await until('the plum page in view', () => inView() === 'Plum plan');
     console.log('opened "Plum plan" from the page strip; "Pear plan" stays on stage');
+    fireEvent.click(view.getByRole('button', { name: 'Settings', exact: true }));
+    await until('settings opened', () => !!view.queryByRole('button', { name: 'Close', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: 'Close', exact: true }));
+    fireEvent.click([...view.container.querySelectorAll('nav[aria-label="Surfaces"] > button')].find(button => button.textContent === 'New surface'));
+    await until('another surface opened', () => view.container.querySelector('nav[aria-label="Surfaces"] li button[aria-current="page"]')?.textContent !== 'Home');
+    fireEvent.click([...view.container.querySelectorAll('nav[aria-label="Surfaces"] li button')].find(button => button.textContent === 'Home'));
+    await until('earlier selected page restored after away/back', () => inView() === 'Plum plan');
+    console.log('Settings close and surface away/back preserve selected Plum plan, without changing the model stage');
     // #189: Pi journals an updated system prompt after the send's origin, before its user message.
     writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
     const question = 'which plums are ripe?', originalSend = f.rpc.exo_send, payloads = [];
