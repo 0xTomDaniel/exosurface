@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
+import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown, modelRequests } from '../test/mock-bb.ts';
 import { exoTab } from '../test/exo-tab.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
@@ -392,13 +392,18 @@ async function exoBlockSentPage() {
     console.log('opened "Plum plan" from the page strip; "Pear plan" stays on stage');
     // #189: Pi journals an updated system prompt after the send's origin, before its user message.
     writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
-    const question = 'which plums are ripe?';
-    await send(question, 'Plum plan');
-    const entries = readFileSync(f.piRuns().find(r => r.profile === f.setup.profile).sessionFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
-    const origin = entries.findLastIndex(e => e.customType === 'exosurface-press' && e.data.line === question);
-    const user = entries.findIndex((e, i) => i > origin && e.message?.role === 'user');
-    if (entries[origin]?.data.page !== 'plum' || !entries.slice(origin + 1, user).some(e => e.message?.role === 'system')) throw new Error('missing selected-page origin or interleaved system message');
-    console.log(`journal: origin ${entries[origin].id} page plum -> system -> user ${entries[user].id}; full thread retained`);
+    const question = 'which plums are ripe?', originalSend = f.rpc.exo_send, payloads = [];
+    f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
+    try { await send(question, 'Plum plan'); } finally { f.rpc.exo_send = originalSend; }
+    if (JSON.stringify(payloads) !== JSON.stringify([{ threadId: 'primary', text: question, page: 'plum' }])) throw new Error('selected-page send payload differs');
+    const request = modelRequests(f).filter(r => r.profile === f.setup.profile).at(-1);
+    const user = request.started.findIndex(message => message.role === 'user' && JSON.stringify(message.content).includes(question));
+    if (user < 0 || !request.started.slice(0, user).some(message => message.role === 'system')) throw new Error('Pi did not emit a system update before the question');
+    const context = JSON.stringify(request.messages);
+    if (!context.includes('Plum plan') || !context.includes('Pear plan')) throw new Error('model lost surface context');
+    const selected = await f.rpc.exo_block({ threadId: 'primary', page: 'plum' }), newer = await f.rpc.exo_block({ threadId: 'primary', page: 'pear' });
+    if (selected.said !== question || selected.words !== answer(question) || newer.said !== 'draw pear: Pear plan' || newer.words !== answer('draw pear: Pear plan')) throw new Error('public page association differs');
+    console.log('Pi public message_start: system update -> question; selected-page RPC payload and both page associations verified; full thread context retained');
     show('after the question (draws nothing)', 'Plum plan', question, question);
     await until('the page to take a press', idle);
     fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));

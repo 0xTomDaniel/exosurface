@@ -3,7 +3,7 @@
 // the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { liveFixture, owner, bridge, modelRequests } from './mock-bb.ts';
 import { waiter } from './wait.ts';
@@ -156,12 +156,9 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   await until('the question to reach the model', () => JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages).includes(question));
   await until('the no-draw turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working);
   assert.deepEqual(payloads, [{ threadId, text: question, page: 'plum' }]);
-  const journal = readFileSync(f.piRuns().find(r => r.profile === profile).sessionFile, 'utf8');
-  const entries = journal.trim().split('\n').map(line => JSON.parse(line));
-  const origin = entries.findLastIndex(e => e.customType === 'exosurface-press' && e.data.line === question);
-  const user = entries.findIndex((e, i) => i > origin && e.message?.role === 'user');
-  assert.ok(origin >= 0 && user > origin, 'the selected-page origin precedes this question');
-  assert.ok(entries.slice(origin + 1, user).some(e => e.message?.role === 'system'), 'real Pi journal interleaves a system message');
+  const started = modelRequests(f).filter(r => r.profile === profile).at(-1)!.started;
+  const user = started.findIndex(message => message.role === 'user' && JSON.stringify(message.content).includes(question));
+  assert.ok(user >= 0 && started.slice(0, user).some(message => message.role === 'system'), 'Pi emits a system update before the question at its public message boundary');
   const context = JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages);
   assert.ok(context.includes('Plum plan') && context.includes('Pear plan') && context.includes('book the cabin'), 'full thread context reaches the model, not just the selected page');
   const selected = await f.rpc.exo_block({ threadId, page: 'plum' });
