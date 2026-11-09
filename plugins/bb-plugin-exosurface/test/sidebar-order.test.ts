@@ -73,3 +73,22 @@ test('acceptance-tree-new-first: with two surfaces, New surface lists the new su
   await until('the new surface listed', () => entries().length === 4);
   assert.deepEqual(entries().slice(0, 2), ['Home', 'New surface']);
 });
+
+test('a send alone is activity (N9): right after a send from the input of the least recently active surface, before Exo\'s turn ends, the tree lists it first', async () => {
+  // #187 follow-up: the order before is New surface, Garden plan, Weekend trip; the person opens Weekend trip and sends a
+  // message Exo answers only once released.
+  await until('three surfaces listed', () => entries().join('|') === 'Home|New surface|Garden plan|Weekend trip');
+  const row = [...sidebar()!.querySelectorAll('li button')].find(b => b.textContent === 'Weekend trip')!;
+  fireEvent.click(row);
+  const weekend = (await f.rpc.thread_list(null)).threads.find((t: any) => t.title === 'Weekend trip')!.threadId as string;
+  const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
+  await until('Weekend trip in view with its input', () => !!input() && !input()!.disabled && !!sidebar()!.querySelector('li button[aria-current="page"]') && sidebar()!.querySelector('li button[aria-current="page"]')!.textContent === 'Weekend trip');
+  const before = boundaries(weekend);
+  fireEvent.change(input()!, { target: { value: 'hold: pack for the coast' } });
+  fireEvent.click(view.getByRole('button', { name: 'Send' }));
+  await until('Weekend trip listed first while Exo works', () => entries().join('|') === 'Home|Weekend trip|New surface|Garden plan');
+  assert.equal(boundaries(weekend), before, 'Exo\'s turn has not ended');
+  for (const run of f.piRuns()) f.release(run.profile);
+  await until('the held turn to end', () => boundaries(weekend) > before, 30000);
+  assert.deepEqual(entries(), ['Home', 'Weekend trip', 'New surface', 'Garden plan']);
+});
