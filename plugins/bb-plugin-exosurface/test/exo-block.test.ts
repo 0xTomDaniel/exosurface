@@ -129,3 +129,34 @@ test('after Exo withdraws the page in view, a message that draws nothing shows i
   assert.equal(said(), 'and the hedge along the path');
   assert.equal(count(block()!.textContent!, 'draw week'), 0);
 });
+
+// #187 (spec pages-and-activity E10, S3): a send or a press is on the page in view it came from.
+const said = () => block()?.querySelector('[data-exo-said]')?.textContent ?? '';
+const inView = () => [...view.container.querySelectorAll('.exo-stage [data-surface]')].map(s => s.getAttribute('data-surface')).join(',');
+
+test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from the kept page and answered without changing any page shows in that page\'s Exo block', async () => {
+  const profile = f.piRuns().at(-1).profile, strip = () => [...view.container.querySelectorAll('nav button[aria-pressed]')] as HTMLElement[];
+  const turn = async (text: string, answer = `Exo (${profile}): ${text}`) => { await send(text); await until(`Exo's reply to ${JSON.stringify(text)}`, () => reply()?.textContent === answer); };
+  // The kept page, with a button, made in reply to one message; a later page made in reply to another.
+  const revision = Number(view.getByLabelText('Surface revision').textContent!.replace('Revision ', ''));
+  const snapshot = '- region "Plum plan" [ref=plum]:\n  - heading "Plum plan" [ref=title]\n  - button "Pick plums" [ref=pick] [action=pick]';
+  await turn(`call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
+  await turn('draw pear: Pear plan');
+  await until('the plum page as a pill', () => strip().some(b => b.textContent === 'Plum plan'));
+  fireEvent.click(strip().find(b => b.textContent === 'Plum plan')!);
+  await until('the plum page in view', () => inView() === 'plum');
+  await turn('which plums are ripe?');
+  assert.equal(inView(), 'plum');
+  assert.equal(said(), 'which plums are ripe?');
+  assert.equal(reply()!.textContent, `Exo (${profile}): which plums are ripe?`);
+});
+
+test('a press is on the page its button sits on: a press that draws nothing shows in that page\'s Exo block, not the page on stage', async () => {
+  const profile = f.piRuns().at(-1).profile;
+  assert.equal(inView(), 'plum', 'the kept plum page in view, the pear page on stage');
+  await until('the page to take a press', () => !block()?.querySelector('[role="status"]') && view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
+  fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));
+  await until('the press and Exo\'s reply in the plum page\'s block', () => reply()?.textContent === `Exo (${profile}): ▸ Plum plan · Pick plums`);
+  assert.equal(inView(), 'plum');
+  assert.equal(said(), 'Pick plums');
+});
