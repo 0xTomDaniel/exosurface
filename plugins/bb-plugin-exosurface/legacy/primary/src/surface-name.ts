@@ -5,7 +5,7 @@
 // own config and shared by every profile (spec N7), never in an OptChat profile config. The file is read at each naming, so a change applies to the next surface named. It is called through Pi (the
 // same CLI and JSONL RPC client the runtime uses, pi-rpc.ts) with no tools, extensions, context files or session, and must
 // run on exactly that model and thinking: anything else is a failure, never a substitute.
-import { createReadStream, existsSync, readFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { modelChoice, type ModelChoice } from '../../../src/config.ts';
@@ -105,8 +105,10 @@ const referenced = (value: unknown) => typeof value === 'string' && /^(!.+|(\$\{
 /** The namer's own Pi agent folder (#147): a fresh one under Exo's state dir for each naming, removed after it. A Pi that exits
  * between creating a lock in its agent folder and registering it leaves the lock for its 30 s stale time; in its own folder
  * that never holds up a surface's Pi on the primary agent folder. Its models.json is the primary agent folder's entry for the
- * namer's provider, credentials by reference only: a literal key or header value is dropped, never copied, and no auth.json
- * or other credential file is written. */
+ * namer's provider, credentials by reference only: a literal key or header value is dropped, never copied. Its auth.json is
+ * a symlink to the primary agent folder's (a Pi login keeps the credential there), never a copy, and only when that file
+ * exists. Pi locks auth.json and models-store.json at "<path>.lock" without resolving links (proper-lockfile realpath:
+ * false), so those locks stay in this folder. */
 export function namerAgentDir(stateDir: string, primaryAgentDir: string, provider: string) {
   mkdirSync(join(stateDir, 'namer'), { recursive: true, mode: 0o700 });
   const dir = mkdtempSync(join(stateDir, 'namer', 'pi-'));
@@ -116,6 +118,7 @@ export function namerAgentDir(stateDir: string, primaryAgentDir: string, provide
   const kept = { ...rest, ...(referenced(apiKey) ? { apiKey } : {}),
     ...(headers && typeof headers === 'object' ? { headers: Object.fromEntries(Object.entries(headers).filter(([, v]) => referenced(v))) } : {}) };
   writeFileSync(join(dir, 'models.json'), JSON.stringify({ providers: entry ? { [provider]: kept } : {} }), { mode: 0o600 });
+  if (existsSync(join(primaryAgentDir, 'auth.json'))) symlinkSync(join(primaryAgentDir, 'auth.json'), join(dir, 'auth.json'));
   return dir;
 }
 
