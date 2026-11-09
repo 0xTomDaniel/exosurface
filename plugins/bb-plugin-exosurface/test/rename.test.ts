@@ -274,6 +274,36 @@ test('real-install shape: the namer\'s provider credential lives only in the pri
   }
 });
 
+test('an OAuth auth.json entry for the namer\'s provider (one Pi refreshes): the namer runs in the primary agent folder as before #147, no namer folder; that choice is logged once across two namings; the primary auth.json is left as it was', async () => {
+  const agent = join(f.home, 'pi-config'), auth = join(agent, 'auth.json'), namers = join(f.home, 'namer');
+  const before = { auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined, config: readFileSync(f.config, 'utf8') };
+  const oauth = JSON.stringify({ anthropic: { type: 'oauth', access: 'fixture-access', refresh: 'fixture-refresh', expires: Date.now() + 86_400_000 } }); // fake
+  writeFileSync(auth, oauth, { mode: 0o600 });
+  writeFileSync(f.config, JSON.stringify({ ...JSON.parse(before.config), namer: { provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' } }));
+  const folders = () => existsSync(namers) ? readdirSync(namers).length : 0, already = folders();
+  try {
+    for (const [reply, text] of [['Tool shed', 'Sort the tool shed'], ['Pantry', 'Stock the pantry']]) {
+      f.model.state.reply = reply;
+      const made = await newSurface();
+      const asked = f.model.requests.length;
+      f.model.state.hold = true;
+      await turn(made, text);
+      await until('the naming call in flight', () => f.model.requests.length > asked);
+      let folder: string | undefined;
+      await until('the namer\'s Pi found', () => (folder = namerFolder()) !== undefined);
+      assert.equal(folder, agent, 'the namer runs in the primary agent folder');
+      assert.equal(folders(), already, 'no namer folder');
+      f.model.release();
+      await until('the naming done', () => f.logs.some(l => l.includes(made) && (l.includes('named "') || l.includes('naming failed'))));
+    }
+    assert.equal(f.logs.filter(l => l.includes('Surface namer runs in the primary Pi agent folder')).length, 1, 'logged once');
+    assert.equal(readFileSync(auth, 'utf8'), oauth, 'the primary auth.json is left as it was');
+  } finally {
+    writeFileSync(f.config, before.config);
+    if (before.auth === undefined) rmSync(auth, { force: true }); else writeFileSync(auth, before.auth);
+  }
+});
+
 test('the namer\'s agent folder takes its provider from the primary agent folder\'s models.json with credentials by reference only: a literal key or header is never copied', async () => {
   const { namerAgentDir } = await import('../legacy/primary/src/surface-name.ts');
   const primary = join(f.root, 'primary-agent'); mkdirSync(primary);

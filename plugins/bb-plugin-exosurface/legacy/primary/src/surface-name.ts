@@ -122,15 +122,28 @@ export function namerAgentDir(stateDir: string, primaryAgentDir: string, provide
   return dir;
 }
 
+/** Whether Pi could rewrite the provider's entry in the primary agent folder's auth.json: Pi refreshes, and so writes, only an
+ * "oauth" entry (pi-ai auth/resolve.js resolveCredential, models.js resolveRefreshCredential); an "api_key" entry or none it
+ * only reads. Anything else, or an unreadable file, counts as refreshable. Reads only the entry's type, never a credential. */
+export function refreshableCredential(primaryAgentDir: string, provider: string) {
+  const file = join(primaryAgentDir, 'auth.json');
+  if (!existsSync(file)) return false;
+  try { const entry = JSON.parse(readFileSync(file, 'utf8'))?.[provider]; return entry !== undefined && entry?.type !== 'api_key'; } catch { return true; }
+}
+
 /** One namer call through Pi's RPC mode, in the namer's own agent folder (namerAgentDir; `agentDir`, the primary agent folder
- * its provider entry is read from). Rejects unless Pi runs the configured model and thinking, or on any model error. */
-export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; stateDir: string; cwd: string }, timeoutMs = 60_000) {
+ * its provider entry is read from). When the provider's credential is refreshable (refreshableCredential), it runs in the
+ * primary agent folder itself, as before #147, so a token refresh writes auth.json under that folder's own lock; `primary`
+ * is told so. Rejects unless Pi runs the configured model and thinking, or on any model error. */
+export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; stateDir: string; cwd: string; primary?: () => void }, timeoutMs = 60_000) {
   const args = ['--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-prompt-templates', '--no-context-files', '--no-mcp', '--no-themes', '--no-approve',
     '--system-prompt', SYSTEM, '--provider', choice.provider, '--model', choice.model, '--thinking', choice.thinking];
   let finish: (v: { text: string; usage?: { input: number; output: number } } | Error) => void = () => {};
   const done = new Promise<{ text: string; usage?: { input: number; output: number } } | Error>(r => { finish = r; });
   let last: any;
-  const agentDir = namerAgentDir(at.stateDir, at.agentDir, choice.provider);
+  const shared = refreshableCredential(at.agentDir, choice.provider);
+  if (shared) at.primary?.();
+  const agentDir = shared ? at.agentDir : namerAgentDir(at.stateDir, at.agentDir, choice.provider);
   const rpc = new PiRpc(at.piCli, args, at.cwd, childEnv({ PI_CODING_AGENT_DIR: agentDir, PI_TELEMETRY: '0' }), e => {
     if (e.type === 'message_end' && e.message?.role === 'assistant') last = e.message;
     if (e.type === 'agent_end') {
@@ -148,5 +161,5 @@ export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli
     const answer = await done;
     if (answer instanceof Error) throw answer;
     return { name: cleanName(answer.text), usage: answer.usage };
-  } finally { clearTimeout(timer); await rpc.close(); rmSync(agentDir, { recursive: true, force: true }); }
+  } finally { clearTimeout(timer); await rpc.close(); if (!shared) rmSync(agentDir, { recursive: true, force: true }); }
 }
