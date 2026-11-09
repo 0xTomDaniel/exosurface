@@ -274,20 +274,91 @@ test('real-install shape: the namer\'s provider credential lives only in the pri
   }
 });
 
-test('the namer\'s agent folder takes its provider from the primary agent folder\'s models.json with credentials by reference only: a literal key or header is never copied', async () => {
-  const { namerAgentDir } = await import('../legacy/primary/src/surface-name.ts');
-  const primary = join(f.root, 'primary-agent'); mkdirSync(primary);
-  writeFileSync(join(primary, 'models.json'), JSON.stringify({ providers: {
-    openai: { baseUrl: 'http://127.0.0.1:1/v1', apiKey: 'sk-literal-secret', headers: { 'x-team': '$TEAM_ID', 'x-token': 'literal-token' } },
-    anthropic: { baseUrl: 'http://127.0.0.1:1', apiKey: '!security find-generic-password -w' } } }));
-  const literal = namerAgentDir(f.home, primary, 'openai'), byCommand = namerAgentDir(f.home, primary, 'anthropic');
-  assert.deepEqual(JSON.parse(readFileSync(join(literal, 'models.json'), 'utf8')), { providers: { openai: { baseUrl: 'http://127.0.0.1:1/v1', headers: { 'x-team': '$TEAM_ID' } } } });
-  assert.deepEqual(JSON.parse(readFileSync(join(byCommand, 'models.json'), 'utf8')), { providers: { anthropic: { baseUrl: 'http://127.0.0.1:1', apiKey: '!security find-generic-password -w' } } });
-  assert.deepEqual([readdirSync(literal), readdirSync(byCommand)], [['models.json'], ['models.json']], 'no primary auth.json: nothing but models.json, no key file');
-  // With a primary auth.json (a Pi login), the namer's is a link to it: no copy, the primary file untouched.
-  writeFileSync(join(primary, 'auth.json'), '{"openai":{"type":"api_key","key":"fixture-fake"}}');
-  const linked = namerAgentDir(f.home, primary, 'openai');
-  assert.deepEqual([readdirSync(linked).sort(), lstatSync(join(linked, 'auth.json')).isSymbolicLink(), readlinkSync(join(linked, 'auth.json'))], [['auth.json', 'models.json'], true, join(primary, 'auth.json')]);
-  for (const dir of [literal, byCommand, linked]) rmSync(dir, { recursive: true, force: true });
-  assert.equal(readFileSync(join(primary, 'auth.json'), 'utf8'), '{"openai":{"type":"api_key","key":"fixture-fake"}}', 'removing the namer folder leaves the primary auth.json');
+test('an OAuth auth.json entry for the namer\'s provider (one Pi refreshes): the namer runs in the primary agent folder as before #147, no namer folder; that choice is logged once across two namings; the primary auth.json is left as it was', async () => {
+  const agent = join(f.home, 'pi-config'), auth = join(agent, 'auth.json'), namers = join(f.home, 'namer');
+  const before = { auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined, config: readFileSync(f.config, 'utf8') };
+  const oauth = JSON.stringify({ anthropic: { type: 'oauth', access: 'fixture-access', refresh: 'fixture-refresh', expires: Date.now() + 86_400_000 } }); // fake
+  writeFileSync(auth, oauth, { mode: 0o600 });
+  writeFileSync(f.config, JSON.stringify({ ...JSON.parse(before.config), namer: { provider: 'anthropic', model: 'claude-haiku-5-5', thinking: 'low' } }));
+  const folders = () => existsSync(namers) ? readdirSync(namers).length : 0, already = folders();
+  try {
+    for (const [reply, text] of [['Tool shed', 'Sort the tool shed'], ['Pantry', 'Stock the pantry']]) {
+      f.model.state.reply = reply;
+      const made = await newSurface();
+      const asked = f.model.requests.length;
+      f.model.state.hold = true;
+      await turn(made, text);
+      await until('the naming call in flight', () => f.model.requests.length > asked);
+      let folder: string | undefined;
+      await until('the namer\'s Pi found', () => (folder = namerFolder()) !== undefined);
+      assert.equal(folder, agent, 'the namer runs in the primary agent folder');
+      assert.equal(folders(), already, 'no namer folder');
+      f.model.release();
+      await until('the naming done', () => f.logs.some(l => l.includes(made) && (l.includes('named "') || l.includes('naming failed'))));
+    }
+    assert.equal(f.logs.filter(l => l.includes('Surface namer runs in the primary Pi agent folder')).length, 1, 'logged once');
+    assert.equal(readFileSync(auth, 'utf8'), oauth, 'the primary auth.json is left as it was');
+  } finally {
+    writeFileSync(f.config, before.config);
+    if (before.auth === undefined) rmSync(auth, { force: true }); else writeFileSync(auth, before.auth);
+  }
+});
+
+/** Every apiKey and header value anywhere in a models.json provider entry. */
+const credentials = (value: unknown): string[] => Array.isArray(value) ? value.flatMap(credentials)
+  : value && typeof value === 'object' ? Object.entries(value).flatMap(([k, v]) => k === 'apiKey' ? [String(v)] : k === 'headers' && v && typeof v === 'object' ? Object.values(v).map(String) : credentials(v)) : [];
+
+test('a primary models.json with literal credentials at every level Pi reads them (provider apiKey and headers, models[].headers, modelOverrides[id].headers; comments and a BOM, as Pi accepts) and the key in auth.json: the running namer\'s folder holds references only and the auth.json link; the surface is named; nothing left behind and the primary files unchanged', async () => {
+  const agent = join(f.home, 'pi-config'), models = join(agent, 'models.json'), auth = join(agent, 'auth.json');
+  const before = { models: readFileSync(models, 'utf8'), auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined };
+  const openai = JSON.parse(before.models).providers.openai;
+  // Fake values throughout. Literals the namer must never receive, beside references it keeps.
+  const primaryModels = '\uFEFF// a Pi models.json may carry comments\n' + JSON.stringify({ providers: { ...JSON.parse(before.models).providers, openai: { ...openai, apiKey: 'literal-provider-key',
+    headers: { 'x-literal': 'literal-provider-header', 'x-team': '!printf team' },
+    models: [{ id: 'fixture-extra', name: 'Fixture extra', api: 'openai-responses', baseUrl: openai.baseUrl, headers: { 'x-literal': 'literal-model-header', 'x-ref': '$FIXTURE_TEAM' } }],
+    modelOverrides: { 'gpt-6-luna': { headers: { 'x-literal': 'literal-override-header', 'x-ref': '!printf ok' } } } } } }, null, 1).replace(/\n}$/, ',\n}');
+  const credential = JSON.stringify({ openai: { type: 'api_key', key: 'fixture-auth-json-only' } });
+  writeFileSync(models, primaryModels); writeFileSync(auth, credential, { mode: 0o600 });
+  try {
+    f.model.state.reply = 'Attic insulation';
+    const made = await newSurface();
+    const asked = f.model.requests.length;
+    f.model.state.hold = true;
+    await turn(made, 'Insulate the attic');
+    await until('the naming call in flight', () => f.model.requests.length > asked);
+    let folder: string | undefined;
+    await until('the namer\'s Pi found', () => (folder = namerFolder()) !== undefined);
+    const copied = readFileSync(join(folder!, 'models.json'), 'utf8'), provider = JSON.parse(copied).providers.openai;
+    assert.equal(/literal-/.test(copied), false, 'no literal credential copied');
+    assert.deepEqual(credentials(provider).sort(), ['!printf ok', '!printf team', '$FIXTURE_TEAM'], 'only the references kept');
+    assert.deepEqual([lstatSync(join(folder!, 'auth.json')).isSymbolicLink(), readlinkSync(join(folder!, 'auth.json'))], [true, auth], 'auth.json a link, not a copy');
+    f.model.release();
+    await until('named', async () => (await listedName(made)) === 'Attic insulation');
+    await until('the namer\'s folder removed', () => !existsSync(folder!));
+    assert.deepEqual([readFileSync(models, 'utf8'), readFileSync(auth, 'utf8')], [primaryModels, credential], 'the primary files are left as they were');
+  } finally {
+    writeFileSync(models, before.models);
+    if (before.auth === undefined) rmSync(auth, { force: true }); else writeFileSync(auth, before.auth);
+  }
+});
+
+test('a naming that fails leaves no namer folder: the naming model refusing, and a primary models.json that cannot be read', async () => {
+  const models = join(f.home, 'pi-config', 'models.json'), namers = join(f.home, 'namer');
+  const before = { models: readFileSync(models, 'utf8') };
+  const left = () => existsSync(namers) ? readdirSync(namers).filter(n => n.startsWith('pi-')) : [];
+  const failed = (made: string) => f.logs.some(l => l.includes(made) && l.includes('naming failed'));
+  try {
+    f.model.state.fail = 500;
+    const refused = await newSurface();
+    await turn(refused, 'Paint the fence');
+    await until('the naming failed on the model', () => failed(refused));
+    assert.deepEqual(left(), [], 'no namer folder after a failed run');
+    f.model.state.fail = undefined;
+    const unreadable = await newSurface();
+    writeFileSync(models, '{ "providers": ');
+    await turn(unreadable, 'Clean the gutters');
+    await until('the naming failed on models.json', () => failed(unreadable));
+    assert.deepEqual(left(), [], 'no namer folder when models.json cannot be read');
+    assert.equal(await listedName(unreadable), 'New surface');
+  } finally { f.model.state.fail = undefined; writeFileSync(models, before.models); }
 });

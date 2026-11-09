@@ -102,45 +102,73 @@ export function cleanName(answer: string) {
 
 /** A key or header value Pi reads by reference ("!command", or only $VAR / ${VAR} environment names), not the secret itself. */
 const referenced = (value: unknown) => typeof value === 'string' && /^(!.+|(\$\{?[A-Za-z_]\w*\}?)+)$/.test(value);
+/** A Pi config file's JSON as Pi 1.1 reads it: BOM stripped, then models.json's `//` comments and trailing commas (Pi's
+ * utils/json.js stripJsonComments, core/model-config.js ModelConfig.load). */
+const piJson = (text: string, comments: boolean) => {
+  const plain = text.replace(/^\uFEFF/, '');
+  return JSON.parse(comments ? plain.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, m => (m[0] === '"' ? m : '')).replace(/"(?:\\.|[^"\\])*"|,(\s*[}\]])/g, (m, tail) => tail ?? (m[0] === '"' ? m : '')) : plain);
+};
+/** A models.json provider entry with every credential Pi reads from it by reference only: each `apiKey` and each value of
+ * each `headers` map, wherever it sits (Pi 1.1 core/model-config.js: the provider's apiKey and headers, models[].headers,
+ * modelOverrides[id].headers). A literal is dropped, never copied. */
+const byReference = (value: unknown): unknown => Array.isArray(value) ? value.map(byReference)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).flatMap(([key, v]): [string, unknown][] =>
+    key === 'apiKey' ? (referenced(v) ? [[key, v]] : [])
+    : key === 'headers' && v && typeof v === 'object' && !Array.isArray(v) ? [[key, Object.fromEntries(Object.entries(v).filter(([, h]) => referenced(h)))]]
+    : [[key, byReference(v)]]))
+  : value;
 /** The namer's own Pi agent folder (#147): a fresh one under Exo's state dir for each naming, removed after it. A Pi that exits
  * between creating a lock in its agent folder and registering it leaves the lock for its 30 s stale time; in its own folder
  * that never holds up a surface's Pi on the primary agent folder. Its models.json is the primary agent folder's entry for the
- * namer's provider, credentials by reference only: a literal key or header value is dropped, never copied. Its auth.json is
- * a symlink to the primary agent folder's (a Pi login keeps the credential there), never a copy, and only when that file
- * exists. Pi locks auth.json and models-store.json at "<path>.lock" without resolving links (proper-lockfile realpath:
- * false), so those locks stay in this folder. */
+ * namer's provider, credentials by reference only (byReference). Its auth.json is a symlink to the primary agent folder's (a
+ * Pi login keeps the credential there), never a copy, and only when that file exists. Pi locks auth.json and
+ * models-store.json at "<path>.lock" without resolving links (proper-lockfile realpath: false), so those locks stay in this
+ * folder. The primary models.json is read before anything is created; on any later failure the folder is removed. */
 export function namerAgentDir(stateDir: string, primaryAgentDir: string, provider: string) {
+  const file = join(primaryAgentDir, 'models.json');
+  const entry = existsSync(file) ? piJson(readFileSync(file, 'utf8'), true)?.providers?.[provider] : undefined;
   mkdirSync(join(stateDir, 'namer'), { recursive: true, mode: 0o700 });
   const dir = mkdtempSync(join(stateDir, 'namer', 'pi-'));
-  const file = join(primaryAgentDir, 'models.json');
-  const entry = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).providers?.[provider] : undefined;
-  const { apiKey, headers, ...rest } = entry ?? {};
-  const kept = { ...rest, ...(referenced(apiKey) ? { apiKey } : {}),
-    ...(headers && typeof headers === 'object' ? { headers: Object.fromEntries(Object.entries(headers).filter(([, v]) => referenced(v))) } : {}) };
-  writeFileSync(join(dir, 'models.json'), JSON.stringify({ providers: entry ? { [provider]: kept } : {} }), { mode: 0o600 });
-  if (existsSync(join(primaryAgentDir, 'auth.json'))) symlinkSync(join(primaryAgentDir, 'auth.json'), join(dir, 'auth.json'));
-  return dir;
+  try {
+    writeFileSync(join(dir, 'models.json'), JSON.stringify({ providers: entry ? { [provider]: byReference(entry) } : {} }), { mode: 0o600 });
+    if (existsSync(join(primaryAgentDir, 'auth.json'))) symlinkSync(join(primaryAgentDir, 'auth.json'), join(dir, 'auth.json'));
+    return dir;
+  } catch (error) { rmSync(dir, { recursive: true, force: true }); throw error; }
+}
+
+/** Whether Pi could rewrite the provider's entry in the primary agent folder's auth.json: Pi refreshes, and so writes, only an
+ * "oauth" entry (pi-ai auth/resolve.js resolveCredential, models.js resolveRefreshCredential); an "api_key" entry or none it
+ * only reads. Anything else, or an unreadable file, counts as refreshable. Reads only the entry's type, never a credential. */
+export function refreshableCredential(primaryAgentDir: string, provider: string) {
+  const file = join(primaryAgentDir, 'auth.json');
+  if (!existsSync(file)) return false;
+  try { const entry = piJson(readFileSync(file, 'utf8'), false)?.[provider]; return entry !== undefined && entry?.type !== 'api_key'; } catch { return true; }
 }
 
 /** One namer call through Pi's RPC mode, in the namer's own agent folder (namerAgentDir; `agentDir`, the primary agent folder
- * its provider entry is read from). Rejects unless Pi runs the configured model and thinking, or on any model error. */
-export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; stateDir: string; cwd: string }, timeoutMs = 60_000) {
+ * its provider entry is read from). When the provider's credential is refreshable (refreshableCredential), it runs in the
+ * primary agent folder itself, as before #147, so a token refresh writes auth.json under that folder's own lock; `primary`
+ * is told so. Rejects unless Pi runs the configured model and thinking, or on any model error. */
+export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; stateDir: string; cwd: string; primary?: () => void }, timeoutMs = 60_000) {
   const args = ['--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-prompt-templates', '--no-context-files', '--no-mcp', '--no-themes', '--no-approve',
     '--system-prompt', SYSTEM, '--provider', choice.provider, '--model', choice.model, '--thinking', choice.thinking];
   let finish: (v: { text: string; usage?: { input: number; output: number } } | Error) => void = () => {};
   const done = new Promise<{ text: string; usage?: { input: number; output: number } } | Error>(r => { finish = r; });
   let last: any;
-  const agentDir = namerAgentDir(at.stateDir, at.agentDir, choice.provider);
-  const rpc = new PiRpc(at.piCli, args, at.cwd, childEnv({ PI_CODING_AGENT_DIR: agentDir, PI_TELEMETRY: '0' }), e => {
-    if (e.type === 'message_end' && e.message?.role === 'assistant') last = e.message;
-    if (e.type === 'agent_end') {
-      if (!last) finish(new Error('The naming model gave no answer'));
-      else if (last.stopReason === 'error' || last.stopReason === 'aborted') finish(new Error(`The naming model failed: ${String(last.errorMessage ?? last.stopReason).slice(0, 300)}`));
-      else finish({ text: said(last), usage: last.usage ? { input: last.usage.input ?? 0, output: last.usage.output ?? 0 } : undefined });
-    }
-  }, error => finish(error));
-  const timer = setTimeout(() => finish(new Error('The naming model timed out')), timeoutMs);
+  const shared = refreshableCredential(at.agentDir, choice.provider);
+  if (shared) at.primary?.();
+  let agentDir: string | undefined, rpc: PiRpc | undefined, timer: NodeJS.Timeout | undefined;
   try {
+    agentDir = shared ? at.agentDir : namerAgentDir(at.stateDir, at.agentDir, choice.provider);
+    rpc = new PiRpc(at.piCli, args, at.cwd, childEnv({ PI_CODING_AGENT_DIR: agentDir, PI_TELEMETRY: '0' }), e => {
+      if (e.type === 'message_end' && e.message?.role === 'assistant') last = e.message;
+      if (e.type === 'agent_end') {
+        if (!last) finish(new Error('The naming model gave no answer'));
+        else if (last.stopReason === 'error' || last.stopReason === 'aborted') finish(new Error(`The naming model failed: ${String(last.errorMessage ?? last.stopReason).slice(0, 300)}`));
+        else finish({ text: said(last), usage: last.usage ? { input: last.usage.input ?? 0, output: last.usage.output ?? 0 } : undefined });
+      }
+    }, error => finish(error));
+    timer = setTimeout(() => finish(new Error('The naming model timed out')), timeoutMs);
     const state = await rpc.send('get_state');
     if (state.model?.provider !== choice.provider || state.model?.id !== choice.model || state.thinkingLevel !== choice.thinking)
       throw new Error(`Pi would run ${state.model?.provider}/${state.model?.id} thinking ${state.thinkingLevel}, not the configured ${choice.provider}/${choice.model} thinking ${choice.thinking}`);
@@ -148,5 +176,5 @@ export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli
     const answer = await done;
     if (answer instanceof Error) throw answer;
     return { name: cleanName(answer.text), usage: answer.usage };
-  } finally { clearTimeout(timer); await rpc.close(); rmSync(agentDir, { recursive: true, force: true }); }
+  } finally { clearTimeout(timer); await rpc?.close(); if (!shared && agentDir) rmSync(agentDir, { recursive: true, force: true }); }
 }
