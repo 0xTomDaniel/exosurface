@@ -220,7 +220,7 @@ async function serverRpc(vault: string) {
   /** The person's queued message sent with BB's explicit Send-now: BB skips the dispatch pass for it by design (BB 0.48
    *  dispatch: `if (!sendNow && hasMessageDispatchHooks())`), then logs the request (author "user") and starts the turn. */
   const sendNow = (threadId: string, text: string) => { logRequest(threadId, text, 'user', null, 'tell'); provider.deliver!(threadId, text); };
-  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults };
+  return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, metadata };
 }
 
 /** Exo installed and not set up (#130): the plugin registered on a mock BB with the installer's local config, no set-up
@@ -239,10 +239,10 @@ export async function installedFixture() {
   process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
-  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults } = await serverRpc(vault);
+  const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, metadata } = await serverRpc(vault);
   /** Lets the profile's "hold:" turn be answered. */
   const release = (profile: string) => { mkdirSync(join(optchatHome, 'release'), { recursive: true }); writeFileSync(join(optchatHome, 'release', profile), ''); };
-  return { root, home, optchatHome, vault, optchat, piCli: PI_CLI, config, rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
+  return { root, home, optchatHome, vault, optchat, piCli: PI_CLI, config, rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, metadata, model, release, piRuns: () => existsSync(join(optchatHome, 'pi-runs.jsonl')) ? readFileSync(join(optchatHome, 'pi-runs.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l)) : [] };
 }
 type Fixture = Awaited<ReturnType<typeof installedFixture>>;
 

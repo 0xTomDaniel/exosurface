@@ -14,6 +14,8 @@ import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-tu
 import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
+// Logged once per process: the namer runs in the primary Pi agent folder (callNamer, an OAuth credential there).
+let namerInPrimaryLogged = false;
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
   canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), initializationAvailable: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
@@ -95,7 +97,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       let choice: ModelChoice | undefined;
       try {
         choice = namerChoice(LOCAL_CONFIG).choice;
-        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), cwd: HOME });
+        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), stateDir: HOME, cwd: HOME,
+          primary: () => { if (namerInPrimaryLogged) return; namerInPrimaryLogged = true; bb.log.info(`Surface namer runs in the primary Pi agent folder: its ${choice!.provider} credential there is one Pi refreshes (OAuth), so it stays under that folder's lock`); } });
         const used = choice;
         const person = await nameWrite(threadId, async () => {
           const person = await named(threadId);
