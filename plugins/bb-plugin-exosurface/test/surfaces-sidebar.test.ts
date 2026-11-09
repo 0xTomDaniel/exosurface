@@ -52,3 +52,54 @@ test('New surface puts a new surface in view with one empty page; the sidebar li
   await waitFor(() => assert.equal(homeShown(), true));
   view.unmount();
 });
+
+// #186 (spec N8, T3; acceptance-sidebar-pinned). jsdom does no layout, so where things sit is read from computed style: the
+// one region of the sidebar that scrolls holds every surface and neither New surface nor Settings, which sit above and below
+// it; nothing around them scrolls, so they stay in view wherever that region is scrolled.
+test('acceptance-sidebar-pinned: with more surfaces than fit, scrolled to the tree\'s end, New surface stays at the top and the Settings gear at the bottom', async () => {
+  const threads = [{ threadId: 'primary', title: 'Home', home: true }, ...Array.from({ length: 40 }, (_, i) => ({ threadId: `thread-${i + 2}`, title: `Surface ${i + 1}`, home: false }))];
+  const panel = app.navPanels.find((p: any) => p.path === 'surface');
+  const view = kit.renderSlot(panel, { subPath: '' }, { rpc: {
+    thread_list: async () => ({ threads }),
+    workspace: async (input: any) => input.threadId ? empty(input.threadId) : homePage(),
+    exo_block: async () => ({ working: false, words: '' }),
+    canonical_setup_status: async () => ({ stage: 'bound' }),
+  } });
+  try {
+    const nav = () => document.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
+    const rows = () => [...nav().querySelectorAll('li')];
+    await waitFor(() => assert.equal(rows().length, 41));
+    const scrolls = (el: Element) => ['auto', 'scroll'].includes(getComputedStyle(el).overflowY) || ['auto', 'scroll'].includes(getComputedStyle(el).overflow);
+    const button = (name: string) => [...nav().querySelectorAll('button')].filter(b => (b.getAttribute('aria-label') ?? b.textContent) === name);
+    const newSurface = button('New surface').filter(b => !b.closest('li')), settings = button('Settings');
+    assert.equal(newSurface.length, 1);
+    assert.equal(settings.length, 1);
+    // The sidebar's one scrolling region holds every surface, Home to the last.
+    const regions = [nav(), ...nav().querySelectorAll('*')].filter(scrolls);
+    assert.equal(regions.length, 1, 'one scrolling region in the sidebar');
+    const [list] = regions;
+    assert.equal(list === nav(), false, 'the sidebar itself does not scroll');
+    assert.equal(rows().every(r => list.contains(r)), true, 'every surface is in the scrolling region');
+    // It shrinks to the room left between the two buttons (a flex column item that may shrink below its content).
+    assert.equal(getComputedStyle(nav()).display, 'flex');
+    assert.equal(getComputedStyle(nav()).flexDirection, 'column');
+    assert.equal(list.parentElement === nav(), true);
+    assert.equal(['0', '0px'].includes(getComputedStyle(list).minHeight), true, 'the list may shrink below its content');
+    assert.equal(getComputedStyle(list).flexGrow, '1');
+    // The person scrolls the list to its end.
+    list.scrollTop = list.scrollHeight;
+    // New surface sits above it, Home first in it, the Settings gear below it; none of the three scrolls with it.
+    for (const b of [newSurface[0], settings[0]]) {
+      assert.equal(list.contains(b), false);
+      assert.equal(b.parentElement === nav(), true);
+    }
+    assert.equal([...nav().children].indexOf(newSurface[0]), 0, 'New surface at the top of the sidebar');
+    assert.equal(rows()[0].textContent, 'Home');
+    assert.equal(rows().at(-1)!.textContent, 'Surface 40');
+    assert.equal(!!(list.compareDocumentPosition(settings[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings below the list');
+    assert.equal([...nav().children].filter(c => c.tagName !== 'P').at(-1) === settings[0], true, 'Settings at the bottom of the sidebar');
+    // Shown as a gear; named Settings for people and assistive tech.
+    assert.equal(settings[0].textContent, '⚙');
+    assert.equal(settings[0].getAttribute('title'), 'Settings');
+  } finally { view.unmount(); }
+});
