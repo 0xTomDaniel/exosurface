@@ -390,8 +390,15 @@ async function exoBlockSentPage() {
     fireEvent.click(pills().find(b => b.textContent === 'Plum plan'));
     await until('the plum page in view', () => inView() === 'Plum plan');
     console.log('opened "Plum plan" from the page strip; "Pear plan" stays on stage');
+    // #189: Pi journals an updated system prompt after the send's origin, before its user message.
+    writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
     const question = 'which plums are ripe?';
     await send(question, 'Plum plan');
+    const entries = readFileSync(f.piRuns().find(r => r.profile === f.setup.profile).sessionFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    const origin = entries.findLastIndex(e => e.customType === 'exosurface-press' && e.data.line === question);
+    const user = entries.findIndex((e, i) => i > origin && e.message?.role === 'user');
+    if (entries[origin]?.data.page !== 'plum' || !entries.slice(origin + 1, user).some(e => e.message?.role === 'system')) throw new Error('missing selected-page origin or interleaved system message');
+    console.log(`journal: origin ${entries[origin].id} page plum -> system -> user ${entries[user].id}; full thread retained`);
     show('after the question (draws nothing)', 'Plum plan', question, question);
     await until('the page to take a press', idle);
     fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));

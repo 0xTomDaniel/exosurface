@@ -51,7 +51,8 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
     }
     const change = changed(entry);
     if (change) { byStage(); if (focus === undefined) focus = change.focus; if (change.pages) pages = [...(pages ?? []), ...change.pages]; }
-    if (entry.type !== 'message') continue;
+    // System prompt updates can sit between a send's origin and its user message; they are not a turn boundary.
+    if (entry.type !== 'message' || entry.message?.role === 'system') continue;
     if (found && !quiet) return found;
     byStage(); last = undefined;
     if (entry.message?.role === 'user') {
