@@ -1,0 +1,64 @@
+{
+  "node_version": "v24.15.0",
+  "scope": "isolated offline fixture/unit checks, not real Mac/BB integration",
+  "commands": [
+    "node --experimental-transform-types test/run-isolated.ts --test-isolation=none test/*.test.ts (primary)",
+    "node --experimental-transform-types test/run-isolated.ts test/*.test.ts (a2ui)",
+    "node node_modules/typescript/bin/tsc --noEmit (both; allowlisted env, temporary HOME)"
+  ],
+  "primary": {
+    "tests": 29,
+    "passed": 28,
+    "skipped": 1,
+    "failed": 0,
+    "skipped_reason": "actual Pi/OptChat binaries not explicitly configured; no paid/model calls"
+  },
+  "a2ui": {
+    "test_files": 15,
+    "tests": 108,
+    "passed": 108,
+    "failed": 0
+  },
+  "typecheck": {
+    "primary": "pass",
+    "a2ui": "pass"
+  },
+  "failing_before": {
+    "baseline_commit": "368cba4",
+    "method": "Disposable source/test copy; replace only src/canvas-memory.ts with git-show baseline, retaining new validation limits to test the actual truncation regression without missing-export failures. Never reset or overwrite worktree.",
+    "tests": 7,
+    "failed": 5,
+    "passed": 2,
+    "failed_cases": [
+      ">=1000-character multiline text",
+      "largest accepted textbox",
+      "full value despite abbreviated label",
+      "full page edit",
+      "explicit outline overflow notice"
+    ],
+    "not_full_baseline_claim": "Overflow rejection tests passed because current workspace validation is retained.",
+    "real_handler_regression": {
+      "tests": 1,
+      "failed": 1,
+      "passed": 0,
+      "boundary": "Actual RPC schema and plugin handler, fake BB SDK send, temporary Unix owner socket. Same disposable baseline canvas-memory replacement."
+    }
+  },
+  "fixed_regression": {
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "real_handler_regression": {
+      "tests": 1,
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "isolation": "First import accident guards plus disposable HOME/TMPDIR/XDG paths and EXO_CONFIG; environment allowlist removes credentials/live selectors/NODE_OPTIONS. Negative selector proof uses a second temporary fixture. Not an OS sandbox; account permissions remain full trust.",
+  "not_run": [
+    "Real Mac/stock-BB installation/enable/restart/reopen E2E",
+    "Browser renderer/advisory exploit suite",
+    "Real agent prompt/model invocation",
+    "Final production artifact audit or separately installed runtime audit"
+  ]
+}

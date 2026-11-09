@@ -18,7 +18,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-transform-types --test --test-isolation=none test/*.test.ts"
+    "test": "node --experimental-transform-types test/run-isolated.ts --test-isolation=none test/*.test.ts"
   },
   "dependencies": {
     "@get-bb/plugin-sdk": "0.6.15",
@@ -52,5 +52,10 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "undici": "8.12.2"
+    }
   }
 }

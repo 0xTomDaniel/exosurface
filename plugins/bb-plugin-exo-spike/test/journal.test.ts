@@ -1,3 +1,4 @@
+import './isolation.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, statSync, rmSync } from 'node:fs';

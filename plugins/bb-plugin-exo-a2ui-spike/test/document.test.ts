@@ -1,3 +1,4 @@
+import './isolation.ts';
 import{Provider}from'../composition/provider.ts';
 import test from'node:test';import assert from'node:assert/strict';import{parseDocument,nodes,reconstruct,acceptHint,digest,type Hints}from'../observer/document.ts';import{planDocument,compileDocument}from'../observer/document-planner.ts';import{DocumentObserverTurn}from'../observer/document-turn.ts';import{applyDelta,moduleNodes,moduleData,latestSnapshot}from'../src/workspace.ts';
 const text='# A decision\n\nKeep this **qualification**.\n\n## Sequence\n\n1. Start at **10:30 am**.\n2. Continue only if ready.\n   - Preserve this nested exception.\n\n## Alternatives\n\n### Inside\n\nTables, but less space.\n\n### Outside\n\nMore room, unless it rains.\n\n## Questions\n\n1. Which place do you prefer?\n2. What remains uncertain?\n',signal=()=>new AbortController().signal;

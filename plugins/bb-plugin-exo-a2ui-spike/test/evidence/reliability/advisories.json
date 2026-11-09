@@ -1,0 +1,1181 @@
+{
+  "source": "GitHub public global security advisories API",
+  "checked_at": "2026-10-28T22:32:32.362181+00:00",
+  "advisories": [
+    {
+      "ghsa_id": "GHSA-26pp-8wgv-hjvm",
+      "cve_id": "CVE-2026-56762",
+      "summary": "Hono missing validation of cookie name on write path in setCookie()",
+      "severity": "medium",
+      "published_at": "2026-04-08T00:17:02Z",
+      "updated_at": "2026-09-24T18:25:35Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-26pp-8wgv-hjvm"
+    },
+    {
+      "ghsa_id": "GHSA-2gcr-mfcq-wcc3",
+      "cve_id": "CVE-2026-47676",
+      "summary": "Hono: app.mount() strips mount prefix using undecoded path, causing incorrect routing for percent-encoded paths",
+      "severity": "medium",
+      "published_at": "2026-06-04T18:01:00Z",
+      "updated_at": "2026-06-04T18:01:03Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-2gcr-mfcq-wcc3"
+    },
+    {
+      "ghsa_id": "GHSA-2m5v-pch6-74hx",
+      "cve_id": "CVE-2026-109383",
+      "summary": "undici vulnerable to TLS certificate validation bypass via dropped tls options in Agent",
+      "severity": "high",
+      "published_at": "2026-10-27T19:02:26Z",
+      "updated_at": "2026-10-27T19:02:27Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.0.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-2m5v-pch6-74hx"
+    },
+    {
+      "ghsa_id": "GHSA-3hrh-pfw6-9m5x",
+      "cve_id": "CVE-2026-47675",
+      "summary": "Hono: Cookie helper does not sanitize sameSite and priority, allowing Set-Cookie injection",
+      "severity": "medium",
+      "published_at": "2026-06-04T17:59:25Z",
+      "updated_at": "2026-06-04T17:59:27Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-3hrh-pfw6-9m5x"
+    },
+    {
+      "ghsa_id": "GHSA-458j-xx4x-4375",
+      "cve_id": "CVE-2026-56761",
+      "summary": "hono Improperly Handles JSX Attribute Names Allows HTML Injection in hono/jsx SSR",
+      "severity": "medium",
+      "published_at": "2026-04-16T01:02:24Z",
+      "updated_at": "2026-06-24T13:10:58Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.14",
+          "first_patched_version": "4.12.14",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-458j-xx4x-4375"
+    },
+    {
+      "ghsa_id": "GHSA-4qv8-2p9j-2685",
+      "cve_id": "CVE-2026-109924",
+      "summary": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser",
+      "severity": "medium",
+      "published_at": "2026-10-23T22:13:29Z",
+      "updated_at": "2026-10-23T22:13:31Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.5.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685"
+    },
+    {
+      "ghsa_id": "GHSA-4w7w-5xrc-9h26",
+      "cve_id": "CVE-2026-109829",
+      "summary": "undici vulnerable to cache poisoning and cross-user disclosure via cross-origin redirects",
+      "severity": "high",
+      "published_at": "2026-10-27T19:02:31Z",
+      "updated_at": "2026-10-27T19:02:32Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-4w7w-5xrc-9h26"
+    },
+    {
+      "ghsa_id": "GHSA-55q2-fjhq-7xh7",
+      "cve_id": null,
+      "summary": "DOMPurify: IN_PLACE hook removal leaves a detached subtree executable, causing XSS",
+      "severity": "medium",
+      "published_at": "2026-08-07T15:30:47Z",
+      "updated_at": "2026-08-07T15:30:48Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.12",
+          "first_patched_version": "3.4.13",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7"
+    },
+    {
+      "ghsa_id": "GHSA-55wc-3pg8-jfw6",
+      "cve_id": "CVE-2026-87029",
+      "summary": "undici vulnerable to Denial of Service via unhandled exception in the decompress interceptor",
+      "severity": "medium",
+      "published_at": "2026-10-27T19:02:10Z",
+      "updated_at": "2026-10-27T19:02:12Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-55wc-3pg8-jfw6"
+    },
+    {
+      "ghsa_id": "GHSA-5pq2-9x2x-5p6w",
+      "cve_id": "CVE-2026-29086",
+      "summary": "Hono Vulnerable to Cookie Attribute Injection via Unsanitized domain and path in setCookie()",
+      "severity": "medium",
+      "published_at": "2026-03-04T19:49:14Z",
+      "updated_at": "2026-03-05T15:26:44Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-5pq2-9x2x-5p6w"
+    },
+    {
+      "ghsa_id": "GHSA-6688-9rhm-gjv2",
+      "cve_id": null,
+      "summary": "DOMPurify: IN_PLACE returns a force-removed rawtext root whose text carries attacker markup \u2014 pure HTML reparse executes",
+      "severity": "low",
+      "published_at": "2026-10-05T23:43:53Z",
+      "updated_at": "2026-10-05T23:43:54Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.15",
+          "first_patched_version": "3.4.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2"
+    },
+    {
+      "ghsa_id": "GHSA-69xw-7hcm-h432",
+      "cve_id": "CVE-2026-44455",
+      "summary": "hono/jsx has Unvalidated JSX Tag Names that May Allow HTML Injection",
+      "severity": "medium",
+      "published_at": "2026-05-06T23:49:43Z",
+      "updated_at": "2026-05-14T20:32:03Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.16",
+          "first_patched_version": "4.12.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-69xw-7hcm-h432"
+    },
+    {
+      "ghsa_id": "GHSA-79qm-7rj5-m7r9",
+      "cve_id": "CVE-2026-71849",
+      "summary": "Hono: Proxy Helper does not remove response headers listed in the `Connection` header",
+      "severity": "low",
+      "published_at": "2026-08-07T18:38:48Z",
+      "updated_at": "2026-08-07T18:38:49Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.7.0, < 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-79qm-7rj5-m7r9"
+    },
+    {
+      "ghsa_id": "GHSA-88fw-hqm2-52qc",
+      "cve_id": "CVE-2026-54290",
+      "summary": "hono: CORS Middleware reflects any Origin with credentials when `origin` defaults to the wildcard",
+      "severity": "high",
+      "published_at": "2026-06-16T14:15:39Z",
+      "updated_at": "2026-07-21T15:27:04Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-88fw-hqm2-52qc"
+    },
+    {
+      "ghsa_id": "GHSA-8j4g-w8fx-2239",
+      "cve_id": "CVE-2026-69207",
+      "summary": "Hono: ReDoS in CORS middleware via Access-Control-Request-Headers",
+      "severity": "medium",
+      "published_at": "2026-08-03T20:23:30Z",
+      "updated_at": "2026-08-03T20:23:59Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-8j4g-w8fx-2239"
+    },
+    {
+      "ghsa_id": "GHSA-9fm3-97px-rjf6",
+      "cve_id": "CVE-2026-109932",
+      "summary": "undici WebSocket client vulnerable to Denial of Service via unbounded automatic PONG buffering",
+      "severity": "medium",
+      "published_at": "2026-10-27T19:02:15Z",
+      "updated_at": "2026-10-27T19:02:17Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 5.15.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-9fm3-97px-rjf6"
+    },
+    {
+      "ghsa_id": "GHSA-9vqf-7f2p-gf9v",
+      "cve_id": "CVE-2026-44456",
+      "summary": "Hono: bodyLimit() can be bypassed for chunked / unknown-length requests",
+      "severity": "medium",
+      "published_at": "2026-05-06T23:50:10Z",
+      "updated_at": "2026-05-14T20:32:03Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.16",
+          "first_patched_version": "4.12.16",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-9vqf-7f2p-gf9v"
+    },
+    {
+      "ghsa_id": "GHSA-c2j3-45gr-mqc4",
+      "cve_id": "CVE-2026-66010",
+      "summary": "DOMPurify: `CUSTOM_ELEMENT_HANDLING` bypasses `afterSanitizeElements` for allowed custom elements.",
+      "severity": "low",
+      "published_at": "2026-07-21T19:41:07Z",
+      "updated_at": "2026-10-02T22:43:23Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.11",
+          "first_patched_version": "3.4.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-c2j3-45gr-mqc4"
+    },
+    {
+      "ghsa_id": "GHSA-c6gr-qvv4-5v3f",
+      "cve_id": null,
+      "summary": "DOMPurify: SMIL attributeName=href guard is skipped when PARSER_MEDIA_TYPE is application/xhtml+xml",
+      "severity": "low",
+      "published_at": "2026-10-22T16:24:23Z",
+      "updated_at": "2026-10-22T16:24:24Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f"
+    },
+    {
+      "ghsa_id": "GHSA-cg2g-xh64-v4q7",
+      "cve_id": null,
+      "summary": "DOMPurify SAFE_FOR_TEMPLATES bypass: split template expressions survive in attached shadow root content on DOM output modes",
+      "severity": "critical",
+      "published_at": "2026-10-22T16:25:31Z",
+      "updated_at": "2026-10-22T16:25:32Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": ">= 3.4.4, <= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7"
+    },
+    {
+      "ghsa_id": "GHSA-crvj-82cr-hjcx",
+      "cve_id": "CVE-2026-84363",
+      "summary": "Hono: Query parser reads parameters after the URL fragment, causing cache-key and proxy interpretation differentials",
+      "severity": "medium",
+      "published_at": "2026-09-08T21:22:50Z",
+      "updated_at": "2026-09-08T21:22:51Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-crvj-82cr-hjcx"
+    },
+    {
+      "ghsa_id": "GHSA-f23p-vx2j-j53r",
+      "cve_id": "CVE-2026-71850",
+      "summary": "Hono: `memo()` retains SSR output across requests, leading to cross-user data disclosure",
+      "severity": "medium",
+      "published_at": "2026-08-07T18:42:01Z",
+      "updated_at": "2026-08-07T18:42:04Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 3.8.0, < 4.12.34",
+          "first_patched_version": "4.12.34",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-f23p-vx2j-j53r"
+    },
+    {
+      "ghsa_id": "GHSA-f577-qrjj-4474",
+      "cve_id": "CVE-2026-47673",
+      "summary": "Hono: JWT middleware accepts any Authorization scheme, not only Bearer",
+      "severity": "medium",
+      "published_at": "2026-06-04T17:52:04Z",
+      "updated_at": "2026-06-04T17:52:06Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-f577-qrjj-4474"
+    },
+    {
+      "ghsa_id": "GHSA-f72v-6w45-q472",
+      "cve_id": "CVE-2026-109841",
+      "summary": "undici vulnerable to Subresource Integrity bypass via non-lowercase algorithm tokens",
+      "severity": "medium",
+      "published_at": "2026-10-23T22:12:57Z",
+      "updated_at": "2026-10-23T22:13:18Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-f72v-6w45-q472"
+    },
+    {
+      "ghsa_id": "GHSA-g6gw-c38x-mqfc",
+      "cve_id": "CVE-2026-84364",
+      "summary": "Hono: Unbounded dot-notation nesting in `parseBody()` can cause memory exhaustion",
+      "severity": "medium",
+      "published_at": "2026-09-08T21:23:02Z",
+      "updated_at": "2026-09-08T21:23:04Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-g6gw-c38x-mqfc"
+    },
+    {
+      "ghsa_id": "GHSA-gfr2-rv44-r23c",
+      "cve_id": "CVE-2026-111758",
+      "summary": "markdown-it: Quadratic-time rendering of a single multi-line link reference definition with default options (regression since 14.0)",
+      "severity": "high",
+      "published_at": "2026-10-20T20:28:44Z",
+      "updated_at": "2026-10-20T20:28:46Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 14.1.0, < 14.3.3",
+          "first_patched_version": "14.3.3",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 15.0.0, < 15.0.3",
+          "first_patched_version": "15.0.3",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-gfr2-rv44-r23c"
+    },
+    {
+      "ghsa_id": "GHSA-gq3j-xvxp-8hrf",
+      "cve_id": null,
+      "summary": "Hono added timing comparison hardening in basicAuth and bearerAuth",
+      "severity": "low",
+      "published_at": "2026-02-19T20:15:59Z",
+      "updated_at": "2026-02-19T20:16:02Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.11.10",
+          "first_patched_version": "4.11.10",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-gq3j-xvxp-8hrf"
+    },
+    {
+      "ghsa_id": "GHSA-gqvv-2mrq-wpjv",
+      "cve_id": "CVE-2026-84365",
+      "summary": "Hono: Incomplete fix for CVE-2026-39408: `toSSG()` still writes files outside the output directory",
+      "severity": "medium",
+      "published_at": "2026-09-08T21:23:51Z",
+      "updated_at": "2026-09-08T21:23:51Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.5",
+          "first_patched_version": "4.13.5",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-gqvv-2mrq-wpjv"
+    },
+    {
+      "ghsa_id": "GHSA-hm8q-7f3q-5f36",
+      "cve_id": "CVE-2026-44459",
+      "summary": "Hono has improper validation of NumericDate claims (exp, nbf, iat) in JWT verify()",
+      "severity": "low",
+      "published_at": "2026-05-09T00:45:19Z",
+      "updated_at": "2026-05-14T20:35:49Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-hm8q-7f3q-5f36"
+    },
+    {
+      "ghsa_id": "GHSA-hvrm-45r6-mjfj",
+      "cve_id": "CVE-2026-59896",
+      "summary": "hono/jsx does not isolate context per request, leading to cross-request data disclosure",
+      "severity": "medium",
+      "published_at": "2026-07-21T18:34:19Z",
+      "updated_at": "2026-07-21T18:34:20Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.11.8, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-hvrm-45r6-mjfj"
+    },
+    {
+      "ghsa_id": "GHSA-hxh3-vqpv-xpqv",
+      "cve_id": "CVE-2026-93981",
+      "summary": "hono/jsx renders plain strings unescaped in boundary components, leading to XSS",
+      "severity": "medium",
+      "published_at": "2026-09-30T23:46:16Z",
+      "updated_at": "2026-09-30T23:46:17Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.13.7",
+          "first_patched_version": "4.13.7",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-hxh3-vqpv-xpqv"
+    },
+    {
+      "ghsa_id": "GHSA-j6c9-x7qj-28xf",
+      "cve_id": "CVE-2026-54287",
+      "summary": "hono: AWS Lambda adapter merges multiple `Set-Cookie` headers into one value, dropping cookies on ALB single-header and Lattice",
+      "severity": "medium",
+      "published_at": "2026-06-16T14:08:40Z",
+      "updated_at": "2026-07-21T15:26:49Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-j6c9-x7qj-28xf"
+    },
+    {
+      "ghsa_id": "GHSA-mrhx-c7xc-m3w5",
+      "cve_id": "CVE-2023-54404",
+      "summary": "Zod can exhaust memory while validating oversized constrained collections",
+      "severity": "high",
+      "published_at": "2026-10-01T18:32:46Z",
+      "updated_at": "2026-10-23T18:26:52Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "zod"
+          },
+          "vulnerable_version_range": "< 4.6.6",
+          "first_patched_version": "4.6.6",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5"
+    },
+    {
+      "ghsa_id": "GHSA-mrv2-3pqr-j5jr",
+      "cve_id": null,
+      "summary": "DOMPurify IN_PLACE: hook that removes a parent or sibling leaves the detached subtree's event handlers armed (incomplete fix for GHSA-p98j-92pf-mc4p)",
+      "severity": "high",
+      "published_at": "2026-10-22T16:24:52Z",
+      "updated_at": "2026-10-22T16:24:53Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "vulnerable_version_range": "<= 3.4.16",
+          "first_patched_version": "3.4.17",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr"
+    },
+    {
+      "ghsa_id": "GHSA-p6xx-57qc-3wxr",
+      "cve_id": "CVE-2026-29085",
+      "summary": "Hono Vulnerable to SSE Control Field Injection via CR/LF in writeSSE()",
+      "severity": "medium",
+      "published_at": "2026-03-04T19:48:41Z",
+      "updated_at": "2026-03-05T15:26:38Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-p6xx-57qc-3wxr"
+    },
+    {
+      "ghsa_id": "GHSA-p77w-8qqv-26rm",
+      "cve_id": "CVE-2026-44457",
+      "summary": "Hono's Cache Middleware ignores Vary: Authorization / Vary: Cookie leading to cross-user cache leakage",
+      "severity": "medium",
+      "published_at": "2026-05-09T00:28:46Z",
+      "updated_at": "2026-05-14T20:35:44Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-p77w-8qqv-26rm"
+    },
+    {
+      "ghsa_id": "GHSA-q5qw-h33p-qvwr",
+      "cve_id": "CVE-2026-29045",
+      "summary": "Hono vulnerable to arbitrary file access via serveStatic vulnerability ",
+      "severity": "high",
+      "published_at": "2026-03-04T19:48:00Z",
+      "updated_at": "2026-03-05T15:26:34Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.4",
+          "first_patched_version": "4.12.4",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-q5qw-h33p-qvwr"
+    },
+    {
+      "ghsa_id": "GHSA-qp7p-654g-cw7p",
+      "cve_id": "CVE-2026-44458",
+      "summary": "Hono has CSS Declaration Injection via Style Object Values in JSX SSR",
+      "severity": "medium",
+      "published_at": "2026-05-09T00:46:44Z",
+      "updated_at": "2026-05-09T00:46:44Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.18",
+          "first_patched_version": "4.12.18",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-qp7p-654g-cw7p"
+    },
+    {
+      "ghsa_id": "GHSA-qrxm-fqhp-jwvm",
+      "cve_id": "CVE-2026-87018",
+      "summary": "undici vulnerable to Denial of Service via TLS 1.2 certificate-changing renegotiation",
+      "severity": "high",
+      "published_at": "2026-10-27T19:02:21Z",
+      "updated_at": "2026-10-27T19:02:22Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 4.2.1, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-qrxm-fqhp-jwvm"
+    },
+    {
+      "ghsa_id": "GHSA-r5rp-j6wh-rvv4",
+      "cve_id": "CVE-2026-39410",
+      "summary": "Hono: Non-breaking space prefix bypass in cookie name handling in getCookie()",
+      "severity": "medium",
+      "published_at": "2026-04-08T00:17:21Z",
+      "updated_at": "2026-04-08T15:34:50Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-r5rp-j6wh-rvv4"
+    },
+    {
+      "ghsa_id": "GHSA-rv63-4mwf-qqc2",
+      "cve_id": "CVE-2026-54288",
+      "summary": "hono: Body Limit Middleware can be bypassed on AWS Lambda by understating `Content-Length`",
+      "severity": "medium",
+      "published_at": "2026-06-16T14:32:49Z",
+      "updated_at": "2026-07-21T15:26:54Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-rv63-4mwf-qqc2"
+    },
+    {
+      "ghsa_id": "GHSA-v8w9-8mx6-g223",
+      "cve_id": "CVE-2026-56763",
+      "summary": "Hono vulnerable to Prototype Pollution possible through __proto__ key allowed in parseBody({ dot: true })",
+      "severity": "medium",
+      "published_at": "2026-03-11T00:31:47Z",
+      "updated_at": "2026-10-02T22:36:06Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.7",
+          "first_patched_version": "4.12.7",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-v8w9-8mx6-g223"
+    },
+    {
+      "ghsa_id": "GHSA-vfgh-jcmw-g37q",
+      "cve_id": "CVE-2026-111766",
+      "summary": "markdown-it: Quadratic-time denial of service in inline HTML parsing with html enabled",
+      "severity": "low",
+      "published_at": "2026-10-20T20:08:19Z",
+      "updated_at": "2026-10-20T20:08:20Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": "< 14.3.3",
+          "first_patched_version": "14.3.3",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "markdown-it"
+          },
+          "vulnerable_version_range": ">= 15.0.0, < 15.0.3",
+          "first_patched_version": "15.0.3",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-vfgh-jcmw-g37q"
+    },
+    {
+      "ghsa_id": "GHSA-w62v-xxxg-mg59",
+      "cve_id": "CVE-2026-59895",
+      "summary": "Hono: Server-Side XSS via JSX Escaping Bypass in cx() Utility",
+      "severity": "medium",
+      "published_at": "2026-07-21T18:33:50Z",
+      "updated_at": "2026-07-21T18:33:50Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.0.0, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-w62v-xxxg-mg59"
+    },
+    {
+      "ghsa_id": "GHSA-wgpf-jwqj-8h8p",
+      "cve_id": "CVE-2026-54289",
+      "summary": "hono: Lambda@Edge adapter keeps only the last value of a repeated request header, dropping the rest",
+      "severity": "medium",
+      "published_at": "2026-06-16T14:32:31Z",
+      "updated_at": "2026-07-21T15:26:59Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-wgpf-jwqj-8h8p"
+    },
+    {
+      "ghsa_id": "GHSA-wmmm-f939-6g9c",
+      "cve_id": "CVE-2026-39407",
+      "summary": "Hono: Middleware bypass via repeated slashes in serveStatic",
+      "severity": "medium",
+      "published_at": "2026-04-08T00:16:45Z",
+      "updated_at": "2026-04-08T15:34:35Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-wmmm-f939-6g9c"
+    },
+    {
+      "ghsa_id": "GHSA-wwfh-h76j-fc44",
+      "cve_id": "CVE-2026-54286",
+      "summary": "hono: Path traversal in `serve-static` on Windows via encoded backslash (`%5C`)",
+      "severity": "medium",
+      "published_at": "2026-06-16T14:09:03Z",
+      "updated_at": "2026-07-21T15:27:08Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.25",
+          "first_patched_version": "4.12.25",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-wwfh-h76j-fc44"
+    },
+    {
+      "ghsa_id": "GHSA-xf4j-xp2r-rqqx",
+      "cve_id": "CVE-2026-39408",
+      "summary": "Hono: Path traversal in toSSG() allows writing files outside the output directory",
+      "severity": "medium",
+      "published_at": "2026-04-08T00:16:51Z",
+      "updated_at": "2026-04-08T15:34:40Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.0.0, <= 4.12.11",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-xf4j-xp2r-rqqx"
+    },
+    {
+      "ghsa_id": "GHSA-xgm2-5f3f-mvvc",
+      "cve_id": "CVE-2026-59897",
+      "summary": "Hono: API Gateway v1 adapter can drop a distinct repeated request header value during de-duplication",
+      "severity": "medium",
+      "published_at": "2026-07-21T18:18:13Z",
+      "updated_at": "2026-07-21T18:18:14Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": ">= 4.3.3, < 4.12.27",
+          "first_patched_version": "4.12.27",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-xgm2-5f3f-mvvc"
+    },
+    {
+      "ghsa_id": "GHSA-xjj6-f33q-929c",
+      "cve_id": "CVE-2026-109869",
+      "summary": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+      "severity": "high",
+      "published_at": "2026-10-23T22:14:31Z",
+      "updated_at": "2026-10-23T22:14:32Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 6.23.0, < 6.29.1",
+          "first_patched_version": "6.29.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+          "first_patched_version": "7.30.1",
+          "vulnerable_functions": []
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+          "first_patched_version": "8.12.2",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-xjj6-f33q-929c"
+    },
+    {
+      "ghsa_id": "GHSA-xpcf-pg52-r92g",
+      "cve_id": "CVE-2026-39409",
+      "summary": "Hono has incorrect IP matching in ipRestriction() for IPv4-mapped IPv6 addresses",
+      "severity": "medium",
+      "published_at": "2026-04-08T00:17:14Z",
+      "updated_at": "2026-04-24T21:06:14Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.12",
+          "first_patched_version": "4.12.12",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-xpcf-pg52-r92g"
+    },
+    {
+      "ghsa_id": "GHSA-xrhx-7g5j-rcj5",
+      "cve_id": "CVE-2026-47674",
+      "summary": "Hono: IP Restriction bypasses static deny rules for non-canonical IPv6 ",
+      "severity": "medium",
+      "published_at": "2026-06-04T18:00:22Z",
+      "updated_at": "2026-06-04T18:00:23Z",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "hono"
+          },
+          "vulnerable_version_range": "< 4.12.21",
+          "first_patched_version": "4.12.21",
+          "vulnerable_functions": []
+        }
+      ],
+      "html_url": "https://github.com/advisories/GHSA-xrhx-7g5j-rcj5"
+    }
+  ]
+}

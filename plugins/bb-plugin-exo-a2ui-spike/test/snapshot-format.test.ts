@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {snapshotToA2ui,parseLines,surfaceSnapshot,changeMessages,formatLines} from '../src/snapshot-format.ts';import {applyDelta,moduleNodes,moduleData} from '../src/workspace.ts';
 const SAMPLE=`- region "Weekend trip: three cabins" [ref=trip]:

@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {CATALOG,UPDATE,applyDelta,validateSnapshot,latestSnapshot,moduleData,moduleNodes,moduleIds,type Delta} from '../src/workspace.ts';
 import {WorkspaceView} from '../src/workspace-view.ts';import {StreamFrames} from '../src/stream-frames.ts';import {delivery} from '../src/delivery.ts';

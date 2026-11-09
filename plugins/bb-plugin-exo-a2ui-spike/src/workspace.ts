@@ -12,7 +12,10 @@ export const MAX_BYTES=40*1024, MAX_SURFACES=8, MAX_SENDS=24;
 export const BASIC_COMPONENTS=['Text','Column','Row','List','Card','Button','TextField','CheckBox','ChoicePicker','Slider','Divider','Tabs'] as const;
 export const COMPONENTS=[...BASIC_COMPONENTS,...EXO_COMPONENTS];
 const identifier=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
-const atom=z.union([z.string().max(2000),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
+// What one press may carry: each typed value whole up to MAX_TEXT, the whole press up to MAX_ACTION (JSON chars).
+// Over either bound the press is refused with the size and nothing is sent; values are never shortened (#31).
+export const MAX_TEXT=2000,MAX_ACTION=16384;
+const atom=z.union([z.string().max(MAX_TEXT,{message:`One textbox can send at most ${MAX_TEXT} characters. Shorten it and press again (nothing was sent).`}),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
 export const actionSchema=z.object({name:identifier,surfaceId:identifier,sourceComponentId:identifier,timestamp:z.string().datetime(),context:z.record(identifier,atom)}).strict();
 export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(2).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
 export type Snapshot=z.infer<typeof snapshotSchema>;
@@ -132,10 +135,19 @@ export function latestSnapshot(branch:readonly any[]):Snapshot|null{
  for(const e of branch.slice(start)){const m=e.message;if(m?.role==='toolResult'&&(m.toolName===UPDATE||m.toolName===SURFACE_UPDATE_TOOL)&&!m.isError)current=applyDelta(current,m.details?.delta);else if(e.type==='custom'&&e.customType==='exosurface-composition-commit')current=applyDelta(current,e.data?.delta);}
  return current;
 }
+/** A typed value over MAX_TEXT: name the box and both sizes instead of a schema error. */
+function tooLong(snapshot:Snapshot,raw:any){
+ if(!raw||typeof raw!=='object'||!raw.context||typeof raw.context!=='object')return;
+ for(const[k,v]of Object.entries(raw.context as Record<string,unknown>)){if(typeof v!=='string'||v.length<=MAX_TEXT)continue;
+  let label=k;try{const c=moduleNodes(snapshot,String(raw.surfaceId)).find(n=>n.id===raw.sourceComponentId),path=c?.action?.event?.context?.[k]?.path,l=path&&inputBindings(snapshot,String(raw.surfaceId)).get(path)?.label;if(typeof l==='string'&&l)label=l;}catch{}
+  throw Error(`Text in “${label}” is ${v.length} characters; the most one box can send is ${MAX_TEXT}. Shorten it and press again (nothing was sent).`);}
+}
 export function validateAction(snapshot:Snapshot,revision:number,raw:unknown){
  if(snapshot.incomplete)throw Error('Workspace is still being composed');
  if(snapshot.revision!==revision)throw Error('Stale workspace action; refresh before trying again');
- if(JSON.stringify(raw).length>16384)throw Error('Action exceeds bound');
+ const size=JSON.stringify(raw)?.length??0;
+ if(size>MAX_ACTION)throw Error(`Press is ${size} characters; the most one press can send is ${MAX_ACTION}. Shorten the text and press again (nothing was sent).`);
+ tooLong(snapshot,raw);
  const a=actionSchema.parse(raw),c=moduleNodes(snapshot,a.surfaceId).find(n=>n.id===a.sourceComponentId);
  if(c?.action?.event?.name!==a.name)throw Error('Action not offered by this component');
  const offered=c.action.event.context,bindings=inputBindings(snapshot,a.surfaceId);

@@ -1,3 +1,4 @@
+import './isolation.ts';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {applyDelta,moduleIds,moduleNodes} from '../src/workspace.ts';
 import {changeMessages} from '../src/snapshot-format.ts';
