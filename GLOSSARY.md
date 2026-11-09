@@ -75,7 +75,7 @@ The sidebar part for surfaces, other than the one the person is in, that finishe
 _Avoid_: inbox, unread
 
 **Tree**:
-Every surface, nested like Notion pages, most recent first at each level. The person nests, moves, renames and settles surfaces; Exo may add a child surface but never rearranges the tree.
+Every surface, nested like Notion pages, most recently active first at each level. The person nests, moves, renames and settles surfaces; Exo may add a child surface but never moves, nests, renames or settles one; its turns change a surface's place only through its last activity.
 _Avoid_: folders, projects
 
 **Settle**:
