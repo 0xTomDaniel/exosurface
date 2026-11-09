@@ -4,8 +4,8 @@
 // RPCs and events, host.ts bridge, the release owner, real Pi); fake at the boundaries: BB, OptChat and the models.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { rmSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, lstatSync, readlinkSync, realpathSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { renderedApp } from './app-render.ts';
 import { waiter, settled } from './wait.ts';
@@ -234,12 +234,15 @@ test('a namer Pi that exits leaving a lock in its agent folder does not hold up 
   await until('the naming call in flight', () => f.model.requests.length > asked);
   let folder: string | undefined;
   await until('the namer\'s Pi found', () => (folder = namerFolder()) !== undefined);
-  // Credentials are referenced (the key by command), never copied: no literal key, no auth.json holding any.
+  // Credentials are referenced, never copied: the key by command, and auth.json a link to the primary agent folder's.
   const providers = Object.values(JSON.parse(readFileSync(join(folder!, 'models.json'), 'utf8')).providers ?? {}) as { apiKey?: unknown }[];
   assert.ok(providers.length > 0, 'the namer\'s provider is configured');
   assert.deepEqual(providers.map(p => typeof p.apiKey === 'string' && p.apiKey.startsWith('!')), providers.map(() => true), 'every key is a reference');
   const auth = join(folder!, 'auth.json');
-  assert.deepEqual(existsSync(auth) ? JSON.parse(readFileSync(auth, 'utf8')) : {}, {}, 'no credential in an auth.json');
+  assert.deepEqual([lstatSync(auth).isSymbolicLink(), readlinkSync(auth)], [true, join(f.home, 'pi-config', 'auth.json')], 'auth.json is a link, not a copy');
+  // Pi's models-store.json is a plain file of this folder, so its lock ("<path>.lock", links unresolved) lands here too.
+  await until('the namer\'s models-store.json', () => existsSync(join(folder!, 'models-store.json')));
+  assert.equal(dirname(realpathSync(join(folder!, 'models-store.json'))), realpathSync(folder!));
   // What a namer Pi exiting between Pi's lock mkdir and its registration leaves behind (#147): an orphan, fresh lock.
   mkdirSync(join(folder!, 'models-store.json.lock'));
   f.model.release();
@@ -247,6 +250,28 @@ test('a namer Pi that exits leaving a lock in its agent folder does not hold up 
   // The next surface's Pi starts at once: its thread/start answers inside the bridge's deadline (newSurface).
   await newSurface();
   await until('the namer\'s folder removed', () => !existsSync(folder!));
+});
+
+test('real-install shape: the namer\'s provider credential lives only in the primary agent folder\'s auth.json (no key in models.json); the surface is named and that auth.json is left as it was', async () => {
+  const agent = join(f.home, 'pi-config'), models = join(agent, 'models.json'), auth = join(agent, 'auth.json');
+  const before = { models: readFileSync(models, 'utf8'), auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined };
+  const keyless = JSON.parse(before.models); delete keyless.providers.openai.apiKey;
+  const credential = JSON.stringify({ openai: { type: 'api_key', key: 'fixture-auth-json-only' } }); // fake, as every fixture credential
+  writeFileSync(models, JSON.stringify(keyless)); writeFileSync(auth, credential, { mode: 0o600 });
+  try {
+    f.model.state.reply = 'Bike repair';
+    const asked = f.model.requests.length;
+    const made = await newSurface();
+    await turn(made, 'Fix the bike chain');
+    const outcome = () => f.logs.find(l => l.includes(made) && (l.includes('named "') || l.includes('naming failed')));
+    await until('the naming done', () => outcome() !== undefined);
+    assert.match(outcome()!, /named "Bike repair" by openai\//, 'named with the auth.json credential, not failed');
+    assert.equal(f.model.requests.length - asked, 1);
+    assert.equal(readFileSync(auth, 'utf8'), credential, 'the primary auth.json is left as it was');
+  } finally {
+    writeFileSync(models, before.models);
+    if (before.auth === undefined) rmSync(auth, { force: true }); else writeFileSync(auth, before.auth);
+  }
 });
 
 test('the namer\'s agent folder takes its provider from the primary agent folder\'s models.json with credentials by reference only: a literal key or header is never copied', async () => {
@@ -258,6 +283,11 @@ test('the namer\'s agent folder takes its provider from the primary agent folder
   const literal = namerAgentDir(f.home, primary, 'openai'), byCommand = namerAgentDir(f.home, primary, 'anthropic');
   assert.deepEqual(JSON.parse(readFileSync(join(literal, 'models.json'), 'utf8')), { providers: { openai: { baseUrl: 'http://127.0.0.1:1/v1', headers: { 'x-team': '$TEAM_ID' } } } });
   assert.deepEqual(JSON.parse(readFileSync(join(byCommand, 'models.json'), 'utf8')), { providers: { anthropic: { baseUrl: 'http://127.0.0.1:1', apiKey: '!security find-generic-password -w' } } });
-  assert.deepEqual([readdirSync(literal), readdirSync(byCommand)], [['models.json'], ['models.json']], 'nothing but models.json: no auth.json, no key file');
-  for (const dir of [literal, byCommand]) rmSync(dir, { recursive: true, force: true });
+  assert.deepEqual([readdirSync(literal), readdirSync(byCommand)], [['models.json'], ['models.json']], 'no primary auth.json: nothing but models.json, no key file');
+  // With a primary auth.json (a Pi login), the namer's is a link to it: no copy, the primary file untouched.
+  writeFileSync(join(primary, 'auth.json'), '{"openai":{"type":"api_key","key":"fixture-fake"}}');
+  const linked = namerAgentDir(f.home, primary, 'openai');
+  assert.deepEqual([readdirSync(linked).sort(), lstatSync(join(linked, 'auth.json')).isSymbolicLink(), readlinkSync(join(linked, 'auth.json'))], [['auth.json', 'models.json'], true, join(primary, 'auth.json')]);
+  for (const dir of [literal, byCommand, linked]) rmSync(dir, { recursive: true, force: true });
+  assert.equal(readFileSync(join(primary, 'auth.json'), 'utf8'), '{"openai":{"type":"api_key","key":"fixture-fake"}}', 'removing the namer folder leaves the primary auth.json');
 });
