@@ -652,7 +652,7 @@ async function rename() {
     const header = await show('after the title rename:', two);
     const ok = auto === 'Spring vegetable garden' && renamed === 'Backyard' && further === 'Backyard' && !againOne && early === 'Cabin trip' && kept === 'Cabin trip' && !againTwo
       && pencil && held === 'Cabin trip' && header === 'Lake cabin' && homeTitle === 'Home' && !homePencil
-      && entries().join('|') === 'Home|Backyard|Lake cabin' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
+      && entries().join('|') === 'Home|Lake cabin|Backyard' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
     if (!ok) throw new Error('rename failed');
   } finally {
     view.unmount(); close();
