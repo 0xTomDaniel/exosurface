@@ -2,7 +2,7 @@
 import {assertOwnerCommand} from './canvas-input.ts';
 import type {PressEntry} from './press-line.ts';
 import{createConnection}from'node:net';import{join}from'node:path';import{HOME}from'./state.ts';
-export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press'};
+export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
 export function canvasDataViaOwner(threadId:string,request:CanvasData,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-data',request,home);}
 export type CanvasRestore={surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string;announced?:boolean};
 export function restoreViaOwner(threadId:string,request:CanvasRestore,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-restore',request,home);}

@@ -385,9 +385,14 @@ async function exoBlockSentPage() {
   try {
     const snapshot = '- region "Plum plan" [ref=plum]:\n  - heading "Plum plan" [ref=title]\n  - button "Pick plums" [ref=pick] [action=pick]';
     await send(`call: ${JSON.stringify({ baseRevision: 0, snapshot })}`, 'Plum plan');
+    await until('Keep on the idle drawn page', () => idle() && !!view.queryByRole('button', { name: 'Keep', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
+    await until('public canonical kept metadata', async () => (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint?.kept?.includes('plum') === true);
+    await until('plum marked kept in the strip', () => !!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }));
+    console.log('pressed literal Keep; canonical workspace delivery kept refs: [plum]; strip marks Plum plan kept');
     await send('draw pear: Pear plan', 'Pear plan');
-    await until('the plum page as a pill', () => pills().some(b => b.textContent === 'Plum plan'));
-    fireEvent.click(pills().find(b => b.textContent === 'Plum plan'));
+    if (!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }) || !view.queryByRole('button', { name: 'Pear plan', exact: true })) throw new Error('kept and new page must both be listed');
+    fireEvent.click(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
     await until('the plum page in view', () => inView() === 'Plum plan');
     console.log('opened "Plum plan" from the page strip; "Pear plan" stays on stage');
     fireEvent.click(view.getByRole('button', { name: 'Settings', exact: true }));

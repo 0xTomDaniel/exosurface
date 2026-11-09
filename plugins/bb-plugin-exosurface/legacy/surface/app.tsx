@@ -43,15 +43,19 @@ function Canvas({view,local}:{view:WorkspaceView;local:Local}){
 }
 // The page strip: the surface's other pages as pills, under the title (owner walkthrough on PR #89). Same plan as the
 // Canvas, so the page in view and the pills never disagree.
-function PageStrip({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void}){
+function PageStrip({view,local,setLocal,onKeep}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void;onKeep:(id:string)=>void}){
  const[allEarlier,setAllEarlier]=useState(false);
  const snapshot=view.displayed,ids=snapshot?moduleIds(snapshot):[],plan=stagePlan(ids,snapshot?.layout,local);
  const dirty=new Set([...view.drafts.edits.values()].map(e=>e.surfaceId));
  const title=(id:string)=>snapshot?surfaceTitle(moduleNodes(snapshot,id),id):id;
- if(!plan||!(plan.receded.length>0||local))return null;
+ if(!plan)return null;
+ const kept=snapshot?.kept??[];
  return <nav className="exo-shelf" aria-label="Earlier in this conversation">
+    {kept.map(id=><button key={id} type="button" className="exo-pill" aria-label={`${title(id)} (kept)`} aria-pressed={plan.focus===id} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span><span aria-hidden="true"> ★</span></button>)}
+    {kept.length>0&&!kept.includes(plan.native)&&<button type="button" className="exo-pill" aria-pressed={plan.focus===plan.native} onClick={()=>setLocal(null)}>{title(plan.native)}</button>}
+    {!kept.includes(plan.focus)&&<button type="button" onClick={()=>onKeep(plan.focus)}>Keep</button>}
     <span>Earlier</span>
-    {(()=>{const recent=[...plan.receded].reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
+    {(()=>{const recent=[...plan.receded].filter(id=>!kept.includes(id)&&(kept.length===0||id!==plan.native)).reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
     {local&&<button type="button" className="exo-follow" onClick={()=>setLocal(null)}>Back to the current topic</button>}
    </nav>;
 }
@@ -190,7 +194,7 @@ function SurfacePage({deployment,threadId,local,setLocal}:{deployment:'clone'|'m
    <div className="exo-top">
     <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
-    {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal}/></div>}
+    {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal} onKeep={async id=>{if(!state?.threadId||!v.committed||busy)return;setPending(true);setError('');try{await rpc.call('edit',{threadId:state.threadId,revision:v.committed.revision,surfaceId:id,updates:[],keep:true,mutationId:crypto.randomUUID()});recover.current();}catch(e){setError(String(e));}finally{setPending(false);}}}/></div>}
    </div>
    <ExoBlock threadId={state?.threadId??null} page={inView}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>

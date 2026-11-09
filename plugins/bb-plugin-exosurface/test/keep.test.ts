@@ -31,14 +31,15 @@ after(async () => {
 test('acceptance-keep: Keep persists the page through new topics, canvas retention and owner replay', async () => {
   await send('draw plum: Plum plan');
   await until('the page to be idle', () => view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
+  await until('Keep on the drawn page', () => !!view.queryByRole('button', { name: 'Keep', exact: true }));
   fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
   await until('public kept metadata', async () => (await workspace()).delivery.checkpoint?.kept?.includes('plum') === true);
   const saved = await workspace(), revision = saved.revision;
   await assert.rejects(f.rpc.edit({ threadId: 'primary', revision: revision - 1, surfaceId: 'plum', updates: [], keep: true, mutationId: crypto.randomUUID() }), /stale_revision/);
   assert.equal((await workspace()).revision, revision, 'stale Keep does not mutate the page');
   for (const [ref, title] of [['pear', 'Pear plan'], ['apple', 'Apple plan'], ['lime', 'Lime plan'], ['lemon', 'Lemon plan'], ['grape', 'Grape plan'], ['peach', 'Peach plan'], ['cherry', 'Cherry plan'], ['berry', 'Berry plan']]) await send(`draw ${ref}: ${title}`);
-  assert.ok(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
-  assert.ok(view.getByRole('button', { name: 'Berry plan', exact: true }));
+  assert.equal(!!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }), true);
+  assert.equal(!!view.queryByRole('button', { name: 'Berry plan', exact: true }), true);
   assert.deepEqual((await workspace()).delivery.checkpoint.kept, ['plum']);
   // Restart only the isolated fixture through its normal owner/bridge startup, so state is rebuilt from the canonical journal.
   for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(resolve => child.once('close', resolve)); }

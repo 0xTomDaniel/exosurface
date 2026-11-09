@@ -142,9 +142,11 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   const revision = Number(view.getByLabelText('Surface revision').textContent!.replace('Revision ', ''));
   const snapshot = '- region "Plum plan" [ref=plum]:\n  - heading "Plum plan" [ref=title]\n  - button "Pick plums" [ref=pick] [action=pick]';
   await turn(`call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
+  await until('Keep on the idle plum page', () => !!view.queryByRole('button', { name: 'Keep', exact: true }) && view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
+  fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
+  await until('plum marked kept', () => !!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }));
   await turn('draw pear: Pear plan');
-  await until('the plum page as a pill', () => strip().some(b => b.textContent === 'Plum plan'));
-  fireEvent.click(strip().find(b => b.textContent === 'Plum plan')!);
+  fireEvent.click(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
   await until('the plum page in view', () => inView() === 'plum');
   const surfaceName = view.container.querySelector('nav[aria-label="Surfaces"] li button[aria-current="page"]')!.textContent!;
   const surfaceRow = (name: string) => [...view.container.querySelectorAll('nav[aria-label="Surfaces"] li button')].find(button => button.textContent === name)!;
