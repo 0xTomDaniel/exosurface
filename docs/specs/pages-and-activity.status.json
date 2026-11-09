@@ -1,6 +1,6 @@
 {
   "spec": "pages-and-activity.spec.html",
-  "accepted_commit": "9cd9ffa22c401f2c56fdbb5d64aca05cb9a56e6c",
+  "accepted_commit": "c96df8af37d958e4efd54ca5c0259833d0fbbffa",
   "criteria": {
     "acceptance-no-chat": {
       "status": "built",
@@ -269,6 +269,26 @@
       "record": "20261108T201512Z-4c8f2b5d",
       "commit": "94d1b08ce57849297952add2096d51bb2864aa1f",
       "tests": []
+    },
+    "acceptance-tree-newest-first": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-tree-new-first": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-sidebar-pinned": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-exo-block-own-page": {
+      "status": "planned",
+      "pr": null
+    },
+    "acceptance-exo-block-sent-page": {
+      "status": "planned",
+      "pr": null
     }
   }
 }
