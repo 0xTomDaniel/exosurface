@@ -8,8 +8,8 @@ import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 import { load, CANONICAL_MODEL, CLONE_HOME } from './src/state.ts';
 import { CATALOG, actionSchema, validateAction, validateSnapshot, deltaSchema } from './src/workspace.ts';
-import { describePress, boundUpdates } from './src/canvas-memory.ts';
-import { canvasDataViaOwner, restoreViaOwner } from './src/canvas-client.ts';
+import { describePress, pressedLabel, boundUpdates } from './src/canvas-memory.ts';
+import { canvasDataViaOwner, restoreViaOwner, pressViaOwner } from './src/canvas-client.ts';
 import { versionAt, versionSnapshot, type Version } from './src/canvas-history.ts';
 import {local} from './src/local-config.ts';
 import { randomUUID } from 'node:crypto';
@@ -187,6 +187,8 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         try{
           // Code first: the submitted values become committed canvas state; then the person's press, in words, starts Exo's turn.
           if(updates.length)await canvasDataViaOwner(threadId,{revision,surfaceId:a.surfaceId,updates,mutationId,source:'press'},ownerHome(d));
+          // The button's label goes with the press as data, for the person's bubble (F6); the Exo block reads main's journals.
+          if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,mutationId:randomUUID()},ownerHome(d));
           await bb.sdk.threads.send({threadId,input:[{type:'text',text,mentions:[]}],mode:'auto'});
         }catch(e){claimed.set(d.threadId??d.name,null);throw e;}
         return {accepted:true};

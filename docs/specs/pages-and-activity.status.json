@@ -215,8 +215,11 @@
       "tests": []
     },
     "acceptance-press-to-top": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 146,
+      "record": "20261109T002757Z-2bb41b91",
+      "commit": "6c64e085d85dafc47faf82b35c3edce66928f100",
+      "tests": []
     },
     "acceptance-one-tab": {
       "status": "built",

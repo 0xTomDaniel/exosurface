@@ -49,11 +49,15 @@ export default function optchat(pi){
   if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
  });
  pi.on('session_shutdown',()=>{lock?.close();});
+ // OptChat assembles the final request in context_with_system, its system prompt first; the pages extension, loaded after
+ // it, then attaches the page state (legacy/surface/src/workspace-frame.ts).
+ pi.on('context_with_system',e=>({messages:[...e.messages.filter(m=>m.role==='system'),...e.messages.filter(m=>m.role!=='system')]}));
  // Opus and Sol (state.ts EXO_MODELS, the models picked in BB), each answered by this offline stream.
  for(const[provider,id]of[['anthropic','claude-opus-5-5'],['openai-codex','gpt-6.1-sol']])pi.registerProvider(provider,{baseUrl:'http://fixture.invalid',apiKey:'fixture-not-a-secret',api:'exo-fixture-'+provider,
   models:[{id,name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
+   appendFileSync(join(process.env.OPTCHAT_HOME,'model-requests.jsonl'),JSON.stringify({profile:pi.getFlag('optchat-profile'),messages:context.messages})+'\\n');
    void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
     const textOf=m=>typeof m.content==='string'?m.content:(m.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
     const messages=context.messages.filter(m=>!(m.role==='user'&&textOf(m).startsWith('Machine state of the surface')));
@@ -250,6 +254,8 @@ export async function liveFixture() {
   writeFileSync(join(f.optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
   return { ...f, setup };
 }
+/** Each request the model received, in order: its profile and messages as sent (the page state among them). */
+export const modelRequests = (f: Fixture): { profile: string; messages: any[] }[] => { const file = join(f.optchatHome, 'model-requests.jsonl'); return existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)) : []; };
 
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 

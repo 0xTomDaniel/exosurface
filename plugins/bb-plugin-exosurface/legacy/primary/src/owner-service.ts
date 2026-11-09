@@ -169,13 +169,20 @@ const server = createServer(socket => {
           if (m.type === 'canvas-data' || m.type === 'canvas-restore') {
             // A thread's page command reaches only that thread's Pi and pages folder (#68).
             const page = m.threadId === primary ? p : await laneFor(m.threadId);
-            if (page.streaming || JSON.stringify(m.request).length > 12000) throw new Error('Idle Exo page command required');
+            if (page.streaming || JSON.stringify(m.request).length > 20000) throw new Error('Idle Exo page command required'); // 20000: MAX_OWNER_COMMAND_UNITS (legacy/surface/src/canvas-input.ts)
             const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
             const before = rev();
             if (m.type === 'canvas-data' && before !== m.request?.revision) { write(socket, { kind: 'response', id: m.id, ok: false, error: `stale_revision ${before}` }); return; }
             await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
             const after = rev();
             write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
+          }
+          if (m.type === 'canvas-press') {
+            // A press's button label (legacy/surface/src/press-line.ts), journaled in that thread's Pi just before the press is sent.
+            const page = m.threadId === primary ? p : await laneFor(m.threadId);
+            if (page.streaming || JSON.stringify(m.request).length > 20000) throw new Error('Idle Exo page command required');
+            await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line }) });
+            write(socket, { kind: 'response', id: m.id, ok: true, data: {} }); return;
           }
           if (m.type === 'hello') {
             const target = await laneFor(m.threadId);
