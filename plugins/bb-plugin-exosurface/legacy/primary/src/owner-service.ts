@@ -182,8 +182,12 @@ const server = createServer(socket => {
             // that thread's Pi just before the message is sent.
             const page = m.threadId === primary ? p : await laneFor(m.threadId);
             if (page.streaming || JSON.stringify(m.request).length > 20000) throw new Error('Idle Exo page command required');
-            await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: m.request?.page }) });
-            write(socket, { kind: 'response', id: m.id, ok: true, data: {} }); return;
+            // Pi takes a "/name" prompt as the person's message unless an extension registered that name: a record is sent only
+            // to a Pi whose page extension takes it, else it is skipped (never a message the model or the person sees).
+            const { commands } = await page.pi.send('get_commands');
+            if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-press' && c.source === 'extension')) throw new Error('No workspace-press command in this Pi; record skipped');
+            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: m.request?.page }) });
+            write(socket, sent?.disposition === 'handled' ? { kind: 'response', id: m.id, ok: true, data: {} } : { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return;
           }
           if (m.type === 'hello') {
             const target = await laneFor(m.threadId);
