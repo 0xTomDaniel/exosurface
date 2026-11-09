@@ -33,6 +33,8 @@ after(async () => {
 
 // Shown: neither it nor anything around it is hidden from the person (aria-hidden, the hidden attribute, display:none).
 const shown = (el: Element) => { for (let at: Element | null = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
+/** A button's name for people and assistive tech: its label, else its text (the Settings gear is labelled Settings). */
+const named = (b: Element) => b.getAttribute('aria-label') ?? b.textContent;
 function screenOf(view: any) {
   const all = (selector: string) => [...view.container.querySelectorAll(selector)].filter(shown) as HTMLElement[];
   const sidebar = () => all('nav[aria-label="Surfaces"]')[0] ?? null;
@@ -47,7 +49,7 @@ function screenOf(view: any) {
     pages: () => all('main[aria-label="Exo"] section[data-surface]').map(s => String(s.getAttribute('aria-label'))),
     /** What settings show: each term with its value, in order. */
     facts: () => [...(settings()?.querySelectorAll('dt') ?? [])].map(dt => [String(dt.textContent), String(dt.nextElementSibling?.textContent)]),
-    press: (name: string, within: () => Element | null) => { const b = [...(within()?.querySelectorAll('button') ?? [])].find(b => b.textContent === name && shown(b)); if (!b) throw new Error(`no button "${name}"`); fireEvent.click(b); },
+    press: (name: string, within: () => Element | null) => { const b = [...(within()?.querySelectorAll('button') ?? [])].find(b => named(b) === name && shown(b)); if (!b) throw new Error(`no button "${name}"`); fireEvent.click(b); },
   };
 }
 
@@ -58,7 +60,7 @@ test('with Exo set up, pressing Settings shows set up, the model, running and th
   try {
     await until('the sidebar listing Home, Home in view', () => s.listed().join('|') === 'Home' && s.surfaceShown() === 1);
     // T3: one Settings button, below the tree (after the surfaces in screen order), not a surface in the list.
-    const buttons = [...s.sidebar()!.querySelectorAll('button')].filter(b => b.textContent === 'Settings');
+    const buttons = [...s.sidebar()!.querySelectorAll('button')].filter(b => named(b) === 'Settings');
     assert.deepEqual(buttons.map(b => b.closest('li') !== null), [false]);
     const lastRow = [...s.sidebar()!.querySelectorAll('li')].at(-1)!;
     assert.equal(!!(lastRow.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings follows the tree');

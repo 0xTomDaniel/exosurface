@@ -1,6 +1,5 @@
-// #186 (spec pages-and-activity N9, N5; acceptance-tree-newest-first, acceptance-tree-new-first): the tree lists surfaces
-// most recently active first. A surface's last activity is the latest of when it was made and the person's last send or
-// press, or Exo's last finished turn, on it; renaming is not activity. Rendered sidebar (package.json bb.app) on the live
+// #186 (spec pages-and-activity N9, N5; acceptance-tree-newest-first, acceptance-tree-new-first): the tree's order by last
+// activity, as N9 defines it. Rendered sidebar (package.json bb.app) on the live
 // entry points (server.ts RPCs and events, host.ts bridge, the release owner, real Pi and its session journals); fake at
 // the boundaries: BB, OptChat and the models. Only the listed names are compared, as strings.
 import { test, after } from 'node:test';
