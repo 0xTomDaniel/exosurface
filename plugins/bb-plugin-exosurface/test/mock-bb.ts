@@ -170,7 +170,9 @@ async function serverRpc(vault: string) {
         async spawn(args: { prompt: string; projectId: string; parentThreadId?: string; title?: string; providerId: string; environment: unknown }) {
           spawns.push(args);
           const id = threads.size ? `thread-${threads.size + 1}` : 'primary';
-          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt: 1000 + threads.size };
+          // createdAt as BB stamps it: the wall-clock milliseconds it was made, each thread after the one before.
+          const createdAt = Math.max(Date.now(), ...[...threads.values()].map(t => t.createdAt + 1));
+          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt };
           threads.set(id, created);
           for (const hook of hooks) {
             const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn', initiator: 'user', senderThreadId: null, queuedMessages: [] });

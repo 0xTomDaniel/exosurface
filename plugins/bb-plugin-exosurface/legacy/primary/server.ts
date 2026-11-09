@@ -11,6 +11,7 @@ import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
 import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-turn.ts';
+import { lastActivity } from './src/last-activity.ts';
 import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
@@ -28,7 +29,8 @@ export const rpcContract = defineRpcContract({
   exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
   // `page`: the page in view the send came from, journaled beside the message (spec E10).
   exo_send: { input: z.object({ threadId: z.string(), text: z.string(), page: z.string().optional() }).strict(), output: z.object({ sent: z.literal(true) }) },
-  // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
+  // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other,
+  // most recently active first (N9, #186).
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
   // New surface (spec S7): a new top-level Exo thread, bound to its own profile before its provider starts.
   thread_new: { input: z.null(), output: z.object({ threadId: z.string() }) },
@@ -120,6 +122,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
   // Fallback only: BB runs message.dispatch on every send but a person's Send-now on a queued row (that bypasses the hook
   // by design), so a first message sent that way is named once its turn ends, from the person's first message in BB's log.
   bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
+  // A turn Exo finished is activity (spec N9): the sidebar reads the list again, its order by last activity.
+  bb.events.on('thread.idle', ({ thread }) => { if (thread.providerId === 'exo-spike') bb.realtime.publish('surface-activity', { threadId: thread.id }); });
   const awaiting = new Map<string, { entry: string | null; text: string }>(); // thread -> its latest person's entry when the input sent, and what it sent
   registerRpc(rpcContract, {
     canonical_setup_status: async () => { const journal = setupStatus(HOME); return { stage: journal?.stage ?? 'unconfigured', operationId: journal?.request.operationId ?? null, projectId: journal?.request.projectId ?? null, threadId: journal?.threadId ?? null, nativeDispatchAllowed: setup.nativeDispatchAllowed, initializationAvailable: setupPorts?.nativeDispatchAllowed ?? true, releaseReady: false as const, defaults: { vault: journal?.request.vault ?? local('vault'), piCli: journal?.request.piCli ?? local('piCli'), optchat: journal?.request.optchat ?? local('optchat') } }; },
@@ -169,7 +173,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       const pointer = join(HOME, 'canonical-thread.json');
       if (!existsSync(pointer)) return { threads: [] };
       const home = load(pointer).threadId as string;
-      const others = (await bb.sdk.threads.list({ hasParent: false, limit: 200 })).filter(t => t.providerId === 'exo-spike' && t.id !== home && !t.parentThreadId && isBoundThread(t.id)).sort((a, b) => a.createdAt - b.createdAt);
+      const others = (await bb.sdk.threads.list({ hasParent: false, limit: 200 })).filter(t => t.providerId === 'exo-spike' && t.id !== home && !t.parentThreadId && isBoundThread(t.id))
+        .map(t => ({ t, at: lastActivity(t.createdAt, sessionOf(t.id)) })).sort((a, b) => b.at - a.at || b.t.createdAt - a.t.createdAt).map(({ t }) => t);
       return { threads: [{ threadId: home, title: 'Home', home: true }, ...others.map(t => ({ threadId: t.id, title: t.title || 'New surface', home: false }))] };
     },
     thread_new: async () => {
