@@ -192,6 +192,8 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
           if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,page:a.surfaceId,mutationId:randomUUID()},ownerHome(d));
           await bb.sdk.threads.send({threadId,input:[{type:'text',text,mentions:[]}],mode:'auto'});
         }catch(e){claimed.set(d.threadId??d.name,null);throw e;}
+        // A press alone moves its surface up in the sidebar (N9), before Exo's turn ends: its entry is journaled above.
+        if(d.name==='main')bb.realtime.publish('surface-activity',{threadId});
         return {accepted:true};
       })();
       admitted.set(actionId,work);try{return await work;}catch(e){admitted.delete(actionId);throw e;}finally{while(admitted.size>100)admitted.delete(admitted.keys().next().value!);}

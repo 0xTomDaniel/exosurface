@@ -161,12 +161,15 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     exo_send: async ({ threadId, text, page }) => {
       validatePrompt(text);
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike' || binding(threadId)?.runtimeKind !== 'canonical') throw new Error('Only an Exo surface thread takes a send from its input');
-      // The page it came from goes beside the message, as a press's does (press-line.ts). The owner journals it only while
-      // Exo is idle; a send it cannot journal still goes, and its turn is read as before (by the page on stage).
-      if (page !== undefined) await pressViaOwner(threadId, { line: text, page, mutationId: randomUUID() }, HOME).catch(e => bb.log.warn(`Surface ${threadId}: the page of a send was not journaled: ${e instanceof Error ? e.message : String(e)}`));
+      // The send's entry, with the page it came from, goes beside the message, as a press's does (press-line.ts): it is the
+      // surface's activity at once (N9) and places a turn that draws nothing (E10). The owner journals it only while Exo is
+      // idle; a send it cannot journal still goes, and its turn is read as before (by the page on stage).
+      await pressViaOwner(threadId, { line: text, ...(page !== undefined ? { page } : {}), mutationId: randomUUID() }, HOME).catch(e => bb.log.warn(`Surface ${threadId}: the page of a send was not journaled: ${e instanceof Error ? e.message : String(e)}`));
       awaiting.set(threadId, { entry: latestTurn(sessionOf(threadId)).userEntry, text });
       try { await bb.sdk.threads.send({ threadId, input: [{ type: 'text', text, mentions: [] }], mode: 'auto' }); }
       catch (e) { awaiting.delete(threadId); throw e; }
+      // A send alone moves its surface up in the sidebar (N9), before Exo's turn ends.
+      bb.realtime.publish('surface-activity', { threadId });
       return { sent: true as const };
     },
     thread_list: async () => {

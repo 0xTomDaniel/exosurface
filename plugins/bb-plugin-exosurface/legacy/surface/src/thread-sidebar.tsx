@@ -21,7 +21,7 @@ export function ThreadSidebar({inView,onView,settings,onSettings}:{inView:string
  useEffect(()=>{void refresh();},[refresh]);
  // A surface named from its first message (#82, spec N7) or renamed: the server signals it; the list is read again.
  useRealtime('surface-names',()=>{void refresh();});
- // A turn Exo finished moves its surface up (N9): the server signals it; the list is read again.
+ // A send, a press, or a turn Exo finished moves its surface up (N9): the server signals it; the list is read again.
  useRealtime('surface-activity',()=>{void refresh();});
  const create=async()=>{setBusy(true);setError('');try{const made=await rpc.call('thread_new',null);onView(made.threadId);await refresh();}catch(e){setError(String(e));}finally{setBusy(false);}};
  const current=(t:Row)=>!settings&&(t.home?inView===null:inView===t.threadId);
