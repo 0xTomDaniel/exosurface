@@ -271,24 +271,36 @@
       "tests": []
     },
     "acceptance-tree-newest-first": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T030411Z-e5483e4f",
+      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "tests": []
     },
     "acceptance-tree-new-first": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T030242Z-911458ff",
+      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "tests": []
     },
     "acceptance-sidebar-pinned": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T030107Z-ef3c4ea7",
+      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "tests": []
     },
     "acceptance-exo-block-own-page": {
       "status": "planned",
       "pr": null
     },
     "acceptance-exo-block-sent-page": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T025942Z-c6623efb",
+      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "tests": []
     }
   }
 }
