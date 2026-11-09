@@ -1061,8 +1061,15 @@ async function sidebarLayout() {
     const before = entries().join(' | ');
     console.log(`sidebar order before:            ${before}`);
     const least = entries().at(-1);
-    await turn(made[least], 'Add two more novels');
-    await until(`${least} at the top`, () => entries()[1] === least);
+    // Exo answers this send only once released: the order right after the send, while Exo's turn runs (N9: a send alone
+    // is activity), then once the turn has ended.
+    const held = boundaries(made[least]);
+    await f.rpc.exo_send({ threadId: made[least], text: 'hold: Add two more novels' });
+    await until(`${least} at the top while Exo works`, () => entries()[1] === least);
+    const whileWorking = entries().join(' | '), working = boundaries(made[least]) === held;
+    console.log(`right after a send on ${JSON.stringify(least)}, ${working ? 'before Exo\'s turn ended' : 'EXO\'S TURN ALREADY ENDED'}: ${whileWorking}`);
+    for (const run of f.piRuns()) f.release(run.profile);
+    await until('the turn to end', () => boundaries(made[least]) > held, 30000);
     const afterSend = entries().join(' | ');
     console.log(`after a send on ${JSON.stringify(least)}, Exo's turn finished: ${afterSend}`);
     await f.rpc.thread_rename({ threadId: made['Kitchen remodel'], name: 'Kitchen' });
@@ -1086,7 +1093,7 @@ async function sidebarLayout() {
     console.log(`the list holds ${[...list.querySelectorAll('li')].length} of ${entries().length} rows, first ${JSON.stringify(entries()[0])}, last ${JSON.stringify(entries().at(-1))}; scrolled to its end (scrollTop ${list.scrollTop} of ${list.scrollHeight}: jsdom does no layout)`);
     console.log(`New surface: ${where(newSurfaceButton())}`);
     console.log(`Settings (shown ${JSON.stringify(settingsButton.textContent)}, named ${JSON.stringify(settingsButton.getAttribute('aria-label'))}): ${where(settingsButton)}`);
-    const ok = before === 'Home | Garden plan | Weekend trip | Kitchen remodel | Reading list' && afterSend === 'Home | Reading list | Garden plan | Weekend trip | Kitchen remodel'
+    const ok = before === 'Home | Garden plan | Weekend trip | Kitchen remodel | Reading list' && working && whileWorking === 'Home | Reading list | Garden plan | Weekend trip | Kitchen remodel' && afterSend === 'Home | Reading list | Garden plan | Weekend trip | Kitchen remodel'
       && afterRename === 'Home | Reading list | Garden plan | Weekend trip | Kitchen' && afterNew === 'Home | New surface | Reading list | Garden plan | Weekend trip | Kitchen'
       && regions.length === 1 && list !== nav() && children.indexOf(newSurfaceButton()) === 0 && !list.contains(newSurfaceButton()) && !list.contains(settingsButton)
       && !!(list.compareDocumentPosition(settingsButton) & Node.DOCUMENT_POSITION_FOLLOWING) && [...list.querySelectorAll('li')].length === entries().length;
