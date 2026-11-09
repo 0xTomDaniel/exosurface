@@ -50,7 +50,7 @@ export default function optchat(pi){
  });
  pi.on('session_shutdown',()=>{lock?.close();});
  // A changing OptChat system prompt is journaled by Pi between the origin entry and the user's message.
- pi.on('before_agent_start',e=>{const file=join(process.env.OPTCHAT_HOME,'system-prompt');return existsSync(file)?{systemPrompt:e.systemPrompt+'\\n'+readFileSync(file,'utf8')}:undefined;});
+ pi.on('input',()=>{if(existsSync(join(process.env.OPTCHAT_HOME,'system-prompt')))pi.setActiveTools(pi.getActiveTools().filter(name=>name!=='read'));});
  // OptChat assembles the final request in context_with_system, its system prompt first; the pages extension, loaded after
  // it, then attaches the page state (legacy/surface/src/workspace-frame.ts).
  pi.on('context_with_system',e=>({messages:[...e.messages.filter(m=>m.role==='system'),...e.messages.filter(m=>m.role!=='system')]}));

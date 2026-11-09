@@ -153,12 +153,14 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
   const threadId = (await f.rpc.thread_list(null)).threads[1].threadId;
   try { await send(question); } finally { f.rpc.exo_send = originalSend; }
+  await until('the question to reach the model', () => JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages).includes(question));
   await until('the no-draw turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working);
   assert.deepEqual(payloads, [{ threadId, text: question, page: 'plum' }]);
   const journal = readFileSync(f.piRuns().find(r => r.profile === profile).sessionFile, 'utf8');
   const entries = journal.trim().split('\n').map(line => JSON.parse(line));
   const origin = entries.findLastIndex(e => e.customType === 'exosurface-press' && e.data.line === question);
   const user = entries.findIndex((e, i) => i > origin && e.message?.role === 'user');
+  assert.ok(origin >= 0 && user > origin, 'the selected-page origin precedes this question');
   assert.ok(entries.slice(origin + 1, user).some(e => e.message?.role === 'system'), 'real Pi journal interleaves a system message');
   const context = JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages);
   assert.ok(context.includes('Plum plan') && context.includes('Pear plan') && context.includes('book the cabin'), 'full thread context reaches the model, not just the selected page');
