@@ -1,9 +1,11 @@
 // Existing page limits, measured exactly as before. Pure preflight runs before any native commit/send.
 import {applyDelta,inputBindings,moduleIds,validateInput,type Snapshot,type Delta} from './workspace.ts';
 import {retirement,versionSnapshot,type Version} from './canvas-history.ts';
-export const MAX_OWNER_COMMAND_UNITS=12000; // JSON.stringify(request).length: UTF-16 code units, not 12 KiB.
+// JSON.stringify(request).length: UTF-16 code units, not KiB. Above a whole press (MAX_ACTION_UNITS) plus 16 update paths,
+// so a press's typed text is never refused here (#143). The owners' socket checks use the same number.
+export const MAX_OWNER_COMMAND_UNITS=20000;
 export function assertOwnerCommand(request:unknown){
- if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error('Page command exceeds 12000 serialized UTF-16 units. Nothing was changed or sent.');
+ if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error(`Page command exceeds ${MAX_OWNER_COMMAND_UNITS} serialized UTF-16 units. Nothing was changed or sent.`);
 }
 export type DataRequest={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press'};
 export function planData(current:Snapshot,r:DataRequest){

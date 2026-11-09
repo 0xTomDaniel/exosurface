@@ -5,6 +5,7 @@
 import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HOME, binding, load } from './state.ts';
+import { PRESS_ENTRY } from '../../surface/src/press-line.ts';
 
 /** ended: Exo's latest message after the person's closes a reply (not a tool step), as the journal holds it. */
 export type LatestTurn = { userEntry: string | null; said: string; words: string; ended: boolean };
@@ -24,11 +25,14 @@ const changed = (entry: any) => {
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards.
  *  With `page`, the latest turn on that page (spec E1, E8): one that drew or edited it, or that changed no page while it was
- *  on stage; none when no turn is on it. */
+ *  on stage; none when no turn is on it. A button press shows as the button's label (spec pages-and-activity F6): the press
+ *  entry journaled before its message. */
 export function latestTurn(sessionFile: string | undefined, page?: string): LatestTurn {
   if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r');
   let said: string[] = [], pages: string[] | undefined, focus: string | null | undefined, quiet: LatestTurn | undefined;
+  // found: the turn to show, held until the entry before its message says whether it was a press; last: the turn just read.
+  let found: LatestTurn | undefined, last: LatestTurn | undefined;
   let replied: boolean | undefined;
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
@@ -47,15 +51,24 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
       for (const line of parts.reverse()) {
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
+        if (last && entry.type === 'custom' && entry.customType === PRESS_ENTRY) {
+          if (entry.data?.line === last.said) last.said = String(entry.data.label);
+          last = undefined;
+          if (found) return found;
+          continue;
+        }
         const change = changed(entry);
         if (change) { if (focus === undefined) focus = change.focus; if (change.pages) pages = [...(pages ?? []), ...change.pages]; }
         if (entry.type !== 'message') continue;
+        if (found) return found;
+        last = undefined;
         if (entry.message?.role === 'user') {
           const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
-          if (page === undefined) return turn;
+          last = turn;
+          if (page === undefined) { found = turn; continue; }
           // A turn that changed no page is on the page on stage when it ran: the next earlier change says which.
           if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; }
-          if (pages?.includes(page)) return turn;
+          if (pages?.includes(page)) { found = turn; continue; }
           if (!pages) quiet ??= turn;
           said = []; pages = undefined; focus = undefined; replied = undefined;
           continue;
@@ -63,6 +76,7 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
         if (entry.message?.role === 'assistant') { said.push(text(entry.message)); replied ??= entry.message.stopReason !== 'toolUse'; }
       }
     }
+    if (found) return found;
     if (page !== undefined) return { userEntry: null, said: '', words: '', ended: false };
     return { userEntry: null, said: '', words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
   } finally { closeSync(fd); }

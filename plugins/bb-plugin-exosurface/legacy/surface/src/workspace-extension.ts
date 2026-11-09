@@ -24,6 +24,7 @@ import {OBS_MODE,nextObserver,observerSurface} from '../observer/mode.ts';
 import {OBS_RUN,type Route,type ObserverStatus} from '../observer/stream.ts';
 import {DocumentObserverTurn as ObserverTurn} from '../observer/document-turn.ts';
 import {checkUpdateArguments,OP_WORDS} from '../../../src/update-arguments.ts';
+import {PRESS_ENTRY,type PressEntry} from './press-line.ts';
 export const OMITTED='Legacy: layout JSON kept out of conversation history; this call was applied.';
 export default function workspace(pi:ExtensionAPI){
  assertDeployment();
@@ -192,6 +193,11 @@ export default function workspace(pi:ExtensionAPI){
   if(!ctx.isIdle()||!current)throw Error('Idle clone with pages required');const r=JSON.parse(args);
   const {delta,next}=planData(current,r);
   pi.appendEntry(COMMIT,{source:r.source==='press'?'canvas-press':'canvas-edit',mutationId:r.mutationId,delta});remember(versionsOf(current,next,delta,r.source==='press'?'press':'edit',new Date().toISOString()));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
+ }});
+ // A press's button label beside its press line (press-line.ts), journaled just before the press message; no model call.
+ pi.registerCommand('workspace-press',{description:'Journal the pressed button\'s label beside the press message; no model call',handler:async(args)=>{
+  const r=JSON.parse(args);if(typeof r.label!=='string'||typeof r.line!=='string')throw Error('Invalid press');
+  pi.appendEntry<PressEntry>(PRESS_ENTRY,{label:r.label,line:r.line});
  }});
  // Bring back an earlier surface version (the person edited it or pressed one of its buttons): code commits
  // it as the current version on stage, with their edits; Exo hears about it with the next turn.

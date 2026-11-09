@@ -5,7 +5,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
 import { liveFixture, owner, bridge } from './mock-bb.ts';
 import { waiter } from './wait.ts';
 import { renderedApp, rightAligned, boxed } from './app-render.ts';
@@ -65,39 +64,89 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   assert.equal(input()!.value, '');
 });
 
-test('a send scrolls the surface back to its top, eased (instantly under reduced motion); a press on its page, Exo\'s turn ending and a poll leave the scroll where it was', async () => {
-  // Owner walkthrough on PR #89 (spec E8, F1/F4). jsdom does no layout or scrolling: through the browser stand-ins of
-  // test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that the
-  // request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then showing
-  // on screen, are the owner's RDP re-check.
-  // The press is the one the page's button sends, through the action RPC: the app hears of it only by its turn and the
-  // polls that follow.
-  const scroller = main(), revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
-  scroller.scrollTop = 400;
-  assert.ok(scroller.scrollTop === 400, `scrolled down: ${scroller.scrollTop}`);
-  const asked = browser.scrolls.length, request = () => JSON.stringify(browser.scrolls.slice(asked));
-  const drawn = (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint;
-  const surfaceId = drawn.messages.find((m: any) => m.createSurface).createSurface.surfaceId, at = revision();
-  const button = drawn.messages.flatMap((m: any) => m.updateComponents?.components ?? []).find((n: any) => n.action?.event);
-  const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, 'Grace']));
-  const pressed = await f.rpc.action({ threadId: 'primary', revision: drawn.revision, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json'] } } } });
-  assert.ok(pressed.accepted === true, JSON.stringify(pressed));
-  await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
-  assert.ok(scroller.scrollTop === 400 && request() === '[]', `after a press, Exo's turn and polls: ${scroller.scrollTop}, scrolls asked ${request()}`);
-  await send('and Saturday too');
-  await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Saturday too');
-  assert.ok(main() === scroller && scroller.scrollTop === 0 && request() === '[{"top":0,"behavior":"smooth"}]', `after a send: ${scroller.scrollTop}, scrolls asked ${request()}`);
-  await until('the send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Saturday too');
-  // The person asked their system for reduced motion: the next send jumps to the top instead.
-  browser.reducedMotion = true; scroller.scrollTop = 400;
-  const before = browser.scrolls.length;
+test('a press on its page and a send both scroll the surface back to its top through the one eased scroll (instantly under reduced motion); Exo\'s turn ending and a poll leave the scroll where it was', async () => {
+  // Owner walkthrough on PR #89 (spec E8, F1/F4) and owner ruling 2026-11-05 on #138 (F6, acceptance-press-to-top: a
+  // press must not jump, it eases exactly like a send). jsdom does no layout or scrolling: through the browser stand-ins
+  // of test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that
+  // the request reaches that container (its scrollTop). The visible easing, and the title, page strip and bubble then
+  // showing on screen, are the owner's RDP re-check.
+  // The press is the person clicking the page's Book button in the rendered surface.
+  const revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+  const idle = () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled;
+  // Each step starts scrolled down, below the first screen; it returns the scrolls the surface asked for during it.
+  async function step(what: string, act: () => Promise<void>) {
+    main().scrollTop = 400;
+    assert.equal(main().scrollTop, 400, `scrolled down before ${what}`);
+    const asked = browser.scrolls.length;
+    await act();
+    return { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
+  }
+  async function press(who: string) {
+    await until('the page\'s Book button, idle', idle);
+    const at = revision(), field = main().querySelector('[data-surface] input') as HTMLInputElement;
+    fireEvent.input(field, { target: { value: who } });
+    fireEvent.click(book()!);
+    // Exo's turn on the press ends and the pressed page is polled in; neither scrolls again.
+    await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
+  }
+  async function sent(text: string) {
+    await send(text);
+    await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === text);
+    await until('the send\'s reply', () => reply()?.textContent === `Exo (exo-optchat): ${text}`);
+  }
+  const eased = '[{"top":0,"behavior":"smooth"}]', instant = '[{"top":0,"behavior":"auto"}]';
+  const pressed = await step('a press', () => press('Grace'));
+  assert.ok(pressed.top === 0 && pressed.asked === eased, `after a press, Exo's turn and polls: ${JSON.stringify(pressed)}`);
+  const send1 = await step('a send', () => sent('and Saturday too'));
+  assert.ok(send1.top === 0 && send1.asked === eased, `after a send: ${JSON.stringify(send1)}`);
+  // The person asked their system for reduced motion: a press and a send both jump to the top instead.
+  browser.reducedMotion = true;
   try {
-    await send('and Sunday');
-    await until('the second send accepted', () => input()!.value === '' && bubble()?.textContent === 'and Sunday');
-    const jumped = JSON.stringify(browser.scrolls.slice(before));
-    assert.ok(scroller.scrollTop === 0 && jumped === '[{"top":0,"behavior":"auto"}]', `after a send with reduced motion: ${scroller.scrollTop}, scrolls asked ${jumped}`);
-    await until('the second send\'s reply', () => reply()?.textContent === 'Exo (exo-optchat): and Sunday');
+    const pressed2 = await step('a press with reduced motion', () => press('Lin'));
+    assert.ok(pressed2.top === 0 && pressed2.asked === instant, `after a press with reduced motion: ${JSON.stringify(pressed2)}`);
+    const send2 = await step('a send with reduced motion', () => sent('and Sunday'));
+    assert.ok(send2.top === 0 && send2.asked === instant, `after a send with reduced motion: ${JSON.stringify(send2)}`);
   } finally { browser.reducedMotion = false; }
+});
+
+test('after a press and Exo\'s finished turn, the person\'s bubble is the button\'s label, right-aligned, and Exo\'s reply to the press is plain text below it', async () => {
+  // #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label, never the press line).
+  const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+  await until('the page\'s Book button, idle', () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled);
+  fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: 'Ada' } });
+  fireEvent.click(book()!);
+  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && reply()!.textContent!.includes('Ada'));
+  assert.equal(bubble()?.textContent, 'Book');
+  assert.equal(rightAligned(bubble()!), true);
+  assert.equal(before(bubble()!, reply()!), true);
+  assert.equal(boxed(reply()!, block()!), false);
+});
+
+test('a press on an earlier version of the page, opened from its card in the chat, scrolls the surface back to its top through the same eased scroll', async () => {
+  // Owner ruling 2026-11-05 on #138 (F6: every press, an earlier-version press included). The person clicks the chat card
+  // of the page as first drawn (revision 1, since edited by the presses above), the surface shows that earlier version, and
+  // they press its Book button; as above, what the surface asks its scroll container for and its scrollTop.
+  const card = /::exo-surface\{surface="([^"]+)" revision="1" action="drew"\}/;
+  const drawn = host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean)!;
+  assert.ok(drawn, 'the chat card of the drawn page');
+  const directive = app.messageDirectives.find((d: any) => d.id === 'exo-surface');
+  const chat = kit.renderSlot(directive, { attributes: { surface: drawn[1], revision: '1', action: 'drew' }, message: { threadId: 'primary' } }, { rpc: f.rpc });
+  try {
+    const earlier = () => [...main().querySelectorAll('[role="status"]')].some(s => s.textContent?.startsWith('Earlier version'));
+    const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
+    await until('the input idle', () => !!input() && !input()!.disabled);
+    fireEvent.click(chat.container.querySelector('button')!);
+    await until('the earlier version with its Book button', () => earlier() && !!book() && !book()!.closest('[inert]'));
+    main().scrollTop = 400;
+    assert.equal(main().scrollTop, 400, 'scrolled down before the press');
+    const asked = browser.scrolls.length;
+    fireEvent.input(main().querySelector('[data-surface] input')!, { target: { value: 'Ada' } });
+    fireEvent.click(book()!);
+    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && reply()!.textContent!.includes('Brought back'));
+    const pressed = { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
+    assert.ok(pressed.top === 0 && pressed.asked === '[{"top":0,"behavior":"smooth"}]', `after a press on the earlier version: ${JSON.stringify(pressed)}`);
+  } finally { chat.unmount(); }
 });
 
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
@@ -115,4 +164,24 @@ test('a surface whose stored name is "Garden plan" shows "Garden plan" as its ti
   open('Home');
   await until('Home as the title', () => title()?.textContent === 'Home');
   assert.deepEqual(headings().filter(h => h?.includes('Exosurface')), []);
+});
+
+test('a press on a button whose label holds " — " or " · " shows exactly that label as the person\'s bubble; a typed message that looks like a press shows as typed', async () => {
+  // Review of PR #146 (F6, acceptance-press-to-top: the bubble carries the button's label, never a rewritten one).
+  // Each button sends the page's note, so each press commits it and the next press is on a new revision.
+  const snapshot = '- region "Plan · Week" [ref=pw]:\n  - textbox "Note" [ref=note]\n  - button "Keep — later" [ref=later] [action=later] [sends=note]\n  - button "Plan · Keep" [ref=plankeep] [action=plan] [sends=note]';
+  const revision = (await f.rpc.workspace({ deployment: 'main', cursor: null })).revision;
+  await until('the input idle', () => !!input() && !input()!.disabled);
+  host.send('primary', `call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
+  const button = (label: string) => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === label) as HTMLButtonElement | undefined;
+  for (const [label, note] of [['Keep — later', 'first'], ['Plan · Keep', 'second']]) {
+    await until(`the ${label} button, idle`, () => !!button(label) && !button(label)!.closest('[inert]') && !!input() && !input()!.disabled);
+    fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: note } });
+    fireEvent.click(button(label)!);
+    await until(`Exo's reply to the ${label} press`, () => reply()?.textContent === `Exo (exo-optchat): ▸ Plan · Week · ${label} — Note: “${note}”`);
+    assert.equal(bubble()?.textContent, label);
+  }
+  await send('▸ Plan · Keep');
+  await until('the reply to the typed message', () => reply()?.textContent === 'Exo (exo-optchat): ▸ Plan · Keep');
+  assert.equal(bubble()?.textContent, '▸ Plan · Keep');
 });

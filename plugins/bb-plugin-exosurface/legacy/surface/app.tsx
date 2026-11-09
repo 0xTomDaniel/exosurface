@@ -77,7 +77,7 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
 }
 // An earlier version of a surface, shown in place of the live canvas. Editing it prepares a bring-back
 // (carried with the next message); pressing one of its buttons brings it back right away. ✕ returns to now.
-function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:VersionRef;revision:number;onCurrent:(surface:string)=>void}){
+function RewindView({threadId,at:ref,revision,onCurrent,onPressed}:{threadId:string;at:VersionRef;revision:number;onCurrent:(surface:string)=>void;onPressed:()=>void}){
  const rpc=useRpc<typeof rpcContract>();
  const[meta,setMeta]=useState<any>(null),[error,setError]=useState(''),[ticks,tick]=useState(0),[pending,setPending]=useState(false);
  const view=useRef<WorkspaceView|null>(null),press=useRef<(a:any)=>void>(()=>{});
@@ -90,7 +90,7 @@ function RewindView({threadId,at:ref,revision,onCurrent}:{threadId:string;at:Ver
  // Edits to the earlier version become the pending bring-back (the composer shows it).
  useEffect(()=>{const v=view.current;if(!v||!meta)return;const edits=[...v.drafts.edits.values()].filter(e=>e.surfaceId===meta.surface);if(!edits.length)return;
   const t=setTimeout(()=>{rpc.call('pending',{threadId,op:'set',version:{surface:meta.surface,revision:meta.revision},updates:edits.slice(0,16).map(({path,value})=>({path,value}))}).catch(e=>setError(String(e)));},500);return()=>clearTimeout(t);},[ticks,meta]);
- press.current=async(a:any)=>{if(pending||!meta)return;setPending(true);setError('');try{await rpc.call('action',{threadId,revision,rewind:{surface:meta.surface,revision:meta.revision},event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}});setRewind(null);}catch(e){setError(String(e));}finally{setPending(false);}};
+ press.current=async(a:any)=>{if(pending||!meta)return;setPending(true);setError('');try{if((await rpc.call('action',{threadId,revision,rewind:{surface:meta.surface,revision:meta.revision},event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}})).accepted)onPressed();setRewind(null);}catch(e){setError(String(e));}finally{setPending(false);}};
  const cancel=async()=>{setRewind(null);await rpc.call('pending',{threadId,op:'clear'}).catch(()=>{});};
  const surface=meta?view.current?.processor.getSurfaces().get(meta.surface):null;
  return <div>
@@ -157,9 +157,11 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  const serial=useRef(0),recover=useRef<()=>void>(()=>{});
  // A send brings the top of the surface into view (title, page strip, the new bubble), wherever the person had scrolled
  // (owner walkthrough on PR #89; spec E8, F1/F4: each send starts following). The browser's eased scroll, or an instant
- // jump for a person who asked for reduced motion.
+ // jump for a person who asked for reduced motion. A press BB accepted takes the same scroll (F6, owner ruling on #138:
+ // a press must not jump).
  const scroller=useRef<HTMLElement>(null);
- useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId&&scroller.current)scroller.current.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}),[]);
+ const toTop=()=>scroller.current?.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId)toTop();}),[]);
  async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),CATALOGS);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
@@ -170,7 +172,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
   const poll=async()=>{if(stopped||inFlight)return;inFlight=true;const before=serial.current;try{const value=await getState();if(!stopped&&before===serial.current)accept(value);}catch(e){if(!stopped)setError(String(e));}finally{inFlight=false;if(!stopped)timer=setTimeout(poll,document.hidden?10000:5000);}};
   recover.current=()=>{clearTimeout(timer);void poll();};void poll();return()=>{stopped=true;clearTimeout(timer);recover.current=()=>{};};
  },[rpc]);
- send.current=async(a:any)=>{const v=view.current,s=stateRef.current;if(!v||!s?.threadId||pending||s.streaming||v.preview||v.committed?.incomplete)return;setPending(true);setError('');try{await rpc.call('action',{threadId:s.threadId,revision:v.committed?.revision??0,event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}});}catch(e){setError(String(e));}finally{setPending(false);}};
+ send.current=async(a:any)=>{const v=view.current,s=stateRef.current;if(!v||!s?.threadId||pending||s.streaming||v.preview||v.committed?.incomplete)return;setPending(true);setError('');try{if((await rpc.call('action',{threadId:s.threadId,revision:v.committed?.revision??0,event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}})).accepted)toTop();}catch(e){setError(String(e));}finally{setPending(false);}};
  const v=view.current,busy=pending||state?.streaming||!!v?.preview||v?.committed?.incomplete;
  // Shared state: edited inputs are saved to the committed canvas (revision-checked) while Exo is idle; no chat message, no turn.
  useEffect(()=>{
@@ -190,7 +192,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
    </div>
    <ExoBlock threadId={state?.threadId??null} page={!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
-   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
+   <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} onPressed={toTop} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
    <SurfaceInput threadId={state?.threadId??null}/>
   </div></main>

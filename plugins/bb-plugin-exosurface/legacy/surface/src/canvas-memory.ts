@@ -54,9 +54,14 @@ export function outlineCanvas(s:Snapshot,limit=7000):string{
  const rest=ids.filter(id=>id!==focus&&!beside.includes(id));if(rest.length)lines.push('[earlier] '+rest.map(id=>`${id} "${surfaceTitle(moduleNodes(s,id),id)}"`).join(', '));
  return cut(lines.join('\n'),limit);
 }
+/** The pressed button's label, as its press line names it. */
+export function pressedLabel(s:Snapshot,action:{surfaceId:string;sourceComponentId:string}):string{
+ const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId);
+ return plain(literal(nodes.find(n=>n.id===button?.child)?.text))||action.sourceComponentId;
+}
 /** "What the person did": a readable line for a button press, labels instead of keys. */
 export function describePress(s:Snapshot,action:{surfaceId:string;sourceComponentId:string;context:Record<string,unknown>}):string{
- const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId),label=plain(literal(nodes.find(n=>n.id===button?.child)?.text))||action.sourceComponentId;
+ const nodes=moduleNodes(s,action.surfaceId),button=nodes.find(n=>n.id===action.sourceComponentId),label=pressedLabel(s,action);
  const bindings=inputBindings(s,action.surfaceId),offered=button?.action?.event?.context??{},parts:string[]=[];
  for(const[key,v]of Object.entries(offered)){const path=(v as any)?.path;if(!path)continue;const input=bindings.get(path),value=action.context[key];if(!input)continue;
   let shown:string;if(input.component==='ChoicePicker')shown=(value as string[]).map(x=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'none';
@@ -83,7 +88,8 @@ export function snapshotOutline(s:Snapshot,earlier:Earlier={count:0,recent:[]},l
  const history=earlier.count?[`Earlier pages in this conversation (${earlier.count}; kept by the system, nothing to manage; read_exosurface shows one, and editing or redrawing its ref brings it back):`,...past,...(earlier.count>past.length?[`…and ${earlier.count-past.length} more`]:[])]:[];
  let body=[...full,...(shelf.length?['Shelf (read_exosurface for a page in full):',...shelf]:[]),...history].join('\n');
  if(body.length>limit&&full.length>1)body=[full[0],...beside.map(id=>`- region ${JSON.stringify(surfaceTitle(moduleNodes(s,id),id))} [ref=${id}]   (beside; read_exosurface for it in full)`),...(shelf.length?['Shelf:',...shelf]:[]),...history].join('\n');
- return `${head}\n${cut(body,limit)}`;
+ // Over the limit, say so in plain words and how to read the rest; never a silent cut of a person's typed text (#143).
+ return `${head}\n${body.length>limit?`${body.slice(0,limit)}\n[The outline stops here: the pages run to ${body.length} characters, more than the ${limit} it holds. read_exosurface with a page's ref shows it in full, typed text included.]`:body}`;
 }
 /** Page edits by the person since the last agent turn, as snapshot-style lines. */
 export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
@@ -93,7 +99,7 @@ export function describeEdits(s:Snapshot,deltas:{messages:any[]}[]):string[]{
  for(const {surfaceId,path} of last.values()){
   if(!moduleIds(s).includes(surfaceId))continue;const input=inputBindings(s,surfaceId).get(path);if(!input)continue;const v=atPath(moduleData(s,surfaceId),path);
   const shown=input.component==='ChoicePicker'?(Array.isArray(v)?v:[v]).map((x:any)=>plain(input.options.find((o:any)=>o.value===x)?.label??x)).join(', ')||'(none)':input.component==='CheckBox'?(v?'checked':'unchecked'):String(v??'')||'(empty)';
-  out.push(`- ${surfaceId} · ${plain(literal(input.label))||input.id} [ref=${input.id}]: ${cut(shown,400)}`);
+  out.push(`- ${surfaceId} · ${plain(literal(input.label))||input.id} [ref=${input.id}]: ${input.component==='TextField'?shown:cut(shown,400)}`); // typed text in full (#143)
  }
  return out;
 }

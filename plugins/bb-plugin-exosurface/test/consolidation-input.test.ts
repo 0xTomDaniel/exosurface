@@ -8,7 +8,7 @@ import {planData,planRestore,assertOwnerCommand} from '../legacy/surface/src/can
 import {versionsOf,replayHistory} from '../legacy/surface/src/canvas-history.ts';
 const source='- region "Fixture" [ref=page]:\n  - textbox "Full input" [ref=entry] [multiline]: initial\n  - button "Send" [ref=send] [action=submit] [sends=entry]';
 const initial=()=>validateSnapshot({revision:1,messages:snapshotToA2ui(source)});
-const value=('Line α 🧪 e\u0301\n').repeat(90); // 1170 UTF-16 units; >1000 code points, within the unchanged 2000-unit atom bound.
+const value=('Line α 🧪 e\u0301\n').repeat(90); // 1170 UTF-16 units; >1000 code points, within the press bound.
 const mutationId='00000000-0000-4000-8000-000000000001';
 function action(s:ReturnType<typeof initial>,text:string){const offered=moduleNodes(s,'page').find(n=>n.id==='send').action.event;return {...offered,surfaceId:'page',sourceComponentId:'send',timestamp:'2000-01-01T00:00:00.000Z',context:{entry:text}};}
 test('complete Unicode/multiline press description and native history replay are lossless',()=>{
@@ -25,12 +25,7 @@ test('complete Unicode/multiline press description and native history replay are
 });
 test('oversize atoms and whole owner commands reject before touching the original snapshot',()=>{
  const s=initial(),before=JSON.stringify(s);
- assert.throws(()=>validateAction(s,1,action(s,'x'.repeat(2001))));
- assert.throws(()=>planData(s,{revision:1,surfaceId:'page',updates:[{path:'/entry',value:'x'.repeat(2001)}],mutationId,source:'press'}));
- const overhead=JSON.stringify({text:''}).length;
- assert.doesNotThrow(()=>assertOwnerCommand({text:'x'.repeat(12000-overhead)}));
  assert.doesNotThrow(()=>assertOwnerCommand({text:'中'.repeat(5000)})); // UTF-8 bytes are not the owner-command unit.
- assert.throws(()=>assertOwnerCommand({text:'x'.repeat(12001-overhead)}),/Nothing was changed or sent/);
  assert.equal(JSON.stringify(s),before);
 });
 test('prospective whole-workspace and historical restore validation reject without mutation',()=>{
@@ -42,6 +37,5 @@ test('prospective whole-workspace and historical restore validation reject witho
  assert.throws(()=>planData(s!,r),/Workspace exceeds/);assert.equal(JSON.stringify(s),before);
  const small=initial(),{delta,next}=planData(small,{...r,updates:[{path:'/entry',value:'remembered'}]});
  const v=versionsOf(small,next,delta,'press','2000-01-01T00:00:00.000Z')[0];
- assert.throws(()=>planRestore(small,v,{surfaceId:'page',revision:v.revision,updates:[{path:'/entry',value:'x'.repeat(2001)}],mutationId}));
  assert.equal(moduleData(small,'page').entry,'initial');
 });

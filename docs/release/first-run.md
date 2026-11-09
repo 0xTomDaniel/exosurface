@@ -180,7 +180,7 @@ Open `http://127.0.0.1:49411` in a browser. Point the CLI at it with `env -i HOM
 | `Select a BB project whose source on this Mac is exactly the workspace path` | Pick (or add) the project for the vault folder; nothing was changed. The check matches the project's exact source path and a single machine ID; it does not separately verify that machine is this Mac, so use a project created locally for this spike |
 | `Missing host bootstrap material` | `bb-server` and `bb-host-daemon` were started separately; use BB.app or the `bb-app` launcher, which enrolls the local host itself |
 | `Sign in to your bb account to use bb connect` | Only for adding a remote/manual machine; not needed for this plugin |
-| Input too large | Atom/textbox cap 2,000 UTF-16 units; workspace 40 KiB and serialized owner command 12,000 UTF-16 units; refusal is atomic, not silent truncation |
+| Input too large | Atom/textbox value and whole press cap 16,384 UTF-16 units; workspace 40 KiB and serialized owner command 20,000 UTF-16 units; refusal is atomic, not silent truncation |
 
 The prior bounded test used a disposable HOME/data directory and separate backend ports. Plugin registration passed, but no host bootstrap/account credentials were manufactured or copied; no account login or machine enrollment was initiated. The desktop probe was stopped before launching a second Electron instance because safe profile/single-instance isolation was not established. A fresh HOME on an existing Mac is not physical clean-Mac proof.
 
