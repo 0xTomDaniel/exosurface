@@ -190,7 +190,7 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
     {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal}/></div>}
    </div>
-   <ExoBlock threadId={state?.threadId??null}/>
+   <ExoBlock threadId={state?.threadId??null} page={!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} onPressed={toTop} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}

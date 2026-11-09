@@ -294,6 +294,64 @@ async function onePage() {
   }
 }
 
+// #142 (bug #134; spec E1, E8): turns on Home that draw different pages (the week's, then the garden's, then a message on
+// the garden page that draws nothing); then the earlier page opened from the page strip, and back to the latest. For each page
+// opened: the message bubble and reply its Exo block shows, which must be that page's own.
+async function exoBlockOwnPage() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const said = () => main().querySelector('section[aria-label="Exo"] [data-exo-said]')?.textContent ?? '', reply = () => main().querySelector('section[aria-label="Exo"] [data-exo-reply]')?.textContent ?? '';
+  const shown = el => { for (let at = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || getComputedStyle(at).display === 'none') return false; return true; };
+  const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label')).join(', ');
+  const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown);
+  const until = waiter(() => `in view ${inView()}; bubble ${JSON.stringify(said())}; reply ${JSON.stringify(reply())}`);
+  const own = { 'Week plan': 'draw week: Week plan', 'Garden plan': 'and the roses by the fence' };
+  let ok = true;
+  const show = async (how, page) => {
+    await until(`${page} in view with its own block`, () => inView() === page && said() === own[page] && reply() === `Exo (${f.setup.profile}): ${own[page]}`);
+    const other = Object.entries(own).filter(([p]) => p !== page).some(([, t]) => main().querySelector('section[aria-label="Exo"]').textContent.includes(t));
+    console.log(`${how}: page in view ${JSON.stringify(inView())}`);
+    console.log(`  Exo block bubble: ${JSON.stringify(said())}`);
+    console.log(`  Exo block reply:  ${JSON.stringify(reply())}`);
+    console.log(`  another page's turn in the block: ${other ? 'SHOWN' : 'none'}`);
+    ok &&= !other;
+  };
+  try {
+    for (const [text, page] of [['draw week: Week plan', 'Week plan'], ['draw garden: Garden plan', 'Garden plan'], ['and the roses by the fence', 'Garden plan']]) {
+      await until('the input', () => input() && !input().disabled);
+      fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+      await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply() === `Exo (${f.setup.profile}): ${text}` && inView() === page);
+      console.log(`sent ${JSON.stringify(text)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+    }
+    await show('latest page', 'Garden plan');
+    await until('the week page as a pill', () => pills().some(b => b.textContent === 'Week plan'));
+    fireEvent.click(pills().find(b => b.textContent === 'Week plan'));
+    await show('earlier page opened from the page strip', 'Week plan');
+    fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
+    await show('back to the current topic', 'Garden plan');
+    // Exo withdraws the garden page (revision 2 to 3); the stage falls back to the week page, and a message that draws
+    // nothing is on it.
+    const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
+    fireEvent.change(input(), { target: { value: withdraw } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until('the garden page withdrawn', () => inView() === 'Week plan' && input() && !input().disabled);
+    console.log(`sent ${JSON.stringify(withdraw)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+    const quiet = 'and the hedge along the path';
+    fireEvent.change(input(), { target: { value: quiet } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    own['Week plan'] = quiet;
+    await show('after Exo withdrew the page in view, a message that draws nothing', 'Week plan');
+    if (!ok) throw new Error('exo-block-own-page failed');
+  } finally {
+    view.unmount(); close();
+    for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
+    await new Promise(r => setTimeout(r, 1000));
+    rmSync(f.root, { recursive: true, force: true });
+  }
+}
+
 // #80: the rendered surface view with a drawn page: where the input sits, what its width follows, and where the fade over the
 // content beneath it starts. Read from computed styles (test/app-render.ts); jsdom does no layout, so true layout and paint
 // are the owner's RDP walkthrough.
@@ -898,7 +956,7 @@ async function pressNotes() {
   }
 }
 
-const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'press-notes': pressNotes, 'press-bubble': pressBubble, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
+const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'press-notes': pressNotes, 'press-bubble': pressBubble, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'exo-block-own-page': exoBlockOwnPage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

@@ -22,8 +22,8 @@ export const rpcContract = defineRpcContract({
   overview: { input: z.null(), output: z.object({ threads: z.array(z.object({ id: z.string(), title: z.string().nullable(), status: z.string(), parentThreadId: z.string().nullable(), profile: z.string().nullable(), ready: z.boolean(), model: z.string().nullable(), commands: z.array(z.string()), feedback: z.object({ statuses: z.record(z.string(), z.string()), notifications: z.array(z.object({ id: z.string(), text: z.string(), type: z.string() })) }), children: z.array(z.object({ id: z.string(), state: z.string(), report: z.string().nullable() })) })) }) },
   thread_bind: { input: z.object({ threadId: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/) }).strict(), output: z.object({ threadId: z.string(), profile: z.string() }) },
   // The surface view's Exo block and input (#69, #79): the person's latest message (said) and Exo's words from that turn,
-  // and a send from the input.
-  exo_block: { input: z.object({ threadId: z.string() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
+  // and a send from the input. With `page`, the page in view: that page's own latest turn (#134).
+  exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
   exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
   // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
@@ -141,9 +141,9 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
     },
     // Exo is working from a send until the thread's journal holds a newer message from the person and Exo's reply to it,
     // and the owner's turn has ended (Pi journals before the owner reports the turn running); while it works, the block shows that and none of the previous turn's words.
-    exo_block: async ({ threadId }) => {
-      const turn = latestTurn(sessionOf(threadId)), sent = awaiting.get(threadId);
-      if (sent !== undefined && sent.entry !== turn.userEntry && turn.ended) awaiting.delete(threadId);
+    exo_block: async ({ threadId, page }) => {
+      const latest = latestTurn(sessionOf(threadId)), turn = page === undefined ? latest : latestTurn(sessionOf(threadId), page), sent = awaiting.get(threadId);
+      if (sent !== undefined && sent.entry !== latest.userEntry && latest.ended) awaiting.delete(threadId);
       const working = awaiting.has(threadId) || ownerWorking(threadId);
       // While it works, the one line of what Exo is doing right now (E9): the owner's, else (sent, the owner's turn not yet
       // started) the turn's first step; never after the reply.

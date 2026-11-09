@@ -94,3 +94,38 @@ test('a surface made by New surface shows no transcript, not even its control fi
   assert.equal(count(pageText(), 'Friday'), 0);
   assert.equal(shown(), false);
 });
+
+test('each page\'s Exo block shows the person\'s latest message on that page and Exo\'s reply to it, never a turn on another page', async () => {
+  // #134, owner ruling 2026-11-06 (spec E1, E8): on the New surface in view, turns drawing different pages, then the earlier
+  // page picked from the page strip. Real turns on the thread's own journal; the association is the app's to find.
+  const profile = f.piRuns().at(-1).profile, said = () => block()?.querySelector('[data-exo-said]')?.textContent ?? '';
+  const strip = () => [...view.container.querySelectorAll('nav button[aria-pressed]')] as HTMLElement[];
+  const turn = async (text: string) => { await send(text); await until(`Exo's reply to ${JSON.stringify(text)}`, () => reply()?.textContent === `Exo (${profile}): ${text}`); };
+  await turn('draw week: Week plan');
+  await turn('draw garden: Garden plan');
+  await turn('and the roses by the fence');
+  await until('the week page as a pill', () => strip().some(b => b.textContent === 'Week plan'));
+  fireEvent.click(strip().find(b => b.textContent === 'Week plan')!);
+  await until('the week page\'s own message in its block', () => said() === 'draw week: Week plan');
+  assert.equal(reply()!.textContent, `Exo (${profile}): draw week: Week plan`);
+  assert.equal(count(block()!.textContent!, 'Garden'), 0);
+  assert.equal(count(block()!.textContent!, 'roses'), 0);
+  // Back on the latest page: its own latest message, a turn that drew nothing while it was the topic.
+  fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
+  await until('the garden page\'s own message in its block', () => said() === 'and the roses by the fence');
+  assert.equal(reply()!.textContent, `Exo (${profile}): and the roses by the fence`);
+  assert.equal(count(block()!.textContent!, 'Week'), 0);
+});
+
+test('after Exo withdraws the page in view, a message that draws nothing shows in the Exo block of the page that comes back into view', async () => {
+  // #134 review: week drawn, then garden; Exo withdraws garden (revision 2 to 3) and the stage falls back to week; the next
+  // message draws nothing, so it is on week, the page in view.
+  const profile = f.piRuns().at(-1).profile, said = () => block()?.querySelector('[data-exo-said]')?.textContent ?? '';
+  const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
+  await send(withdraw);
+  await until('the garden page withdrawn and the week page in view', () => !pageText().includes('Garden plan') && pageText().includes('Week plan'));
+  await send('and the hedge along the path');
+  await until('the week page\'s latest message and Exo\'s reply in its block', () => reply()?.textContent === `Exo (${profile}): and the hedge along the path`);
+  assert.equal(said(), 'and the hedge along the path');
+  assert.equal(count(block()!.textContent!, 'draw week'), 0);
+});
