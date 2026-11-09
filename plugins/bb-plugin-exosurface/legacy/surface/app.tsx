@@ -174,6 +174,8 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  },[rpc]);
  send.current=async(a:any)=>{const v=view.current,s=stateRef.current;if(!v||!s?.threadId||pending||s.streaming||v.preview||v.committed?.incomplete)return;setPending(true);setError('');try{if((await rpc.call('action',{threadId:s.threadId,revision:v.committed?.revision??0,event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}})).accepted)toTop();}catch(e){setError(String(e));}finally{setPending(false);}};
  const v=view.current,busy=pending||state?.streaming||!!v?.preview||v?.committed?.incomplete;
+ // The page in view: its Exo block shows its own latest turn (#134), and a send from the input is on it (E10).
+ const inView=!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined;
  // Shared state: edited inputs are saved to the committed canvas (revision-checked) while Exo is idle; no chat message, no turn.
  useEffect(()=>{
   const cur=view.current;if(!cur||busy||!state?.threadId||!cur.committed||saving.current)return;const edits=[...cur.drafts.edits.values()];if(!edits.length)return;
@@ -190,11 +192,11 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
     {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal}/></div>}
    </div>
-   <ExoBlock threadId={state?.threadId??null} page={!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined}/>
+   <ExoBlock threadId={state?.threadId??null} page={inView}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} onPressed={toTop} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
-   <SurfaceInput threadId={state?.threadId??null}/>
+   <SurfaceInput threadId={state?.threadId??null} page={inView}/>
   </div></main>
  </div>;
 }

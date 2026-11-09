@@ -14,6 +14,8 @@ import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-tu
 import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { pressViaOwner } from '../surface/src/canvas-client.ts';
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
 export const rpcContract = defineRpcContract({
   canonical_setup_status: { input: z.null(), output: z.object({ stage: z.string(), operationId: z.string().nullable(), projectId: z.string().nullable(), threadId: z.string().nullable(), nativeDispatchAllowed: z.boolean(), initializationAvailable: z.boolean(), releaseReady: z.literal(false), defaults: z.object({ vault: z.string(), piCli: z.string(), optchat: z.string() }) }) },
@@ -24,7 +26,8 @@ export const rpcContract = defineRpcContract({
   // The surface view's Exo block and input (#69, #79): the person's latest message (said) and Exo's words from that turn,
   // and a send from the input. With `page`, the page in view: that page's own latest turn (#134).
   exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
-  exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
+  // `page`: the page in view the send came from, journaled beside the message (spec E10).
+  exo_send: { input: z.object({ threadId: z.string(), text: z.string(), page: z.string().optional() }).strict(), output: z.object({ sent: z.literal(true) }) },
   // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
   // New surface (spec S7): a new top-level Exo thread, bound to its own profile before its provider starts.
@@ -151,9 +154,12 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       // Until the journal holds the message just sent, the person's latest message is the one the input sent.
       return { working, said: awaiting.get(threadId)?.text ?? turn.said, words: working ? '' : turn.words, ...(activity ? { activity } : {}) };
     },
-    exo_send: async ({ threadId, text }) => {
+    exo_send: async ({ threadId, text, page }) => {
       validatePrompt(text);
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike' || binding(threadId)?.runtimeKind !== 'canonical') throw new Error('Only an Exo surface thread takes a send from its input');
+      // The page it came from goes beside the message, as a press's does (press-line.ts). The owner journals it only while
+      // Exo is idle; a send it cannot journal still goes, and its turn is read as before (by the page on stage).
+      if (page !== undefined) await pressViaOwner(threadId, { line: text, page, mutationId: randomUUID() }, HOME).catch(e => bb.log.warn(`Surface ${threadId}: the page of a send was not journaled: ${e instanceof Error ? e.message : String(e)}`));
       awaiting.set(threadId, { entry: latestTurn(sessionOf(threadId)).userEntry, text });
       try { await bb.sdk.threads.send({ threadId, input: [{ type: 'text', text, mentions: [] }], mode: 'auto' }); }
       catch (e) { awaiting.delete(threadId); throw e; }

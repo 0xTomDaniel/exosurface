@@ -187,8 +187,9 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         try{
           // Code first: the submitted values become committed canvas state; then the person's press, in words, starts Exo's turn.
           if(updates.length)await canvasDataViaOwner(threadId,{revision,surfaceId:a.surfaceId,updates,mutationId,source:'press'},ownerHome(d));
-          // The button's label goes with the press as data, for the person's bubble (F6); the Exo block reads main's journals.
-          if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,mutationId:randomUUID()},ownerHome(d));
+          // The button's label goes with the press as data, for the person's bubble (F6), and the page its button sits on, the
+          // page the press is on (S3, E10); the Exo block reads main's journals.
+          if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,page:a.surfaceId,mutationId:randomUUID()},ownerHome(d));
           await bb.sdk.threads.send({threadId,input:[{type:'text',text,mentions:[]}],mode:'auto'});
         }catch(e){claimed.set(d.threadId??d.name,null);throw e;}
         return {accepted:true};

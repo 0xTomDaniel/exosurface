@@ -24,16 +24,20 @@ const changed = (entry: any) => {
 };
 
 /** The latest turn in a Pi session journal: the last person's message entry, its text, and Exo's words after it. Reads backwards.
- *  With `page`, the latest turn on that page (spec E1, E8): one that drew or edited it, or that changed no page while it was
- *  on stage; none when no turn is on it. A button press shows as the button's label (spec pages-and-activity F6): the press
- *  entry journaled before its message. */
+ *  With `page`, the latest turn on that page (spec E1, E8, E10): one that drew or edited it, or that changed no page and was
+ *  sent or pressed from it (the press entry journaled before its message names the page), or, in a journal without that
+ *  page, that changed no page while it was on stage; none when no turn is on it. A button press shows as the button's
+ *  label (spec pages-and-activity F6): the press entry's label. */
 export function latestTurn(sessionFile: string | undefined, page?: string): LatestTurn {
   if (!sessionFile || !existsSync(sessionFile)) return { userEntry: null, said: '', words: '', ended: false };
   const fd = openSync(sessionFile, 'r');
   let said: string[] = [], pages: string[] | undefined, focus: string | null | undefined, quiet: LatestTurn | undefined;
-  // found: the turn to show, held until the entry before its message says whether it was a press; last: the turn just read.
-  let found: LatestTurn | undefined, last: LatestTurn | undefined;
+  // found: the turn to show, held until the entry before its message says whether it was a press, and while a later turn
+  // read by the stage (quiet) may still be on the page; last: the turn just read; undecided: last changed no page, and the
+  // entry before its message may name the page it came from.
+  let found: LatestTurn | undefined, last: LatestTurn | undefined, undecided = false;
   let replied: boolean | undefined;
+  const byStage = () => { if (undecided) { quiet ??= last; undecided = false; } };
   try {
     // Pi appends whole lines; a last line without its newline is a write in progress and is skipped.
     let at = statSync(sessionFile).size, carry = Buffer.alloc(0), first = true;
@@ -52,24 +56,28 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
         if (!line.length) continue;
         const entry = JSON.parse(line.toString('utf8'));
         if (last && entry.type === 'custom' && entry.customType === PRESS_ENTRY) {
-          if (entry.data?.line === last.said) last.said = String(entry.data.label);
-          last = undefined;
-          if (found) return found;
+          if (entry.data?.line === last.said) {
+            if (typeof entry.data.label === 'string') last.said = entry.data.label;
+            if (undecided && typeof entry.data.page === 'string') { undecided = false; if (entry.data.page === page) found = last; }
+          }
+          byStage(); last = undefined;
+          if (found && !quiet) return found;
           continue;
         }
         const change = changed(entry);
-        if (change) { if (focus === undefined) focus = change.focus; if (change.pages) pages = [...(pages ?? []), ...change.pages]; }
+        if (change) { byStage(); if (focus === undefined) focus = change.focus; if (change.pages) pages = [...(pages ?? []), ...change.pages]; }
         if (entry.type !== 'message') continue;
-        if (found) return found;
-        last = undefined;
+        if (found && !quiet) return found;
+        byStage(); last = undefined;
         if (entry.message?.role === 'user') {
           const turn = { userEntry: String(entry.id), said: typeof entry.message.content === 'string' ? entry.message.content : text(entry.message), words: said.reverse().filter(Boolean).join('\n\n'), ended: replied ?? false };
           last = turn;
           if (page === undefined) { found = turn; continue; }
-          // A turn that changed no page is on the page on stage when it ran: the next earlier change says which.
-          if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; }
-          if (pages?.includes(page)) { found = turn; continue; }
-          if (!pages) quiet ??= turn;
+          // A turn that changed no page and whose message has no page it came from beside it is on the page on stage when
+          // it ran: the next earlier change says which.
+          if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; if (found) return found; }
+          if (!found && pages?.includes(page)) found = turn;
+          else if (!found && !pages) undecided = true;
           said = []; pages = undefined; focus = undefined; replied = undefined;
           continue;
         }
