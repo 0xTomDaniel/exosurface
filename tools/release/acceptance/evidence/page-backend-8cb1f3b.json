@@ -1,0 +1,39 @@
+{
+  "schema": "exosurface-independent-page-backend/0",
+  "producer": "8cb1f3b815f383bcfb1428acd5b3cbdbf6974bd4",
+  "source_status": "",
+  "lock_sha256": "fb0eb9b9c7f3a99f49dc9575437f700c3c316c95705ed3a1d087baa96eab6ec9",
+  "environment": "empty-object allowlist; dedicated short temporary HOME/TMPDIR/BB_DATA_DIR, absolute Node24.15.0; cached toolchain; no inherited selectors/credentials",
+  "prerequisites": "Copied existing development node_modules matching identical committed lock and each installed package version; supplied existing BB toolchain copied; no dependency install or online fetch",
+  "checks": {
+    "bb-build": 0,
+    "owner-build": 0,
+    "typecheck": 0,
+    "tests": 0
+  },
+  "producer_suite": "18/18, no skips",
+  "extra_compiled_harness": {
+    "test_source_sha256": "d48e8478ee2ea0f3f31385d0f204b9fb8287d89d9c21e33155067040ed0a487f",
+    "method": "Copy committed pages.test.ts outside clone; redirect all src imports to actual owner-build dist JS and resolved compiled dist references; no sibling/source changes. This exercises compiled owner runtime in addition to original compiled server/tools boundaries.",
+    "exit": 0,
+    "long_text_utf8_bytes": 232027,
+    "long_text_utf16_units": 224027
+  },
+  "observations": [
+    "Actual BB build creates compiled Zod4 server/host/app and metadata; owner build creates compiled page modules",
+    "Compiled server schema parse + direct handlers, real Unix owner socket, mock Pi API importing compiled page tools",
+    "Exact 232027 UTF-8-byte textbox retained including leading/trailing whitespace, Unicode, newlines and final sentinel",
+    "Draw1\u2192edit2\u2192press3\u2192mock tool heading update4; exact textbox persists on disk read; response body exact; acknowledged duplicate remains revision4",
+    "Stale revision/ref, unknown offered input, invalid types/size/envelope, mutation conflict, unsupported persisted schema and interrupted lock rejected in tests",
+    "Additional external harness redirects committed page tests to compiled modules including owner runtime; six checks pass, clone remains clean"
+  ],
+  "not_proven": [
+    "Actual browser/rendered textbox/DOM edit/button/reopen",
+    "Actual BB page-RPC transport; handlers invoked directly with compiled input schemas",
+    "Real Pi extension loader/tool registration contract or inference/auth",
+    "New full installer/package tuple; older38-file artifact proof remains producer4570c18",
+    "Whole-runtime dependency/security clearance, clean-Mac or launchd/lifecycle"
+  ],
+  "scope": "Reuse-first BB-extension scope preserved; visual edits paused for owner review. No new architecture/consolidation/migration commissioned or accepted.",
+  "external_logs_pointer": "/tmp/exo-page-acceptance-latest"
+}

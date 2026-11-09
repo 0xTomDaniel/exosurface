@@ -1,0 +1,89 @@
+{
+  "schema": "exosurface-independent-integration/0",
+  "tuple": {
+    "consumer": "0ca0f671518274b6d6afbb5781fbae8afcd186a3",
+    "producer": "4570c1893d1fca47d43a8d5fb1c251535e4be7eb",
+    "starter": "890ed34efa13699f3f637964e0f5e57f0d86ad71"
+  },
+  "source_status": {
+    "release-bundle": {
+      "commit": "0ca0f671518274b6d6afbb5781fbae8afcd186a3",
+      "status": ""
+    },
+    "producer-unavailable": {
+      "commit": "4570c1893d1fca47d43a8d5fb1c251535e4be7eb",
+      "status": ""
+    },
+    "starter": {
+      "commit": "890ed34efa13699f3f637964e0f5e57f0d86ad71",
+      "status": ""
+    }
+  },
+  "node": "24.15.0",
+  "python": "3.13.1",
+  "validator": "supplied existing Python3.12/PyYAML venv; symlink path retained",
+  "producer_lock_sha256": "fb0eb9b9c7f3a99f49dc9575437f700c3c316c95705ed3a1d087baa96eab6ec9",
+  "build": [
+    "offline npm ci --ignore-scripts --legacy-peer-deps with copied supplied cache",
+    "actual BB CLI plugin build in disposable clean clone with supplied cached toolchain",
+    "node build.mjs",
+    "node node_modules/typescript/bin/tsc --noEmit"
+  ],
+  "checks": {
+    "consumer_tests": "12/12 after supplying real Python; initial 11/12 retained in external logs",
+    "npm_ls_all": "exit0, no problems",
+    "clean_build": "38 files; source.clean=true; no --allow-dirty",
+    "verify": "exit0",
+    "copied_cli_directory_alias_pack": "nonempty parsed JSON; archive exists; exit0",
+    "safe_unpack": "exit0",
+    "original_source_and_artifact_unavailable": "own fixture directories renamed before relocated checks",
+    "relocated_verify": "exit0",
+    "relocated_owner_selftest": "ok; no artifact node_modules",
+    "independent_package": "pass; bounded static check only",
+    "latest_starter_setup": "exit0; starterVerified=true; fixture install only",
+    "latest_starter_independent_verify": "exit0; 36 files; 4 notes; nitride one task row",
+    "owner_metadata": "receipt and parsed operational Owner.md both Etc/UTC, Fixture Owner"
+  },
+  "archive_sha256": "64f5042e5debeef4c6b6440f031b8cd08509c76b674e00305d71b91b9e1ed93d",
+  "comparison": {
+    "bundle_tar_sha256": "eeabb7acef3a0e7b968d7810c28ec2542b5b75ac3299c567b1499d6129942125",
+    "file_count": 38,
+    "payload_identical": true,
+    "different_payloads": [],
+    "manifest_built_at": "2026-10-28T23:37:30.953Z",
+    "bundle_built_at": "2026-10-28T23:35:16.770Z"
+  },
+  "missing_models": [
+    "main",
+    "compactor",
+    "subagent"
+  ],
+  "initial_failures": [
+    "Initial suite11/12 with Apple /usr/bin/python3 (conflict fixture HOME/Library appeared); suite12/12 using supplied real Python3.13 PATH",
+    "First offline BB toolchain cache missing at explicit BB_DATA_DIR; ENOTCACHED, then copied supplied cache to own fixture",
+    "First offline npm ci cache missed zod4.6.6; rerun with supplied home/cache copy succeeds using --ignore-scripts --legacy-peer-deps"
+  ],
+  "bounds": [
+    "cached development prerequisites supplied, not provisioned",
+    "install scripts disabled; no general script/native dependency compatibility claim",
+    "legacy-peer-deps used; npm ls_all clean for this lock, not an A2UI/Zod3 compatibility waiver",
+    "no provider/auth/inference/launchctl/live BB/state",
+    "older producer has no production snapshot renderer; no new-feature acceptance",
+    "latest starter29-test pass reported by owner lane, not independently repeated here"
+  ],
+  "external_evidence_pointer": "/tmp/exo-clean-independent-latest -> independent-proof.json and logs",
+  "separate_new_producer_review": {
+    "producer": "3b685b206d045d4fb0da64c1b1e5cb9d1b942411",
+    "clean": true,
+    "independent_checks": [
+      "offline cached npm ci",
+      "actual BB build only",
+      "owner build",
+      "typecheck",
+      "12 isolated/mock tests pass after short TMPDIR"
+    ],
+    "initial_failure": "Unix socket EINVAL from long macOS fixture path; retained; short dedicated /private/tmp rerun passes",
+    "committed_actual_bb_evidence": "Reviewed, not independently rerun. Parent ready/idle, retry same ID/count1; lost receipt fixture-injected, not process crash. No Pi/auth/owner.",
+    "scope": "Distinct from older pinned38-file package; no renderer/inference/lifecycle acceptance"
+  }
+}

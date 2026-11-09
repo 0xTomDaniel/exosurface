@@ -1,0 +1,15 @@
+(node:29538) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (1.237875ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (0.334417ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.169041ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.424625ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (1.871375ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107.665292

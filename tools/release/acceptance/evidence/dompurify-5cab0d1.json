@@ -1,0 +1,209 @@
+{
+  "schema": "exosurface-independent-dompurify-fix/0",
+  "producer": "5cab0d1dc97c9b5f3fd283d8080e339c5cf39bd7",
+  "source_status": "",
+  "environment": "Clean pinned disposable clone; empty-object allowlist; real Node24.15.0; fixture HOME/TMPDIR/BB_DATA_DIR and copied cache; offline ignore-scripts; no services/provider/network calls except loopback fixture",
+  "checks": [
+    {
+      "check": "rebuild",
+      "exit": 0
+    },
+    {
+      "check": "offline-strict-peer-ci",
+      "exit": 0
+    },
+    {
+      "check": "real-browser-markdown",
+      "exit": 1
+    },
+    {
+      "check": "real-browser-markdown-unmodified-retry",
+      "exit": 0
+    },
+    {
+      "check": "candidate-tests",
+      "exit": 0
+    },
+    {
+      "check": "default-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "source-typecheck",
+      "exit": 0
+    },
+    {
+      "check": "source-list",
+      "exit": 0
+    },
+    {
+      "check": "npm-ls-all",
+      "exit": 0
+    }
+  ],
+  "install": {
+    "packages": 44,
+    "strict_peers": true,
+    "lock_sha256": "4bc4e10c0e57d9ea6b35e02aca285f62e3ac6fb855419f798aa79df155c3b04b",
+    "lock_unchanged_by_install": true,
+    "logical_diff_only": true,
+    "changes": [
+      "Explicit root markdown0.2.1 dependency and existing entry relocated from React nested path",
+      "Scoped markdown0.2.1 DOMPurify3.4.11 to3.4.17 version/tarball/integrity only"
+    ]
+  },
+  "runtime_resolution": {
+    "application_root_markdown": "0.2.1, actual direct import resolves",
+    "markdown_and_root_dompurify": "3.4.17, actual Node/CJS and browser ESM versions asserted",
+    "a2ui_core": "0.13.0; compatible markdown core^0.13 peer retained",
+    "sdk": "Separate Zod4.6.6 actual contract execution passes"
+  },
+  "zod_artifact_files_unchanged_sha256": {
+    "zod-3.25.76-exosurface.1.tgz": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5",
+    "build.mjs": "0da39a45b8d526dc731f3bca963d342188e1f052364b3ecc6c13089e088269fa",
+    "LICENSE.upstream": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
+    "backport.patch": "d508c6a32209136be0077f1a5e29d8c759180ff7fd97fed647f682e6cb30bb76",
+    "upstream.json": "87d422ce431a1660b669fe3b35629f8aeab7c709413ddd7b3101dd00f1e7f6c3",
+    "NOTICE.md": "42104642a830029ec3db91f26be17d7a8ab8f15753614bf30f712b485612b2a7",
+    "artifact.json": "e088ca7cbaadf5faa79acdedbd4fee17abf6e3c9b4a9667c33ddcf8c6520d4ff"
+  },
+  "deterministic_upstream_integrity_verified_rebuild_matches_commit": true,
+  "dompurify_license_notices_match_producer_hashes": true,
+  "parity": {
+    "candidate_pass": 19,
+    "unchanged_legacy_upstream_pass": 36,
+    "unchanged_legacy_patched_pass": 36,
+    "default_and_source_typechecks": "pass, actual src/v3/types.ts compiler listing confirmed, explicit markdown import included",
+    "coverage": "Six source/ESM/CJS root/v3 entrypoints; actual core/converter and SDK contract; sampled accepted behavior, official/Exo catalog schema/ref maps and65-option workspace parity"
+  },
+  "browser": {
+    "configured_executable": "Installed Brave Browser Chromium131 executable identified in supplied producer run.sh",
+    "first_unmodified_run": {
+      "exit": 1,
+      "outcome": "20-second shutdown deadline killed browser with SIGKILL after receiving a result report (missingReport:false). No report JSON emitted; not counted as passing DOM assertions or runner."
+    },
+    "one_unmodified_retry": {
+      "exit": 0,
+      "report": {
+        "applicationDirectMarkdownImport": true,
+        "actualMarkdownDependencyDOMPurify": "3.4.17",
+        "advisoryRangeChecks": [
+          {
+            "id": "GHSA-55q2-fjhq-7xh7",
+            "range": "<= 3.4.12",
+            "fixedVersionExcluded": true
+          },
+          {
+            "id": "GHSA-c2j3-45gr-mqc4",
+            "range": "<= 3.4.11",
+            "fixedVersionExcluded": true
+          },
+          {
+            "id": "GHSA-6688-9rhm-gjv2",
+            "range": "<= 3.4.15",
+            "fixedVersionExcluded": true
+          },
+          {
+            "id": "GHSA-cg2g-xh64-v4q7",
+            "range": ">= 3.4.4, <= 3.4.16",
+            "fixedVersionExcluded": true
+          },
+          {
+            "id": "GHSA-mrv2-3pqr-j5jr",
+            "range": "<= 3.4.16",
+            "fixedVersionExcluded": true
+          },
+          {
+            "id": "GHSA-c6gr-qvv4-5v3f",
+            "range": "<= 3.4.16",
+            "fixedVersionExcluded": true
+          }
+        ],
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36",
+        "patchedVersion": "3.4.17",
+        "baselineVersion": "3.4.11",
+        "nonDefaultAdvisoryTestsAreNotApplicationReachabilityProof": true,
+        "tests": [
+          {
+            "name": "Actual browser ESM sanitizer versions",
+            "pass": true
+          },
+          {
+            "name": "Default markdown output/accepted formatting/classes equal old sanitizer and actual Node raw renderer",
+            "pass": true
+          },
+          {
+            "name": "Actual default sanitizer rejects unsafe attributes/protocols; ordinary formatting retained",
+            "pass": true
+          },
+          {
+            "name": "GHSA-55q2-fjhq-7xh7: hook-detached descendants neutralized",
+            "pass": true
+          },
+          {
+            "name": "GHSA-c2j3-45gr-mqc4: allowed custom elements pass afterSanitizeElements policy",
+            "pass": true
+          },
+          {
+            "name": "GHSA-6688-9rhm-gjv2: rawtext root fails closed or returns non-reparseable output",
+            "pass": true,
+            "details": {
+              "outcome": "Fail-closed TypeError; original dirty input is not a sanitizer result and must not be rendered"
+            }
+          },
+          {
+            "name": "GHSA-cg2g-xh64-v4q7: shadow-root split template fragments scrubbed",
+            "pass": true
+          },
+          {
+            "name": "GHSA-mrv2-3pqr-j5jr: hook-removed parent/sibling neutralized",
+            "pass": true
+          },
+          {
+            "name": "GHSA-c6gr-qvv4-5v3f: XHTML SMIL href attributeName guard",
+            "pass": true
+          }
+        ]
+      }
+    },
+    "no_timeout_relaxation_or_harness_edits": true,
+    "owned_process_check": "After retry, ps found no remaining processes referencing this independent disposable browser profile root; no unrelated process was touched",
+    "preserved_old_baseline_matches_independent3_4_11": true,
+    "limits": [
+      "Markdown-it uses installed UMD distribution through import-map adapter, raw outputs compared with actual Node renderer",
+      "Six non-default test-only advisory configurations are structural regressions, not application exploit reachability",
+      "Rawtext-root input throws fail-closed TypeError; dirty original is not a sanitized result",
+      "No template evaluation, SMIL activation or event-handler execution",
+      "No page/UI integration test duplicated; browser runner shutdown flake retained separately"
+    ]
+  },
+  "audit": {
+    "producer_saved_snapshot": {
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 4,
+        "critical": 0,
+        "total": 4
+      },
+      "packages": [
+        "@a2ui/markdown-it",
+        "@a2ui/react",
+        "@a2ui/web_core",
+        "zod"
+      ],
+      "independently_refreshed": false
+    },
+    "producer_snapshot_hashes_verified": true,
+    "review": "No DOMPurify entry; zero critical; four high package entries propagate the single Zod advisory through zod/web_core/markdown/react, not four distinct advisories",
+    "fresh_independent_audit": "Not run: network prohibited. No independent fresh-scanner-clearance claim."
+  },
+  "not_proven": [
+    "Blanket advisory or resource-safety clearance, residual-risk acceptance",
+    "Actual production-plugin renderer graph/security disposition",
+    "Existing UI textbox/press/owner/update/reopen",
+    "Real inference/authentication, clean-Mac/lifecycle/minimum-Node acceptance"
+  ],
+  "external_evidence_pointer": "/tmp/exo-domfix-independent-latest"
+}

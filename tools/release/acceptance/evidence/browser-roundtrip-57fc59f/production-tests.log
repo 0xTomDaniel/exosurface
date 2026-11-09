@@ -1,0 +1,37 @@
+(node:29540) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ fresh + retry use one profile/thread; no active-memory fabricated; preserve vault (111.89775ms)
+✔ profile configured interrupted; retries without replacement (98.106375ms)
+✔ existing profile unclaimed or newer state refuses, zero overwrite (54.476875ms)
+✔ durable lookup recovers BB-created thread before local receipt, never unrelated candidate (167.246042ms)
+✔ uncertain BB creation before/after spawn fails closed, no second spawn (229.659417ms)
+✔ environment allowlist strips inherited live selectors and vendor credentials (0.219791ms)
+✔ relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails (367.391375ms)
+✔ real socket → mock Pi RPC → response page; full long input; wrong thread refused (641.571834ms)
+✔ concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated (120.335625ms)
+✔ concrete BB receipt survives interruption before bootstrap local receipt (109.019792ms)
+✔ BB nonempty initialization input settles locally without Pi, auth, binding or launchctl (240.068542ms)
+✔ initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text (96.737041ms)
+(node:29541) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ adapter preserves entire long values, serializes edits, acknowledges exact published value and never seeds (1.870958ms)
+✔ adapter saves edits before press and forwards offered ref/context without inventing action authority (0.351917ms)
+✔ adapter does not acknowledge newer drafts with an older edit response (0.159416ms)
+✔ adapter never automatically retries an uncertain press, even with a new mutation ID (0.383667ms)
+✔ adapter rejects a concurrent second press and never sends a press after failed edit (1.993333ms)
+(node:29542) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime (2.688916ms)
+✔ durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite (224.289875ms)
+✔ press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry (280.957917ms)
+✔ production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking (474.311792ms)
+✔ built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps (1.189916ms)
+✔ unsupported persisted pages and interrupted mutation locks fail closed without overwrite (39.713959ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4297.707959
