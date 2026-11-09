@@ -122,8 +122,11 @@
       "pr": null
     },
     "acceptance-keep": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T235731Z-7f926953",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
+      "tests": []
     },
     "acceptance-keep-refresh": {
       "status": "planned",
@@ -273,33 +276,36 @@
     "acceptance-tree-newest-first": {
       "status": "built",
       "pr": 144,
-      "record": "20261109T030411Z-e5483e4f",
-      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "record": "20261109T235557Z-682d1c9e",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
       "tests": []
     },
     "acceptance-tree-new-first": {
       "status": "built",
       "pr": 144,
-      "record": "20261109T030242Z-911458ff",
-      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "record": "20261109T235402Z-3aca94eb",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
       "tests": []
     },
     "acceptance-sidebar-pinned": {
       "status": "built",
       "pr": 144,
-      "record": "20261109T030107Z-ef3c4ea7",
-      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "record": "20261109T235222Z-7933dbe6",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
       "tests": []
     },
     "acceptance-exo-block-own-page": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261109T234843Z-9c6182d3",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
+      "tests": []
     },
     "acceptance-exo-block-sent-page": {
       "status": "built",
       "pr": 144,
-      "record": "20261109T025942Z-c6623efb",
-      "commit": "1d97a9b4f16163c0e56fcda9eb7e0a42aa689662",
+      "record": "20261109T235110Z-4a944e3c",
+      "commit": "decc185116034c001660f80ed66db4a73c7559dc",
       "tests": []
     }
   }
