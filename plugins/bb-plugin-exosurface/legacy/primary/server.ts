@@ -95,7 +95,7 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       let choice: ModelChoice | undefined;
       try {
         choice = namerChoice(LOCAL_CONFIG).choice;
-        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), cwd: HOME });
+        const { name, usage } = await callNamer(choice, namePrompt(turn.message, turn.reply), { piCli: requireLocal(PI_CLI, 'piCli'), agentDir: requireLocal(local('primaryAgentDir'), 'primaryAgentDir'), stateDir: HOME, cwd: HOME });
         const used = choice;
         const person = await nameWrite(threadId, async () => {
           const person = await named(threadId);

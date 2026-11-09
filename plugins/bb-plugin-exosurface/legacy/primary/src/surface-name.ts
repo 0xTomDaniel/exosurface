@@ -5,7 +5,8 @@
 // own config and shared by every profile (spec N7), never in an OptChat profile config. The file is read at each naming, so a change applies to the next surface named. It is called through Pi (the
 // same CLI and JSONL RPC client the runtime uses, pi-rpc.ts) with no tools, extensions, context files or session, and must
 // run on exactly that model and thinking: anything else is a failure, never a substitute.
-import { createReadStream, existsSync, readFileSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { modelChoice, type ModelChoice } from '../../../src/config.ts';
 import { childEnv } from '../../../src/env.ts';
@@ -99,14 +100,35 @@ export function cleanName(answer: string) {
   return name;
 }
 
-/** One namer call through Pi's RPC mode. Rejects unless Pi runs the configured model and thinking, or on any model error. */
-export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; cwd: string }, timeoutMs = 60_000) {
+/** A key or header value Pi reads by reference ("!command", or only $VAR / ${VAR} environment names), not the secret itself. */
+const referenced = (value: unknown) => typeof value === 'string' && /^(!.+|(\$\{?[A-Za-z_]\w*\}?)+)$/.test(value);
+/** The namer's own Pi agent folder (#147): a fresh one under Exo's state dir for each naming, removed after it. A Pi that exits
+ * between creating a lock in its agent folder and registering it leaves the lock for its 30 s stale time; in its own folder
+ * that never holds up a surface's Pi on the primary agent folder. Its models.json is the primary agent folder's entry for the
+ * namer's provider, credentials by reference only: a literal key or header value is dropped, never copied, and no auth.json
+ * or other credential file is written. */
+export function namerAgentDir(stateDir: string, primaryAgentDir: string, provider: string) {
+  mkdirSync(join(stateDir, 'namer'), { recursive: true, mode: 0o700 });
+  const dir = mkdtempSync(join(stateDir, 'namer', 'pi-'));
+  const file = join(primaryAgentDir, 'models.json');
+  const entry = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).providers?.[provider] : undefined;
+  const { apiKey, headers, ...rest } = entry ?? {};
+  const kept = { ...rest, ...(referenced(apiKey) ? { apiKey } : {}),
+    ...(headers && typeof headers === 'object' ? { headers: Object.fromEntries(Object.entries(headers).filter(([, v]) => referenced(v))) } : {}) };
+  writeFileSync(join(dir, 'models.json'), JSON.stringify({ providers: entry ? { [provider]: kept } : {} }), { mode: 0o600 });
+  return dir;
+}
+
+/** One namer call through Pi's RPC mode, in the namer's own agent folder (namerAgentDir; `agentDir`, the primary agent folder
+ * its provider entry is read from). Rejects unless Pi runs the configured model and thinking, or on any model error. */
+export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli: string; agentDir: string; stateDir: string; cwd: string }, timeoutMs = 60_000) {
   const args = ['--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-prompt-templates', '--no-context-files', '--no-mcp', '--no-themes', '--no-approve',
     '--system-prompt', SYSTEM, '--provider', choice.provider, '--model', choice.model, '--thinking', choice.thinking];
   let finish: (v: { text: string; usage?: { input: number; output: number } } | Error) => void = () => {};
   const done = new Promise<{ text: string; usage?: { input: number; output: number } } | Error>(r => { finish = r; });
   let last: any;
-  const rpc = new PiRpc(at.piCli, args, at.cwd, childEnv({ PI_CODING_AGENT_DIR: at.agentDir, PI_TELEMETRY: '0' }), e => {
+  const agentDir = namerAgentDir(at.stateDir, at.agentDir, choice.provider);
+  const rpc = new PiRpc(at.piCli, args, at.cwd, childEnv({ PI_CODING_AGENT_DIR: agentDir, PI_TELEMETRY: '0' }), e => {
     if (e.type === 'message_end' && e.message?.role === 'assistant') last = e.message;
     if (e.type === 'agent_end') {
       if (!last) finish(new Error('The naming model gave no answer'));
@@ -123,5 +145,5 @@ export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli
     const answer = await done;
     if (answer instanceof Error) throw answer;
     return { name: cleanName(answer.text), usage: answer.usage };
-  } finally { clearTimeout(timer); await rpc.close(); }
+  } finally { clearTimeout(timer); await rpc.close(); rmSync(agentDir, { recursive: true, force: true }); }
 }
