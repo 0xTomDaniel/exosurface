@@ -49,6 +49,8 @@ export default function optchat(pi){
   if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
  });
  pi.on('session_shutdown',()=>{lock?.close();});
+ // A changing OptChat system prompt is journaled by Pi between the origin entry and the user's message.
+ pi.on('before_agent_start',e=>{const file=join(process.env.OPTCHAT_HOME,'system-prompt');return existsSync(file)?{systemPrompt:e.systemPrompt+'\\n'+readFileSync(file,'utf8')}:undefined;});
  // OptChat assembles the final request in context_with_system, its system prompt first; the pages extension, loaded after
  // it, then attaches the page state (legacy/surface/src/workspace-frame.ts).
  pi.on('context_with_system',e=>({messages:[...e.messages.filter(m=>m.role==='system'),...e.messages.filter(m=>m.role!=='system')]}));

@@ -3,8 +3,9 @@
 // the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
-import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { liveFixture, owner, bridge, modelRequests } from './mock-bb.ts';
 import { waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
@@ -145,7 +146,27 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   await until('the plum page as a pill', () => strip().some(b => b.textContent === 'Plum plan'));
   fireEvent.click(strip().find(b => b.textContent === 'Plum plan')!);
   await until('the plum page in view', () => inView() === 'plum');
-  await turn('which plums are ripe?');
+  // Match the installed owner journal: origin, optchat.run, changed system prompt, user, no-draw assistant.
+  writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
+  const question = 'which plums are ripe?', originalSend = f.rpc.exo_send;
+  const payloads: unknown[] = [];
+  f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
+  const threadId = (await f.rpc.thread_list(null)).threads[1].threadId;
+  try { await send(question); } finally { f.rpc.exo_send = originalSend; }
+  await until('the no-draw turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working);
+  assert.deepEqual(payloads, [{ threadId, text: question, page: 'plum' }]);
+  const journal = readFileSync(f.piRuns().find(r => r.profile === profile).sessionFile, 'utf8');
+  const entries = journal.trim().split('\n').map(line => JSON.parse(line));
+  const origin = entries.findLastIndex(e => e.customType === 'exosurface-press' && e.data.line === question);
+  const user = entries.findIndex((e, i) => i > origin && e.message?.role === 'user');
+  assert.ok(entries.slice(origin + 1, user).some(e => e.message?.role === 'system'), 'real Pi journal interleaves a system message');
+  const context = JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages);
+  assert.ok(context.includes('Plum plan') && context.includes('Pear plan') && context.includes('book the cabin'), 'full thread context reaches the model, not just the selected page');
+  const selected = await f.rpc.exo_block({ threadId, page: 'plum' });
+  assert.equal(selected.said, question);
+  assert.equal(selected.words, `Exo (${profile}): ${question}`);
+  assert.equal((await f.rpc.exo_block({ threadId, page: 'pear' })).said, 'draw pear: Pear plan');
+  await until('the selected page reply to render', () => reply()?.textContent === `Exo (${profile}): ${question}`);
   assert.equal(inView(), 'plum');
   assert.equal(said(), 'which plums are ripe?');
   assert.equal(reply()!.textContent, `Exo (${profile}): which plums are ripe?`);
