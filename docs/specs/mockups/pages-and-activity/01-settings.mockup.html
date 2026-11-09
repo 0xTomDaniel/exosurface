@@ -23,7 +23,9 @@
   .exo-side h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--exo-quiet); margin: .9rem 0 .2rem; font-weight: 600; }
   .exo-side .exo-row { padding: .3rem .5rem; border-radius: 6px; font-size: .9rem; }
   .exo-side .exo-row-nest { padding-left: 1.5rem; }
-  .exo-side .exo-settings-button { margin-top: auto; padding: .45rem .6rem; border-radius: 8px; border: 1px solid var(--exo-line); background: var(--exo-wash); font: inherit; font-size: .9rem; color: var(--exo-ink); text-align: left; }
+  .exo-side .exo-new-surface { padding: .45rem .6rem; border-radius: 8px; border: 1px solid var(--exo-line); background: var(--exo-paper); font: inherit; font-size: .9rem; font-weight: 600; color: var(--exo-ink); text-align: left; margin-bottom: .5rem; }
+  .exo-side .exo-side-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: .3rem; }
+  .exo-side .exo-settings-button { align-self: flex-start; margin-top: .5rem; width: 2.2rem; height: 2.2rem; border-radius: 8px; border: 1px solid var(--exo-line); background: var(--exo-wash); font: inherit; font-size: 1.15rem; line-height: 1; color: var(--exo-ink); }
   .exo-settings { flex: 1; padding: 1.5rem 2rem; max-width: 720px; }
   .exo-settings-top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--exo-line); padding-bottom: .75rem; margin-bottom: 1.2rem; }
   .exo-settings-top h1 { font-family: var(--exo-display); font-size: 1.1rem; font-weight: 650; margin: 0; }
@@ -46,15 +48,18 @@
     <span class="bb-tab">Chats</span>
     <span class="bb-tab bb-tab-on">Exo</span>
   </nav>
-  <aside class="exo-side" data-anchor="desktop-sidebar" data-illustrates="tab-settings-button sidebar-surfaces">
+  <aside class="exo-side" data-anchor="desktop-sidebar" data-illustrates="tab-settings-button sidebar-surfaces sidebar-pinned">
+    <button type="button" class="exo-new-surface" data-anchor="desktop-new-surface" data-illustrates="surface-new-surface sidebar-pinned">+ New surface</button>
+    <div class="exo-side-list" data-anchor="desktop-side-list" data-illustrates="sidebar-surfaces sidebar-order">
     <span class="exo-row">Home</span>
     <h3>Needs you</h3>
     <span class="exo-row">Weekend trip</span>
     <h3>Surfaces</h3>
+    <span class="exo-row">Weekend trip</span>
     <span class="exo-row">Garden plan</span>
     <span class="exo-row exo-row-nest">Backyard</span>
-    <span class="exo-row">Weekend trip</span>
-    <button type="button" class="exo-settings-button" data-anchor="desktop-settings-button" data-illustrates="tab-settings-button">Settings</button>
+    </div>
+    <button type="button" class="exo-settings-button" aria-label="Settings" title="Settings" data-anchor="desktop-settings-button" data-illustrates="tab-settings-button sidebar-pinned">&#9881;</button>
   </aside>
   <main class="exo-settings" data-anchor="desktop-settings" data-illustrates="tab-settings-shows acceptance-settings-shows boundary-settings">
     <div class="exo-settings-top">
