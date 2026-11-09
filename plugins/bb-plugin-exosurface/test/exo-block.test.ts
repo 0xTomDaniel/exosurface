@@ -146,6 +146,17 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   await until('the plum page as a pill', () => strip().some(b => b.textContent === 'Plum plan'));
   fireEvent.click(strip().find(b => b.textContent === 'Plum plan')!);
   await until('the plum page in view', () => inView() === 'plum');
+  const surfaceName = view.container.querySelector('nav[aria-label="Surfaces"] li button[aria-current="page"]')!.textContent!;
+  const surfaceRow = (name: string) => [...view.container.querySelectorAll('nav[aria-label="Surfaces"] li button')].find(button => button.textContent === name)!;
+  fireEvent.click(view.getByRole('button', { name: 'Settings', exact: true }));
+  await until('settings in view', () => !!view.queryByRole('button', { name: 'Close', exact: true }));
+  fireEvent.click(view.getByRole('button', { name: 'Close', exact: true }));
+  assert.equal(inView(), 'plum', 'closing settings restores the selected page');
+  fireEvent.click(surfaceRow('Home'));
+  await until('Home in view', () => view.container.querySelector('nav[aria-label="Surfaces"] button[aria-current="page"]')?.textContent === 'Home');
+  await until('the original surface listed after navigation', () => !!surfaceRow(surfaceName));
+  fireEvent.click(surfaceRow(surfaceName));
+  await until('the earlier page restored on returning to its surface', () => inView() === 'plum');
   // Match the installed owner journal: origin, optchat.run, changed system prompt, user, no-draw assistant.
   writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
   const question = 'which plums are ripe?', originalSend = f.rpc.exo_send;
