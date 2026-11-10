@@ -5,7 +5,7 @@
 // Usage: demo/surfaces <scenario>   Scenarios are dispatched by name; later tickets add theirs to SCENARIOS.
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown } from '../test/mock-bb.ts';
+import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown, modelRequests } from '../test/mock-bb.ts';
 import { exoTab } from '../test/exo-tab.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
@@ -352,6 +352,93 @@ async function exoBlockOwnPage() {
   }
 }
 
+// #187 (spec pages-and-activity E10, S3): the rendered surface view; Exo draws a kept page with a button, then a later page;
+// the person opens the kept page from the page strip, sends a question Exo answers without changing any page, and presses
+// the kept page's button, which draws nothing either. Each page's Exo block, as the view shows it.
+async function exoBlockSentPage() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  const main = () => view.container.querySelector('main'), input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea');
+  const said = () => main().querySelector('section[aria-label="Exo"] [data-exo-said]')?.textContent ?? '', reply = () => main().querySelector('section[aria-label="Exo"] [data-exo-reply]')?.textContent ?? '';
+  const inView = () => [...main().querySelectorAll('.exo-stage [data-surface]')].map(s => s.getAttribute('aria-label')).join(', ');
+  const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')];
+  const until = waiter(() => `in view ${inView()}; bubble ${JSON.stringify(said())}; reply ${JSON.stringify(reply())}`);
+  const idle = () => !!input() && !input().disabled && main().querySelector('p.exo-status')?.getAttribute('data-busy') === 'false' && !main().querySelector('section[aria-label="Exo"] [role="status"]');
+  const answer = text => `Exo (${f.setup.profile}): ${text}`;
+  const send = async (text, page) => {
+    await until('the input', idle);
+    fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply() === answer(text) && inView() === page);
+    console.log(`sent ${JSON.stringify(text.length > 60 ? text.slice(0, 57) + '...' : text)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+  };
+  let ok = true;
+  const show = (what, page, bubble, words) => {
+    const right = inView() === page && said() === bubble && reply() === answer(words);
+    console.log(`${what}: page in view ${JSON.stringify(inView())}`);
+    console.log(`  Exo block bubble: ${JSON.stringify(said())}`);
+    console.log(`  Exo block reply:  ${JSON.stringify(reply())}`);
+    ok &&= right;
+  };
+  try {
+    const snapshot = '- region "Plum plan" [ref=plum]:\n  - heading "Plum plan" [ref=title]\n  - button "Pick plums" [ref=pick] [action=pick]';
+    await send(`call: ${JSON.stringify({ baseRevision: 0, snapshot })}`, 'Plum plan');
+    await until('Keep on the idle drawn page', () => idle() && !!view.queryByRole('button', { name: 'Keep', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
+    await until('public canonical kept metadata', async () => (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint?.kept?.includes('plum') === true);
+    await until('plum marked kept in the strip', () => !!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }));
+    console.log('pressed literal Keep; canonical workspace delivery kept refs: [plum]; strip marks Plum plan kept');
+    await send('draw pear: Pear plan', 'Pear plan');
+    if (!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }) || !view.queryByRole('button', { name: 'Pear plan', exact: true })) throw new Error('kept and new page must both be listed');
+    fireEvent.click(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
+    await until('the plum page in view', () => inView() === 'Plum plan');
+    console.log('opened "Plum plan" from the page strip; "Pear plan" stays on stage');
+    fireEvent.click(view.getByRole('button', { name: 'Settings', exact: true }));
+    await until('settings opened', () => !!view.queryByRole('button', { name: 'Close', exact: true }));
+    fireEvent.click(view.getByRole('button', { name: 'Close', exact: true }));
+    fireEvent.click([...view.container.querySelectorAll('nav[aria-label="Surfaces"] > button')].find(button => button.textContent === 'New surface'));
+    await until('another surface opened', () => view.container.querySelector('nav[aria-label="Surfaces"] li button[aria-current="page"]')?.textContent !== 'Home');
+    fireEvent.click([...view.container.querySelectorAll('nav[aria-label="Surfaces"] li button')].find(button => button.textContent === 'Home'));
+    await until('earlier selected page restored after away/back', () => inView() === 'Plum plan');
+    console.log('Settings close and surface away/back preserve selected Plum plan, without changing the model stage');
+    // #189: Pi journals an updated system prompt after the send's origin, before its user message.
+    writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
+    const question = 'which plums are ripe?', originalSend = f.rpc.exo_send, payloads = [];
+    f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
+    try { await send(question, 'Plum plan'); } finally { f.rpc.exo_send = originalSend; }
+    if (JSON.stringify(payloads) !== JSON.stringify([{ threadId: 'primary', text: question, page: 'plum' }])) throw new Error('selected-page send payload differs');
+    const request = modelRequests(f).filter(r => r.profile === f.setup.profile).at(-1);
+    const user = request.started.findIndex(message => message.role === 'user' && JSON.stringify(message.content).includes(question));
+    if (user < 0 || !request.started.slice(0, user).some(message => message.role === 'system')) throw new Error('Pi did not emit a system update before the question');
+    const context = JSON.stringify(request.messages);
+    if (!context.includes('Plum plan') || !context.includes('Pear plan')) throw new Error('model lost surface context');
+    const selected = await f.rpc.exo_block({ threadId: 'primary', page: 'plum' }), newer = await f.rpc.exo_block({ threadId: 'primary', page: 'pear' });
+    if (selected.said !== question || selected.words !== answer(question) || newer.said !== 'draw pear: Pear plan' || newer.words !== answer('draw pear: Pear plan')) throw new Error('public page association differs');
+    console.log('Pi public message_start: system update -> question; selected-page RPC payload and both page associations verified; full thread context retained');
+    show('after the question (draws nothing)', 'Plum plan', question, question);
+    await until('the page to take a press', idle);
+    fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));
+    const line = '▸ Plum plan · Pick plums';
+    await until('Exo\'s finished turn on the press', () => reply() === answer(line));
+    console.log(`pressed "Pick plums" on "Plum plan" (draws nothing); Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+    show('after the press', 'Plum plan', 'Pick plums', line);
+    fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
+    await until('the pear page in view', () => inView() === 'Pear plan' && said() === 'draw pear: Pear plan');
+    show('back to the current topic', 'Pear plan', 'draw pear: Pear plan', 'draw pear: Pear plan');
+    if (!ok) throw new Error('exo-block-sent-page failed');
+  } finally {
+    view.unmount(); close();
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running; fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
 // #80: the rendered surface view with a drawn page: where the input sits, what its width follows, and where the fade over the
 // content beneath it starts. Read from computed styles (test/app-render.ts); jsdom does no layout, so true layout and paint
 // are the owner's RDP walkthrough.
@@ -525,17 +612,17 @@ async function rename() {
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')));
     await until('the new surface', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads.at(-1).threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
     await until('the new surface ready', () => boundaries(made) > 0);
     return made;
   };
   const renameTo = async (from, to) => {
-    fireEvent.click([...sidebar().querySelectorAll(`button[aria-label="Rename ${from}"]`)].at(-1));
+    fireEvent.click(sidebar().querySelector(`button[aria-label="Rename ${from}"]`)); // the most recently active such row (N9)
     const field = sidebar().querySelector('input[aria-label="Surface name"]');
     fireEvent.change(field, { target: { value: to } }); fireEvent.keyDown(field, { key: 'Enter' });
     console.log(`  renamed in the sidebar: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`);
-    await until(`the sidebar and the title to show ${to}`, () => entries().at(-1) === to && title() === to);
+    await until(`the sidebar and the title to show ${to}`, () => entries()[1] === to && title() === to);
   };
   const top = () => view.container.querySelector('main .exo-topline');
   const show = async (when, id) => { const n = await name(id); console.log(`  ${when.padEnd(30)} name ${JSON.stringify(n)}  title at the top ${JSON.stringify(title())}  sidebar: ${entries().join(', ')}  namer calls: ${f.model.requests.length}`); return n === title() ? n : `${n} (title ${title()})`; };
@@ -548,7 +635,7 @@ async function rename() {
     f.model.state.reply = 'Spring vegetable garden';
     const one = await newOne();
     await turn(one, 'Help me plan a vegetable garden for spring');
-    await settled(() => entries().at(-1) !== 'New surface' && title() !== 'New surface', 15000);
+    await settled(() => entries()[1] !== 'New surface' && title() !== 'New surface', 15000);
     const auto = await show('after auto-naming:', one), asked = f.model.requests.length;
     await renameTo(auto, 'Backyard');
     const renamed = await show('after the rename:', one);
@@ -574,11 +661,11 @@ async function rename() {
     console.log(`  double-click on the title "Cabin trip": a field holding ${JSON.stringify(held)}; pencil beside the title: ${pencil ? 'shown' : 'NONE'}`);
     fireEvent.change(field, { target: { value: 'Lake cabin' } }); fireEvent.keyDown(field, { key: 'Enter' });
     console.log('  typed "Lake cabin", Enter');
-    await until('the title and the sidebar to show Lake cabin', () => title() === 'Lake cabin' && entries().at(-1) === 'Lake cabin');
+    await until('the title and the sidebar to show Lake cabin', () => title() === 'Lake cabin' && entries()[1] === 'Lake cabin');
     const header = await show('after the title rename:', two);
     const ok = auto === 'Spring vegetable garden' && renamed === 'Backyard' && further === 'Backyard' && !againOne && early === 'Cabin trip' && kept === 'Cabin trip' && !againTwo
       && pencil && held === 'Cabin trip' && header === 'Lake cabin' && homeTitle === 'Home' && !homePencil
-      && entries().join('|') === 'Home|Backyard|Lake cabin' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
+      && entries().join('|') === 'Home|Lake cabin|Backyard' && homeRpc.startsWith('refused') && emptyRpc.startsWith('refused');
     if (!ok) throw new Error('rename failed');
   } finally {
     view.unmount(); close();
@@ -751,7 +838,7 @@ async function settings() {
   const surface = () => all('main[aria-label="Exo"]').length;
   const page = () => all('main[aria-label="Exo"] section[data-surface]').map(s => s.getAttribute('aria-label'));
   const facts = () => [...(panel()?.querySelectorAll('dt') ?? [])].map(dt => [dt.textContent, dt.nextElementSibling?.textContent]);
-  const press = (name, within) => fireEvent.click([...within().querySelectorAll('button')].find(b => b.textContent === name));
+  const press = (name, within) => fireEvent.click([...within().querySelectorAll('button')].find(b => (b.getAttribute('aria-label') ?? b.textContent) === name));
   const until = waiter(() => `in view ${JSON.stringify(inView())}; surface shown ${surface()}; page ${JSON.stringify(page())}; settings ${JSON.stringify(facts())}`);
   try {
     await until('Home with its page', () => inView().join() === 'Home' && page().join() === 'Week plan');
@@ -956,7 +1043,100 @@ async function pressNotes() {
   }
 }
 
-const SCENARIOS = { 'first-run': firstRun, settings, 'one-tab': oneTab, 'press-notes': pressNotes, 'press-bubble': pressBubble, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'exo-block-own-page': exoBlockOwnPage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
+// #186 (spec N8, N9, T3): the Exo tab with several surfaces on the live entry points (their order from BB's createdAt and
+// each surface's own Pi session journal); the sidebar's order before and after a send on the least recently active surface
+// and after New surface; then, the list scrolled to its end, where New surface and the Settings gear sit, by computed style.
+async function sidebarLayout() {
+  const f = await liveFixture(), ownerProcess = await owner(f), host = bridge(f);
+  f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+  const start = await host.start('primary'); if (start.error) throw new Error(start.error.message);
+  const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+  const view = kit.renderSlot(app.navPanels.find(p => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
+  f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
+  const nav = () => view.container.querySelector('nav[aria-label="Surfaces"]');
+  const entries = () => [...(nav()?.querySelectorAll('li') ?? [])].map(li => li.textContent);
+  const until = waiter(() => `sidebar ${entries().join(', ')}`);
+  const boundaries = id => host.deltas(id).filter(d => d.kind === 'turn.boundary').length;
+  const ids = async () => (await f.rpc.thread_list(null)).threads.map(t => t.threadId);
+  const newSurfaceButton = () => [...nav().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'));
+  const make = async name => {
+    const before = await ids(), count = entries().length;
+    fireEvent.click(newSurfaceButton());
+    await until('the new surface listed', () => entries().length === count + 1);
+    const made = (await ids()).find(id => !before.includes(id));
+    const started = await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }]); if (started.error) throw new Error(started.error.message);
+    await until('the new surface ready', () => boundaries(made) > 0);
+    await f.rpc.thread_rename({ threadId: made, name });
+    return made;
+  };
+  const turn = async (id, text) => {
+    const before = boundaries(id);
+    await f.rpc.exo_send({ threadId: id, text });
+    await until('the turn to end', () => boundaries(id) > before, 30000);
+  };
+  try {
+    await until('Home listed', () => entries().join('|') === 'Home');
+    const made = {};
+    for (const [name, text] of [['Reading list', 'Books for the summer'], ['Kitchen remodel', 'Price new cabinets'], ['Weekend trip', 'Plan a weekend at the coast'], ['Garden plan', 'Lay out three raised beds']]) {
+      made[name] = await make(name);
+      await turn(made[name], text);
+      console.log(`made ${JSON.stringify(name)}, sent ${JSON.stringify(text)}, Exo's turn finished`);
+    }
+    await until('four surfaces listed', () => entries().length === 5);
+    const before = entries().join(' | ');
+    console.log(`sidebar order before:            ${before}`);
+    const least = entries().at(-1);
+    // Exo answers this send only once released: the order right after the send, while Exo's turn runs (N9: a send alone
+    // is activity), then once the turn has ended.
+    const held = boundaries(made[least]);
+    await f.rpc.exo_send({ threadId: made[least], text: 'hold: Add two more novels' });
+    await until(`${least} at the top while Exo works`, () => entries()[1] === least);
+    const whileWorking = entries().join(' | '), working = boundaries(made[least]) === held;
+    console.log(`right after a send on ${JSON.stringify(least)}, ${working ? 'before Exo\'s turn ended' : 'EXO\'S TURN ALREADY ENDED'}: ${whileWorking}`);
+    for (const run of f.piRuns()) f.release(run.profile);
+    await until('the turn to end', () => boundaries(made[least]) > held, 30000);
+    const afterSend = entries().join(' | ');
+    console.log(`after a send on ${JSON.stringify(least)}, Exo's turn finished: ${afterSend}`);
+    await f.rpc.thread_rename({ threadId: made['Kitchen remodel'], name: 'Kitchen' });
+    await until('the rename shown', () => entries().includes('Kitchen'));
+    const afterRename = entries().join(' | ');
+    console.log(`after renaming "Kitchen remodel" (not activity): ${afterRename}`);
+    fireEvent.click(newSurfaceButton());
+    await until('the new surface listed', () => entries().length === 6);
+    const afterNew = entries().join(' | ');
+    console.log(`after New surface:               ${afterNew}`);
+    // Many more surfaces than fit; the person scrolls the list to its end.
+    for (let i = 0; i < 30; i++) await f.rpc.thread_new(null);
+    view.emitRealtime('surface-activity', {});
+    await until('35 surfaces listed', () => entries().length === 36);
+    const style = el => getComputedStyle(el), scrolls = el => ['auto', 'scroll'].includes(style(el).overflowY) || ['auto', 'scroll'].includes(style(el).overflow);
+    const regions = [nav(), ...nav().querySelectorAll('*')].filter(scrolls), list = regions[0];
+    list.scrollTop = list.scrollHeight;
+    const settingsButton = nav().querySelector('button[aria-label="Settings"]'), children = [...nav().children];
+    const where = b => `child ${children.indexOf(b) + 1} of ${children.length} in the sidebar, ${list.contains(b) ? 'INSIDE' : 'outside'} the scrolling list, ${list.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING ? 'above' : 'below'} it`;
+    console.log(`scrolling regions in the sidebar: ${regions.length} (${regions.map(r => `<${r.tagName.toLowerCase()}> overflow-y ${style(r).overflowY}, flex-grow ${style(r).flexGrow}, min-height ${style(r).minHeight}`).join('; ')}); the sidebar itself: overflow-y ${style(nav()).overflowY || 'visible'}, display ${style(nav()).display} ${style(nav()).flexDirection}`);
+    console.log(`the list holds ${[...list.querySelectorAll('li')].length} of ${entries().length} rows, first ${JSON.stringify(entries()[0])}, last ${JSON.stringify(entries().at(-1))}; scrolled to its end (scrollTop ${list.scrollTop} of ${list.scrollHeight}: jsdom does no layout)`);
+    console.log(`New surface: ${where(newSurfaceButton())}`);
+    console.log(`Settings (shown ${JSON.stringify(settingsButton.textContent)}, named ${JSON.stringify(settingsButton.getAttribute('aria-label'))}): ${where(settingsButton)}`);
+    const ok = before === 'Home | Garden plan | Weekend trip | Kitchen remodel | Reading list' && working && whileWorking === 'Home | Reading list | Garden plan | Weekend trip | Kitchen remodel' && afterSend === 'Home | Reading list | Garden plan | Weekend trip | Kitchen remodel'
+      && afterRename === 'Home | Reading list | Garden plan | Weekend trip | Kitchen' && afterNew === 'Home | New surface | Reading list | Garden plan | Weekend trip | Kitchen'
+      && regions.length === 1 && list !== nav() && children.indexOf(newSurfaceButton()) === 0 && !list.contains(newSurfaceButton()) && !list.contains(settingsButton)
+      && !!(list.compareDocumentPosition(settingsButton) & Node.DOCUMENT_POSITION_FOLLOWING) && [...list.querySelectorAll('li')].length === entries().length;
+    console.log(ok ? 'sidebar-layout: ok' : 'sidebar-layout: FAILED');
+    if (!ok) throw new Error('sidebar-layout failed');
+  } finally {
+    view.unmount(); close();
+    const pis = f.piRuns().map(r => r.pid); for (const pid of pis) reapOnExit(pid);
+    const ended = c => c.exitCode !== null || c.signalCode !== null;
+    const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
+    for (const child of [host.child, ownerProcess]) child.kill('SIGTERM');
+    await f.model.close();
+    if (await settled(() => ended(host.child) && ended(ownerProcess) && !pis.some(alive), 15000)) rmSync(f.root, { recursive: true, force: true });
+    else { console.error(`fixture processes still running; fixture kept at ${f.root}`); process.exitCode = 1; }
+  }
+}
+
+const SCENARIOS = { 'sidebar-layout': sidebarLayout, 'first-run': firstRun, settings, 'one-tab': oneTab, 'press-notes': pressNotes, 'press-bubble': pressBubble, 'press-to-top': pressToTop, 'bad-arguments': badArguments, 'parallel-threads': parallelThreads, 'new-surface': newSurface, 'exo-block': exoBlock, parallel, opening, 'one-page': onePage, 'exo-block-own-page': exoBlockOwnPage, 'exo-block-sent-page': exoBlockSentPage, 'second-bundle': secondBundle, 'input-floats': inputFloats, 'auto-name': autoName, rename, 'activity-line': activityLine, 'activity-block': activityBlock };
 const scenario = SCENARIOS[process.argv[2] ?? ''];
 if (!scenario) { console.error(`usage: demo/surfaces <${Object.keys(SCENARIOS).join('|')}>`); process.exit(2); }
 try { await scenario(); } catch (e) { console.error(e instanceof Error ? e.message : String(e)); process.exitCode = 1; }

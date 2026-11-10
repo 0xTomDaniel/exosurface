@@ -124,7 +124,7 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
@@ -133,7 +133,7 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
     // Exo's turn is held (the fake Exo model answers a "hold:" message only on release): the name must come meanwhile.
     fireEvent.change(input()!, { target: { value: 'hold: Help me plan raised garden beds' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
-    await until('the title and the sidebar show the name while Exo\'s turn runs', () => title() === 'Garden beds while working' && entries().at(-1) === 'Garden beds while working');
+    await until('the title and the sidebar show the name while Exo\'s turn runs', () => title() === 'Garden beds while working' && entries()[1] === 'Garden beds while working');
     assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
     assert.equal(f.model.requests.length - asked, 1);
     // Named from the person's first message alone: Exo's reply had not arrived.
@@ -148,9 +148,9 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
     fireEvent.change(input()!, { target: { value: 'Add a herb bed' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('the later turn ends', () => boundaries(made) > later);
-    assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Garden beds while working' || entries().at(-1) !== 'Garden beds while working'), true, 'the name stays after the turn and a later send');
+    assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Garden beds while working' || entries()[1] !== 'Garden beds while working'), true, 'the name stays after the turn and a later send');
     assert.equal(title(), 'Garden beds while working');
-    assert.equal(entries().at(-1), 'Garden beds while working');
+    assert.equal(entries()[1], 'Garden beds while working');
     assert.equal(await listedName(made), 'Garden beds while working');
     assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
   } finally { view.unmount(); f.realtime.deliver = undefined; }
@@ -170,7 +170,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
@@ -191,7 +191,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
     const sent = boundaries(made);
     fireEvent.change(input()!, { target: { value: 'hold: Plan a rose garden by the porch' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
-    await until('the name while Exo\'s turn runs', () => title() === 'Rose garden' && entries().at(-1) === 'Rose garden');
+    await until('the name while Exo\'s turn runs', () => title() === 'Rose garden' && entries()[1] === 'Rose garden');
     assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
     assert.equal(f.model.requests.length - asked, 1);
     const prompt = JSON.stringify(f.model.requests[asked].body);
@@ -228,7 +228,7 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
     const asked = f.model.requests.length;
@@ -244,7 +244,7 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
     const sent = boundaries(made);
     f.sendNow(made, 'Plan the orchard by the creek');
     await until('Exo\'s turn on the person\'s message', () => boundaries(made) > sent);
-    await until('the title and the sidebar show the name', () => title() === 'Creek orchard' && entries().at(-1) === 'Creek orchard');
+    await until('the title and the sidebar show the name', () => title() === 'Creek orchard' && entries()[1] === 'Creek orchard');
     assert.equal(f.model.requests.length - asked, 1, 'the namer is asked once');
     const prompt = JSON.stringify(f.model.requests[asked].body);
     assert.equal(prompt.includes('Plan the orchard by the creek'), true, 'the person\'s text reached the namer');

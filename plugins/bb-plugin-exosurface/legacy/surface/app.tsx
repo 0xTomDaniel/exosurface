@@ -43,15 +43,19 @@ function Canvas({view,local}:{view:WorkspaceView;local:Local}){
 }
 // The page strip: the surface's other pages as pills, under the title (owner walkthrough on PR #89). Same plan as the
 // Canvas, so the page in view and the pills never disagree.
-function PageStrip({view,local,setLocal}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void}){
+function PageStrip({view,local,setLocal,onKeep}:{view:WorkspaceView;local:Local;setLocal:(l:Local)=>void;onKeep:(id:string)=>void}){
  const[allEarlier,setAllEarlier]=useState(false);
  const snapshot=view.displayed,ids=snapshot?moduleIds(snapshot):[],plan=stagePlan(ids,snapshot?.layout,local);
  const dirty=new Set([...view.drafts.edits.values()].map(e=>e.surfaceId));
  const title=(id:string)=>snapshot?surfaceTitle(moduleNodes(snapshot,id),id):id;
- if(!plan||!(plan.receded.length>0||local))return null;
+ if(!plan)return null;
+ const kept=snapshot?.kept??[];
  return <nav className="exo-shelf" aria-label="Earlier in this conversation">
+    {kept.map(id=><button key={id} type="button" className="exo-pill" aria-label={`${title(id)} (kept)`} aria-pressed={plan.focus===id} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span><span aria-hidden="true"> ★</span></button>)}
+    {kept.length>0&&!kept.includes(plan.native)&&<button type="button" className="exo-pill" aria-pressed={plan.focus===plan.native} onClick={()=>setLocal(null)}>{title(plan.native)}</button>}
+    {!kept.includes(plan.focus)&&<button type="button" onClick={()=>onKeep(plan.focus)}>Keep</button>}
     <span>Earlier</span>
-    {(()=>{const recent=[...plan.receded].reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
+    {(()=>{const recent=[...plan.receded].filter(id=>!kept.includes(id)&&(kept.length===0||id!==plan.native)).reverse(),shown=allEarlier?recent:recent.filter((id,i)=>i<3||dirty.has(id));return <>{shown.map(id=><button key={id} type="button" className="exo-pill" aria-pressed={false} title={dirty.has(id)?'Has unsent edits':undefined} onClick={()=>setLocal({id,nativeFocus:plan.native})}><span>{title(id)}</span>{dirty.has(id)&&<span className="exo-dot" aria-label="unsent edits"/>}</button>)}{recent.length>shown.length&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(true)}>{recent.length-shown.length} more</button>}{allEarlier&&recent.length>3&&<button type="button" className="exo-more" onClick={()=>setAllEarlier(false)}>Fewer</button>}</>;})()}
     {local&&<button type="button" className="exo-follow" onClick={()=>setLocal(null)}>Back to the current topic</button>}
    </nav>;
 }
@@ -147,10 +151,10 @@ function BringBackCancel(){
   className="inline-flex h-8 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">↺ <span aria-hidden="true">✕</span></button>;
 }
 // threadId: a bound thread in view (a surface other than Home, #68); its own page state, envelopes naming it only.
-function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:string}){
+function SurfacePage({deployment,threadId,local,setLocal}:{deployment:'clone'|'main';threadId?:string;local:Local;setLocal:(value:Local)=>void}){
  const channel=threadId?'surface-thread':deployment==='clone'?'workspace':'surface-main',clone=deployment==='clone',other=(payload:unknown)=>!!threadId&&(payload as any)?.threadId!==threadId;
  const rpc=useRpc<typeof rpcContract>();type Status=Awaited<ReturnType<typeof getState>>;
- const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0),[local,setLocal]=useState<Local>(null);
+ const[state,setState]=useState<Status|null>(null),[error,setError]=useState(''),[pending,setPending]=useState(false),[ticks,tick]=useState(0);
  const saving=useRef(false),anyRewind=useRewind(),rewind=anyRewind&&(anyRewind.deployment??'clone')===deployment?anyRewind:null;
  useRealtime('pending-restore',v=>{if(!v)setRewind(null);});
  const view=useRef<WorkspaceView|null>(null),send=useRef<(a:any)=>void>(()=>{}),stateRef=useRef(state);stateRef.current=state;
@@ -174,6 +178,8 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
  },[rpc]);
  send.current=async(a:any)=>{const v=view.current,s=stateRef.current;if(!v||!s?.threadId||pending||s.streaming||v.preview||v.committed?.incomplete)return;setPending(true);setError('');try{if((await rpc.call('action',{threadId:s.threadId,revision:v.committed?.revision??0,event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}})).accepted)toTop();}catch(e){setError(String(e));}finally{setPending(false);}};
  const v=view.current,busy=pending||state?.streaming||!!v?.preview||v?.committed?.incomplete;
+ // The page in view: its Exo block shows its own latest turn (#134), and a send from the input is on it (E10).
+ const inView=!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined;
  // Shared state: edited inputs are saved to the committed canvas (revision-checked) while Exo is idle; no chat message, no turn.
  useEffect(()=>{
   const cur=view.current;if(!cur||busy||!state?.threadId||!cur.committed||saving.current)return;const edits=[...cur.drafts.edits.values()];if(!edits.length)return;
@@ -188,13 +194,13 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
    <div className="exo-top">
     <div className="exo-topline"><SurfaceTitle threadId={threadId}/><p aria-label="Surface revision">{clone?'Isolated clone, revision ':'Revision '}{v?.committed?.revision??0}</p></div>
     {/* Inert while Exo is busy, as the page is (unchanged from when the strip sat above the page). */}
-    {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal}/></div>}
+    {!(rewind&&state?.threadId)&&v&&v.processor.getSurfaces().size>0&&<div inert={!!busy}><PageStrip view={v} local={local} setLocal={setLocal} onKeep={async id=>{if(!state?.threadId||!v.committed||busy)return;setPending(true);setError('');try{await rpc.call('edit',{threadId:state.threadId,revision:v.committed.revision,surfaceId:id,updates:[],keep:true,mutationId:crypto.randomUUID()});recover.current();}catch(e){setError(String(e));}finally{setPending(false);}}}/></div>}
    </div>
-   <ExoBlock threadId={state?.threadId??null} page={!rewind&&v?.displayed?stagePlan(moduleIds(v.displayed),v.displayed.layout,local)?.focus:undefined}/>
+   <ExoBlock threadId={state?.threadId??null} page={inView}/>
    <p role="status" aria-live="polite" className="exo-status" data-busy={busy?'true':'false'}>{v?.preview?'Exo is drawing a page — controls wake up when it finishes.':busy?'Exo is updating a page…':state?.ready?null:(clone?'Clone owner is detached or starting.':'Exo is detached or starting.')}</p>
    <div inert={!!busy}>{rewind&&state?.threadId?<RewindView threadId={state.threadId} at={rewind} onPressed={toTop} revision={v?.committed?.revision??0} onCurrent={id=>{setRewind(null);setLocal({id,nativeFocus:v?.displayed?nativeFocus(moduleIds(v.displayed),v.displayed.layout):undefined});}}/>:v&&v.processor.getSurfaces().size>0?<Canvas view={v} local={local}/>:<p className="max-w-prose text-sm" style={{color:'var(--exo-quiet)'}}>Talk with Exo below. When a picture helps, a page appears here.</p>}</div>
    {error&&<p role="alert" className="mt-6 text-sm text-destructive">{error}</p>}
-   <SurfaceInput threadId={state?.threadId??null}/>
+   <SurfaceInput threadId={state?.threadId??null} page={inView}/>
   </div></main>
  </div>;
 }
@@ -205,8 +211,11 @@ function SurfacePage({deployment,threadId}:{deployment:'clone'|'main';threadId?:
 function ExoTab(){return <SetUpFirst><SurfacesPanel/></SetUpFirst>;}
 function SurfacesPanel(){
  const[inView,setInView]=useState<string|null>(null),[settings,setSettings]=useState(false);
+ const[selections,setSelections]=useState<Record<string,Local>>({});
+ const selectedKey=inView??'home',local=selections[selectedKey]??null;
+ const setLocal=(value:Local)=>setSelections(previous=>({...previous,[selectedKey]:value}));
  const open=(threadId:string|null)=>{setInView(threadId);setSettings(false);};
- return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
+ return <div className="flex h-full min-h-0"><ThreadSidebar inView={inView} onView={open} settings={settings} onSettings={()=>setSettings(true)}/><div hidden={settings} className="min-h-0 min-w-0 flex-1"><SurfacePage key={inView??'home'} deployment="main" threadId={inView??undefined} local={local} setLocal={setLocal}/></div>{settings&&<Settings onClose={()=>setSettings(false)}/>}</div>;
 }
 export default definePluginApp(app=>{
  app.slots.navPanel({id:'surface',path:'surface',title:'Exo',icon:'PanelsTopLeft',component:ExoTab});

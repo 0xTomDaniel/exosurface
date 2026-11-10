@@ -69,7 +69,7 @@ export function retirement(current:Snapshot|null,messages:any[],layout:Delta['la
   const ids=next?moduleIds(next):idsAfter(current,all);
   const bytes=next?JSON.stringify(next).length:Infinity;
   if(next&&ids.length<=MAX_SURFACES&&bytes<=MAX_BYTES*0.9)return {messages:all,retired};
-  const keep=new Set([...protect,...(next?.layout?.focus?[next.layout.focus]:[]),...(next?.layout?.beside??[])]);
+  const keep=new Set([...protect,...(current?.kept??[]),...(next?.layout?.focus?[next.layout.focus]:[]),...(next?.layout?.beside??[])]);
   const victim=ids.find(id=>!keep.has(id)&&!retired.includes(id));if(!victim){if(next)return {messages:all,retired};throw Error('Canvas bound exceeded by the surfaces in this call alone; split it into smaller surfaces');}
   retired.push(victim);all=[...all,{version:'v0.9.1',deleteSurface:{surfaceId:victim}}];
  }

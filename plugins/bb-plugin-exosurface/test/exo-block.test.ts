@@ -3,8 +3,9 @@
 // the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
-import { liveFixture, owner, bridge } from './mock-bb.ts';
+import { rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { liveFixture, owner, bridge, modelRequests } from './mock-bb.ts';
 import { waiter } from './wait.ts';
 import { renderedApp } from './app-render.ts';
 
@@ -128,4 +129,67 @@ test('after Exo withdraws the page in view, a message that draws nothing shows i
   await until('the week page\'s latest message and Exo\'s reply in its block', () => reply()?.textContent === `Exo (${profile}): and the hedge along the path`);
   assert.equal(said(), 'and the hedge along the path');
   assert.equal(count(block()!.textContent!, 'draw week'), 0);
+});
+
+// #187 (spec pages-and-activity E10, S3): a send or a press is on the page in view it came from.
+const said = () => block()?.querySelector('[data-exo-said]')?.textContent ?? '';
+const inView = () => [...view.container.querySelectorAll('.exo-stage [data-surface]')].map(s => s.getAttribute('data-surface')).join(',');
+
+test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from the kept page and answered without changing any page shows in that page\'s Exo block', async () => {
+  const profile = f.piRuns().at(-1).profile, strip = () => [...view.container.querySelectorAll('nav button[aria-pressed]')] as HTMLElement[];
+  const turn = async (text: string, answer = `Exo (${profile}): ${text}`) => { await send(text); await until(`Exo's reply to ${JSON.stringify(text)}`, () => reply()?.textContent === answer); };
+  // The kept page, with a button, made in reply to one message; a later page made in reply to another.
+  const revision = Number(view.getByLabelText('Surface revision').textContent!.replace('Revision ', ''));
+  const snapshot = '- region "Plum plan" [ref=plum]:\n  - heading "Plum plan" [ref=title]\n  - button "Pick plums" [ref=pick] [action=pick]';
+  await turn(`call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
+  await until('Keep on the idle plum page', () => !!view.queryByRole('button', { name: 'Keep', exact: true }) && view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
+  fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
+  await until('plum marked kept', () => !!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }));
+  await turn('draw pear: Pear plan');
+  fireEvent.click(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
+  await until('the plum page in view', () => inView() === 'plum');
+  const surfaceName = view.container.querySelector('nav[aria-label="Surfaces"] li button[aria-current="page"]')!.textContent!;
+  const surfaceRow = (name: string) => [...view.container.querySelectorAll('nav[aria-label="Surfaces"] li button')].find(button => button.textContent === name)!;
+  fireEvent.click(view.getByRole('button', { name: 'Settings', exact: true }));
+  await until('settings in view', () => !!view.queryByRole('button', { name: 'Close', exact: true }));
+  fireEvent.click(view.getByRole('button', { name: 'Close', exact: true }));
+  assert.equal(inView(), 'plum', 'closing settings restores the selected page');
+  fireEvent.click(surfaceRow('Home'));
+  await until('Home in view', () => view.container.querySelector('nav[aria-label="Surfaces"] button[aria-current="page"]')?.textContent === 'Home');
+  await until('the original surface listed after navigation', () => !!surfaceRow(surfaceName));
+  fireEvent.click(surfaceRow(surfaceName));
+  await until('the earlier page restored on returning to its surface', () => inView() === 'plum');
+  // Match the installed owner journal: origin, optchat.run, changed system prompt, user, no-draw assistant.
+  writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
+  const question = 'which plums are ripe?', originalSend = f.rpc.exo_send;
+  const payloads: unknown[] = [];
+  f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
+  const threadId = (await f.rpc.thread_list(null)).threads[1].threadId;
+  try { await send(question); } finally { f.rpc.exo_send = originalSend; }
+  await until('the question to reach the model', () => JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages).includes(question));
+  await until('the no-draw turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working);
+  assert.deepEqual(payloads, [{ threadId, text: question, page: 'plum' }]);
+  const started = modelRequests(f).filter(r => r.profile === profile).at(-1)!.started;
+  const user = started.findIndex(message => message.role === 'user' && JSON.stringify(message.content).includes(question));
+  assert.ok(user >= 0 && started.slice(0, user).some(message => message.role === 'system'), 'Pi emits a system update before the question at its public message boundary');
+  const context = JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages);
+  assert.ok(context.includes('Plum plan') && context.includes('Pear plan') && context.includes('book the cabin'), 'full thread context reaches the model, not just the selected page');
+  const selected = await f.rpc.exo_block({ threadId, page: 'plum' });
+  assert.equal(selected.said, question);
+  assert.equal(selected.words, `Exo (${profile}): ${question}`);
+  assert.equal((await f.rpc.exo_block({ threadId, page: 'pear' })).said, 'draw pear: Pear plan');
+  await until('the selected page reply to render', () => reply()?.textContent === `Exo (${profile}): ${question}`);
+  assert.equal(inView(), 'plum');
+  assert.equal(said(), 'which plums are ripe?');
+  assert.equal(reply()!.textContent, `Exo (${profile}): which plums are ripe?`);
+});
+
+test('a press is on the page its button sits on: a press that draws nothing shows in that page\'s Exo block, not the page on stage', async () => {
+  const profile = f.piRuns().at(-1).profile;
+  assert.equal(inView(), 'plum', 'the kept plum page in view, the pear page on stage');
+  await until('the page to take a press', () => !block()?.querySelector('[role="status"]') && view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
+  fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));
+  await until('the press and Exo\'s reply in the plum page\'s block', () => reply()?.textContent === `Exo (${profile}): ▸ Plum plan · Pick plums`);
+  assert.equal(inView(), 'plum');
+  assert.equal(said(), 'Pick plums');
 });

@@ -11,9 +11,12 @@ import { loadIf } from '../../src/store.ts';
 import { bindThread } from './src/thread-profiles.ts';
 import { join } from 'node:path';
 import { latestTurn, ownerWorking, ownerActivity, sessionOf } from './src/exo-turn.ts';
+import { lastActivity } from './src/last-activity.ts';
 import { FIRST_STEP } from './src/first-step.ts';
 import { validatePrompt } from '../../src/input.ts';
 import { existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { pressViaOwner } from '../surface/src/canvas-client.ts';
 // Logged once per process: the namer runs in the primary Pi agent folder (callNamer, an OAuth credential there).
 let namerInPrimaryLogged = false;
 const setupInput = z.object({ operationId: z.string().min(8).max(80), projectId: z.string().min(1), vault: z.string().min(1), piCli: z.string().min(1), optchat: z.string().min(1), authorizeInitialization: z.literal(true), recoverDeadLock: z.boolean().default(false) }).strict();
@@ -26,8 +29,10 @@ export const rpcContract = defineRpcContract({
   // The surface view's Exo block and input (#69, #79): the person's latest message (said) and Exo's words from that turn,
   // and a send from the input. With `page`, the page in view: that page's own latest turn (#134).
   exo_block: { input: z.object({ threadId: z.string(), page: z.string().optional() }).strict(), output: z.object({ working: z.boolean(), said: z.string(), words: z.string(), activity: z.string().optional() }) },
-  exo_send: { input: z.object({ threadId: z.string(), text: z.string() }).strict(), output: z.object({ sent: z.literal(true) }) },
-  // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other.
+  // `page`: the page in view the send came from, journaled beside the message (spec E10).
+  exo_send: { input: z.object({ threadId: z.string(), text: z.string(), page: z.string().optional() }).strict(), output: z.object({ sent: z.literal(true) }) },
+  // The sidebar's surfaces (spec N1, #68: Home and a flat list only): Home (the primary thread) first, then every other,
+  // most recently active first (N9, #186).
   thread_list: { input: z.null(), output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), home: z.boolean() })) }) },
   // New surface (spec S7): a new top-level Exo thread, bound to its own profile before its provider starts.
   thread_new: { input: z.null(), output: z.object({ threadId: z.string() }) },
@@ -120,6 +125,8 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
   // Fallback only: BB runs message.dispatch on every send but a person's Send-now on a queued row (that bypasses the hook
   // by design), so a first message sent that way is named once its turn ends, from the person's first message in BB's log.
   bb.events.on('thread.idle', ({ thread }) => { void nameSurface(thread.id); });
+  // A turn Exo finished is activity (spec N9): the sidebar reads the list again, its order by last activity.
+  bb.events.on('thread.idle', ({ thread }) => { if (thread.providerId === 'exo-spike') bb.realtime.publish('surface-activity', { threadId: thread.id }); });
   const awaiting = new Map<string, { entry: string | null; text: string }>(); // thread -> its latest person's entry when the input sent, and what it sent
   registerRpc(rpcContract, {
     canonical_setup_status: async () => { const journal = setupStatus(HOME); return { stage: journal?.stage ?? 'unconfigured', operationId: journal?.request.operationId ?? null, projectId: journal?.request.projectId ?? null, threadId: journal?.threadId ?? null, nativeDispatchAllowed: setup.nativeDispatchAllowed, initializationAvailable: setupPorts?.nativeDispatchAllowed ?? true, releaseReady: false as const, defaults: { vault: journal?.request.vault ?? local('vault'), piCli: journal?.request.piCli ?? local('piCli'), optchat: journal?.request.optchat ?? local('optchat') } }; },
@@ -154,19 +161,26 @@ export default function plugin(bb: BbPluginApi, registerRpc = bb.rpc.register.bi
       // Until the journal holds the message just sent, the person's latest message is the one the input sent.
       return { working, said: awaiting.get(threadId)?.text ?? turn.said, words: working ? '' : turn.words, ...(activity ? { activity } : {}) };
     },
-    exo_send: async ({ threadId, text }) => {
+    exo_send: async ({ threadId, text, page }) => {
       validatePrompt(text);
       if ((await bb.sdk.threads.get({ threadId })).providerId !== 'exo-spike' || binding(threadId)?.runtimeKind !== 'canonical') throw new Error('Only an Exo surface thread takes a send from its input');
+      // The send's entry, with the page it came from, goes beside the message, as a press's does (press-line.ts): it is the
+      // surface's activity at once (N9) and places a turn that draws nothing (E10). The owner journals it only while Exo is
+      // idle; a send it cannot journal still goes, and its turn is read as before (by the page on stage).
+      await pressViaOwner(threadId, { line: text, ...(page !== undefined ? { page } : {}), mutationId: randomUUID() }, HOME).catch(e => bb.log.warn(`Surface ${threadId}: the page of a send was not journaled: ${e instanceof Error ? e.message : String(e)}`));
       awaiting.set(threadId, { entry: latestTurn(sessionOf(threadId)).userEntry, text });
       try { await bb.sdk.threads.send({ threadId, input: [{ type: 'text', text, mentions: [] }], mode: 'auto' }); }
       catch (e) { awaiting.delete(threadId); throw e; }
+      // A send alone moves its surface up in the sidebar (N9), before Exo's turn ends.
+      bb.realtime.publish('surface-activity', { threadId });
       return { sent: true as const };
     },
     thread_list: async () => {
       const pointer = join(HOME, 'canonical-thread.json');
       if (!existsSync(pointer)) return { threads: [] };
       const home = load(pointer).threadId as string;
-      const others = (await bb.sdk.threads.list({ hasParent: false, limit: 200 })).filter(t => t.providerId === 'exo-spike' && t.id !== home && !t.parentThreadId && isBoundThread(t.id)).sort((a, b) => a.createdAt - b.createdAt);
+      const others = (await bb.sdk.threads.list({ hasParent: false, limit: 200 })).filter(t => t.providerId === 'exo-spike' && t.id !== home && !t.parentThreadId && isBoundThread(t.id))
+        .map(t => ({ t, at: lastActivity(t.createdAt, sessionOf(t.id)) })).sort((a, b) => b.at - a.at || b.t.createdAt - a.t.createdAt).map(({ t }) => t);
       return { threads: [{ threadId: home, title: 'Home', home: true }, ...others.map(t => ({ threadId: t.id, title: t.title || 'New surface', home: false }))] };
     },
     thread_new: async () => {

@@ -173,16 +173,26 @@ const server = createServer(socket => {
             const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
             const before = rev();
             if (m.type === 'canvas-data' && before !== m.request?.revision) { write(socket, { kind: 'response', id: m.id, ok: false, error: `stale_revision ${before}` }); return; }
-            await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            if (m.type === 'canvas-data') {
+              const { commands } = await page.pi.send('get_commands');
+              if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-data' && c.source === 'extension')) throw new Error('No workspace-data command in this Pi; edit refused');
+            }
+            const sent = await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            if (m.type === 'canvas-data' && sent?.disposition !== 'handled') { write(socket, { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return; }
             const after = rev();
             write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
           }
           if (m.type === 'canvas-press') {
-            // A press's button label (legacy/surface/src/press-line.ts), journaled in that thread's Pi just before the press is sent.
+            // A press's button label and the page a send or press came from (legacy/surface/src/press-line.ts), journaled in
+            // that thread's Pi just before the message is sent.
             const page = m.threadId === primary ? p : await laneFor(m.threadId);
             if (page.streaming || JSON.stringify(m.request).length > 20000) throw new Error('Idle Exo page command required');
-            await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line }) });
-            write(socket, { kind: 'response', id: m.id, ok: true, data: {} }); return;
+            // Pi takes a "/name" prompt as the person's message unless an extension registered that name: a record is sent only
+            // to a Pi whose page extension takes it, else it is skipped (never a message the model or the person sees).
+            const { commands } = await page.pi.send('get_commands');
+            if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-press' && c.source === 'extension')) throw new Error('No workspace-press command in this Pi; record skipped');
+            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: m.request?.page }) });
+            write(socket, sent?.disposition === 'handled' ? { kind: 'response', id: m.id, ok: true, data: {} } : { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return;
           }
           if (m.type === 'hello') {
             const target = await laneFor(m.threadId);

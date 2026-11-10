@@ -47,7 +47,7 @@ export const rpcContract=defineRpcContract({
   workspace:{input:z.object({deployment:z.enum(['clone','main']),threadId:z.string().optional(),cursor:cursorSchema.nullable()}).strict(),output:statusSchema},
   compose:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),mode:z.enum(['jev','haiku','haiku-both']),prompt:z.string().min(1).max(1600),resumeRunId:z.string().uuid().optional()}).strict(),output:z.object({completed:z.boolean()})},
   observerArm:{input:z.object({threadId:z.string(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),route:z.enum(['sidecar','direct','off'])}).strict(),output:z.object({armed:z.boolean()})},
-  edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(80),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).min(1).max(16),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
+  edit:{input:z.object({threadId:z.string(),revision:z.number().int().nonnegative(),surfaceId:z.string().max(80),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16),keep:z.literal(true).optional(),mutationId:z.string().uuid()}).strict(),output:z.object({revision:z.number()})},
   surfaceAt:{input:z.object({threadId:z.string()}).merge(versionRef).strict(),output:z.object({surface:z.string(),revision:z.number(),title:z.string(),at:z.string(),action:z.string(),current:z.boolean(),onStage:z.boolean(),panel:z.string(),snapshot:z.any()})},
   pending:{input:z.object({threadId:z.string(),op:z.enum(['get','set','clear']),version:versionRef.optional(),updates:z.array(z.object({path:z.string().max(160),value:z.any()}).strict()).max(16).optional()}).strict(),output:pendingSchema.nullable()},
   action:{input:z.object({threadId:z.string(),revision:z.number().int(),rewind:versionRef.optional(),event:eventSchema,actionId:z.string().uuid(),metadata:z.object({a2uiClientCapabilities:z.object({'v0.9.1':z.object({supportedCatalogIds:z.array(z.string())})})})}),output:z.object({accepted:z.boolean()})},
@@ -187,10 +187,13 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         try{
           // Code first: the submitted values become committed canvas state; then the person's press, in words, starts Exo's turn.
           if(updates.length)await canvasDataViaOwner(threadId,{revision,surfaceId:a.surfaceId,updates,mutationId,source:'press'},ownerHome(d));
-          // The button's label goes with the press as data, for the person's bubble (F6); the Exo block reads main's journals.
-          if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,mutationId:randomUUID()},ownerHome(d));
+          // The button's label goes with the press as data, for the person's bubble (F6), and the page its button sits on, the
+          // page the press is on (S3, E10); the Exo block reads main's journals.
+          if(d.name==='main')await pressViaOwner(threadId,{label:pressedLabel(prospective,a),line:text,page:a.surfaceId,mutationId:randomUUID()},ownerHome(d));
           await bb.sdk.threads.send({threadId,input:[{type:'text',text,mentions:[]}],mode:'auto'});
         }catch(e){claimed.set(d.threadId??d.name,null);throw e;}
+        // A press alone moves its surface up in the sidebar (N9), before Exo's turn ends: its entry is journaled above.
+        if(d.name==='main')bb.realtime.publish('surface-activity',{threadId});
         return {accepted:true};
       })();
       admitted.set(actionId,work);try{return await work;}catch(e){admitted.delete(actionId);throw e;}finally{while(admitted.size>100)admitted.delete(admitted.keys().next().value!);}

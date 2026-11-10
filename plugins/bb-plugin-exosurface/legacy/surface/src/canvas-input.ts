@@ -7,10 +7,15 @@ export const MAX_OWNER_COMMAND_UNITS=20000;
 export function assertOwnerCommand(request:unknown){
  if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error(`Page command exceeds ${MAX_OWNER_COMMAND_UNITS} serialized UTF-16 units. Nothing was changed or sent.`);
 }
-export type DataRequest={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press'};
+export type DataRequest={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
 export function planData(current:Snapshot,r:DataRequest){
  assertOwnerCommand(r);
  if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);
+ if(r.keep===true){
+  if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||r.updates.length||!moduleIds(current).includes(r.surfaceId))throw Error('Invalid Keep');
+  const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages:[],kept:[...new Set([...(current.kept??[]),r.surfaceId])]};
+  return {delta,next:applyDelta(current,delta)};
+ }
  if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||!r.updates.length||r.updates.length>16)throw Error('Invalid page edit. Nothing was changed or sent.');
  const bindings=inputBindings(current,r.surfaceId),messages=r.updates.map(u=>{const n=bindings.get(u.path);if(!n)throw Error('Only offered inputs can be edited');return {version:'v0.9.1',updateDataModel:{surfaceId:r.surfaceId,path:u.path,value:validateInput(n,u.value)}};});
  const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages};

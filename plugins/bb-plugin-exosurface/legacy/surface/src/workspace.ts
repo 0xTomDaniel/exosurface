@@ -16,7 +16,7 @@ const identifier=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 export const MAX_ACTION_UNITS=16384;
 const atom=z.union([z.string().max(MAX_ACTION_UNITS),z.number().finite(),z.boolean(),z.array(z.string().max(160)).max(24)]);
 export const actionSchema=z.object({name:identifier,surfaceId:identifier,sourceComponentId:identifier,timestamp:z.string().datetime(),context:z.record(identifier,atom)}).strict();
-export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(2).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
+export const snapshotSchema=z.object({revision:z.number().int().positive(),messages:z.array(z.any()).max(MAX_SURFACES*3),kept:z.array(identifier).max(MAX_SURFACES).optional(),layout:z.object({columns:z.number().int().min(1).max(3).optional(),wide:z.array(identifier).max(MAX_SURFACES).optional(),focus:identifier.optional(),beside:z.array(identifier).max(2).optional()}).strict().optional(),incremental:z.literal(true).optional(),incomplete:z.boolean().optional()}).strict();
 export type Snapshot=z.infer<typeof snapshotSchema>;
 // Official DataModel takes ownership of supplied value objects. Never let local
 // input mutation alias the authoritative React/RPC/native publication snapshot.
@@ -62,6 +62,7 @@ export function validateSnapshot(value:unknown):Snapshot{
  if(new TextEncoder().encode(JSON.stringify(s)).length>MAX_BYTES)throw Error('Workspace exceeds 40KB bound; delete stale surfaces');
  // Data snapshot uses root '/', unlike leaf component bindings.
  inspect(s.messages.map(m=>m.updateDataModel?{...m,updateDataModel:{...m.updateDataModel,path:undefined}}:m));
+ if(s.kept&&(new Set(s.kept).size!==s.kept.length||s.kept.some(id=>!moduleIds(s).includes(id))))throw Error('Kept pages must name unique live pages');
  if(!s.incremental&&s.messages.length%3)throw Error('Full snapshot uses three consecutive messages per surface');
  const ids=moduleIds(s);if((!s.incremental&&ids.length!==s.messages.length/3)||new Set(ids).size!==ids.length)throw Error('Duplicate/missing surface');
  if(s.messages.some(m=>!ids.includes((m.createSurface??m.updateComponents??m.updateDataModel)?.surfaceId)))throw Error('Uncreated surface');
@@ -105,7 +106,7 @@ export function validateSnapshot(value:unknown):Snapshot{
   p.processMessages(rendererMessages(s));if(p.getSurfaces().size!==ids.length)throw Error('Renderer surface count mismatch');return s.incremental?{...s,incomplete}:s;
  }finally{p.dispose();}
 }
-export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).min(1).max(32),layout:snapshotSchema.shape.layout}).strict();
+export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).max(32),kept:snapshotSchema.shape.kept,layout:snapshotSchema.shape.layout}).strict().refine(value=>value.messages.length>0||value.kept!==undefined,'Empty page change');
 export type Delta=z.infer<typeof deltaSchema>;
 export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  const d=deltaSchema.parse(raw);if(d.baseRevision!==(current?.revision??0)||d.revision!==d.baseRevision+1)throw Error('Stale/nonsequential delta');
@@ -124,7 +125,8 @@ export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  }
  const messages=[...surfaces].flatMap(([id,s])=>[s.create,...(s.nodes.length?[{version:s.componentVersion,updateComponents:{surfaceId:id,components:s.nodes}}]:[]),{version:s.dataVersion,updateDataModel:{surfaceId:id,path:'/',value:s.data}}]);
  const layout=nextLayout(current?.layout,d.layout,d.messages,[...surfaces.keys()]);
- return validateSnapshot({revision:d.revision,messages,incremental:true,...(layout?{layout}:{})});
+ const kept=(d.kept??current?.kept)?.filter(id=>surfaces.has(id));
+ return validateSnapshot({revision:d.revision,messages,incremental:true,...(layout?{layout}:{}),...(kept?{kept}:{})});
 }
 export function latestSnapshot(branch:readonly any[]):Snapshot|null{
  let current:Snapshot|null=null,start=0;

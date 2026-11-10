@@ -46,7 +46,7 @@ async function newSurface() {
   const count = entries().length;
   fireEvent.click(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li'))!);
   await until('the new surface listed', () => entries().length === count + 1);
-  const made = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+  const made = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(made) > 0);
   return made;
@@ -57,9 +57,10 @@ async function turn(threadId: string, text: string) {
   await f.rpc.exo_send({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
-/** The person renames the surface listed as `from` in the sidebar (the latest such row): its Rename action, type the name, Enter. */
+/** The person renames the surface listed as `from` in the sidebar (the most recently active such row, the first: spec N9): its
+ *  Rename action, type the name, Enter. */
 async function rename(from: string, to: string) {
-  fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${from}` }).at(-1)!);
+  fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${from}` })[0]!);
   const field = sidebar().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement;
   const shown = field.value;
   assert.equal(shown, from);
@@ -105,19 +106,19 @@ test('acceptance-rename: a surface renamed before its first turn keeps the perso
   const made = await newSurface();
   const asked = f.model.requests.length;
   await rename('New surface', 'Cabin trip');
-  await until('the sidebar and the title show Cabin trip', () => entries().at(-1) === 'Cabin trip' && title() === 'Cabin trip');
+  await until('the sidebar and the title show Cabin trip', () => entries()[1] === 'Cabin trip' && title() === 'Cabin trip');
   await turn(made, 'Book the cabin for June');
-  assert.ok(await unchanged(() => f.model.requests.length > asked || entries().at(-1) !== 'Cabin trip' || title() !== 'Cabin trip'));
-  assert.equal(entries().at(-1), 'Cabin trip');
+  assert.ok(await unchanged(() => f.model.requests.length > asked || entries()[1] !== 'Cabin trip' || title() !== 'Cabin trip'));
+  assert.equal(entries()[1], 'Cabin trip');
   assert.equal(title(), 'Cabin trip');
   assert.equal(await listedName(made), 'Cabin trip');
   assert.equal(f.model.requests.length, asked, 'the namer is never called for it');
 
   // Renamed back to "New surface" by the person: still the person's name, never Exo's.
   await rename('Cabin trip', 'New surface');
-  await until('the sidebar shows New surface', () => entries().at(-1) === 'New surface');
+  await until('the sidebar shows New surface', () => entries()[1] === 'New surface');
   await turn(made, 'And a canoe');
-  assert.ok(await unchanged(() => f.model.requests.length > asked || entries().at(-1) !== 'New surface'));
+  assert.ok(await unchanged(() => f.model.requests.length > asked || entries()[1] !== 'New surface'));
   assert.equal(await listedName(made), 'New surface');
   assert.equal(f.model.requests.length, asked);
 });
@@ -130,24 +131,24 @@ test('acceptance-rename: a rename landing while the naming call is in flight win
   await turn(made, 'Sort out the garage');
   await until('the naming call in flight', () => f.model.requests.length > asked);
   await rename('New surface', 'Garage');
-  await until('the sidebar shows Garage', () => entries().at(-1) === 'Garage');
+  await until('the sidebar shows Garage', () => entries()[1] === 'Garage');
   f.model.release();
   await until('the namer gives way', () => f.logs.some(l => l.includes(made) && l.includes('keeps the person\'s name')));
-  assert.ok(await unchanged(() => entries().at(-1) !== 'Garage' || title() !== 'Garage'));
+  assert.ok(await unchanged(() => entries()[1] !== 'Garage' || title() !== 'Garage'));
   assert.equal(await listedName(made), 'Garage');
-  assert.equal(entries().at(-1), 'Garage');
+  assert.equal(entries()[1], 'Garage');
   assert.equal(title(), 'Garage');
 });
 
 test('the rename RPC refuses Home, an empty name, a too long name and a thread that is not a bound Exo surface', async () => {
-  const surface = (await f.rpc.thread_list(null)).threads.at(-1)!.threadId;
+  const surface = (await f.rpc.thread_list(null)).threads[1].threadId;
   await assert.rejects(f.rpc.thread_rename({ threadId: f.setup.threadId, name: 'My home' }), /Home/);
   assert.equal((await f.rpc.thread_list(null)).threads[0].title, 'Home');
   await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: '   ' }), /empty/);
   await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: 'x'.repeat(81) }), /80/);
   await assert.rejects(f.rpc.thread_rename({ threadId: 'not-a-surface', name: 'Backyard' }), /Exo surface/);
   // The sidebar shows the refusal and keeps the field open.
-  const listed = entries().at(-1)!;
+  const listed = entries()[1]!;
   fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${listed}` }).at(-1)!);
   const field = sidebar().getByRole('textbox', { name: 'Surface name' });
   fireEvent.change(field, { target: { value: ' ' } });
@@ -155,7 +156,7 @@ test('the rename RPC refuses Home, an empty name, a too long name and a thread t
   await until('the refusal shown', () => /empty/.test(sidebar().queryByRole('alert')?.textContent ?? ''));
   assert.equal(shows('textbox', 'Surface name'), true);
   fireEvent.keyDown(sidebar().getByRole('textbox', { name: 'Surface name' }), { key: 'Escape' });
-  assert.equal(entries().at(-1), listed);
+  assert.equal(entries()[1], listed);
 });
 
 /** The top of the surface in view (its title and revision line), as queries; never held by an assert. */
@@ -184,7 +185,7 @@ test('acceptance-rename: the title at the top renames the surface in view (doubl
   f.model.state.reply = 'Patio lights';
   const made = await newSurface();
   await turn(made, 'Help me string lights over the patio');
-  await until('named at the top', () => title() === 'Patio lights' && entries().at(-1) === 'Patio lights');
+  await until('named at the top', () => title() === 'Patio lights' && entries()[1] === 'Patio lights');
 
   // The pencil beside the title and the sidebar's, judged by computed style from the app's own stylesheets.
   assert.deepEqual(pencilShows(header().getByRole('button', { name: 'Rename Patio lights' })), { resting: true, focused: true, shown: true });
@@ -204,7 +205,7 @@ test('acceptance-rename: the title at the top renames the surface in view (doubl
   fireEvent.doubleClick(header().getByRole('heading', { name: 'Patio lights' }));
   fireEvent.change(header().getByRole('textbox', { name: 'Surface name' }), { target: { value: 'Backyard' } });
   fireEvent.keyDown(header().getByRole('textbox', { name: 'Surface name' }), { key: 'Enter' });
-  await until('the title and the sidebar show Backyard', () => title() === 'Backyard' && entries().at(-1) === 'Backyard');
+  await until('the title and the sidebar show Backyard', () => title() === 'Backyard' && entries()[1] === 'Backyard');
   assert.equal(await listedName(made), 'Backyard');
   // The pencil opens the same field.
   fireEvent.click(header().getByRole('button', { name: 'Rename Backyard' }));

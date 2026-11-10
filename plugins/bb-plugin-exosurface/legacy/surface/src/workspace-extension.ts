@@ -165,7 +165,7 @@ export default function workspace(pi:ExtensionAPI){
     const cards=[...change.drawn.map(surface=>({surface,action:'drew' as Action,revision:next.revision})),...change.edited.map(surface=>({surface,action:'edited' as Action,revision:next.revision}))];
     const said=[change.drawn.length&&`drew page ${change.drawn.join(', ')}`,change.edited.length&&`edited page ${change.edited.join(', ')}`,change.deleted.length&&`withdrew page ${change.deleted.join(', ')}`].filter(Boolean).join('; ');
     // stage: the page on stage after this change as applyDelta settled it (withdrawal fallback included), null when none;
-    // the Exo block reads it to place a later turn that changed no page (#134).
+    // the Exo block reads it to place a later turn that changed no page and has no page it came from journaled (#134, #187).
     return {content:[{type:'text',text:`Surface revision ${next.revision}: ${said}.${focus?` On stage: ${focus}.`:''}`}],details:{delta,revision:next.revision,cards,retired,stage:focus??null}};
    }catch(error){
     // Validator errors come back as plain words, never raw schema JSON (which misled the model into cutting content).
@@ -194,10 +194,11 @@ export default function workspace(pi:ExtensionAPI){
   const {delta,next}=planData(current,r);
   pi.appendEntry(COMMIT,{source:r.source==='press'?'canvas-press':'canvas-edit',mutationId:r.mutationId,delta});remember(versionsOf(current,next,delta,r.source==='press'?'press':'edit',new Date().toISOString()));current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
  }});
- // A press's button label beside its press line (press-line.ts), journaled just before the press message; no model call.
- pi.registerCommand('workspace-press',{description:'Journal the pressed button\'s label beside the press message; no model call',handler:async(args)=>{
-  const r=JSON.parse(args);if(typeof r.label!=='string'||typeof r.line!=='string')throw Error('Invalid press');
-  pi.appendEntry<PressEntry>(PRESS_ENTRY,{label:r.label,line:r.line});
+ // A press's button label beside its press line, and the page a send or press came from (press-line.ts), journaled just
+ // before its message; no model call.
+ pi.registerCommand('workspace-press',{description:'Journal the pressed button\'s label and the page a send or press came from beside its message; no model call',handler:async(args)=>{
+  const r=JSON.parse(args),optional=(v:unknown)=>v===undefined||typeof v==='string';if(typeof r.line!=='string'||!optional(r.label)||!optional(r.page))throw Error('Invalid press');
+  pi.appendEntry<PressEntry>(PRESS_ENTRY,{...(r.label!==undefined?{label:r.label}:{}),line:r.line,...(r.page!==undefined?{page:r.page}:{})});
  }});
  // Bring back an earlier surface version (the person edited it or pressed one of its buttons): code commits
  // it as the current version on stage, with their edits; Exo hears about it with the next turn.

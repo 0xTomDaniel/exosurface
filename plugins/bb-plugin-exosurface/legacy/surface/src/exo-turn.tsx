@@ -38,14 +38,15 @@ export function ExoBlock({threadId,page}:{threadId:string|null;page?:string}){
  </section>;
 }
 
-export function SurfaceInput({threadId}:{threadId:string|null}){
+/** `page`: the page in view, journaled beside each send as the page it came from (spec E10). */
+export function SurfaceInput({threadId,page}:{threadId:string|null;page?:string}){
  const rpc=useRpc<typeof rpcContract>();
  const[text,setText]=useState(''),[sending,setSending]=useState(false),[error,setError]=useState('');
  const send=useCallback(async()=>{
   if(!threadId||sending||!text.trim())return;setSending(true);setError('');
-  try{await rpc.call('exo_send',{threadId,text});setText('');for(const listener of sent)listener(threadId,text);}
+  try{await rpc.call('exo_send',{threadId,text,...(page?{page}:{})});setText('');for(const listener of sent)listener(threadId,text);}
   catch(e){setError(String(e));}finally{setSending(false);}
- },[threadId,sending,text,rpc]);
+ },[threadId,page,sending,text,rpc]);
  const submit=(e:FormEvent)=>{e.preventDefault();void send();};
  const keys=(e:KeyboardEvent<HTMLTextAreaElement>)=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}};
  return <div className="exo-dock"><div aria-hidden="true" className="exo-fade"/><form aria-label="Message Exo" onSubmit={submit} className="exo-input flex items-end gap-2">

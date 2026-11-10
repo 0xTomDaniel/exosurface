@@ -122,8 +122,11 @@
       "pr": null
     },
     "acceptance-keep": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T022958Z-9bce9f2c",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     },
     "acceptance-keep-refresh": {
       "status": "planned",
@@ -271,24 +274,39 @@
       "tests": []
     },
     "acceptance-tree-newest-first": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T023840Z-f5b7b15b",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     },
     "acceptance-tree-new-first": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T023656Z-145c8161",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     },
     "acceptance-sidebar-pinned": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T023501Z-36c129c0",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     },
     "acceptance-exo-block-own-page": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T023127Z-995a2157",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     },
     "acceptance-exo-block-sent-page": {
-      "status": "planned",
-      "pr": null
+      "status": "built",
+      "pr": 144,
+      "record": "20261110T023329Z-57a9e8a8",
+      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "tests": []
     }
   }
 }

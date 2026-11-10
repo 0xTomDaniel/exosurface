@@ -2,11 +2,12 @@
 import {assertOwnerCommand} from './canvas-input.ts';
 import type {PressEntry} from './press-line.ts';
 import{createConnection}from'node:net';import{join}from'node:path';import{HOME}from'./state.ts';
-export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press'};
+export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
 export function canvasDataViaOwner(threadId:string,request:CanvasData,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-data',request,home);}
 export type CanvasRestore={surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string;announced?:boolean};
 export function restoreViaOwner(threadId:string,request:CanvasRestore,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-restore',request,home);}
-/** The pressed button's label beside the press line (press-line.ts), journaled just before the press message is sent. */
+/** The pressed button's label beside the press line, and the page a send or press came from (press-line.ts), journaled
+ *  just before its message is sent. */
 export function pressViaOwner(threadId:string,request:PressEntry&{mutationId:string},home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-press',request,home);}
 function ownerCommand(threadId:string,type:string,request:{mutationId:string},home:string):Promise<void>{assertOwnerCommand(request);return new Promise((resolve,reject)=>{
  const s=createConnection(join(home,'owner/rpc.sock'));let buffer='',done=false;const end=(e?:Error)=>{if(done)return;done=true;s.destroy();e?reject(e):resolve();};

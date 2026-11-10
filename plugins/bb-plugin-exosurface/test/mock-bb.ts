@@ -41,7 +41,8 @@ import{createAssistantMessageEventStream}from${JSON.stringify(PI_AI)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),arg=f=>process.argv.includes(f)?process.argv[process.argv.indexOf(f)+1]:undefined;
 export default function optchat(pi){
  pi.registerFlag('optchat-profile',{description:'OptChat profile',type:'string'});
- let lock,recorded=false;
+ let lock,recorded=false;const started=[];
+ pi.on('message_start',e=>{started.push(e.message);});
  pi.on('session_start',async(_e,ctx)=>{
   const name=pi.getFlag('optchat-profile');if(typeof name!=='string')return;const dir=join(process.env.OPTCHAT_HOME,'profiles',name);
   if(!lock){lock=createServer(s=>s.end(name+' · PID '+process.pid+' · fixture'));await new Promise((ok,no)=>{lock.once('error',no);lock.listen(join(dir,'lock.sock'),ok);});}
@@ -49,6 +50,8 @@ export default function optchat(pi){
   if(process.env.EXO_BB_INFO_FILE&&!recorded){recorded=true;appendFileSync(join(process.env.OPTCHAT_HOME,'pi-runs.jsonl'),JSON.stringify({pid:process.pid,profile:name,cwd:process.cwd(),model:arg('--provider')+'/'+arg('--model')+'/'+arg('--thinking'),instructions:readFileSync(join(dir,'AGENTS.md'),'utf8'),pageExtensions:process.argv.some(a=>a.endsWith('workspace-extension.js')),sessionFile:ctx.sessionManager.getSessionFile()})+'\\n');}
  });
  pi.on('session_shutdown',()=>{lock?.close();});
+ // A changing OptChat system prompt is journaled by Pi between the origin entry and the user's message.
+ pi.on('input',()=>{if(existsSync(join(process.env.OPTCHAT_HOME,'system-prompt')))pi.setActiveTools(pi.getActiveTools().filter(name=>name!=='read'));});
  // OptChat assembles the final request in context_with_system, its system prompt first; the pages extension, loaded after
  // it, then attaches the page state (legacy/surface/src/workspace-frame.ts).
  pi.on('context_with_system',e=>({messages:[...e.messages.filter(m=>m.role==='system'),...e.messages.filter(m=>m.role!=='system')]}));
@@ -57,7 +60,7 @@ export default function optchat(pi){
   models:[{id,name:'fixture',reasoning:true,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:200000,maxTokens:8192}],
   streamSimple:(model,context)=>{const stream=createAssistantMessageEventStream();
    const message={role:'assistant',api:model.api,provider:model.provider,model:model.id,content:[],timestamp:Date.now(),stopReason:'stop',usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};
-   appendFileSync(join(process.env.OPTCHAT_HOME,'model-requests.jsonl'),JSON.stringify({profile:pi.getFlag('optchat-profile'),messages:context.messages})+'\\n');
+   appendFileSync(join(process.env.OPTCHAT_HOME,'model-requests.jsonl'),JSON.stringify({profile:pi.getFlag('optchat-profile'),messages:context.messages,started:started.splice(0)})+'\\n');
    void(async()=>{// The person's messages, without the per-request page-state context the pages extension adds as a user message.
     const textOf=m=>typeof m.content==='string'?m.content:(m.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('');
     const messages=context.messages.filter(m=>!(m.role==='user'&&textOf(m).startsWith('Machine state of the surface')));
@@ -170,7 +173,9 @@ async function serverRpc(vault: string) {
         async spawn(args: { prompt: string; projectId: string; parentThreadId?: string; title?: string; providerId: string; environment: unknown }) {
           spawns.push(args);
           const id = threads.size ? `thread-${threads.size + 1}` : 'primary';
-          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt: 1000 + threads.size };
+          // createdAt as BB stamps it: the wall-clock milliseconds it was made, each thread after the one before.
+          const createdAt = Math.max(Date.now(), ...[...threads.values()].map(t => t.createdAt + 1));
+          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt };
           threads.set(id, created);
           for (const hook of hooks) {
             const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn', initiator: 'user', senderThreadId: null, queuedMessages: [] });
@@ -255,7 +260,7 @@ export async function liveFixture() {
   return { ...f, setup };
 }
 /** Each request the model received, in order: its profile and messages as sent (the page state among them). */
-export const modelRequests = (f: Fixture): { profile: string; messages: any[] }[] => { const file = join(f.optchatHome, 'model-requests.jsonl'); return existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)) : []; };
+export const modelRequests = (f: Fixture): { profile: string; messages: any[]; started: { role: string; content?: unknown }[] }[] => { const file = join(f.optchatHome, 'model-requests.jsonl'); return existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)) : []; };
 
 const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
 
