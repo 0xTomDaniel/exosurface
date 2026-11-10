@@ -173,7 +173,12 @@ const server = createServer(socket => {
             const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json'), rev = () => existsSync(file) ? load(file).workspace?.revision ?? 0 : 0;
             const before = rev();
             if (m.type === 'canvas-data' && before !== m.request?.revision) { write(socket, { kind: 'response', id: m.id, ok: false, error: `stale_revision ${before}` }); return; }
-            await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            if (m.type === 'canvas-data') {
+              const { commands } = await page.pi.send('get_commands');
+              if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-data' && c.source === 'extension')) throw new Error('No workspace-data command in this Pi; edit refused');
+            }
+            const sent = await page.pi.send('prompt', { message: (m.type === 'canvas-data' ? '/workspace-data ' : '/workspace-restore ') + JSON.stringify(m.request) });
+            if (m.type === 'canvas-data' && sent?.disposition !== 'handled') { write(socket, { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return; }
             const after = rev();
             write(socket, after === before + 1 ? { kind: 'response', id: m.id, ok: true, data: { revision: after } } : { kind: 'response', id: m.id, ok: false, error: `not_applied ${after}` }); return;
           }
