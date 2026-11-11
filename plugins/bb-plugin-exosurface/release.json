@@ -193,6 +193,14 @@
       "sha256": "3a96202f693128fcf0d6264ba92469b697a348023c966c3396f74a7189a3f137"
     },
     {
+      "path": "resources/licenses/@json-render_core-0.21.0/LICENSE",
+      "sha256": "014bb31e83d5c2e76aea1cc6e82217346ab41362f32cb355ad0f5c10aa0aeaff"
+    },
+    {
+      "path": "resources/licenses/@json-render_core-0.21.0/package.json",
+      "sha256": "4c1663a648d356d72c3974ae37f7fa9fd13d715fe0edad78194099806767d0e1"
+    },
+    {
       "path": "resources/licenses/@lit-labs_ssr-dom-shim-1.6.0/package.json",
       "sha256": "4750ce03f739519d8111819a01df6a772648909a323fffcfb2a5623ad77eac9a"
     },

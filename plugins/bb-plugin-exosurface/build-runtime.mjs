@@ -63,7 +63,8 @@ for(const graph of Object.values(graphs))for(const input of graph.inputs){
  packages.set(dir,{name:pkg.name,version:pkg.version,license:pkg.license});
 }
 // BB's frontend build does not expose an esbuild input manifest. Conservatively retain
-// notices for the entire locked installed graph too (a superset, not proof of loading).
+// notices for all active production importer graphs (a superset, not proof of loading).
+// Root tooling is build-only, not part of this product notice traversal.
 // Follow production dependency edges using Node's lookup paths and real directories.
 // pnpm's links are not directories to Dirent, and transitive packages live beside
 // their dependent in the virtual store, not inside its node_modules.
@@ -82,7 +83,8 @@ function installedPackages(project){
   else if(pkg.dependencies?.[name]&&!pkg.optionalDependencies?.[name])throw Error('Missing installed production dependency: '+name+' from '+dir);
  }
 }
-for(const project of ['.','legacy/surface']){
+for(const {importer} of dependencyProjects.filter(project=>project.id!=='tooling')){
+ const project=relative(pluginRoot,importer);
  const pkg=JSON.parse(readFileSync(join(root,project,'package.json'),'utf8'));
  const req=createRequire(join(root,project,'package.json'));
  for(const name of Object.keys(pkg.dependencies||{})){

@@ -15,7 +15,7 @@ const plugin = join(import.meta.dirname, '..');
 const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c', 'user.name=release-clean', '-c', 'user.email=release-clean@invalid', ...args], { cwd, encoding: 'utf8', timeout: 60_000 });
 
 test('the runtime build leaves the tracked release.json unchanged', async t => {
-  for (const modules of ['node_modules', 'legacy/surface/node_modules'])
+  for (const modules of ['node_modules', 'legacy/surface/node_modules', 'legacy/surface/composition/node_modules'])
     assert.ok(existsSync(join(plugin, modules)), `${modules} missing: run just setup (frozen pnpm installation) before the offline gate`);
   const copy = mkdtempSync(join(tmpdir(), 'exosurface-release-clean-'));
   t.after(() => rmSync(copy, { recursive: true, force: true }));
@@ -27,7 +27,7 @@ test('the runtime build leaves the tracked release.json unchanged', async t => {
   }
   // release.json as tracked (git's index), not as a build before this one (the gate's own) left it on disk.
   writeFileSync(join(copy, 'release.json'), git(plugin, 'show', ':./release.json'));
-  for (const modules of ['node_modules', 'legacy/surface/node_modules']) symlinkSync(join(plugin, modules), join(copy, modules), 'dir');
+  for (const modules of ['node_modules', 'legacy/surface/node_modules', 'legacy/surface/composition/node_modules']) symlinkSync(join(plugin, modules), join(copy, modules), 'dir');
   git(copy, 'init', '-q'); git(copy, 'add', 'release.json'); git(copy, 'commit', '-q', '-m', 'tracked release.json');
 
   const build = reaped(spawn(process.execPath, [...PARENT_WATCH, 'build-runtime.mjs'], { cwd: copy, stdio: ['ignore', 'pipe', 'pipe'] }));
