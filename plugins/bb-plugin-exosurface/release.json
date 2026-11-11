@@ -630,15 +630,15 @@
     },
     {
       "path": "resources/provenance/workspace/mise.lock",
-      "sha256": "1f594b3a6d4f8e6a0f0b0ea8d947f695de97fba0c11fcfcaf6b210a48fafd520"
+      "sha256": "771e091c5c7cc599790772f27da201b0841d8793167f3ba8e5bc3ee1044911c9"
     },
     {
       "path": "resources/provenance/workspace/mise.toml",
-      "sha256": "a572d4c5465f29409d7396248835490eadcb2caadac184b8eab09238f91c9443"
+      "sha256": "97264710545430dbf965b49bd3e3d6b6948558b096b21ef1ca2e5aaddd074284"
     },
     {
       "path": "resources/provenance/workspace/package.json",
-      "sha256": "8812498377589a678b3f5ad57946429bc90b7fd18d14674faa2a9d731bf19516"
+      "sha256": "3a7f57df546a4bfda475fcf95d8e5c2647ad43a0a4d6bec6718e450b8baca935"
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
@@ -654,11 +654,11 @@
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
-      "sha256": "a4817ef078378ceb07d2b8b14529eea35419e47721eca02a3d49561fb7911da8"
+      "sha256": "4895c0a400d08fc845853a33ce2ed27019389b383f28a67dac7069d6a882c3ac"
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",
-      "sha256": "6581a79825f96d086a892261abd28581eabdb93188b4c595c4dacc395d0a73f4"
+      "sha256": "e2ea0f8aa7af2eade056bb70f1b080968fd23d340ada5e9897bebe7f91d8b4ff"
     },
     {
       "path": "resources/provenance/workspace/pnpm-workspace.yaml",

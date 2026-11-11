@@ -13,7 +13,7 @@
     "test": "scripts/check",
     "build": "bb plugin build && node build.mjs && node build-runtime.mjs",
     "build:owner": "node build.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --workspace-root exec tsc --project plugins/bb-plugin-exosurface/tsconfig.json --noEmit",
     "build:runtime": "node build-runtime.mjs"
   },
   "bb": {
@@ -34,7 +34,6 @@
     "typebox": "1.3.27"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
     "@types/node": "22.20.5",
     "@types/react": "19.3.0",
     "@earendil-works/pi-coding-agent": "1.1.0",
