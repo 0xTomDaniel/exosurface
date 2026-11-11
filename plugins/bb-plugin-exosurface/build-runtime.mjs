@@ -1,9 +1,9 @@
 // Package the existing owner and actual extensions; no checkout-relative runtime imports.
 import {build} from 'esbuild';
-import {isBuiltin} from 'node:module';
-import {cpSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync,rmSync,lstatSync} from 'node:fs';
+import {isBuiltin,createRequire} from 'node:module';
+import {cpSync,existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync,rmSync,lstatSync,realpathSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-import {dirname,join,relative} from 'node:path';
+import {dirname,join,relative,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=dirname(fileURLToPath(import.meta.url));
 const entries={
@@ -22,18 +22,40 @@ for(const [name,entry] of Object.entries(entries)){
  if(inputs.some(input=>input.includes('@json-render/core')||input.endsWith('composition/engine.ts')))throw Error('Archived composition entered active runtime');
  graphs[name]={entry,inputs,outputs:result.metafile.outputs};
 }
+// Native BB source packaging follows the compiler's local import closure, not
+// a historical hand-maintained list. Dependencies remain the frozen graph.
+const sourceGraph=await build({absWorkingDir:root,entryPoints:['app.tsx','host.ts','server.ts'],outdir:'dist/source-closure',bundle:true,packages:'external',write:false,metafile:true,format:'esm',platform:'node',target:'node22.19',jsx:'automatic',loader:{'.css':'text'},logLevel:'error'});
+const sourceInputs=Object.keys(sourceGraph.metafile.inputs).sort();
+const dependencyInputs=['legacy/surface/package.json','legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz','legacy/primary/src/canonical-initialization.ts'];
 // Resources are generated, never a checkout dependency or evidence directory.
 if(existsSync(join(root,'resources')))rmSync(join(root,'resources'),{recursive:true});
 mkdirSync(join(root,'resources'),{recursive:true});
 cpSync(join(root,'legacy/surface/skills'),join(root,'resources/skills'),{recursive:true});
 cpSync(join(root,'legacy/surface/vendor/zod3'),join(root,'resources/provenance/zod3'),{recursive:true});
-mkdirSync(join(root,'resources/provenance/surface'),{recursive:true});
-for(const file of ['package.json','package-lock.json'])cpSync(join(root,'legacy/surface',file),join(root,'resources/provenance/surface',file));
+// Locate the workspace owning the installed graph, including when source is
+// built in another directory with the original node_modules linked into it.
+let workspace=realpathSync(join(root,'node_modules'));
+while(!existsSync(join(workspace,'pnpm-workspace.yaml'))){
+ const parent=dirname(workspace);if(parent===workspace)throw Error('Installed pnpm workspace not found');workspace=parent;
+}
+const pluginRoot=relative(workspace,dirname(realpathSync(join(root,'node_modules')))).replaceAll('\\','/');
+const dependencyProjects=[
+ {id:'tooling',importer:'.'},
+ {id:'plugin',importer:pluginRoot},
+ {id:'surface',importer:pluginRoot+'/legacy/surface'},
+ {id:'composition',importer:pluginRoot+'/legacy/surface/composition'},
+];
+const snapshot='resources/provenance/workspace';
+const graphFiles=['pnpm-lock.yaml','pnpm-workspace.yaml','.npmrc','mise.toml','mise.lock','mise-version',...dependencyProjects.map(({importer})=>importer==='.'?'package.json':importer+'/package.json'),pluginRoot+'/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz'];
+for(const file of graphFiles){
+ const dest=join(root,snapshot,file);mkdirSync(dirname(dest),{recursive:true});
+ cpSync(join(workspace,file),dest);
+}
 // Preserve dependency license/notice files from every package that actually entered these bundles.
 const packages=new Map();
 for(const graph of Object.values(graphs))for(const input of graph.inputs){
  if(!input.includes('node_modules/'))continue;
- let dir=dirname(join(root,input)),pkg;
+ let dir=dirname(resolve(root,input)),pkg;
  for(;;){
   if(existsSync(join(dir,'package.json'))){const candidate=JSON.parse(readFileSync(join(dir,'package.json'),'utf8'));if(candidate.name&&candidate.version){pkg=candidate;break;}}
   const parent=dirname(dir);if(parent===dir)throw Error('Package provenance missing: '+input);dir=parent;
@@ -42,33 +64,49 @@ for(const graph of Object.values(graphs))for(const input of graph.inputs){
 }
 // BB's frontend build does not expose an esbuild input manifest. Conservatively retain
 // notices for the entire locked installed graph too (a superset, not proof of loading).
-// Only what a production install puts there on every platform: lock entries neither dev nor os/cpu-specific, so the
-// tracked release.json is the same bytes after any full `npm ci` on Linux or macOS (#139).
-const shipped=project=>{const lock=JSON.parse(readFileSync(join(project,'package-lock.json'),'utf8')).packages;return dir=>{const entry=lock[relative(project,dir).replaceAll('\\','/')];return !!entry&&!entry.dev&&!entry.os&&!entry.cpu;};};
-function installedPackages(modules,ships){
- if(!existsSync(modules))return;
- for(const ent of readdirSync(modules,{withFileTypes:true})){
-  if(!ent.isDirectory())continue; // workspace links are handled by their explicit source tree below.
-  const dir=join(modules,ent.name);
-  if(ent.name.startsWith('@')){installedPackages(dir,ships);continue;}
-  if(existsSync(join(dir,'package.json'))&&ships(dir)){const pkg=JSON.parse(readFileSync(join(dir,'package.json'),'utf8'));if(pkg.name&&pkg.version)packages.set(dir,{name:pkg.name,version:pkg.version,license:pkg.license});}
-  installedPackages(join(dir,'node_modules'),ships);
+// Follow production dependency edges using Node's lookup paths and real directories.
+// pnpm's links are not directories to Dirent, and transitive packages live beside
+// their dependent in the virtual store, not inside its node_modules.
+const visited=new Set();
+function installedPackages(project){
+ const dir=realpathSync(project);
+ if(visited.has(dir))return;
+ visited.add(dir);
+ const pkg=JSON.parse(readFileSync(join(dir,'package.json'),'utf8'));
+ if(pkg.os||pkg.cpu)return; // platform-only packages are not portable release provenance.
+ if(pkg.name&&pkg.version)packages.set(dir,{name:pkg.name,version:pkg.version,license:pkg.license});
+ const req=createRequire(join(dir,'package.json'));
+ for(const name of Object.keys({...pkg.dependencies,...pkg.optionalDependencies,...pkg.peerDependencies})){
+  const found=(req.resolve.paths(name)||[]).map(base=>join(base,name)).find(base=>existsSync(join(base,'package.json')));
+  if(found)installedPackages(found);
+  else if(pkg.dependencies?.[name]&&!pkg.optionalDependencies?.[name])throw Error('Missing installed production dependency: '+name+' from '+dir);
  }
 }
-installedPackages(join(root,'node_modules'),shipped(root));
-installedPackages(join(root,'legacy/surface/node_modules'),shipped(join(root,'legacy/surface')));
+for(const project of ['.','legacy/surface']){
+ const pkg=JSON.parse(readFileSync(join(root,project,'package.json'),'utf8'));
+ const req=createRequire(join(root,project,'package.json'));
+ for(const name of Object.keys(pkg.dependencies||{})){
+  const found=(req.resolve.paths(name)||[]).map(base=>join(base,name)).find(base=>existsSync(join(base,'package.json')));
+  if(!found)throw Error('Missing installed production dependency: '+name);
+  installedPackages(found);
+ }
+}
 for(const [dir,pkg] of packages){
  const dest=join(root,'resources/licenses',pkg.name.replaceAll('/','_')+'-'+pkg.version);mkdirSync(dest,{recursive:true});
  writeFileSync(join(dest,'package.json'),JSON.stringify(pkg,null,2)+'\n');
  for(const name of readdirSync(dir))if(/^(license|notice|copying)(\.|$)/i.test(name))cpSync(join(dir,name),join(dest,name),{recursive:true});
 }
-writeFileSync(join(root,'dist/runtime-graph.json'),JSON.stringify({format:'exosurface-runtime-graph/0',releaseReady:false,entries:graphs},null,2)+'\n');
+writeFileSync(join(root,'dist/runtime-graph.json'),JSON.stringify({format:'exosurface-runtime-graph/0',releaseReady:false,entries:graphs,sourceClosure:{entries:['app.tsx','host.ts','server.ts'],inputs:sourceInputs}},null,2)+'\n');
 
 // Coordinated additive exosurface-package/0 producer contract. No self hashing.
 const releasePath=join(root,'release.json'),release=JSON.parse(readFileSync(releasePath,'utf8'));
 if(release.releaseReady!==false)throw Error('Publication provenance guard must remain false');
-release.files=[...new Set([...release.files,'resources/**'])];
-release.dependencyProjects=[{id:'surface',package:'resources/provenance/surface/package.json',lock:'resources/provenance/surface/package-lock.json',sourcePackage:'legacy/surface/package.json',sourceLock:'legacy/surface/package-lock.json'}];
+release.files=[...new Set([...release.files.filter(file=>!file.startsWith('legacy/')&&file!=='package-lock.json'),'resources/**',...[...new Set([...sourceInputs.filter(file=>file.startsWith('legacy/')),...dependencyInputs])].sort()])];
+release.dependencyProjects=dependencyProjects.map(({id,importer})=>({
+ id,sourceRoot:'repository',pluginRoot,importer,
+ sourcePackage:importer==='.'?'package.json':importer+'/package.json',sourceLock:'pnpm-lock.yaml',
+ package:snapshot+'/'+(importer==='.'?'package.json':importer+'/package.json'),lock:snapshot+'/pnpm-lock.yaml',
+}));
 const resources=[];
 function inventory(dir){
  for(const name of readdirSync(dir).sort()){

@@ -1,5 +1,6 @@
 // Frozen pre-repair parser versus production static import; no provider or native startup.
 import assert from 'node:assert/strict';
+import {parse} from 'yaml';
 import {createRequire} from 'node:module';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {resolve,join} from 'node:path';
@@ -13,9 +14,11 @@ assert.equal(pkg.version,'14.3.3');assert.equal(pkg.license,'MIT');
 const before=JSON.parse(readFileSync(join(root,'compat/consolidation/evidence/nested-final-package-lock.json'),'utf8'));
 const oldIntegrities=new Set(Object.entries(before.packages).filter(([p])=>p.endsWith('/node_modules/markdown-it')||p==='node_modules/markdown-it').map(([,v])=>v.integrity));
 assert.equal(oldIntegrities.size,1);
-const lock=JSON.parse(readFileSync(join(root,'legacy/surface/package-lock.json'),'utf8'));
-for(const [p,v] of Object.entries(lock.packages))if(p.endsWith('/node_modules/markdown-it')||p==='node_modules/markdown-it'){
- assert.equal(v.version,'14.3.3');assert.ok(oldIntegrities.has(v.integrity),p);
+const lock=parse(readFileSync(resolve(root,'../../pnpm-lock.yaml'),'utf8'));
+const markdownPackages=Object.entries(lock.packages).filter(([p])=>p.startsWith('markdown-it@'));
+assert.ok(markdownPackages.length>0);
+for(const [p,v] of markdownPackages){
+ assert.equal(p,'markdown-it@14.3.3');assert.ok(oldIntegrities.has(v.resolution.integrity),p);
 }
 const samples=['# Heading\n\nHello α 🧪 e\u0301\n','First\r\n\r\nSecond\r\n','# A\n## B\n### C\nBody\n','- one\n- **two**\n  - nested\n','1. first\n2. second\n','> quotation\n\n---\n','```js\nconst x = "<unsafe>";\n```\n','[link](https://example.invalid) and https://example.invalid\n','<script>not executable</script>\n','| A | B |\n|---|---|\n| 1 | 2 |\n','**Strong** _emphasis_ `code`\n','Meet at 10:30 am.\n\nWhat next?\n','Line 1  \nLine 2\n','Literal &amp; \\*star\\*\n','Unicode list\n\n- 日本語\n- مرحبا\n'];
 const opts={html:false,linkify:false,typographer:false},a=new old(opts),b=new esm(opts);

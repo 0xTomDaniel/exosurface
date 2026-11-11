@@ -4,15 +4,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { pathToFileURL } from 'node:url';
 import { fixtureCleanup } from './fixture-cleanup.ts';
 
-const PLUGIN = resolve(import.meta.dirname, '..');
-const PI_AI = pathToFileURL(join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/index.js')).href;
 type Tool = { name: string; parameters: unknown; execute: (id: string, args: unknown) => Promise<{ content: { type: string; text: string }[] }> };
-const { validateToolArguments } = await import(PI_AI) as { validateToolArguments: (tool: Tool, call: object) => unknown };
+const { validateToolArguments } = await import('@earendil-works/pi-ai') as { validateToolArguments: (tool: Tool, call: object) => unknown };
 
 /** What Exo receives for one update_exosurface call, as Pi runs it. */
 async function call(tool: Tool, args: object) {

@@ -1,5 +1,5 @@
 // Gate leaves a clean tree (#139, owner ruling 2026-11-06 #110): the runtime build, run over the dependencies a full
-// `npm ci` installed (the gate's first steps), rewrites the tracked release manifest to the same bytes on any platform.
+// frozen pnpm setup installed before the offline gate, rewrites the tracked release manifest to the same bytes on any platform.
 // The build runs in a scratch copy of this plugin that shares its installed node_modules, so the bundles and resources
 // other tests read here are never rewritten under them; the copy's git holds release.json as this checkout's git tracks it.
 import { test } from 'node:test';
@@ -16,7 +16,7 @@ const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c', 'user
 
 test('the runtime build leaves the tracked release.json unchanged', async t => {
   for (const modules of ['node_modules', 'legacy/surface/node_modules'])
-    assert.ok(existsSync(join(plugin, modules)), `${modules} missing: run the gate (scripts/check), which runs npm ci first`);
+    assert.ok(existsSync(join(plugin, modules)), `${modules} missing: run just setup (frozen pnpm installation) before the offline gate`);
   const copy = mkdtempSync(join(tmpdir(), 'exosurface-release-clean-'));
   t.after(() => rmSync(copy, { recursive: true, force: true }));
   // The plugin as this checkout has it: tracked files with their working bytes, untracked unignored files too.

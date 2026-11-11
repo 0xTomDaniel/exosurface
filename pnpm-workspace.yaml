@@ -1,0 +1,4 @@
+packages:
+  - plugins/bb-plugin-exosurface
+  - plugins/bb-plugin-exosurface/legacy/surface
+  - plugins/bb-plugin-exosurface/legacy/surface/composition

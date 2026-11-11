@@ -37,7 +37,7 @@ So put Exocortex identity and policy in the vault's `AGENTS.md` and its skills i
 ## Dependencies
 
 - macOS with normal BB desktop installed and running (tested BB 0.45.0).
-- Git and Node >=22.19 with npm (tested Node 24.15.0/npm 11.12.1).
+- Git and the repository's mise-pinned Node22.23.3/pnpm10.7.0/just1.21.0 toolchain. Current pnpm evidence is Linux-native build/fixture evidence, not a new desktop acceptance claim.
 - Writable source checkout of this private repository, access to its locked dependencies and BB's compiler toolchain.
 - OptChat **0.8.6** from [upstream](https://github.com/jonaslsaa/pi-optchat), pinned to `aae1caf7715830051d327f819fc776792211167a`, with its dependencies installed. For a new source checkout:
 
@@ -48,10 +48,10 @@ So put Exocortex identity and policy in the vault's `AGENTS.md` and its skills i
   npm ci
   ```
 
-- Pi **1.1.0** and SDK **0.6.15** are pinned in the plugin's root lockfile. Use Pi's public `dist/bundle/cli.js`, not its incompatible SDK-root import.
+- Pi **1.1.0** and SDK **0.6.15** are pinned in the repository-root pnpm lockfile. Use the canonical realpath of Pi's declared public bin (`dist/bundle/cli.js`), not its incompatible SDK-root import or a pnpm symlink alias.
 - Your own workspace/vault and model-provider account. Normal provider authentication occurs after initialization in the new owner's private Pi directory.
 
-The earlier isolated run reused populated npm/BB toolchain caches; an uncached download/install on a new Mac has not been tested. Normal `npm ci`/BB builds may download dependencies and execute trusted package scripts. No global Pi installation is needed by these instructions. SDK redistribution rights remain unresolved: this private source integration does not authorize a public binary/package release.
+The earlier isolated desktop run reused npm/BB toolchain caches; it does not prove this pnpm head. Repository `just setup` now installs the frozen active workspace, including BB's exact local toolchain through pnpm packageExtensions; the canonical gate installs nothing. A fresh Mac install/desktop run remains untested. The separately pinned OptChat checkout retains its own upstream installation instructions above. No global Pi installation is needed by these instructions. SDK redistribution rights remain unresolved: this private source integration does not authorize a public binary/package release.
 
 ## Local configuration
 
@@ -65,10 +65,18 @@ Before registering the plugin, create `~/.config/exo/exosurface.json`, private t
   "primaryProfile": "exo-optchat",
   "primaryAgentDir": "/absolute/short/path/s/pi-config",
   "vault": "/absolute/path/to/your/exocortex-vault",
-  "piCli": "/absolute/path/to/exosurface/plugins/bb-plugin-exosurface/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js",
+  "piCli": "/absolute/canonical/path/reported-by-the-command-below",
   "optchat": "/absolute/path/to/pi-optchat"
 }
 ```
+
+After frozen setup, obtain the existing declared public CLI's canonical path without executing Pi:
+
+```sh
+node --input-type=module -e 'import {realpathSync} from "node:fs"; console.log(realpathSync(process.argv[1]))' "$PLUGIN/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"
+```
+
+Use that result for piCli. The canonical setup symlink-path guard remains unchanged.
 
 Path rules:
 
@@ -91,13 +99,12 @@ Follow the clone/dependency commands in the [root README](../../README.md#2-clon
 NODE="$(command -v node)"
 BB_CLI="/Applications/BB.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb.js"
 cd "$PLUGIN"
-"$NODE" "$BB_CLI" plugin build "$PLUGIN"
-"$NODE" build.mjs
-"$NODE" build-runtime.mjs
+pnpm exec bb plugin build
+../../scripts/build
 "$NODE" "$BB_CLI" plugin install "$PLUGIN" --yes --json
 ```
 
-There are two locked installs (`npm ci` in the plugin root and `legacy/surface`), not a workspace-wide dependency flattening. BB rebuilds local plugin entries and writes build outputs. Keep the source/dependencies available and writable; a read-only archive or `dist/` alone is not installable by this route.
+One repository-root frozen pnpm install supplies explicitly scoped owner/surface/composition importers. SDK Zod4 and vendored surface Zod3 remain distinct, as does composition Zod4. The contained `resources/provenance/workspace` snapshot preserves original root/importer-relative manifests, shared lock and tarball coordinates; logical source coordinates are separately identified by release dependencyProjects. BB rebuilds local plugin entries and writes build outputs. Keep the source/dependencies available and writable; a read-only archive or `dist/` alone is not installable by this route.
 
 Registration creates the **Exo** plugin (id `exosurface`) and `exo-spike` provider. Open the **Exo** tab in BB's sidebar; route `/plugins/exosurface/surface`. Do not install both historical plugins alongside the consolidated one for a fresh instance. A normal desktop installation does not require creating a second server.
 

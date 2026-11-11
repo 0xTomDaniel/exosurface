@@ -1,0 +1,160 @@
+# #217 staged pnpm pilot
+
+Owner: owner ruling 2026-11-11, #216. Ticket #217 owns the native pipeline pilot only. Template baseline: octo-feather a58919e2446850b19f2482aa5fd93dbc0e59b4ac `templates/typescript/**`. Factory ADR0008 and ADR0017 apply. This record is preparation, not a claim that validation passed.
+
+## Installation and dependency closure
+
+Proposed active workspace: root tooling (BB CLI 0.48.0), `plugins/bb-plugin-exosurface`, `legacy/surface`, `legacy/surface/composition` beneath that plugin. Existing host/server/app metadata and engine requirements remain unchanged. Source imports, not directory names, determine activity:
+
+- Owner build strips `src/*.ts`; runtime build bundles primary release-owner/live/canonical-initialization and surface workspace-extension/frame.
+- Surface server imports composition/client; workspace-extension imports composition/contract and tool-schema. Composition therefore is not wholly historical. Its engine imports @json-render/core; keep its independent dependency graph installed pending type/build closure verification. Existing runtime builder rejects engine/core inclusion in shipped runtime.
+- Existing archived compatibility/repro/spike manifests and all historical locks/evidence remain unchanged. They are not recursively discovered workspace members. No import/build closure proof has yet been run at this head, so this is an installation selection, not proof those trees are dead.
+
+Root `pnpm.packageExtensions["bb-app@0.48.0"].dependencies` supplies the exact BB-local probe toolchain: esbuild0.28.1, @tailwindcss/node4.3.0, @tailwindcss/oxide4.3.0, tailwindcss4.3.0. The plugin's separate esbuild0.25.12 remains unchanged. Installed upstream source `host-daemon/dist/bb-chunks/plugin-O362IKMI.js:2606` defines these pins and probes package versions with createRequire anchored at the BB module before consulting its data-dir cache; lines2607..2608 implement the fallback download via bundled npm. This package extension is an owner-review adaptation through existing pnpm and maintained native BB mechanisms, not a copied toolcache or replacement builder. Frozen graph refresh and fresh-data-dir validation must prove the adaptation.
+
+Root pnpm overrides map SDK zod to 4.6.6 and A2UI react/web_core plus zod-to-json-schema to the retained surface vendored zod3 tarball. markdown-it's dompurify override stays 3.4.17. The surface's direct zod tarball remains relative to its own manifest. pnpm overrides are centralized at workspace root, rather than relying on npm's nested override semantics. Node resolution follows real package directories in the virtual store. Active lock generation, frozen install and cross-version resolution remain to be proved.
+
+## Packaging adaptations in progress
+
+`./scripts/build` delegates to the actual owner/runtime scripts. BB packaging remains separate and uses the pinned real CLI, real host/server/app and SDK. No provider bridge or queue/store changes.
+
+Runtime license traversal follows declared production dependency edges through Node lookup paths and real symlink targets instead of npm's copied directory layout. Platform-specific dependencies remain outside portable provenance, as before; packages entering bundles still contribute notices. Shared pnpm graph and workspace/override manifest are copied into generated provenance. Installed peer dependency edges are included in license traversal when resolvable, including SDK peers; absent theoretical peers are skipped. Their coverage and generated release identities require another build after this fix. Release mappings and harness dependency-layout assumptions require validation against the actual installed graph. `sourcePackage`/`sourceLock` continue to mean original source locations; `package`/`lock` mean packaged provenance. The earlier draft sourceLock mapping was incomplete. The 16:45 continuation decision authorizes the explicit workspace-root adaptation defined below; generated validation is still pending. Existing npm locks are retained until replacement graph/provenance is demonstrated; historical snapshots are never regenerated.
+
+## Template inventory
+
+| Template standard/files | Pilot treatment | Evidence / remaining work |
+| --- | --- | --- |
+| AGENTS/layout/repo skills | Adapted to native BB | Root AGENTS, existing native entrypoints; no toy CLI |
+| pnpm package/lock | In progress | Explicit workspace, selector overrides, pinned local BB; frozen graph proof pending |
+| mise.toml/mise.lock/mise-version | Adapted subset | Template Node/pnpm/just blocks; shellcheck/scc deferred with enforcement |
+| justfile setup/check/tool PATH | Adapted | Template tool PATH script and setup; existing bounded offline native pipeline, no install in gate |
+| hooks/CI | Adapted | Hook and CI use just check; CI frozen install and native BB build; execution pending |
+| integrate/qc recipes | Intentionally absent | ADR0017 brownfield exception; supervisor runs existing kit command |
+| strictest tsconfig/NodeNext/erasable syntax | Deferred | Preserve current tsconfig and native typecheck, no weakened coverage; full strictness/JS coverage later |
+| ESLint typed strict/stylistic | Deferred | No new enforcement allowed in #217 |
+| dependency-cruiser boundaries | Deferred | Corrector design, no new scans in pilot |
+| knip dead code | Deferred | Corrector design, no deletion for green |
+| check-languages/scc/gitattributes | Deferred | Full tracked-language/tool coverage later, no blanket exemptions |
+| shellcheck | Deferred | Existing shell bounds retained; no new enforcement in pilot |
+| Vitest integration/E2E | Adapted, parity deferred | Existing native Node mock-BB harness retained, process reaping/parent-watch unchanged; bounded validation pending |
+| verify-app feature map/qc.toml/example spec | Not copied | Template greeting app is not this BB product; target-native verification/contract and product acceptance work remain separately owned |
+| .gitignore/.gitattributes | Partly adapted | Ignore generated node_modules/local pnpm store; language attributes and normalization parity deferred |
+| template sample src/tests | Not copied | Existing real BB entrypoints and harness are the product; no greeting CLI replacement |
+
+Remaining corrector routing: strictest TS plus JavaScript coverage, typed lint, architecture/dead-code checks, tracked-language classification and actual tool file coverage (including scripts/dotpaths), shell/Python gates, spec/status/logged-call maintained validation, verification skill/feature-map/driver contract where product-owned. No full adoption or gate parity beyond the existing pipeline is claimed.
+
+## Tracked language/path inventory
+
+Source/tooling: TypeScript and TSX in active plugin src/legacy/test/demo and retained plugin/spike trees; JavaScript MJS/CJS/JS in builders, test helpers and compatibility/repro/vendor trees; Python in tools/review-serve.py, old plugin tests and compatibility evidence launch/proof scripts; Bash/Shell in scripts/check, root scripts/build, hook and retained evidence runners. Data/documentation: JSON/JSONL manifests/configs/locks/evidence, Markdown docs/skills/notices, HTML/CSS specs and styles, YAML CI/workspace/lock, TOML mise, patches, text/log/TAP/stdout/stderr/exit/hash records. Binary artifacts: PNG images and vendored TGZ archives. No tracked Go/Rust/Elixir source was found by the initial file inventory. None of these categories is silently deleted or blanket-exempted to turn checks green.
+
+## Validation ledger
+
+Base: 7125f968bd7b614ed198821cb0936d01f6639ad1, branch gh216-217. Historical prior-head green records do not prove this head. Initial resource hold was below4096MiB; no job ran until conditional release and a fresh launch check passed.
+
+| Job | Head / dirty identity | UTC start / end | Launch memory | Result |
+| --- | --- | --- | --- | --- |
+| lock resolution smoke | base above, tracked diff SHA256 `0164d8f56437d289e3fb25cd9500bfbd4d7a273a88480029be2127d0dc8aed8f`; per-untracked-file hashes in worktree git-dir `validation/lock-smoke-20261111T160950Z.log` | 2026-11-11T16:09:50Z / 16:09:57Z | 4264980kB, 4165MiB | rc0, 6.3s, 304 resolved, four workspace importers, lock generated |
+
+Subsequent separately released jobs (each base head above plus dirty-file hashes recorded in the named worktree git-dir ledger):
+
+| Job | UTC start / end | Cap / launch memory | Result |
+| --- | --- | --- | --- |
+| frozen-smoke-20261111T161158Z.log | 16:11:58Z / 16:12:07Z | 300s / 4202508kB | rc0, 8.5s,268packages, lock resolution skipped, esbuild postinstall ran; native-addon ignored-script warnings retained |
+| build-smoke-20261111T161420Z.log | 16:14:20Z / 16:14:21Z | 180s / 4576744kB | rc0; actual pnpm build:owner then build:runtime; five runtime graphs,86resource hashes verified; old lock only |
+| bb-smoke-20261111T161613Z.log | 16:16:13Z / 16:16:16Z | 180s / 4718452kB | rc0; real server/app/host artifacts; online fallback toolchain preparation occurred, not npm-free/offline proof |
+| toolchain-lock-smoke-20261111T161919Z.log | 16:19:19Z / 16:19:21Z | 180s / 4648504kB | rc0,1.1s,366resolved; installed graph now stale, new frozen refresh required |
+
+All these jobs used owned setsid groups recorded under git-dir/pids, pidfile group sweep and awaited wait/reap. Exact commands and head/tracked-diff/untracked-file hashes live in the named ledgers. Frozen command: same Node PATH, GOMAXPROCS2/heap1536, `timeout -k 10 300 /home/varelaseb/.local/share/mise/installs/pnpm/10.7.0/pnpm install --frozen-lockfile --network-concurrency=2 --child-concurrency=1`. Build command adds pinned pnpm bin to PATH and runs `timeout -k 10 180 ./scripts/build`. BB command runs pinned `pnpm exec bb plugin build` in the plugin, under180s, with isolated git-dir/validation/bb-smoke-data.
+
+BB smoke preserved warning SDK0.6.15 versus bundled0.6.94. No SDK update/types command ran. Upstream BB internally invoked bundled npm for its missing build toolchain; no agent-issued npm command ran. That smoke proves online preparation and packaging only. Toolchain cache `plugins/toolchain-0.28.1-4.3.0-4.3.0-4.3.0` in the isolated data dir has a `.bb-toolchain.json` pins stamp and npm's hidden installed lock, not a committed frozen graph. It is not promoted/copied as proof. Subsequent packageExtensions and new root lock SHA256 `3b60b7d7034144b523898c9cc895817e032e60b5b50fcaefe66d6e6921daf219` supersede the earlier graph. Earlier installed identity/build proofs apply only old lock `aca73cc06251618a5021b71df1a18a38a234a37ac65fb2f683534101c9ae3f12` until refreshed.
+
+Old-graph installed metadata-only resolution proved both SDK consumers use zod4.6.6, A2UI/converter share vendored3.25.76+exosurface.1, composition uses4.3.6 and BB4.6.5. ESM public `@earendil-works/pi-ai` resolution from agent and plugin produced identical1.1.0 URLs. These packages have import-only exports, so CJS createRequire.resolve of their public entry fails. The old test hardcoded npm nested-dist path remains unchanged pending ownership sequencing. No provider/module execution was part of resolver inspection.
+
+Exact initial smoke command, cwd this worktree:
+
+```sh
+PATH=/home/varelaseb/.local/share/mise/installs/node/22.23.3/bin:$PATH GOMAXPROCS=2 NODE_OPTIONS=--max-old-space-size=1536 timeout -k 10 180 /home/varelaseb/.local/share/mise/installs/pnpm/10.7.0/pnpm install --lockfile-only --ignore-scripts --network-concurrency=2
+```
+
+Owned setsid process group recorded in git-dir `pids/lock-smoke`, swept using that pidfile and awaited/reaped. Warnings: pi-coding-agent1.1.0/chord1.5.2 requests react19.3.0 and esbuild0.28.2 peers while existing pins remain react19.2.4/esbuild0.25.12. No pin changes made to hide warnings. This proves resolution only, not frozen install, dependency identity, native packaging or build/runtime behavior. Every subsequent heavy job remains separately release-gated. No current green full-gate claim is made.
+
+### Extended-graph validation and diagnostic triage
+
+The frozen refresh under lock `3b60b7d7034144b523898c9cc895817e032e60b5b50fcaefe66d6e6921daf219` completed rc0,1.3s, UTC16:20:53Z..16:20:55Z (`toolchain-frozen-smoke-20261111T162053Z.log`), adding19packages with esbuild0.28.1 postinstall. Metadata-only reproducible `validation/native-local-probe.mjs` and its logged command resolve all four toolchain pins from the actual installed BB plugin chunk; plugin esbuild remains0.25.12. No package code/provider execution occurs in that inspection.
+
+Fresh-data-dir BB packaging completed rc0 UTC16:23:14Z..16:23:15Z (`bb-local-smoke-20261111T162314Z.log`). BB_DATA_DIR was absent both initially and finally; no toolchain download/fallback/cache occurred, and native host/server/app artifacts were emitted. The SDK0.6.15 versus bundled0.6.94 warning remains. This proves fallback-free packaging using the refreshed installed graph, not complete packaging-in-gate conformance or offline network denial. The canonical gate deliberately retains the existing owner/runtime/type/mock pipeline; packaging remains separate CI coverage. Clean CI setup prepares BB's local pins through frozen pnpm installation, not the old fallback cache.
+
+Existing typecheck completed rc0 UTC16:24:45Z..16:24:49Z (`type-smoke-20261111T162445Z.log`), running actual plugin-local TypeScript5.9.3/current tsconfig only. Narrow maintained gate completed rc0 UTC16:26:32Z..16:26:40Z (`first-run-smoke-20261111T162632Z.log`),12/12tests,no skips; owner/runtime build, current typecheck and compiled-provider/socket/mock child path passed with the existing cleanup records. Installed peer-notice traversal produced130resources, including SDK-installed testing-library/React-type/better-sqlite3/hono peers. No product/reap/readiness behavior changed.
+
+Full existing root gate diagnostic was RED rc1 UTC16:28:34Z..16:29:51Z (`gate-diagnostic-20261111T162834Z.log`),81tests,59pass,22fail,no skips. All22failures:
+
+-20 share the canonical setup symlink-path rejection, not twenty independent product faults. Seventeen file wrappers: activity-block(line50),auto-name76,exo-block280,input-floats408,keep456,live-activity482,new-surface508,one-page534,parallel-surfaces738,parallel-threads764,press-notes790,rename884,second-bundle910,send-record936,settings1164,sidebar-order1190,surface-opening1216. Three named cases: keep-absent422,settings-resume1034,settings-fresh1135. Settings alerts/fields explicitly contain `Canonical setup refuses symlink paths`; no separate UI/preexisting claim is made. Source is mock-bb.ts PI_CLI dependency alias passed through installedFixture, rejected by the unchanged product guard canonical-setup.ts27.
+-Independent failure21: release-clean(line804) correctly detects migrated lock/resource identities against the old Git index. The honest final generated release must be committed and the test rerun, not skipped or staged solely to manufacture green.
+-Independent failure22: update-arguments(line1568), ERR_MODULE_NOT_FOUND for the old npm-nested agent/node_modules/pi-ai/dist path.
+
+Proposed dependency-layout-only fixture correction, held for215 sequencing: wrap mock-bb.ts19's existing PI_CLI join in realpathSync (already imported), preserving its target bytes and the product symlink guard. Metadata proof: original alias and canonical path match package1.1.0's declared public bin `dist/bundle/cli.js`, SHA256 `e79626f2dd6f94aa45d30f3fa63cd84319a6eefcd150b353cfaf274366926774`; canonical path has no symlink ancestor. Public pi-ai ESM import replacement likewise remains ownership-gated. No helper edits or failure suppression were applied at that diagnostic checkpoint. After the 16:45 ownership release, only mock-bb.ts19's realpathSync wrapper has been applied. The same declared CLI bytes are now named canonically; the product guard, readiness/reap and all assertions remain unchanged. Public pi-ai resolver selection remains held for director choice.
+
+Original active inputs now have new byte-preserving provenance snapshots under `plugins/bb-plugin-exosurface/compat/pnpm-migration/original`, from base commit above. Its README inventories complete manifests/locks/original release and hashes. Existing historical records and active npm lock names have not been changed at this checkpoint; active retirement waits for explicit final source/packaged mapping.
+
+### Explicit source versus packaged workspace contract
+
+The 16:45 scoped continuation authorizes this additive `exosurface-package/0` mapping. Each dependencyProjects entry names one original active importer (tooling, plugin, surface, composition):
+
+- `sourceRoot: "repository"` is a logical discriminator: sourcePackage and sourceLock are relative to the original repository root, not the plugin directory or packaged provenance. No physical checkout path is serialized.
+- `pluginRoot: "plugins/bb-plugin-exosurface"` records the original plugin's repository-relative location.
+- `importer` is the original pnpm lock importer, exactly `.`, `plugins/bb-plugin-exosurface`, that path plus `/legacy/surface`, or plus `/legacy/surface/composition`.
+- `sourcePackage` is the original repository-relative manifest path for that importer. `sourceLock: "pnpm-lock.yaml"` still means the original shared source lock at repository root. It is never silently redefined as a packaged lock.
+- `package` and `lock` remain paths relative to the packaged plugin. Both refer into `resources/provenance/workspace/`, with the package at its original importer-relative path and the shared lock at that snapshot root.
+
+The contained workspace snapshot preserves root pnpm-lock.yaml/pnpm-workspace.yaml/package.json, all three active nested manifests at exact importer paths, and the local zod3 tarball at the exact lock-relative path. It also retains root .npmrc and mise.toml/mise.lock/mise-version for installation configuration/tool identities. No installed dependency closure or BB fallback cache is copied. The existing recursive resource inventory hashes every snapshot file; releaseReady remains false. The separate zod3 notice/backport provenance remains retained. This snapshot is dependency/tool provenance, not a substitute product source checkout or a claim that its manifest build scripts have source files there.
+
+The runtime builder locates the installed graph's workspace via realpath(node_modules), preserving its logical plugin importer even for a source copy linked to that installed graph. Rebuilding still operates on the real source entries and existing BB pipeline. The old active npm lock names are removed from the generated shipping allowlist; disk retirement waits until this mapping has been generated and inspected. Complete original npm inputs remain byte-preserved in compat/pnpm-migration/original, not regenerated. Earlier snapshots/ledgers describe prior heads only.
+
+Generation, snapshot-byte/hash/relative-tarball closure verification, refreshed settings/resolver tests and final committed-release determinism are pending separately released runs. No new enforcement gate or product behavior is added.
+
+### Maintained consumers and current closure repair
+
+Root dev yaml2.9.0 is explicitly declared for maintained graph/source-closure/parity tools, using its public parser, not a handwritten lock parser. YAML lock resolution rc0 UTC16:54:39Z..16:54:40Z and frozen refresh rc0 UTC16:55:55Z produced/installed lock SHA256 `6581a79825f96d086a892261abd28581eabdb93188b4c595c4dacc395d0a73f4`. Earlier3b60 runtime/BB/resource proofs remain prior-graph records. Chord peer warnings remain. Source edits migrate graph diagnostics from npm ls to actual public pnpm list JSON, keep schema/installed-consumer/native-artifact assertions, migrate parser parity integrity to pnpm lock records, and keep exact source/allowlist/negative-case/notice/tarball assertions against explicit contained workspace mappings. These maintained tools are not dismissed as historical by directory.
+
+Frozen browser-roundtrip replay explicitly sources original package.json/package-lock.json from immutable compat/pnpm-migration/original while keeping baseline byte comparisons and copied baseline dependency semantics. It remains frozen-baseline-only, not a pnpm/current-head proof, and was not executed. Existing evidence remains unchanged. All active npm lock files remain present until maintained consumer proofs qualify their retirement.
+
+The runtime+static-closure smoke `yaml-closure-smoke-20261111T165944Z.log` failed rc1 UTC16:59:44Z..16:59:45Z. Runtime regeneration succeeded, but the independent compiler/AST closure found a real shipping defect: the historical literal allowlist omitted current native runtime imports. Lock/schema/tarball/notice assertions after checkAllow were UNREACHED in that run. Source==artifact was used; neither relocation nor native behavior was proved.
+
+Exact missing import delta, six primary modules:
+
+- legacy/primary/src/exo-turn.ts, first-step.ts, last-activity.ts, surface-name.ts and thread-profiles.ts are imported by the current native server; journal-lines.ts is required by its turn/activity readers.
+
+Seven surface modules:
+
+- legacy/surface/src/exo-turn.tsx, settings.tsx, thread-sidebar.tsx, surface-title.tsx and surface-rename.tsx are required by the current app; bundle-tags.ts is required by its catalog/theme paths; press-line.ts is required by the existing turn/page client paths.
+
+Authorized producer repair derives the exact literal local legacy shipping closure from existing esbuild's native app.tsx/host.ts/server.ts input metadata, with packages external, write:false, metafile:true and the existing CSS text loader. It adds only the existing explicit dependency manifest/tarball/canonical-initialization inputs, preserves nonlegacy allowlist/resources and releaseReady:false, and records sourceClosure in the existing runtime-graph metadata. No product source, test-only production branch, glob, new store or enforcement scan is added. Independent TypeScript transpile/AST exact closure equality and both negative allowlist cases remain. The first repaired-producer rerun `closure-repair-smoke-20261111T170549Z.log` passed exact shipping equality but failed the next legacy cardinality assertion47!=48. All subsequent checks, including negative cases and lock/tar/notices, remained UNREACHED. Metadata reconciliation: original immutable release has38legacy shipping literals including four explicit inputs (manifest, original npm lock, tarball, canonical-initialization), leaving34runtime legacy sources, not the stale35test constant. Thirteen reviewed imports give47runtime legacy sources. Seven nonlegacy runtime sources (app.tsx, host.ts, server.ts, src/config.ts, src/env.ts, src/input.ts, src/store.ts) give54total compiler inputs. After replacing the active npm-lock input, three explicit inputs remain disjoint from runtime closure, giving50shipped legacy literals (=38-1+13). There are no duplicate explicit/runtime inputs; both compilers erase type-only imports. The narrowly corrected runtime cardinality is47, not48; exact closure equality and negative cases remain unchanged. Fresh rerun is required; no repaired-green claim is made yet.
+
+An inert public ESM resolver probe, `agent-ai-public-identity-20261111T170356Z.log`, resolved actual agent1.1.0's public import entry and then its public pi-ai entry, and independently resolved pi-ai from the plugin test parent. On lock6581, both resolve to the exact same physical pi-ai1.1.0 file URL, not merely equal versions. The approved minimal update-arguments test import now uses the public pi-ai export with all assertions unchanged. The experimental parentURL resolver flag is confined to the inert probe, not the test runner. This identity must be reproved on the final dependency graph.
+
+Latest released static rerun `closure-count-smoke-20261111T170957Z.log` PASS rc0 UTC17:09:57Z..17:09:59Z: 47runtime legacy/54total inputs, exact equality, both negative allowlist cases, four workspace project/importer/schema/lock mappings, patched tar SHA256 df2fe07a..., notices and137resource hashes all reached and passed. This remains static source==artifact, not independent relocation or native behavior. SDK rights remain unresolved and releaseReady:false.
+
+Maintained parser parity `parity-current-smoke-20261111T171253Z.log` PASS rc0 UTC17:12:53Z..17:12:54Z:60API comparisons,15document roundtrips,3matching rejections, frozen lock integrity, exact MIT license bytes and preserved composition wire type. No native startup/provider/browser proof. Maintained graph diagnostics still require a new native BB build on this graph; old3b60 app/server/maps cannot substitute.
+
+The canonical gate now recursively discovers *.test.ts and *.test.mjs under existing maintained plugin test/, with NUL-separated stable selection and only node_modules/.git pruned. It does not blanket-exclude directories named dist/resources/generated, execute historical non-test .mjs tools, or broaden into frozen compatibility/spikes/service tests. Explicit caller-relative selections and flock/concurrency/timeout/parentwatch/reap behavior are unchanged. Package scripts.test delegates to existing scripts/check, which invokes Node directly without recursion. This scripts-only manifest edit leaves dependency pins unchanged but invalidates previous packaged manifest-byte proofs until regeneration.
+
+### Final pilot handoff checkpoint
+
+- `bb-current-graph-smoke-20261111T171557Z.log`: launcher quoting failed before any intended command, not a product failure. `bb-current-graph-retry-20261111T172437Z.log`: new native artifacts built, then graph RED on incorrectly interpreted map coordinates. BB0.48 emits maps relative to dist/.stage-* then copies them unchanged (installed plugin-O362IKMI.js:2608..2610). The diagnostic now uses those pinned upstream coordinates and retains exact installed-file equality; it does not claim to fix BB. `server-map-coordinate-identity.json` records exact matching canonical paths/SHA256.
+- `bb-map-graph-smoke-20261111T172609Z.log`: PASS rc0 UTC17:26:09Z..17:26:11Z, current6581 local tool entry/manifest hashes and all four pins, regenerated resources, fresh native host/server/app/maps, installed consumer CJS/ESM and early-return checks, SDK Zod4, sanitizer, public pnpm lists, tar hashes, runtime inputs, exact mapped Zod4+Zod3 and native app static checks. BB_DATA_DIR absent before/after, no fallback observed; SDK warning retained. This is packaging/graph proof, not native product acceptance.
+- After all three maintained consumers passed, only the three active plugin/surface/composition npm lock names were retired. Original complete inputs and all older evidence remain immutable. Remaining executable references are explicit frozen parser/roundtrip baseline inputs or historical compatibility projects with their own preserved locks; build-runtime's old-name filter only removes obsolete shipping selectors.
+- `focused-fixture-smoke-20261111T172919Z.log`: PASS rc0 UTC17:29:19Z..17:29:28Z,21/21tests, no skips, real owner/runtime/current5.9.3 typecheck plus selected settings/setup/update-arguments public fixtures and awaited cleanup. Not extrapolated to a full root pass or TS6.
+- `relocated-import-smoke-20261111T173044Z.log`: PASS rc0. Exact release.files selectors staged252regular files with per-file source/artifact hashes in its .files.json record, no node_modules/symlinks or installed closure copy. Five shipped runtime entries import and owner release-selftest pass under env-i with owned HOME/TMPDIR, pinned Node PATH, empty NODE_PATH, no inherited provider/auth selectors. Owned temporary artifact removed after group cleanup/reap. No extension registration or provider call, nativeAcceptance:NOT RUN. Runtime dynamic paths beyond these imports/selftest are not claimed proved.
+- `final-static-smoke-20261111T173318Z.log`: PASS rc0 UTC17:33:18Z..17:33:19Z after scripts-only manifest change: current source/packaged workspace bytes, four lock importer schemas, tar/notice/resource hashes and exact closure/negative cases pass; inert agent->pi-ai versus plugin->pi-ai public resolution again gives the same exact1.1.0 file URL on6581. Final post-corrector graph still owes identity reproof.
+
+Safety fact, executed through actual consumers and contained artifacts: pnpm changes dependency lookup/installation ownership, not the pinned runtime schema split or guard semantics. SDK uses4.6.6, actual A2UI/converter consumers use patched3.25.76, oversize arrays/sets still reject before child visits; selected canonical setup fixtures pass with the unchanged symlink guard, and all five shipped runtime entries import without installed dependencies. Proof stops at offline artifact/fixture/selftest boundaries, not live native app/provider acceptance. Historical full gate59pass/22fail remains a RED checkpoint until a fresh committed-baseline gate supersedes it. The generated release manifest is deliberately committed as a real baseline before that rerun, not staged solely to manufacture a release-clean pass. Build outputs/resources remain generated under the existing ignore policy; release.json commits their provenance hashes.
+
+Prior-art research: [pnpm10.7 release](https://github.com/pnpm/pnpm/releases/tag/v10.7.0), [pnpm adoption/releases](https://mise-tools.jdx.dev/tools/pnpm), [YAML registry](https://registry.npmjs.org/yaml), [YAML releases](https://github.com/eemeli/yaml/releases), [mise releases](https://mise.jdx.dev/releases.html), [mise registry](https://crates.io/crates/mise), [just releases/adoption](https://mise-tools.jdx.dev/tools/just). Exact template/supervisor-approved pins retained, not a latest-version claim: pnpm10.7.0 (2025-03-26; project latest2026-11-10,2.89M tool downloads, MIT), YAML2.9.0 (2026-05-11;2.9.1 latest2026-09-11,154.5M weekly/18.4K dependents, ISC), mise2026.10.21 (latest2026-11-11,448K crate downloads, MIT), just1.21.0 (2023-12-29; latest2026-10-15,406K tool downloads, CC0). YAML parses only the maintained workspace lock here. No hand-written YAML parser or alternate test runner.
+
+### Enforcement handoff, not pilot adoption
+
+The later corrector request is held: root @tsconfig/node22=22.0.6,@tsconfig/strictest=2.0.8,typescript6.0.3,eslint10.13.0,typescript-eslint8.71.2,dependency-cruiser18.6.0,knip6.42.0,basedpyright1.40.2; reuse @types/node22.20.5 and preserve SDK/React/zod. Python3.13.5/ruff0.17.1 native backend pins require their own compatibility proof. No such dependency or enforcement change is part of this pilot. No Vitest replacement, app scaffold or alternate package manager is introduced.
+
+Current gate cds the plugin and runs `pnpm run typecheck`; a future rootTS6 declaration alone would still be shadowed by plugin-local5.9.3. The later unit must atomically establish one root tooling owner, migrate/remove nested TS declaration and update lock/config/gate wiring, then prove the actual compiler executed is6.0.3. Manifest/lock/native-pin writes remain single-writer, with corrector configuration changes sequenced only after pilot integration.
+
+Integration environment: kit scripts/octo-feather-integrate49..50 requires a clean lane worktree,68..82 applies refs transactionally,98 calls the actual root gate, with no setup hook. The supervisor must provision dependencies through supported setup before invoking that offline transaction. No install-in-check, custom adapter, copied dependency closure, manual merge or kit change is introduced. Temporary detached-head setup in the supervisor's own worktree is a proposed standard Git/pnpm option, not an executed proof; original-base generated-path ignore/cleanliness must also be handled legitimately before integration. Only the supervisor owns that preparation and integration.
