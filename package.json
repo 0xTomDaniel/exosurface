@@ -20,7 +20,10 @@
       "zod-to-json-schema>zod": "file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz",
       "@a2ui/markdown-it>dompurify": "3.4.17"
     },
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": ["esbuild"],
+    "patchedDependencies": {
+      "@get-bb/plugin-sdk@0.6.15": "patches/@get-bb__plugin-sdk@0.6.15.patch"
+    }
   },
   "devDependencies": {
     "bb-app": "0.48.0",

@@ -13,6 +13,11 @@ overrides:
 
 packageExtensionsChecksum: sha256-EPgZUqC7i2TvQ+sCOeP1Sl1RH7ysh0n1+TBST3ug1yY=
 
+patchedDependencies:
+  '@get-bb/plugin-sdk@0.6.15':
+    hash: 200f84d014d6bcc55e041c65040908a702eb7b39d50f878c9008cb9a695abbb3
+    path: patches/@get-bb__plugin-sdk@0.6.15.patch
+
 importers:
 
   .:
@@ -55,7 +60,7 @@ importers:
     dependencies:
       '@get-bb/plugin-sdk':
         specifier: 0.6.15
-        version: 0.6.15(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 0.6.15(patch_hash=200f84d014d6bcc55e041c65040908a702eb7b39d50f878c9008cb9a695abbb3)(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -116,7 +121,7 @@ importers:
         version: 0.13.0
       '@get-bb/plugin-sdk':
         specifier: 0.6.15
-        version: 0.6.15(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 0.6.15(patch_hash=200f84d014d6bcc55e041c65040908a702eb7b39d50f878c9008cb9a695abbb3)(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       markdown-it:
         specifier: 14.3.3
         version: 14.3.3
@@ -3287,7 +3292,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@get-bb/plugin-sdk@0.6.15(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@get-bb/plugin-sdk@0.6.15(patch_hash=200f84d014d6bcc55e041c65040908a702eb7b39d50f878c9008cb9a695abbb3)(@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.2.3(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.3.0)(better-sqlite3@13.0.3)(hono@4.13.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       cross-spawn: 7.0.6
       zod: 4.6.6
