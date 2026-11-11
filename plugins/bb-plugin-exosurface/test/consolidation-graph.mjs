@@ -1,8 +1,9 @@
-// Graph diagnostics, not native-BB packaged-product acceptance; npm ls remains a separate required gate.
+// Maintained pnpm/consumer graph diagnostics, not native-BB packaged-product acceptance.
 import assert from 'node:assert/strict';
 import {createRequire,isBuiltin} from 'node:module';
+import {parse} from 'yaml';
 import {readFileSync,existsSync} from 'node:fs';
-import {dirname,resolve,join} from 'node:path';
+import {dirname,resolve,join,relative} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
@@ -10,14 +11,15 @@ const root=resolve(process.argv[2]??fileURLToPath(new URL('..',import.meta.url))
 const artifact=resolve(process.argv[3]??root);
 const read=p=>JSON.parse(readFileSync(p,'utf8'));
 const packageOf=entry=>{for(let p=dirname(entry);;p=dirname(p)){if(existsSync(join(p,'package.json'))){const m=read(join(p,'package.json'));if(m.name&&m.version)return {dir:p,...m};}if(dirname(p)===p)throw Error('Missing package provenance: '+entry);}};
-const npmCLI=process.argv[4]??resolve(dirname(process.execPath),'../lib/node_modules/npm/bin/npm-cli.js');
-const npmLs=[];
-for(const project of ['.','legacy/surface']){
- const cwd=join(root,project),manifest=read(join(cwd,'package.json')),lock=read(join(cwd,'package-lock.json'));
- assert.ok(!manifest.workspaces&&!lock.packages[''].workspaces);
- assert.ok(!Object.values(lock.packages).some(p=>p.link===true));
- const result=spawnSync(process.execPath,[npmCLI,'ls','--all','--json'],{cwd,env:process.env,encoding:'utf8',timeout:20000});
- assert.equal(result.status,0,result.stderr);assert.ok(!readTree(result.stdout).problems);npmLs.push({project,exit:result.status});
+const pnpmCLI=process.argv[4]??'pnpm';
+const pnpmLists=[],workspace=resolve(root,'../..'),lock=parse(readFileSync(join(workspace,'pnpm-lock.yaml'),'utf8'));
+for(const project of ['.','legacy/surface','legacy/surface/composition']){
+ const cwd=join(root,project),manifest=read(join(cwd,'package.json')),importer=relative(workspace,cwd).replaceAll('\\','/');
+ assert.ok(lock.importers[importer],`Missing locked importer: ${importer}`);
+ for(const field of ['dependencies','devDependencies','optionalDependencies'])for(const [name,specifier] of Object.entries(manifest[field]??{}))assert.equal(lock.importers[importer][field]?.[name]?.specifier,specifier);
+ const result=spawnSync(pnpmCLI,['list','--depth','Infinity','--json'],{cwd,env:process.env,encoding:'utf8',timeout:20000,maxBuffer:16*1024*1024});
+ assert.equal(result.status,0,result.stderr);const listing=readTree(result.stdout);assert.ok(Array.isArray(listing)&&listing.some(row=>row.path===cwd));
+ assert.ok(!listing.some(row=>row.problems?.length));pnpmLists.push({project,exit:result.status});
 }
 function readTree(text){return JSON.parse(text);}
 const primary=createRequire(join(root,'legacy/primary/server.ts'));
@@ -49,7 +51,7 @@ for(const [consumer,r] of [['primary',primary],['primary SDK',createRequire(prim
 const markdownEntry=surface.resolve('@a2ui/markdown-it'),markdown=packageOf(markdownEntry);
 const sanitizerEntry=createRequire(markdownEntry).resolve('dompurify');
 assert.equal(packageOf(sanitizerEntry).version,'3.4.17');
-console.log(JSON.stringify({format:'exosurface-consumer-graph/0',consumers:rows,markdown:{entry:markdownEntry,declaredDOMPurify:markdown.dependencies.dompurify,resolvedDOMPurify:sanitizerEntry,version:packageOf(sanitizerEntry).version,surfaceScopedOverride:read(join(root,'legacy/surface/package.json')).overrides['@a2ui/markdown-it']},npmLs},null,2));
+console.log(JSON.stringify({format:'exosurface-consumer-graph/0',consumers:rows,markdown:{entry:markdownEntry,declaredDOMPurify:markdown.dependencies.dompurify,resolvedDOMPurify:sanitizerEntry,version:packageOf(sanitizerEntry).version,workspaceScopedOverride:lock.overrides['@a2ui/markdown-it>dompurify']},pnpmLists},null,2));
 const provenance=join(artifact,'resources/provenance/zod3'),meta=read(join(provenance,'artifact.json'));
 assert.equal(createHash('sha256').update(readFileSync(join(provenance,meta.artifact))).digest('hex'),meta.sha256);
 for(const change of meta.changes){const path=change.path.replace(/^package\//,'');assert.equal(createHash('sha256').update(readFileSync(join(packageOf(surface.resolve('zod')).dir,path))).digest('hex'),change.patchedSha256);}
@@ -57,15 +59,18 @@ const graph=read(join(artifact,'dist/runtime-graph.json'));assert.equal(graph.re
 for(const [name,g] of Object.entries(graph.entries)){
  assert.ok(!g.inputs.some(p=>p.includes('@json-render/core')||p.endsWith('composition/engine.ts')));
  for(const out of Object.values(g.outputs))for(const imp of out.imports)if(imp.external)assert.ok(isBuiltin(imp.path),imp.path);
- if(name.startsWith('workspace-'))assert.ok(g.inputs.includes('legacy/surface/node_modules/zod/v3/types.js'));
+ if(name.startsWith('workspace-'))assert.ok(g.inputs.includes(relative(root,join(packageOf(surface.resolve('zod')).dir,'v3/types.js')).replaceAll('\\','/')));
 }
 // These are assertions against the actual BB-emitted app bundle, not a parallel renderer bundle.
 const server=readFileSync(join(artifact,'dist/server.js'),'utf8');
 // BB emits build-only maps; do not expand shipped debug/source allowlists.
 assert.deepEqual(readFileSync(join(artifact,'dist/server.js')),readFileSync(join(root,'dist/server.js')));
 const serverMap=read(join(root,'dist/server.js.map'));
-assert.ok(serverMap.sources.some(p=>p.endsWith('/node_modules/zod/v4/core/versions.js')&&!p.includes('/legacy/surface/')));
-assert.ok(serverMap.sources.some(p=>p.endsWith('/legacy/surface/node_modules/zod/v3/types.js')));
+// BB0.48 emits under dist/.stage-*/server.js then copies the map unchanged to
+// dist (plugin-O362IKMI.js:2608-2610). Resolve its original staging coordinates.
+const serverMapBase=join(root,'dist','.stage-');
+assert.ok(serverMap.sources.some(p=>resolve(serverMapBase,p)===join(packageOf(primary.resolve('zod')).dir,'v4/core/versions.js')));
+assert.ok(serverMap.sources.some(p=>resolve(serverMapBase,p)===join(packageOf(surface.resolve('zod')).dir,'v3/types.js')));
 assert.match(server,/major:4,minor:6,patch:6/);
 const app=readFileSync(join(artifact,'dist/app.js'),'utf8');assert.ok(app.includes('3.4.17'));assert.ok(!app.includes('3.4.11'));
 assert.match(app,/\.maxLength!==null&&\w+\.data\.length>\w+\.maxLength\.value\)return/);

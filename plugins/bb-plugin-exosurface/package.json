@@ -10,7 +10,7 @@
   },
   "scripts": {
     "check": "scripts/check",
-    "test": "node --experimental-transform-types --test test/*.test.ts",
+    "test": "scripts/check",
     "build": "bb plugin build && node build.mjs && node build-runtime.mjs",
     "build:owner": "node build.mjs",
     "typecheck": "tsc --noEmit",

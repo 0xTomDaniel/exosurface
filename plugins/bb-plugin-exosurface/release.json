@@ -8,18 +8,21 @@
     "host.ts",
     "server.ts",
     "app.tsx",
-    "package-lock.json",
     "dist/*.js",
     "dist/*.css",
     "dist/*.json",
     "resources/**",
     "legacy/primary/host.ts",
     "legacy/primary/server.ts",
-    "legacy/primary/src/canonical-fresh.ts",
-    "legacy/primary/src/canonical-setup.ts",
     "legacy/primary/src/canonical-control.ts",
-    "legacy/primary/src/canonical-system.ts",
+    "legacy/primary/src/canonical-fresh.ts",
     "legacy/primary/src/canonical-initialization.ts",
+    "legacy/primary/src/canonical-setup.ts",
+    "legacy/primary/src/canonical-system.ts",
+    "legacy/primary/src/exo-turn.ts",
+    "legacy/primary/src/first-step.ts",
+    "legacy/primary/src/journal-lines.ts",
+    "legacy/primary/src/last-activity.ts",
     "legacy/primary/src/local-config.ts",
     "legacy/primary/src/model-selection.ts",
     "legacy/primary/src/overview.ts",
@@ -27,12 +30,16 @@
     "legacy/primary/src/pi-rpc.ts",
     "legacy/primary/src/runtime.ts",
     "legacy/primary/src/state.ts",
+    "legacy/primary/src/surface-name.ts",
+    "legacy/primary/src/thread-profiles.ts",
     "legacy/surface/app.tsx",
     "legacy/surface/composition/client.ts",
     "legacy/surface/lib/document-style.ts",
     "legacy/surface/lib/exo-theme.ts",
     "legacy/surface/observer/client.ts",
+    "legacy/surface/package.json",
     "legacy/surface/server.ts",
+    "legacy/surface/src/bundle-tags.ts",
     "legacy/surface/src/canvas-client.ts",
     "legacy/surface/src/canvas-history.ts",
     "legacy/surface/src/canvas-input.ts",
@@ -41,15 +48,19 @@
     "legacy/surface/src/drafts.ts",
     "legacy/surface/src/exo-catalog.ts",
     "legacy/surface/src/exo-components.tsx",
+    "legacy/surface/src/exo-turn.tsx",
     "legacy/surface/src/local-config.ts",
+    "legacy/surface/src/press-line.ts",
     "legacy/surface/src/rewind-store.ts",
+    "legacy/surface/src/settings.tsx",
     "legacy/surface/src/snapshot-format.ts",
     "legacy/surface/src/stage.ts",
     "legacy/surface/src/state.ts",
+    "legacy/surface/src/surface-rename.tsx",
+    "legacy/surface/src/surface-title.tsx",
+    "legacy/surface/src/thread-sidebar.tsx",
     "legacy/surface/src/workspace-view.ts",
     "legacy/surface/src/workspace.ts",
-    "legacy/surface/package.json",
-    "legacy/surface/package-lock.json",
     "legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz"
   ],
   "owner": {
@@ -88,11 +99,44 @@
   "releaseReady": false,
   "dependencyProjects": [
     {
+      "id": "tooling",
+      "sourceRoot": "repository",
+      "pluginRoot": "plugins/bb-plugin-exosurface",
+      "importer": ".",
+      "sourcePackage": "package.json",
+      "sourceLock": "pnpm-lock.yaml",
+      "package": "resources/provenance/workspace/package.json",
+      "lock": "resources/provenance/workspace/pnpm-lock.yaml"
+    },
+    {
+      "id": "plugin",
+      "sourceRoot": "repository",
+      "pluginRoot": "plugins/bb-plugin-exosurface",
+      "importer": "plugins/bb-plugin-exosurface",
+      "sourcePackage": "plugins/bb-plugin-exosurface/package.json",
+      "sourceLock": "pnpm-lock.yaml",
+      "package": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
+      "lock": "resources/provenance/workspace/pnpm-lock.yaml"
+    },
+    {
       "id": "surface",
-      "package": "resources/provenance/surface/package.json",
-      "lock": "resources/provenance/surface/package-lock.json",
-      "sourcePackage": "legacy/surface/package.json",
-      "sourceLock": "legacy/surface/package-lock.json"
+      "sourceRoot": "repository",
+      "pluginRoot": "plugins/bb-plugin-exosurface",
+      "importer": "plugins/bb-plugin-exosurface/legacy/surface",
+      "sourcePackage": "plugins/bb-plugin-exosurface/legacy/surface/package.json",
+      "sourceLock": "pnpm-lock.yaml",
+      "package": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/package.json",
+      "lock": "resources/provenance/workspace/pnpm-lock.yaml"
+    },
+    {
+      "id": "composition",
+      "sourceRoot": "repository",
+      "pluginRoot": "plugins/bb-plugin-exosurface",
+      "importer": "plugins/bb-plugin-exosurface/legacy/surface/composition",
+      "sourcePackage": "plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
+      "sourceLock": "pnpm-lock.yaml",
+      "package": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
+      "lock": "resources/provenance/workspace/pnpm-lock.yaml"
     }
   ],
   "resources": [
@@ -137,16 +181,24 @@
       "sha256": "848ed6a8c023048a0d553249a8fa8f98a692570ccd49f2b282b96b02a77fce79"
     },
     {
-      "path": "resources/licenses/@babel_runtime-7.29.10/LICENSE",
+      "path": "resources/licenses/@babel_runtime-7.29.13/LICENSE",
       "sha256": "117da2af0d4ce0fe1c8e19b5cff9dcd806adf973d328d27b11d4448c4ff24f76"
     },
     {
-      "path": "resources/licenses/@babel_runtime-7.29.10/package.json",
-      "sha256": "69c016f01e3650f206c20bd82a689187d0d2571ec342ee712eaf9a97217d29b7"
+      "path": "resources/licenses/@babel_runtime-7.29.13/package.json",
+      "sha256": "4ad0b694c3e44ea724237d19f6a4b4eb60a05313e835d1bfb35c8dec0b59b624"
     },
     {
       "path": "resources/licenses/@get-bb_plugin-sdk-0.6.15/package.json",
       "sha256": "3a96202f693128fcf0d6264ba92469b697a348023c966c3396f74a7189a3f137"
+    },
+    {
+      "path": "resources/licenses/@json-render_core-0.21.0/LICENSE",
+      "sha256": "014bb31e83d5c2e76aea1cc6e82217346ab41362f32cb355ad0f5c10aa0aeaff"
+    },
+    {
+      "path": "resources/licenses/@json-render_core-0.21.0/package.json",
+      "sha256": "4c1663a648d356d72c3974ae37f7fa9fd13d715fe0edad78194099806767d0e1"
     },
     {
       "path": "resources/licenses/@lit-labs_ssr-dom-shim-1.6.0/package.json",
@@ -209,6 +261,14 @@
       "sha256": "e6375f834e3f25f46dcce21ad3b55dd944aa5d1dd0df431b48a9bbc203f05063"
     },
     {
+      "path": "resources/licenses/@types_react-dom-19.2.3/LICENSE",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "path": "resources/licenses/@types_react-dom-19.2.3/package.json",
+      "sha256": "6abdbf3fb0a8472e89cfc488fbae0bec7c5a03ad883ef41a2ab06834f5101817"
+    },
+    {
       "path": "resources/licenses/@types_trusted-types-2.0.7/LICENSE",
       "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
     },
@@ -247,6 +307,14 @@
     {
       "path": "resources/licenses/aria-query-5.3.0/package.json",
       "sha256": "450a668b715546766ff676e8bfd207bd0b507bcc2dfa7229d0fc6f1da830c3d6"
+    },
+    {
+      "path": "resources/licenses/better-sqlite3-13.0.3/LICENSE",
+      "sha256": "09856b52897c91ab67e7456ef43067019f31dfd3b87fda72e655736b1ebdee55"
+    },
+    {
+      "path": "resources/licenses/better-sqlite3-13.0.3/package.json",
+      "sha256": "863ca75d385e5f4e3c92b10880c01c1a748cf4ec75d0e080f636751bacac2fbd"
     },
     {
       "path": "resources/licenses/clsx-2.1.1/license",
@@ -303,6 +371,14 @@
     {
       "path": "resources/licenses/entities-4.5.0/package.json",
       "sha256": "5aafc7f3315a68a5af86727c71a8757b21bc8f51b0ae58770daa8853df42df38"
+    },
+    {
+      "path": "resources/licenses/hono-4.13.18/LICENSE",
+      "sha256": "a6ab98e5c77b9070c443eaff2ff81034a6f8cc05a7524d5098eb0f24defa0115"
+    },
+    {
+      "path": "resources/licenses/hono-4.13.18/package.json",
+      "sha256": "c79709b2d394aa3b32df3e55bf5237e11f8b61a40ac99a7f97dc5b8a3f7d8b1c"
     },
     {
       "path": "resources/licenses/isexe-2.0.0/LICENSE",
@@ -379,6 +455,14 @@
     {
       "path": "resources/licenses/mdurl-2.1.0/package.json",
       "sha256": "08998ec17f77cbc3e63cb251bcce49378935c0807899a30622da7a7d23e795ea"
+    },
+    {
+      "path": "resources/licenses/node-addon-api-8.9.2/LICENSE.md",
+      "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c"
+    },
+    {
+      "path": "resources/licenses/node-addon-api-8.9.2/package.json",
+      "sha256": "94a1365d14f41919457663c06b5d69c71a240f12c06d0f692e97e2474c053897"
     },
     {
       "path": "resources/licenses/path-key-3.1.1/license",
@@ -513,6 +597,14 @@
       "sha256": "da9f4efb18d3fb4b95c86d373b7150d92213a708ca11ed629888458ac5801a56"
     },
     {
+      "path": "resources/licenses/zod-4.3.6/LICENSE",
+      "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
+    },
+    {
+      "path": "resources/licenses/zod-4.3.6/package.json",
+      "sha256": "d74fbb6e2f4d85b5c5d937b0f25b5d6003cfdc922283f14a3293ae0340817926"
+    },
+    {
       "path": "resources/licenses/zod-4.6.6/LICENSE",
       "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
     },
@@ -529,12 +621,48 @@
       "sha256": "7c5b94d2abfeda0ecab269378b6ea1d94af4624686060c80df15e3ee06986042"
     },
     {
-      "path": "resources/provenance/surface/package-lock.json",
-      "sha256": "12329573b2f5cb501ff106731541e82392d725db689d85cf3b705687ab7ffc4b"
+      "path": "resources/provenance/workspace/.npmrc",
+      "sha256": "5ef2dff6d16a3e7e06a025c2a42fbf170247401482b709031c2c8d5a5fef7754"
     },
     {
-      "path": "resources/provenance/surface/package.json",
+      "path": "resources/provenance/workspace/mise-version",
+      "sha256": "3e41b98a2686de33a5b8926749b7922f1aa75a8a8914c2970566d5af1109e543"
+    },
+    {
+      "path": "resources/provenance/workspace/mise.lock",
+      "sha256": "1f594b3a6d4f8e6a0f0b0ea8d947f695de97fba0c11fcfcaf6b210a48fafd520"
+    },
+    {
+      "path": "resources/provenance/workspace/mise.toml",
+      "sha256": "a572d4c5465f29409d7396248835490eadcb2caadac184b8eab09238f91c9443"
+    },
+    {
+      "path": "resources/provenance/workspace/package.json",
+      "sha256": "8812498377589a678b3f5ad57946429bc90b7fd18d14674faa2a9d731bf19516"
+    },
+    {
+      "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
+      "sha256": "504509ae54e2ef901f947cfdcccfc5a888fd6d5ca0c51e08362185844f8b4bee"
+    },
+    {
+      "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/package.json",
       "sha256": "514b71753378fcec76a93ac16430b1dc8274b68ad5c2b1e07136098a955f43bc"
+    },
+    {
+      "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz",
+      "sha256": "df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5"
+    },
+    {
+      "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
+      "sha256": "a4817ef078378ceb07d2b8b14529eea35419e47721eca02a3d49561fb7911da8"
+    },
+    {
+      "path": "resources/provenance/workspace/pnpm-lock.yaml",
+      "sha256": "6581a79825f96d086a892261abd28581eabdb93188b4c595c4dacc395d0a73f4"
+    },
+    {
+      "path": "resources/provenance/workspace/pnpm-workspace.yaml",
+      "sha256": "500a7524386a5f313d240cdf4500dd9283d65543ff1d0da6c0d4b343c6627cc3"
     },
     {
       "path": "resources/provenance/zod3/LICENSE.upstream",

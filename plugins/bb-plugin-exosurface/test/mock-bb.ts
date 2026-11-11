@@ -16,7 +16,7 @@ import { reaped, PARENT_WATCH } from './reap.ts';
 import { settled } from './wait.ts';
 
 export const PLUGIN = resolve(import.meta.dirname, '..');
-const PI_CLI = join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
+const PI_CLI = realpathSync(join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js'));
 const PI_AI = pathToFileURL(join(PLUGIN, 'node_modules/@earendil-works/pi-ai/dist/index.js')).href;
 export const INSTRUCTIONS = '# Exo\n\nThe one Exo instructions source.\n';
 

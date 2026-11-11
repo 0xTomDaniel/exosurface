@@ -1,4 +1,5 @@
 // Isolated existing-renderer → compiled RPC → INDEPENDENT owner → mock Pi/tool → persisted page → fresh-browser reopen.
+// Frozen npm-baseline replay only, not the current pnpm graph or current-head acceptance.
 // No BB process, real authentication, provider network, launchctl, global state, or product-ready assertion.
 import assert from 'node:assert/strict';
 import {spawn,execFileSync} from 'node:child_process';
@@ -26,7 +27,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const waitFor=async(predicate,label)=>{const until=Date.now()+5000;while(!await predicate()){if(Date.now()>until)throw Error('Fixture wait failed: '+label);await sleep(20);}};
 try{
  // Reuse only an explicitly supplied disposable production dependency/build tree. No global installation.
- mkdirSync(backend);for(const file of ['package.json','package-lock.json','server.ts','build.mjs']){assert.deepEqual(readFileSync(join(plugin,file)),readFileSync(join(baselineBackend,file)),file+' production source must match');cpSync(join(plugin,file),join(backend,file));}
+ mkdirSync(backend);for(const file of ['package.json','package-lock.json','server.ts','build.mjs']){const source=join(plugin,...(['package.json','package-lock.json'].includes(file)?['compat/pnpm-migration/original',file]:[file]));assert.deepEqual(readFileSync(source),readFileSync(join(baselineBackend,file)),file+' frozen baseline source must match');cpSync(source,join(backend,file));}
  for(const name of readdirSync(join(baselineBackend,'src')).filter(n=>n.endsWith('.ts')))assert.deepEqual(readFileSync(join(plugin,'src',name)),readFileSync(join(baselineBackend,'src',name)),name+' production source must match');
  cpSync(join(plugin,'src'),join(backend,'src'),{recursive:true});cpSync(join(baselineBackend,'node_modules'),join(backend,'node_modules'),{recursive:true});
  mkdirSync(join(backend,'dist'));cpSync(join(baselineBackend,'dist/server.js'),join(backend,'dist/server.js'));

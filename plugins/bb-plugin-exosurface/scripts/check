@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Exosurface gate: the one deterministic check lanes and CI run (owner ruling 2026-11-05, #105, #106).
-# Steps, in order, stopping at the first red one: npm ci (plugin), npm ci (legacy/surface), owner build,
-# runtime build, typecheck, node tests on the mock-BB harness. No secrets, no model call, no network beyond npm ci.
+# Offline steps: owner build, runtime build, typecheck, mock-BB tests.
+# Install the frozen pnpm graph first with just setup. No secrets or model calls.
 # Bounds (owner order): each step under `timeout -k 10` in its own process group, SIGKILL-swept after;
 # NODE_OPTIONS=--max-old-space-size=1536, GOMAXPROCS=2, test concurrency 2, per-test timeout 120 s;
 # one run at a time per worktree under flock (EXOSURFACE_CHECK_LOCK overrides the lock path).
 # Usage: scripts/check [test file ...]   (from repo root or plugin dir; args narrow the test step only,
-# default test/*.test.ts). Exit code is the failed step's (124/137 on timeout).
+# default recursive test/**/*.test.ts and test/**/*.test.mjs). Exit code is the failed step's (124/137 on timeout).
 set -o pipefail
 plugin=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 2
 root=$(git -C "$plugin" rev-parse --show-toplevel 2>/dev/null) || root=$(cd "$plugin/../.." && pwd)
@@ -20,14 +20,17 @@ for f in "$@"; do
   if [[ -e $f ]]; then files+=("$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"); else files+=("$f"); fi
 done
 cd "$plugin" || exit 2
-((${#files[@]})) || files=(test/*.test.ts)
+if ((${#files[@]} == 0)); then
+  mapfile -d '' -t files < <(find test -type d \( -name node_modules -o -name .git \) -prune -o -type f \( -name '*.test.ts' -o -name '*.test.mjs' \) -print0 | LC_ALL=C sort -z)
+  ((${#files[@]})) || { echo 'check: no maintained test files found' >&2; exit 2; }
+fi
 
 export GOMAXPROCS=2 NODE_OPTIONS=--max-old-space-size=1536
 bounded() { # bounded SECONDS cmd...   timeout puts cmd in its own process group (pgid = its pid); sweep it after
   local s=$1; shift
   timeout -k 10 "$s" "$@" 9>&- & local p=$!
   wait $p; local rc=$?
-  pkill -KILL -g $p 2>/dev/null
+  kill -KILL -- -"$p" 2>/dev/null || true
   return $rc
 }
 step() { # step NAME SECONDS cmd...
@@ -37,10 +40,8 @@ step() { # step NAME SECONDS cmd...
   if ((rc)); then echo "check: FAILED step $name (exit $rc)"; exit $rc; fi
 }
 
-step "npm ci" 300 npm ci
-(cd legacy/surface && step "npm ci legacy/surface" 300 npm ci) || exit $?
 step "owner build" 300 node build.mjs
 step "runtime build" 300 node build-runtime.mjs
-step "typecheck" 300 npm run typecheck
+step "typecheck" 300 pnpm run typecheck
 step "test" 900 node --experimental-transform-types --test --test-concurrency=2 --test-timeout=120000 "${files[@]}"
 echo "check: ok"
