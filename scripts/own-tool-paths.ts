@@ -20,5 +20,10 @@ function ownTools(): string[] {
 }
 
 const names = ownTools();
-const paths = names.length > 0 ? ask("bin-paths", ...names).split("\n") : [];
-process.stdout.write(paths.filter((p) => p !== "").join(":"));
+if (process.argv.includes("--names")) {
+  if (names.length === 0) throw new Error("mise ls --local --json supplied no tools; check mise.toml before setup");
+  process.stdout.write(names.join("\n"));
+} else {
+  const paths = names.length > 0 ? ask("bin-paths", ...names).split("\n") : [];
+  process.stdout.write(paths.filter((p) => p !== "").join(":"));
+}

@@ -6,11 +6,11 @@ import { writeFileSync } from 'node:fs';
 import { createAssistantMessageEventStream, type AssistantMessage, type Model, type Api, type TranscriptContext } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
-const MARKERS = (process.env.EXO_CONTEXT_PROBE_MARKERS ?? '').split(',').filter(Boolean);
+const MARKERS = (process.env["EXO_CONTEXT_PROBE_MARKERS"] ?? '').split(',').filter(Boolean);
 const where = (prompt: string) => Object.fromEntries(MARKERS.map(m => [m, prompt.indexOf(m)]));
 
 export default function contextProbe(pi: ExtensionAPI) {
-  const out = process.env.EXO_CONTEXT_PROBE_OUT;
+  const out = process.env["EXO_CONTEXT_PROBE_OUT"];
   if (!out) throw Error('EXO_CONTEXT_PROBE_OUT required');
   const record: any = {};
   pi.on('session_start', (_e, ctx) => { record.base = { offsets: where(ctx.getSystemPrompt()), cwd: ctx.cwd, projectTrusted: ctx.isProjectTrusted() }; writeFileSync(out, JSON.stringify(record, null, 2)); });

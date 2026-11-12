@@ -13,7 +13,7 @@
     "test": "scripts/check",
     "build": "bb plugin build && node build.mjs && node build-runtime.mjs",
     "build:owner": "node build.mjs",
-    "typecheck": "pnpm --workspace-root exec tsc --project plugins/bb-plugin-exosurface/tsconfig.json --noEmit",
+    "typecheck": "pnpm --workspace-root exec node scripts/lint.ts --compiler --no-coverage --project=plugins/bb-plugin-exosurface/tsconfig.json",
     "build:runtime": "node build-runtime.mjs"
   },
   "bb": {

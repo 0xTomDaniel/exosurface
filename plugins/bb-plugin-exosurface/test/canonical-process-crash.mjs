@@ -6,20 +6,20 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } fr
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { settled } from './wait.ts';
-const plugin = resolve(process.argv[2]), root = process.env.PROOF_ROOT;
-assert.ok(root && process.env.HOME.startsWith(root + '/'));
+const plugin = resolve(process.argv[2]), root = process.env["PROOF_ROOT"];
+assert.ok(root && process.env["HOME"].startsWith(root + '/'));
 const cases = ['profile-api-no-receipt', 'profile-receipt', 'session-ready', 'native-spawning', 'pi-intent'];
 if (process.argv[3] === '--worker') {
-  const scenario = process.argv[4], mode = process.argv[5], base = process.env.PROOF_CASE_ROOT;
+  const scenario = process.argv[4], mode = process.argv[5], base = process.env["PROOF_CASE_ROOT"];
   assert.ok(cases.includes(scenario) && base.startsWith(root + '/'));
   const { canonicalSetup, recoverSetupLock } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-setup.ts')));
   const { canonicalSystemPorts, canonicalNativeAdapter } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-system.ts')));
   const home = join(base, 's'), optchatHome = join(base, 'o'), profile = 'exo-optchat';
-  const request = { operationId: 'process-crash-proof', authorizeInitialization: true, projectId: 'mock-project', home, optchatHome, profile, vault: root + '/vault', piCli: process.env.PROOF_PI_CLI, optchat: root + '/optchat' };
+  const request = { operationId: 'process-crash-proof', authorizeInitialization: true, projectId: 'mock-project', home, optchatHome, profile, vault: root + '/vault', piCli: process.env["PROOF_PI_CLI"], optchat: root + '/optchat' };
   let stalled;
   const stall = async phase => { writeFileSync(join(base, 'phase.json'), JSON.stringify({ phase, pid: process.pid })); stalled = setInterval(() => {}, 1000); await new Promise(() => {}); };
   const native = canonicalNativeAdapter({ async create() { appendFileSync(join(base, 'mock-native.jsonl'), JSON.stringify({ id: 'crash-mock-thread' }) + '\n'); if (mode === 'crash' && scenario === 'native-spawning') await stall('native-spawning'); return { id: 'crash-mock-thread' }; }, async get(id) { return { id, projectId: request.projectId, providerId: 'exo-spike' }; } }, true);
-  const ports = canonicalSystemPorts({ localConfig: join(base, 'config.json'), runtimeRoot: plugin, node: process.execPath, native, instrumentEnvironment: env => ({ ...env, NODE_OPTIONS: process.env.NODE_OPTIONS, PROOF_ROOT: root, PROOF_ALLOW_PI: '1', PROOF_PI_CLI: request.piCli, PROOF_PROFILE_DIR: join(optchatHome, 'profiles', profile), ...(mode === 'crash' && scenario === 'pi-intent' ? { PROOF_CRASH_PI_INTENT: '1', PROOF_PHASE_FILE: join(base, 'phase.json') } : {}) }) });
+  const ports = canonicalSystemPorts({ localConfig: join(base, 'config.json'), runtimeRoot: plugin, node: process.execPath, native, instrumentEnvironment: env => ({ ...env, NODE_OPTIONS: process.env["NODE_OPTIONS"], PROOF_ROOT: root, PROOF_ALLOW_PI: '1', PROOF_PI_CLI: request.piCli, PROOF_PROFILE_DIR: join(optchatHome, 'profiles', profile), ...(mode === 'crash' && scenario === 'pi-intent' ? { PROOF_CRASH_PI_INTENT: '1', PROOF_PHASE_FILE: join(base, 'phase.json') } : {}) }) });
   const create = ports.createProfile, initialize = ports.initializeSession;
   ports.createProfile = async r => { await create(r); if (mode === 'crash' && scenario === 'profile-receipt') await stall('profile-receipt'); };
   ports.initializeSession = async r => { const session = await initialize(r); if (mode === 'crash' && scenario === 'session-ready') await stall('session-ready'); return session; };
@@ -27,14 +27,14 @@ if (process.argv[3] === '--worker') {
   catch (error) { console.log(JSON.stringify({ ok: false, error: error.message })); process.exitCode = 2; }
   finally { if (stalled) clearInterval(stalled); }
 } else {
-  const series = process.env.PROOF_CRASH_RUN || 'crashes'; assert.match(series, /^crashes(?:[0-9]+)?$/);
+  const series = process.env["PROOF_CRASH_RUN"] || 'crashes'; assert.match(series, /^crashes(?:[0-9]+)?$/);
   const directory = join(root, series); mkdirSync(directory, { recursive: true });
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const results = [];
   for (let i = 0; i < cases.length; i++) {
     const scenario = cases[i], base = join(directory, 'c' + i); mkdirSync(base, { recursive: true });
     const run = mode => {
-      const env = { HOME: join(base, 'h'), TMPDIR: root + '/tmp', PATH: process.env.PATH, NODE_OPTIONS: process.env.NODE_OPTIONS, PROOF_ROOT: root, PROOF_PI_CLI: process.env.PROOF_PI_CLI, PROOF_CASE_ROOT: base, PROOF_ALLOW_PI: '1', PROOF_PROFILE_DIR: join(base, 'o/profiles/exo-optchat'), ...(mode === 'crash' && scenario === 'profile-api-no-receipt' ? { PROOF_CRASH_PROFILE_API: '1', PROOF_PHASE_FILE: join(base, 'phase.json') } : {}) };
+      const env = { HOME: join(base, 'h'), TMPDIR: root + '/tmp', PATH: process.env["PATH"], NODE_OPTIONS: process.env["NODE_OPTIONS"], PROOF_ROOT: root, PROOF_PI_CLI: process.env["PROOF_PI_CLI"], PROOF_CASE_ROOT: base, PROOF_ALLOW_PI: '1', PROOF_PROFILE_DIR: join(base, 'o/profiles/exo-optchat'), ...(mode === 'crash' && scenario === 'profile-api-no-receipt' ? { PROOF_CRASH_PROFILE_API: '1', PROOF_PHASE_FILE: join(base, 'phase.json') } : {}) };
       mkdirSync(env.HOME, { recursive: true });
       const child = spawn(process.execPath, ['--experimental-transform-types', join(plugin, 'test/canonical-process-crash.mjs'), plugin, '--worker', scenario, mode], { cwd: base, env, stdio: ['ignore', 'pipe', 'pipe'] });
       const done = new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal }))); let stdout = '', stderr = '';

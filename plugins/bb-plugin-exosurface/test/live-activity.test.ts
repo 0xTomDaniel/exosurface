@@ -36,12 +36,12 @@ test('a send Exo answers in several steps: exo_block names each step in turn whi
 });
 
 test('exo_block as BB serves it: its output passes the contract, an input the contract refuses never reaches it', async () => {
-  await assert.rejects(f.rpc.exo_block({ threadId: 'primary', limit: 500 } as any), /exo_block input invalid/);
-  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' });
+  await assert.rejects(f.rpc["exo_block"]({ threadId: 'primary', limit: 500 } as any), /exo_block input invalid/);
+  assert.deepEqual(await f.rpc["exo_block"]({ threadId: 'primary' }), { working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' });
 });
 
 test('two surfaces working at once: each exo_block reports its own line, never the other\'s', async () => {
-  await f.rpc.thread_bind({ threadId: 'second' });
+  await f.rpc["thread_bind"]({ threadId: 'second' });
   assert.equal((await host.start('second')).error, undefined);
   const profile = f.piRuns().at(-1).profile;
   const [home, second] = await Promise.all([stepsTurn(f, 'primary', 'garden'), stepsTurn(f, 'second', 'cabin')]);

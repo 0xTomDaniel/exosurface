@@ -123,7 +123,7 @@ test('a send on a new surface whose turn the provider fails before any step: the
   fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
-  const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
+  const fresh = (await f.rpc["thread_list"](null)).threads[1].threadId;
   assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface to take a message', () => !!input() && !input()!.disabled && reply()?.textContent === '');
   const profile = f.piRuns().at(-1).profile, opened = host.deltas(fresh).filter(d => d.kind === 'turn.open').length;

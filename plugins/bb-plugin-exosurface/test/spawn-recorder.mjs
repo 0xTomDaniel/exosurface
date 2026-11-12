@@ -4,7 +4,7 @@
 import cp from 'node:child_process';
 import { syncBuiltinESMExports } from 'node:module';
 import { appendFileSync } from 'node:fs';
-const file = process.env.EXO_SPAWN_RECORD, original = cp.spawn;
+const file = process.env["EXO_SPAWN_RECORD"], original = cp.spawn;
 cp.spawn = function (command, args, options) {
   if (file) appendFileSync(file, JSON.stringify({ command, args, cwd: options?.cwd, env: options?.env }) + '\n');
   return original.apply(this, arguments);

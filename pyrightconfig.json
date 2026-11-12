@@ -1,0 +1,11 @@
+{
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.13",
+  "include": [
+    "tools",
+    "scripts",
+    "plugins/bb-plugin-exo-a2ui-spike/test",
+    "plugins/bb-plugin-exo-spike/test",
+    "plugins/bb-plugin-exosurface/compat"
+  ]
+}

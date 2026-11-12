@@ -9,7 +9,7 @@
 # default recursive test/**/*.test.ts and test/**/*.test.mjs). Exit code is the failed step's (124/137 on timeout).
 set -o pipefail
 plugin=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 2
-root=$(git -C "$plugin" rev-parse --show-toplevel 2>/dev/null) || root=$(cd "$plugin/../.." && pwd)
+root=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE git -C "$plugin" rev-parse --show-toplevel 2>/dev/null) || root=$(cd "$plugin/../.." && pwd)
 lock=${EXOSURFACE_CHECK_LOCK:-$(git -C "$root" rev-parse --path-format=absolute --git-path exosurface-check.lock 2>/dev/null || echo "$root/.exosurface-check.lock")}
 exec 9>"$lock" || exit 2
 if ! flock -n 9; then echo "check: waiting on lock $lock"; flock 9; fi
@@ -42,6 +42,19 @@ step() { # step NAME SECONDS cmd...
 
 step "owner build" 300 node build.mjs
 step "runtime build" 300 node build-runtime.mjs
+
+# The justfile owns the ordered standards steps; execute them under this same lock and process bounds.
+# The architecture reader consumes the graph from the immediately preceding real build.
+# Standards steps call git from the repo root: drop a hook's GIT_DIR/GIT_WORK_TREE so git rediscovers this worktree
+# from cwd instead of taking cwd as the work tree; GIT_INDEX_FILE stays, so staged views show the commit being made.
+# typecheck and test keep the full hook env.
+standards_text=$(just --justfile "$root/justfile" --evaluate GATE_RECIPES) || exit $?
+read -r -a standards_steps <<<"$standards_text"
+((${#standards_steps[@]})) || { echo 'check: justfile declares no standards steps' >&2; exit 2; }
+for recipe in "${standards_steps[@]}"; do
+  step "$recipe" 300 env -u GIT_DIR -u GIT_WORK_TREE just --justfile "$root/justfile" "$recipe"
+done
+
 step "typecheck" 300 pnpm run typecheck
 step "test" 900 node --experimental-transform-types --test --test-concurrency=2 --test-timeout=120000 "${files[@]}"
 echo "check: ok"

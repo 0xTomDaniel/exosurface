@@ -1,0 +1,6 @@
+target-version = "py313"
+line-length = 100
+
+[lint]
+select = ["ALL"]
+ignore = ["COM812", "CPY001", "D", "S101", "S603"]

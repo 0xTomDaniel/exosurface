@@ -1,0 +1,15 @@
+octo-feather
+Copyright 2026 Tom Daniel
+
+This product includes software derived from octo-lite
+(https://github.com/varelaseb/octo-lite, commit cc6fa4e),
+Copyright 2026 Sebastian Varela, licensed under the Apache License, Version 2.0
+(see LICENSE). octo-lite's NOTICE reads:
+
+    Dev Workflows
+    Copyright 2026 Sebastian Varela
+
+    This repository contains general-purpose development workflows, scripts, templates,
+    and related tooling independently developed by Sebastian Varela.
+
+    These materials are provided under the Apache License, Version 2.0.

@@ -61,7 +61,7 @@ function PageStrip({view,local,setLocal,onKeep}:{view:WorkspaceView;local:Local;
 }
 // A surface card in the chat, where Exo drew or edited it. Clicking shows that version on the canvas.
 function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
- const rpc=useRpc<typeof rpcContract>(),nav=useBbNavigate(),surface=attributes.surface??'',revision=Number(attributes.revision),valid=/^[a-zA-Z0-9_-]{1,80}$/.test(surface)&&Number.isInteger(revision);
+ const rpc=useRpc<typeof rpcContract>(),nav=useBbNavigate(),surface=attributes["surface"]??'',revision=Number(attributes["revision"]),valid=/^[a-zA-Z0-9_-]{1,80}$/.test(surface)&&Number.isInteger(revision);
  const[meta,setMeta]=useState<{title:string;at:string}|null>(null),active=useRewind();
  useEffect(()=>{if(valid)rpc.call('surfaceAt',{threadId:message.threadId,surface,revision}).then(m=>setMeta({title:m.title,at:m.at})).catch(()=>{});},[surface,revision,message.threadId]);
  if(!valid)return null;const on=active?.surface===surface&&active.revision===revision;
@@ -76,7 +76,7 @@ function ExoSurfaceCard({attributes,message}:PluginMessageDirectiveProps){
   if(m&&!m.onStage)await rpc.call('pending',{threadId:message.threadId,op:'set',version:{surface,revision:m.revision}}).catch(()=>{});}}
   className={`my-1 flex w-full max-w-md items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent ${on?'border-primary':'border-border'}`}>
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 opacity-70"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
-  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes.action==='edited'?'Page edited':'Page'}{meta?` · ${when(meta.at)}`:''}</span></span>
+  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{meta?.title??surface}</span><span className="block text-xs text-muted-foreground">{attributes["action"]==='edited'?'Page edited':'Page'}{meta?` · ${when(meta.at)}`:''}</span></span>
  </button>;
 }
 // An earlier version of a surface, shown in place of the live canvas. Editing it prepares a bring-back

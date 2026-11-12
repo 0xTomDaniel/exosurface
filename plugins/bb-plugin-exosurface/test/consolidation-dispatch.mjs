@@ -5,8 +5,8 @@ import {pathToFileURL} from 'node:url';
 import {join,resolve} from 'node:path';
 import {mkdirSync,writeFileSync,readFileSync,existsSync,rmSync} from 'node:fs';
 import {createServer} from 'node:net';
-const plugin=resolve(process.argv[2]),home=resolve(process.env.HOME??'');
-assert.ok(process.env.EXO_NATIVE_ROOT&&home.startsWith(resolve(process.env.EXO_NATIVE_ROOT)+'/'),'Disposable fixture HOME required');
+const plugin=resolve(process.argv[2]),home=resolve(process.env["HOME"]??'');
+assert.ok(process.env["EXO_NATIVE_ROOT"]&&home.startsWith(resolve(process.env["EXO_NATIVE_ROOT"])+'/'),'Disposable fixture HOME required');
 const {default:register,composeDispatchHooks}=await import(pathToFileURL(join(plugin,'server.ts')));
 let registrations=0,dispatch;const providers=[],services=[],signals=[];
 // Test transport only, not a substituted dependency/module or host behavior proof.

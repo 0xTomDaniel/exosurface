@@ -40,7 +40,7 @@ function assertPlain(text: string, args: object, argument: RegExp, accepts: RegE
 
 test('fresh-owner page tools: each format error reaches Exo in plain words; well-formed draw and edit save', async t => {
   const state = mkdtempSync(join(tmpdir(), 'exo-args-')); fixtureCleanup(t, state);
-  process.env.EXO_PAGE_STATE = state;
+  process.env["EXO_PAGE_STATE"] = state;
   const tools = new Map<string, Tool>();
   (await import('../src/page-tools.ts')).default({ registerTool: (tool: Tool) => tools.set(tool.name, tool) });
   const tool = tools.get('update_exosurface')!;

@@ -48,6 +48,6 @@ test('not set up: the Exo tab shows only settings offering set-up, then Set up E
     assert.equal(s.settingsShown(), 0);
     // Set up once: one native conversation.
     assert.equal(f.spawns.length, 1);
-    assert.equal((await f.rpc.canonical_setup_status(null)).stage, 'bound');
+    assert.equal((await f.rpc["canonical_setup_status"](null)).stage, 'bound');
   } finally { view.unmount(); }
 });

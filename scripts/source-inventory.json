@@ -1,0 +1,1366 @@
+{
+  "version": 1,
+  "integrity": {
+    "plugins/bb-plugin-exo-a2ui-spike/test/archive-presentation-experiments.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/archive-presentation-experiments.py"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/clone-exo.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/clone-exo.py"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/preservation.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/preservation.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/reopen.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "reopen.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/rpc-proof.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "rpc-proof.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/launch.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "launch.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/launch-fixed.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "launch-fixed.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/launch.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/SANITIZED.md",
+      "format": "sanitized-table",
+      "key": "native-prerequisite-evidence/launch.py"
+    },
+    "scripts/vendor/spec-status/check.py": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "reverse-patch",
+      "key": "check.py"
+    },
+    "scripts/vendor/spec-status/github-issues.sh": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "audit-table",
+      "key": "github-issues.sh"
+    },
+    "scripts/vendor/spec-status/linear.sh": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "audit-table",
+      "key": "linear.sh"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-client.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-client.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-doc.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-doc.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-history.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-history.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-memory.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-memory.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/delivery.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/delivery.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/drafts.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/drafts.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/exo-catalog.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/exo-catalog.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/exo-components.tsx": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/exo-components.tsx"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/generation-policy.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/generation-policy.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/journal.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/journal.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/live.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/live.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/local-config.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/local-config.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/overview.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/overview.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/owner-client.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/owner-client.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/owner-service.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/owner-service.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/pi-rpc.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/pi-rpc.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/presentation-guide.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/presentation-guide.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/rewind-store.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/rewind-store.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/runtime.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/runtime.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/snapshot-format.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/snapshot-format.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/stage.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/stage.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/state.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/state.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/stream-frames.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/stream-frames.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/tool-contract.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/tool-contract.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-extension.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-extension.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-frame.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-frame.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-view.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-view.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/canvas-history.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/canvas-history.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/canvas-memory.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/canvas-memory.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/card-rule-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/card-rule-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/compose-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/compose-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-configure.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-configure.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-context.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-context.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-visibility.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-visibility.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-ordinary-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-ordinary-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-render-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-render-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-replay-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-replay-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-schema-replay.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-schema-replay.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/drawing-eval.mts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/drawing-eval.mts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generation-policy.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generation-policy.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generative-ui.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generative-ui.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generative.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generative.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/graduation-gates.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/graduation-gates.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/history-staged-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/history-staged-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-baseline.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-baseline.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-interaction.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-interaction.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/jev-direct-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/jev-direct-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/layout-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/layout-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-ordinary-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-ordinary-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-provider-probe.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-provider-probe.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-source-ref-probe.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-source-ref-probe.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/pill-staged-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/pill-staged-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/playwright.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/playwright.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/presentation-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/presentation-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/reply-metrics.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/reply-metrics.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/restart-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/restart-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/revert-direct-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/revert-direct-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/sample.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/sample.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/shared-state-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/shared-state-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/snapshot-format.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/snapshot-format.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage-fixtures.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage-fixtures.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage-render.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage-render.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stream-component-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stream-component-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/tool-contract.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/tool-contract.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/ui-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/ui-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/workspace.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/workspace.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/lib/document-style.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "lib/document-style.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/lib/exo-theme.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "lib/exo-theme.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/app.tsx": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "app.tsx"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/host.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "host.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/server.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "server.ts"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1.min.js": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/dist/echarts.min.js"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/LICENSE": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/LICENSE"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/NOTICE": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/NOTICE"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/licenses/LICENSE-d3": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/licenses/LICENSE-d3"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/upstream-package.json": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/package.json"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/guard.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "guard.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/proof.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "proof.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/setup-extension.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "setup-extension.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/fixture-owner.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "fixture-owner.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire-attempt-1.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire-attempt-1.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire-attempt-2.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire-attempt-2.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire-before-artifact.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire-before-artifact.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire-root-ci.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire-root-ci.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/regression-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "regression-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/shell-ui-smoke.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "shell-ui-smoke.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-smoke.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-smoke.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire-attempt-1.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire-attempt-1.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire-attempt-2.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire-attempt-2.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire.cjs"
+    },
+    "docs/specs/.viz/runtime.js": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/PINNED.md",
+      "format": "audit-table",
+      "key": "docs/specs/.viz/runtime.js"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/evidence/initial-wrong-runtime-server.js": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/evidence/PINNED.md",
+      "format": "sanitized-table",
+      "key": "plugins/bb-plugin-exosurface/compat/consolidation/evidence/initial-wrong-runtime-server.js"
+    }
+  },
+  "maintainedDiagnosticCases": [
+    {
+      "id": "216-compact-t201",
+      "file": "plugins/bb-plugin-exo-spike/test/compact-own-status.py",
+      "rule": "T201",
+      "kind": "structured-receipt",
+      "decisionRef": "https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6821734163",
+      "reviewedSource": "\"\"\"One-time BB0.45 repair of this adapter's redundant status metadata only.\nNo conversation trimming, schema/index/bundle patch, or recurring DB integration.\nPrivate consistent backup + tested-copy preservation are required before --apply.\n\"\"\"\n\nimport hashlib\nimport json\nimport sqlite3\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nBASE = Path(__file__).resolve().parent.parent\nDB = Path.home() / \".bb/bb.db\"\nDEST = Path.home() / \".exo-bb-spike/backups\"\nDEST.mkdir(parents=True, exist_ok=True, mode=0o700)\nassert (\n    json.loads(\n        Path(\n            \"/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/package.json\"\n        ).read_text()\n    )[\"version\"]\n    == \"0.45.0\"\n), \"Version-specific one-time repair; re-review before other versions\"\nKIND = \"exo-spike/pi-ui\"\nDELETE = \"\"\"DELETE FROM events WHERE type='thread/extensionState/updated'\nAND json_extract(data,'$.kind')=? AND id NOT IN\n(SELECT e.id FROM events e WHERE e.type='thread/extensionState/updated'\nAND json_extract(e.data,'$.kind')=? AND e.sequence=(SELECT MAX(n.sequence) FROM events n\nWHERE n.thread_id=e.thread_id AND n.type=e.type AND json_extract(n.data,'$.kind')=?))\"\"\"\n\n\ndef fingerprint(c: sqlite3.Connection) -> dict[str, int | str]:\n    h = hashlib.sha256()\n    count = 0\n    for row in c.execute(\n        \"SELECT id,thread_id,sequence,type,data FROM events \"\n        \"WHERE NOT(type='thread/extensionState/updated' \"\n        \"AND COALESCE(json_extract(data,'$.kind'),'')=?) \"\n        \"ORDER BY thread_id,sequence\",\n        (KIND,),\n    ):\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1\n    return {\"rows\": count, \"sha256\": h.hexdigest()}\n\n\ndef latest(c: sqlite3.Connection) -> list[object]:\n    return c.execute(\n        \"SELECT thread_id,MAX(sequence) FROM events \"\n        \"WHERE type='thread/extensionState/updated' \"\n        \"AND json_extract(data,'$.kind')=? GROUP BY thread_id\",\n        (KIND,),\n    ).fetchall()\n\n\ndef shrink(c: sqlite3.Connection) -> dict[str, int | bool | dict[str, int | str]]:\n    before = fingerprint(c)\n    heads = latest(c)\n    ids = {\n        r[0]\n        for r in c.execute(\n            \"SELECT id FROM events WHERE type='thread/extensionState/updated' \"\n            \"AND json_extract(data,'$.kind')=?\",\n            (KIND,),\n        )\n    }\n    assert (\n        not c.execute(\n            \"SELECT 1 FROM retained_event_outputs WHERE event_id IN (\"\n            + \",\".join(\"?\" for _ in ids)\n            + \") LIMIT 1\",\n            list(ids),\n        ).fetchone()\n        if ids\n        else True\n    )\n    with c:\n        c.execute(\"PRAGMA foreign_keys=ON\")\n        n = c.execute(DELETE, (KIND, KIND, KIND)).rowcount\n        assert fingerprint(c) == before, \"Non-owned-state event changed\"\n        assert latest(c) == heads, \"Latest state/high-water mark changed\"\n    return {\n        \"removedSupersededOwnStatusSnapshots\": n,\n        \"nonStatusEvents\": before,\n        \"latestOwnStatePerThreadPreserved\": True,\n    }\n\n\nsource = sqlite3.connect(f\"file:{DB}?mode=ro\", uri=True, timeout=5)\nsource.execute(\"pragma query_only=on\")\nstamp = datetime.now().astimezone().strftime(\"%Y%m%dT%H%M%S%z\")\nbackup = DEST / f\"bb-before-status-repair-{stamp}.sqlite\"\ntarget = sqlite3.connect(backup)\nsource.backup(target)\ntarget.close()\nsource.close()\nbackup.chmod(0o600)\nassert sqlite3.connect(backup).execute(\"pragma integrity_check\").fetchone()[0] == \"ok\"\ncopy = DEST / f\"bb-status-repair-dry-run-{stamp}.sqlite\"\ns = sqlite3.connect(backup)\nd = sqlite3.connect(copy)\ns.backup(d)\ns.close()\ndry = shrink(d)\nd.close()\ncopy.chmod(0o600)\nresult = {\n    \"captured\": datetime.now().astimezone().isoformat(),\n    \"databaseBackup\": str(backup),\n    \"backupSha256\": hashlib.sha256(backup.read_bytes()).hexdigest(),\n    \"copyResult\": dry,\n    \"applied\": False,\n    \"scope\": (\n        \"Only exo-spike/pi-ui superseded latest-state metadata; \"\n        \"all conversation/tool/foreign events preserved\"\n    ),\n}\nif \"--apply\" in sys.argv:\n    live = sqlite3.connect(DB, timeout=5)\n    actual = shrink(live)\n    live.close()\n    result[\"liveResult\"] = actual\n    result[\"applied\"] = True\n(BASE / \"evidence/status-repair.json\").write_text(json.dumps(result, indent=2) + \"\\n\")\nprint(json.dumps(result, indent=2))\n",
+      "sourceSha256": "82bdf17cb216f36b2bf8e70e0b05df8f7888b06f2196e706cdef773f5c6f6ea2",
+      "manifest": "plugins/bb-plugin-exo-spike/package.json",
+      "reviewedManifest": "{\n  \"name\": \"bb-plugin-exo-spike\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"engines\": {\n    \"bb\": \">=0.45\",\n    \"bbPluginSdk\": \">=0.6.15\"\n  },\n  \"bb\": {\n    \"name\": \"Exo Spike\",\n    \"description\": \"Isolated Exo / Pi / OptChat public-provider proof: offline fixture and real-model trial.\",\n    \"host\": \"./host.ts\",\n    \"branding\": {\n      \"icon\": \"ListTodo\"\n    },\n    \"server\": \"./server.ts\",\n    \"app\": \"./app.tsx\"\n  },\n  \"scripts\": {\n    \"typecheck\": \"tsc --noEmit\",\n    \"test\": \"node --experimental-transform-types --test --test-isolation=none test/*.test.ts\"\n  },\n  \"dependencies\": {\n    \"@get-bb/plugin-sdk\": \"0.6.15\",\n    \"@radix-ui/react-checkbox\": \"^1.3.7\",\n    \"@radix-ui/react-slot\": \"^1.3.0\",\n    \"zod\": \"^4.6.5\"\n  },\n  \"devDependencies\": {\n    \"@earendil-works/pi-coding-agent\": \"1.1.0\",\n    \"@pierre/diffs\": \"^1.2.9\",\n    \"@radix-ui/react-alert-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-context-menu\": \"^2.3.3\",\n    \"@radix-ui/react-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-dropdown-menu\": \"^2.1.20\",\n    \"@radix-ui/react-hover-card\": \"^1.1.19\",\n    \"@radix-ui/react-menubar\": \"^1.1.20\",\n    \"@radix-ui/react-navigation-menu\": \"^1.2.18\",\n    \"@radix-ui/react-popover\": \"^1.1.19\",\n    \"@radix-ui/react-select\": \"^2.3.3\",\n    \"@radix-ui/react-tooltip\": \"^1.2.12\",\n    \"@types/better-sqlite3\": \"^7.6.12\",\n    \"@types/node\": \"^22.0.0\",\n    \"@types/react\": \"^19.0.0\",\n    \"@types/react-dom\": \"^19.0.0\",\n    \"better-sqlite3\": \"^12.0.0\",\n    \"class-variance-authority\": \"^0.7.1\",\n    \"clsx\": \"^2.1.1\",\n    \"cron-parser\": \"^5.5.0\",\n    \"hono\": \"^4.11.9\",\n    \"sonner\": \"^1.7.4\",\n    \"tailwind-merge\": \"^3.4.0\",\n    \"typescript\": \"^5.7.0\",\n    \"vaul\": \"^1.1.2\"\n  }\n}\n",
+      "toolVersion": "0.17.1",
+      "configSha256": "5ce787e987a1dd0ddc0e53be46f3865ef60305ad23433d1713b450b3e0cd2e87",
+      "proofEvidence": null,
+      "controls": [
+        {
+          "name": "reviewed-positive",
+          "replaceOld": "",
+          "replaceNew": "",
+          "mutateReviewedToo": false,
+          "expectedSemantic": true
+        },
+        {
+          "name": "wrong-output",
+          "replaceOld": "print(json.dumps(result, indent=2))",
+          "replaceNew": "print(json.dumps(sys.argv, indent=2))",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "extra-print",
+          "replaceOld": "print(json.dumps(result, indent=2))",
+          "replaceNew": "print(json.dumps(result, indent=2))\nprint(\"debug\")",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "producer-data",
+          "replaceOld": "\"copyResult\": dry",
+          "replaceNew": "\"copyResult\": heads",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-plus2",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 2",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-plus0",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 0",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-plus-bool",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += True",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-extra-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 1\n        count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-conditional-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "if row:\n            count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-rebind",
+          "replaceOld": "count += 1",
+          "replaceNew": "count = 100",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-hash-order",
+          "replaceOld": "        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1",
+          "replaceNew": "        count += 1\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-alias",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids_alias = ids\n    ids_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-alias-chain",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    first_alias = ids\n    second_alias = first_alias\n    second_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-container-escape",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    escaped = [ids]\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-unknown-call",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    unknown_consumer(ids)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-subscript-store",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids[0] = 1\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-direct-method",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-after-query",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    after_query_alias = ids\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "unsupported-reflection-ids",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    setattr(ids, \"PUBLIC\", True)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-frame-before",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-frame-after",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-frame-in-transaction",
+          "replaceOld": "        n = c.execute(DELETE",
+          "replaceNew": "        sys._getframe().f_locals.__setitem__(\"ids\", set())\n        n = c.execute(DELETE",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        }
+      ]
+    },
+    {
+      "id": "216-compact-s608",
+      "file": "plugins/bb-plugin-exo-spike/test/compact-own-status.py",
+      "rule": "S608",
+      "kind": "bound-placeholder-count",
+      "decisionRef": "https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6821734741",
+      "reviewedSource": "\"\"\"One-time BB0.45 repair of this adapter's redundant status metadata only.\nNo conversation trimming, schema/index/bundle patch, or recurring DB integration.\nPrivate consistent backup + tested-copy preservation are required before --apply.\n\"\"\"\n\nimport hashlib\nimport json\nimport sqlite3\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nBASE = Path(__file__).resolve().parent.parent\nDB = Path.home() / \".bb/bb.db\"\nDEST = Path.home() / \".exo-bb-spike/backups\"\nDEST.mkdir(parents=True, exist_ok=True, mode=0o700)\nassert (\n    json.loads(\n        Path(\n            \"/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/package.json\"\n        ).read_text()\n    )[\"version\"]\n    == \"0.45.0\"\n), \"Version-specific one-time repair; re-review before other versions\"\nKIND = \"exo-spike/pi-ui\"\nDELETE = \"\"\"DELETE FROM events WHERE type='thread/extensionState/updated'\nAND json_extract(data,'$.kind')=? AND id NOT IN\n(SELECT e.id FROM events e WHERE e.type='thread/extensionState/updated'\nAND json_extract(e.data,'$.kind')=? AND e.sequence=(SELECT MAX(n.sequence) FROM events n\nWHERE n.thread_id=e.thread_id AND n.type=e.type AND json_extract(n.data,'$.kind')=?))\"\"\"\n\n\ndef fingerprint(c: sqlite3.Connection) -> dict[str, int | str]:\n    h = hashlib.sha256()\n    count = 0\n    for row in c.execute(\n        \"SELECT id,thread_id,sequence,type,data FROM events \"\n        \"WHERE NOT(type='thread/extensionState/updated' \"\n        \"AND COALESCE(json_extract(data,'$.kind'),'')=?) \"\n        \"ORDER BY thread_id,sequence\",\n        (KIND,),\n    ):\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1\n    return {\"rows\": count, \"sha256\": h.hexdigest()}\n\n\ndef latest(c: sqlite3.Connection) -> list[object]:\n    return c.execute(\n        \"SELECT thread_id,MAX(sequence) FROM events \"\n        \"WHERE type='thread/extensionState/updated' \"\n        \"AND json_extract(data,'$.kind')=? GROUP BY thread_id\",\n        (KIND,),\n    ).fetchall()\n\n\ndef shrink(c: sqlite3.Connection) -> dict[str, int | bool | dict[str, int | str]]:\n    before = fingerprint(c)\n    heads = latest(c)\n    ids = {\n        r[0]\n        for r in c.execute(\n            \"SELECT id FROM events WHERE type='thread/extensionState/updated' \"\n            \"AND json_extract(data,'$.kind')=?\",\n            (KIND,),\n        )\n    }\n    assert (\n        not c.execute(\n            \"SELECT 1 FROM retained_event_outputs WHERE event_id IN (\"\n            + \",\".join(\"?\" for _ in ids)\n            + \") LIMIT 1\",\n            list(ids),\n        ).fetchone()\n        if ids\n        else True\n    )\n    with c:\n        c.execute(\"PRAGMA foreign_keys=ON\")\n        n = c.execute(DELETE, (KIND, KIND, KIND)).rowcount\n        assert fingerprint(c) == before, \"Non-owned-state event changed\"\n        assert latest(c) == heads, \"Latest state/high-water mark changed\"\n    return {\n        \"removedSupersededOwnStatusSnapshots\": n,\n        \"nonStatusEvents\": before,\n        \"latestOwnStatePerThreadPreserved\": True,\n    }\n\n\nsource = sqlite3.connect(f\"file:{DB}?mode=ro\", uri=True, timeout=5)\nsource.execute(\"pragma query_only=on\")\nstamp = datetime.now().astimezone().strftime(\"%Y%m%dT%H%M%S%z\")\nbackup = DEST / f\"bb-before-status-repair-{stamp}.sqlite\"\ntarget = sqlite3.connect(backup)\nsource.backup(target)\ntarget.close()\nsource.close()\nbackup.chmod(0o600)\nassert sqlite3.connect(backup).execute(\"pragma integrity_check\").fetchone()[0] == \"ok\"\ncopy = DEST / f\"bb-status-repair-dry-run-{stamp}.sqlite\"\ns = sqlite3.connect(backup)\nd = sqlite3.connect(copy)\ns.backup(d)\ns.close()\ndry = shrink(d)\nd.close()\ncopy.chmod(0o600)\nresult = {\n    \"captured\": datetime.now().astimezone().isoformat(),\n    \"databaseBackup\": str(backup),\n    \"backupSha256\": hashlib.sha256(backup.read_bytes()).hexdigest(),\n    \"copyResult\": dry,\n    \"applied\": False,\n    \"scope\": (\n        \"Only exo-spike/pi-ui superseded latest-state metadata; \"\n        \"all conversation/tool/foreign events preserved\"\n    ),\n}\nif \"--apply\" in sys.argv:\n    live = sqlite3.connect(DB, timeout=5)\n    actual = shrink(live)\n    live.close()\n    result[\"liveResult\"] = actual\n    result[\"applied\"] = True\n(BASE / \"evidence/status-repair.json\").write_text(json.dumps(result, indent=2) + \"\\n\")\nprint(json.dumps(result, indent=2))\n",
+      "sourceSha256": "82bdf17cb216f36b2bf8e70e0b05df8f7888b06f2196e706cdef773f5c6f6ea2",
+      "manifest": "plugins/bb-plugin-exo-spike/package.json",
+      "reviewedManifest": "{\n  \"name\": \"bb-plugin-exo-spike\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"engines\": {\n    \"bb\": \">=0.45\",\n    \"bbPluginSdk\": \">=0.6.15\"\n  },\n  \"bb\": {\n    \"name\": \"Exo Spike\",\n    \"description\": \"Isolated Exo / Pi / OptChat public-provider proof: offline fixture and real-model trial.\",\n    \"host\": \"./host.ts\",\n    \"branding\": {\n      \"icon\": \"ListTodo\"\n    },\n    \"server\": \"./server.ts\",\n    \"app\": \"./app.tsx\"\n  },\n  \"scripts\": {\n    \"typecheck\": \"tsc --noEmit\",\n    \"test\": \"node --experimental-transform-types --test --test-isolation=none test/*.test.ts\"\n  },\n  \"dependencies\": {\n    \"@get-bb/plugin-sdk\": \"0.6.15\",\n    \"@radix-ui/react-checkbox\": \"^1.3.7\",\n    \"@radix-ui/react-slot\": \"^1.3.0\",\n    \"zod\": \"^4.6.5\"\n  },\n  \"devDependencies\": {\n    \"@earendil-works/pi-coding-agent\": \"1.1.0\",\n    \"@pierre/diffs\": \"^1.2.9\",\n    \"@radix-ui/react-alert-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-context-menu\": \"^2.3.3\",\n    \"@radix-ui/react-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-dropdown-menu\": \"^2.1.20\",\n    \"@radix-ui/react-hover-card\": \"^1.1.19\",\n    \"@radix-ui/react-menubar\": \"^1.1.20\",\n    \"@radix-ui/react-navigation-menu\": \"^1.2.18\",\n    \"@radix-ui/react-popover\": \"^1.1.19\",\n    \"@radix-ui/react-select\": \"^2.3.3\",\n    \"@radix-ui/react-tooltip\": \"^1.2.12\",\n    \"@types/better-sqlite3\": \"^7.6.12\",\n    \"@types/node\": \"^22.0.0\",\n    \"@types/react\": \"^19.0.0\",\n    \"@types/react-dom\": \"^19.0.0\",\n    \"better-sqlite3\": \"^12.0.0\",\n    \"class-variance-authority\": \"^0.7.1\",\n    \"clsx\": \"^2.1.1\",\n    \"cron-parser\": \"^5.5.0\",\n    \"hono\": \"^4.11.9\",\n    \"sonner\": \"^1.7.4\",\n    \"tailwind-merge\": \"^3.4.0\",\n    \"typescript\": \"^5.7.0\",\n    \"vaul\": \"^1.1.2\"\n  }\n}\n",
+      "toolVersion": "0.17.1",
+      "configSha256": "5ce787e987a1dd0ddc0e53be46f3865ef60305ad23433d1713b450b3e0cd2e87",
+      "proofEvidence": null,
+      "controls": [
+        {
+          "name": "reviewed-positive",
+          "replaceOld": "",
+          "replaceNew": "",
+          "mutateReviewedToo": false,
+          "expectedSemantic": true
+        },
+        {
+          "name": "value-interpolation",
+          "replaceOld": "\"?\" for _ in ids",
+          "replaceNew": "str(_) for _ in ids",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "missing-bindings",
+          "replaceOld": "list(ids),",
+          "replaceNew": "[],",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "changed-producer",
+          "replaceOld": "ids = {",
+          "replaceNew": "ids = set()\n    discarded_ids = {",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-plus2",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 2",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-plus0",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 0",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-plus-bool",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += True",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-extra-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 1\n        count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-conditional-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "if row:\n            count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-rebind",
+          "replaceOld": "count += 1",
+          "replaceNew": "count = 100",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-hash-order",
+          "replaceOld": "        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1",
+          "replaceNew": "        count += 1\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-alias",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids_alias = ids\n    ids_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-alias-chain",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    first_alias = ids\n    second_alias = first_alias\n    second_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-container-escape",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    escaped = [ids]\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-unknown-call",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    unknown_consumer(ids)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-subscript-store",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids[0] = 1\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-direct-method",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-after-query",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    after_query_alias = ids\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "unsupported-reflection-ids",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    setattr(ids, \"PUBLIC\", True)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-frame-before",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-frame-after",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-frame-in-transaction",
+          "replaceOld": "        n = c.execute(DELETE",
+          "replaceNew": "        sys._getframe().f_locals.__setitem__(\"ids\", set())\n        n = c.execute(DELETE",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        }
+      ]
+    },
+    {
+      "id": "216-compact-inp001",
+      "file": "plugins/bb-plugin-exo-spike/test/compact-own-status.py",
+      "rule": "INP001",
+      "kind": "standalone-entry",
+      "decisionRef": "https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6821735431",
+      "reviewedSource": "\"\"\"One-time BB0.45 repair of this adapter's redundant status metadata only.\nNo conversation trimming, schema/index/bundle patch, or recurring DB integration.\nPrivate consistent backup + tested-copy preservation are required before --apply.\n\"\"\"\n\nimport hashlib\nimport json\nimport sqlite3\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nBASE = Path(__file__).resolve().parent.parent\nDB = Path.home() / \".bb/bb.db\"\nDEST = Path.home() / \".exo-bb-spike/backups\"\nDEST.mkdir(parents=True, exist_ok=True, mode=0o700)\nassert (\n    json.loads(\n        Path(\n            \"/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/package.json\"\n        ).read_text()\n    )[\"version\"]\n    == \"0.45.0\"\n), \"Version-specific one-time repair; re-review before other versions\"\nKIND = \"exo-spike/pi-ui\"\nDELETE = \"\"\"DELETE FROM events WHERE type='thread/extensionState/updated'\nAND json_extract(data,'$.kind')=? AND id NOT IN\n(SELECT e.id FROM events e WHERE e.type='thread/extensionState/updated'\nAND json_extract(e.data,'$.kind')=? AND e.sequence=(SELECT MAX(n.sequence) FROM events n\nWHERE n.thread_id=e.thread_id AND n.type=e.type AND json_extract(n.data,'$.kind')=?))\"\"\"\n\n\ndef fingerprint(c: sqlite3.Connection) -> dict[str, int | str]:\n    h = hashlib.sha256()\n    count = 0\n    for row in c.execute(\n        \"SELECT id,thread_id,sequence,type,data FROM events \"\n        \"WHERE NOT(type='thread/extensionState/updated' \"\n        \"AND COALESCE(json_extract(data,'$.kind'),'')=?) \"\n        \"ORDER BY thread_id,sequence\",\n        (KIND,),\n    ):\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1\n    return {\"rows\": count, \"sha256\": h.hexdigest()}\n\n\ndef latest(c: sqlite3.Connection) -> list[object]:\n    return c.execute(\n        \"SELECT thread_id,MAX(sequence) FROM events \"\n        \"WHERE type='thread/extensionState/updated' \"\n        \"AND json_extract(data,'$.kind')=? GROUP BY thread_id\",\n        (KIND,),\n    ).fetchall()\n\n\ndef shrink(c: sqlite3.Connection) -> dict[str, int | bool | dict[str, int | str]]:\n    before = fingerprint(c)\n    heads = latest(c)\n    ids = {\n        r[0]\n        for r in c.execute(\n            \"SELECT id FROM events WHERE type='thread/extensionState/updated' \"\n            \"AND json_extract(data,'$.kind')=?\",\n            (KIND,),\n        )\n    }\n    assert (\n        not c.execute(\n            \"SELECT 1 FROM retained_event_outputs WHERE event_id IN (\"\n            + \",\".join(\"?\" for _ in ids)\n            + \") LIMIT 1\",\n            list(ids),\n        ).fetchone()\n        if ids\n        else True\n    )\n    with c:\n        c.execute(\"PRAGMA foreign_keys=ON\")\n        n = c.execute(DELETE, (KIND, KIND, KIND)).rowcount\n        assert fingerprint(c) == before, \"Non-owned-state event changed\"\n        assert latest(c) == heads, \"Latest state/high-water mark changed\"\n    return {\n        \"removedSupersededOwnStatusSnapshots\": n,\n        \"nonStatusEvents\": before,\n        \"latestOwnStatePerThreadPreserved\": True,\n    }\n\n\nsource = sqlite3.connect(f\"file:{DB}?mode=ro\", uri=True, timeout=5)\nsource.execute(\"pragma query_only=on\")\nstamp = datetime.now().astimezone().strftime(\"%Y%m%dT%H%M%S%z\")\nbackup = DEST / f\"bb-before-status-repair-{stamp}.sqlite\"\ntarget = sqlite3.connect(backup)\nsource.backup(target)\ntarget.close()\nsource.close()\nbackup.chmod(0o600)\nassert sqlite3.connect(backup).execute(\"pragma integrity_check\").fetchone()[0] == \"ok\"\ncopy = DEST / f\"bb-status-repair-dry-run-{stamp}.sqlite\"\ns = sqlite3.connect(backup)\nd = sqlite3.connect(copy)\ns.backup(d)\ns.close()\ndry = shrink(d)\nd.close()\ncopy.chmod(0o600)\nresult = {\n    \"captured\": datetime.now().astimezone().isoformat(),\n    \"databaseBackup\": str(backup),\n    \"backupSha256\": hashlib.sha256(backup.read_bytes()).hexdigest(),\n    \"copyResult\": dry,\n    \"applied\": False,\n    \"scope\": (\n        \"Only exo-spike/pi-ui superseded latest-state metadata; \"\n        \"all conversation/tool/foreign events preserved\"\n    ),\n}\nif \"--apply\" in sys.argv:\n    live = sqlite3.connect(DB, timeout=5)\n    actual = shrink(live)\n    live.close()\n    result[\"liveResult\"] = actual\n    result[\"applied\"] = True\n(BASE / \"evidence/status-repair.json\").write_text(json.dumps(result, indent=2) + \"\\n\")\nprint(json.dumps(result, indent=2))\n",
+      "sourceSha256": "82bdf17cb216f36b2bf8e70e0b05df8f7888b06f2196e706cdef773f5c6f6ea2",
+      "manifest": "plugins/bb-plugin-exo-spike/package.json",
+      "reviewedManifest": "{\n  \"name\": \"bb-plugin-exo-spike\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"engines\": {\n    \"bb\": \">=0.45\",\n    \"bbPluginSdk\": \">=0.6.15\"\n  },\n  \"bb\": {\n    \"name\": \"Exo Spike\",\n    \"description\": \"Isolated Exo / Pi / OptChat public-provider proof: offline fixture and real-model trial.\",\n    \"host\": \"./host.ts\",\n    \"branding\": {\n      \"icon\": \"ListTodo\"\n    },\n    \"server\": \"./server.ts\",\n    \"app\": \"./app.tsx\"\n  },\n  \"scripts\": {\n    \"typecheck\": \"tsc --noEmit\",\n    \"test\": \"node --experimental-transform-types --test --test-isolation=none test/*.test.ts\"\n  },\n  \"dependencies\": {\n    \"@get-bb/plugin-sdk\": \"0.6.15\",\n    \"@radix-ui/react-checkbox\": \"^1.3.7\",\n    \"@radix-ui/react-slot\": \"^1.3.0\",\n    \"zod\": \"^4.6.5\"\n  },\n  \"devDependencies\": {\n    \"@earendil-works/pi-coding-agent\": \"1.1.0\",\n    \"@pierre/diffs\": \"^1.2.9\",\n    \"@radix-ui/react-alert-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-context-menu\": \"^2.3.3\",\n    \"@radix-ui/react-dialog\": \"^1.1.19\",\n    \"@radix-ui/react-dropdown-menu\": \"^2.1.20\",\n    \"@radix-ui/react-hover-card\": \"^1.1.19\",\n    \"@radix-ui/react-menubar\": \"^1.1.20\",\n    \"@radix-ui/react-navigation-menu\": \"^1.2.18\",\n    \"@radix-ui/react-popover\": \"^1.1.19\",\n    \"@radix-ui/react-select\": \"^2.3.3\",\n    \"@radix-ui/react-tooltip\": \"^1.2.12\",\n    \"@types/better-sqlite3\": \"^7.6.12\",\n    \"@types/node\": \"^22.0.0\",\n    \"@types/react\": \"^19.0.0\",\n    \"@types/react-dom\": \"^19.0.0\",\n    \"better-sqlite3\": \"^12.0.0\",\n    \"class-variance-authority\": \"^0.7.1\",\n    \"clsx\": \"^2.1.1\",\n    \"cron-parser\": \"^5.5.0\",\n    \"hono\": \"^4.11.9\",\n    \"sonner\": \"^1.7.4\",\n    \"tailwind-merge\": \"^3.4.0\",\n    \"typescript\": \"^5.7.0\",\n    \"vaul\": \"^1.1.2\"\n  }\n}\n",
+      "toolVersion": "0.17.1",
+      "configSha256": "5ce787e987a1dd0ddc0e53be46f3865ef60305ad23433d1713b450b3e0cd2e87",
+      "proofEvidence": null,
+      "controls": [
+        {
+          "name": "reviewed-positive",
+          "replaceOld": "",
+          "replaceNew": "",
+          "mutateReviewedToo": false,
+          "expectedSemantic": true
+        },
+        {
+          "name": "unknown-purpose",
+          "replaceOld": "One-time BB0.45 repair",
+          "replaceNew": "Reusable importable Python library",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "extra-entry",
+          "replaceOld": "print(json.dumps(result, indent=2))",
+          "replaceNew": "print(json.dumps(result, indent=2))\nimport unittest",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "fingerprint-plus2",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 2",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-plus0",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 0",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-plus-bool",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += True",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-extra-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "count += 1\n        count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-conditional-update",
+          "replaceOld": "count += 1",
+          "replaceNew": "if row:\n            count += 1",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-rebind",
+          "replaceOld": "count += 1",
+          "replaceNew": "count = 100",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "fingerprint-hash-order",
+          "replaceOld": "        h.update(json.dumps(row, separators=(\",\", \":\")).encode())\n        count += 1",
+          "replaceNew": "        count += 1\n        h.update(json.dumps(row, separators=(\",\", \":\")).encode())",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-alias",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids_alias = ids\n    ids_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-alias-chain",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    first_alias = ids\n    second_alias = first_alias\n    second_alias.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-container-escape",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    escaped = [ids]\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-unknown-call",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    unknown_consumer(ids)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-subscript-store",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids[0] = 1\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-direct-method",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    ids.clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-after-query",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    after_query_alias = ids\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "unsupported-reflection-ids",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    setattr(ids, \"PUBLIC\", True)\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "ids-frame-before",
+          "replaceOld": "    assert (\n        not c.execute(",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    assert (\n        not c.execute(",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-frame-after",
+          "replaceOld": "    with c:\n",
+          "replaceNew": "    sys._getframe().f_locals[\"ids\"].clear()\n    with c:\n",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        },
+        {
+          "name": "ids-frame-in-transaction",
+          "replaceOld": "        n = c.execute(DELETE",
+          "replaceNew": "        sys._getframe().f_locals.__setitem__(\"ids\", set())\n        n = c.execute(DELETE",
+          "mutateReviewedToo": true,
+          "expectedSemantic": true
+        }
+      ]
+    },
+    {
+      "file": "tools/review-serve.py",
+      "reviewedSource": "#!/usr/bin/env python3\n# spec-chat-capabilities: git-baseline narrow-review-root\n\"\"\"spec-chat review-serve - HTTP transport for a narrow review collection.\n\nFSA requires the browser and the spool files to share a machine; over SSH they\ndon't. This serves a narrow review collection plus tiny spool and Git-baseline\nroutes. For remote review, bind directly to the host interface and treat the\nprinted URL as the secret. Stdlib only.\n\nusage: review-serve.py [ROOT] [PORT] [--public] [--bind HOST] [--host HOST]\n\n  GET  /api/events?dir=<review-dir-rel-path>            -> ordered event list\n  POST /api/events?dir=<...>&actor=human|agent  (JSON)  -> writes one event file\n  GET  /api/baseline?path=<spec-rel-path>[&base=<ref>]  -> local Git baseline\n\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport os\nimport re\nimport socket\nimport subprocess\nimport time\nfrom http.server import HTTPServer, SimpleHTTPRequestHandler\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, override\nfrom urllib.parse import parse_qs, urlparse\n\nif TYPE_CHECKING:\n    from socketserver import BaseServer\n    from typing import TypedDict\n\n    class StoredEvent(TypedDict):\n        actor: str\n        name: str\n        body: object\n\n\ndef parse_args() -> argparse.Namespace:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"root\", nargs=\"?\", default=\".\")\n    parser.add_argument(\"port\", nargs=\"?\", type=int, default=None)\n    parser.add_argument(\"--public\", action=\"store_true\", help=\"bind to all host interfaces\")\n    parser.add_argument(\"--bind\", default=None, help=\"bind address (default: loopback)\")\n    parser.add_argument(\n        \"--host\", default=None, help=\"host name or address printed in the review URL\"\n    )\n    return parser.parse_args()\n\n\nARGS = parse_args()\nROOT = os.path.realpath(ARGS.root)\nroot_path = Path(ROOT)\nport = ARGS.port if ARGS.port is not None else (0 if ARGS.public else 7160)\nBIND = ARGS.bind or (\"0.0.0.0\" if ARGS.public else \"127.0.0.1\")\n\n\ndef advertised_host() -> str:\n    if ARGS.host:\n        return ARGS.host\n    if not ARGS.public:\n        return \"127.0.0.1\"\n    try:\n        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n        probe.connect((\"8.8.8.8\", 80))\n        address = probe.getsockname()[0]\n        probe.close()\n        if address and not address.startswith(\"127.\"):\n            return address\n    except OSError:\n        pass\n    return socket.gethostname()\n\n\ntry:\n    repo_root = subprocess.check_output(\n        (\"/usr/bin/git\", \"-C\", ROOT, \"rev-parse\", \"--show-toplevel\"),\n        text=True,\n        stderr=subprocess.DEVNULL,\n    ).strip()\nexcept (OSError, subprocess.CalledProcessError):\n    repo_root = None\n\n\nclass _BroadReviewRootError(SystemExit):\n    def __init__(self) -> None:\n        super().__init__(\n            \"refusing broad root; serve a narrow review collection \"\n            \"strictly inside its Git repository\"\n        )\n\n\nif not repo_root or root_path.samefile(repo_root):\n    raise _BroadReviewRootError\n\n\ndef _is_file(target: str) -> bool:\n    try:\n        return Path(target).is_file()\n    except (OSError, ValueError):\n        return False\n\n\nclass Handler(SimpleHTTPRequestHandler):\n    def __init__(\n        self,\n        request: socket.socket | tuple[bytes, socket.socket],\n        client_address: object,\n        server: BaseServer,\n    ) -> None:\n        super().__init__(request, client_address, server, directory=ROOT)\n\n    def end_headers(self) -> None:\n        # dev loop: never let a stale runtime.js survive a reload\n        self.send_header(\"Cache-Control\", \"no-cache\")\n        super().end_headers()\n\n    @override\n    def log_message(self, format: str, *a: object) -> None:\n        line = format % a\n        if \"hxdebug\" in line:\n            super().log_message(\"DEBUG-BEACON: %s\", line)\n\n    def translate_path(self, path: str) -> str:\n        translated = super().translate_path(path)\n        resolved = os.path.realpath(translated)\n        if resolved != ROOT and not resolved.startswith(ROOT + os.sep):\n            return str(root_path / \".spec-chat-path-denied\")\n        return translated\n\n    def _review_dir(self, q: dict[str, list[str]]) -> Path | None:\n        rel = q.get(\"dir\", [\"\"])[0]\n        d = os.path.realpath(root_path / rel)\n        if not d.startswith(ROOT + os.sep) or not d.endswith(\".review\"):\n            return None\n        return Path(d)\n\n    def _json(self, obj: object, code: int = 200) -> None:\n        body = json.dumps(obj).encode()\n        self.send_response(code)\n        self.send_header(\"Content-Type\", \"application/json\")\n        self.send_header(\"Content-Length\", str(len(body)))\n        self.end_headers()\n        self.wfile.write(body)\n\n    def _baseline(self, q: dict[str, list[str]]) -> None:\n        rel = q.get(\"path\", [\"\"])[0]\n        target = os.path.realpath(root_path / rel)\n        if not rel or not target.startswith(ROOT + os.sep) or not _is_file(target):\n            return self._json({\"error\": \"bad path\"}, 400)\n        try:\n            repo = subprocess.check_output(\n                (\"/usr/bin/git\", \"-C\", ROOT, \"rev-parse\", \"--show-toplevel\"),\n                text=True,\n                stderr=subprocess.DEVNULL,\n            ).strip()\n            repo_rel = os.path.relpath(target, repo)\n            if repo_rel.startswith(\"..\" + os.sep) or repo_rel == \"..\":\n                return self._json({\"error\": \"path outside repository\"}, 400)\n            requested = q.get(\"base\", [\"\"])[0]\n            candidates = [requested] if requested else []\n            if not candidates:\n                try:\n                    candidates.append(\n                        subprocess.check_output(\n                            (\n                                \"/usr/bin/git\",\n                                \"-C\",\n                                repo,\n                                \"symbolic-ref\",\n                                \"--quiet\",\n                                \"--short\",\n                                \"refs/remotes/origin/HEAD\",\n                            ),\n                            text=True,\n                            stderr=subprocess.DEVNULL,\n                        ).strip()\n                    )\n                except subprocess.CalledProcessError:\n                    candidates.extend((\"main\", \"master\"))\n            base_ref = next(\n                (\n                    candidate\n                    for candidate in candidates\n                    if candidate\n                    and subprocess.run(\n                        (\n                            \"/usr/bin/git\",\n                            \"-C\",\n                            repo,\n                            \"rev-parse\",\n                            \"--verify\",\n                            \"--quiet\",\n                            candidate + \"^{commit}\",\n                        ),\n                        stdout=subprocess.DEVNULL,\n                        stderr=subprocess.DEVNULL,\n                        check=False,\n                    ).returncode\n                    == 0\n                ),\n                None,\n            )\n            if not base_ref:\n                return self._json({\"error\": \"no local base ref\"}, 409)\n            base = subprocess.check_output(\n                (\"/usr/bin/git\", \"-C\", repo, \"merge-base\", \"HEAD\", base_ref),\n                text=True,\n                stderr=subprocess.DEVNULL,\n            ).strip()\n            prior = subprocess.run(\n                (\"/usr/bin/git\", \"-C\", repo, \"show\", base + \":\" + repo_rel),\n                stdout=subprocess.PIPE,\n                stderr=subprocess.DEVNULL,\n                check=False,\n            )\n            # A newly seeded spec is absent from the change-request base. Use\n            # the first committed snapshot that introduced it. This seed must\n            # stay stable across later spec commits, or refresh would move the\n            # baseline to HEAD and erase the review diff.\n            if prior.returncode != 0:\n                seed = subprocess.run(\n                    (\"/usr/bin/git\", \"-C\", repo, \"rev-list\", \"--reverse\", \"HEAD\", \"--\", repo_rel),\n                    stdout=subprocess.PIPE,\n                    stderr=subprocess.DEVNULL,\n                    text=True,\n                    check=False,\n                )\n                seed = (\n                    seed.stdout.strip().splitlines()[0]\n                    if seed.returncode == 0 and seed.stdout.strip()\n                    else None\n                )\n                if seed:\n                    seed_prior = subprocess.run(\n                        (\"/usr/bin/git\", \"-C\", repo, \"show\", seed + \":\" + repo_rel),\n                        stdout=subprocess.PIPE,\n                        stderr=subprocess.DEVNULL,\n                        check=False,\n                    )\n                    if seed_prior.returncode == 0:\n                        prior = seed_prior\n            html = prior.stdout.decode(\"utf-8\") if prior.returncode == 0 else None\n            return self._json({\"base\": base, \"html\": html})\n        except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):\n            return self._json({\"error\": \"git baseline unavailable\"}, 409)\n\n    def do_GET(self) -> None:\n        u = urlparse(self.path)\n        if u.path == \"/api/baseline\":\n            return self._baseline(parse_qs(u.query))\n        if u.path != \"/api/events\":\n            return super().do_GET()\n        d = self._review_dir(parse_qs(u.query))\n        if not d:\n            return self._json({\"error\": \"bad dir\"}, 400)\n        events: list[StoredEvent] = []\n        for actor in (\"human\", \"agent\"):\n            p = d / actor\n            try:\n                actor_is_dir = p.is_dir()\n            except (OSError, ValueError):\n                actor_is_dir = False\n            if not actor_is_dir:\n                continue\n            for entry in p.iterdir():\n                name = entry.name\n                try:\n                    with entry.open() as f:\n                        events.append({\"actor\": actor, \"name\": name, \"body\": json.load(f)})\n                except (OSError, ValueError):\n                    pass\n        events.sort(key=lambda e: e[\"name\"])\n        self._json(events)\n        return None\n\n    def do_POST(self) -> None:\n        u = urlparse(self.path)\n        if u.path != \"/api/events\":\n            return self._json({\"error\": \"not found\"}, 404)\n        q = parse_qs(u.query)\n        d = self._review_dir(q)\n        actor = q.get(\"actor\", [\"human\"])[0]\n        if not d or actor not in (\"human\", \"agent\"):\n            return self._json({\"error\": \"bad dir or actor\"}, 400)\n        try:\n            ev = json.loads(self.rfile.read(int(self.headers.get(\"Content-Length\", 0))))\n        except ValueError:\n            return self._json({\"error\": \"bad json\"}, 400)\n        event = ev.get(\"event\")\n        event_id = ev.get(\"id\")\n        safe = re.compile(r\"[A-Za-z0-9._-]{1,128}\")\n        if (\n            not isinstance(event, str)\n            or not isinstance(event_id, str)\n            or not safe.fullmatch(event)\n            or not safe.fullmatch(event_id)\n        ):\n            return self._json({\"error\": \"bad event name\"}, 400)\n        (d / actor).mkdir(parents=True, exist_ok=True)\n        name = \"{:d}-{!s}-{!s}.json\".format(*(time.time_ns(), event, event_id))\n        with (d / actor / name).open(\"w\") as f:\n            json.dump(ev, f)\n        self._json({\"ok\": True, \"name\": name})\n        return None\n\n\nif __name__ == \"__main__\":\n    server = HTTPServer((BIND, port), Handler)\n    port = server.server_port\n    host = advertised_host()\n    print(\n        \"spec-chat review-serve on http://{!s}:{:d}  root={!s}\".format(*(host, port, ROOT)),\n        flush=True,\n    )\n    print(\"review URL is the secret; stop this process when review ends\", flush=True)\n    server.serve_forever()\n",
+      "sourceSha256": "c1371b64af1fd4d37c9281934e5a16d8af2383fe31cfc21e84d375fce5094a1d",
+      "manifest": "package.json",
+      "reviewedManifest": "{\n  \"name\": \"exosurface-tooling\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"pnpm\": {\n    \"packageExtensions\": {\n      \"bb-app@0.48.0\": {\n        \"dependencies\": {\n          \"esbuild\": \"0.28.1\",\n          \"@tailwindcss/node\": \"4.3.0\",\n          \"@tailwindcss/oxide\": \"4.3.0\",\n          \"tailwindcss\": \"4.3.0\"\n        }\n      }\n    },\n    \"overrides\": {\n      \"@get-bb/plugin-sdk>zod\": \"4.6.6\",\n      \"@a2ui/react>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"@a2ui/web_core>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"zod-to-json-schema>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"@a2ui/markdown-it>dompurify\": \"3.4.17\"\n    },\n    \"onlyBuiltDependencies\": [\"esbuild\"],\n    \"patchedDependencies\": {\n      \"@get-bb/plugin-sdk@0.6.15\": \"patches/@get-bb__plugin-sdk@0.6.15.patch\"\n    }\n  },\n  \"devDependencies\": {\n    \"bb-app\": \"0.48.0\",\n    \"yaml\": \"2.9.0\",\n    \"@tsconfig/node22\": \"22.0.6\",\n    \"@tsconfig/strictest\": \"2.0.8\",\n    \"typescript\": \"6.0.3\",\n    \"eslint\": \"10.13.0\",\n    \"typescript-eslint\": \"8.71.2\",\n    \"dependency-cruiser\": \"18.6.0\",\n    \"knip\": \"6.42.0\",\n    \"basedpyright\": \"1.40.2\",\n    \"@types/node\": \"22.20.5\"\n  }\n}\n",
+      "toolVersion": "0.17.1",
+      "configSha256": "5ce787e987a1dd0ddc0e53be46f3865ef60305ad23433d1713b450b3e0cd2e87",
+      "proofEvidence": null,
+      "id": "216-reviewserve-s104",
+      "rule": "S104",
+      "kind": "explicit-public-bind",
+      "decisionRef": "https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6823970279",
+      "controls": [
+        {
+          "name": "reviewed-Z-positive",
+          "replaceOld": "",
+          "replaceNew": "",
+          "mutateReviewedToo": false,
+          "expectedSemantic": true
+        },
+        {
+          "name": "default-wildcard",
+          "replaceOld": "\"127.0.0.1\")",
+          "replaceNew": "\"0.0.0.0\")",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "lost-optin",
+          "replaceOld": "action=\"store_true\"",
+          "replaceNew": "action=\"store_false\"",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "precedence",
+          "replaceOld": "ARGS.bind or (\"0.0.0.0\" if ARGS.public else \"127.0.0.1\")",
+          "replaceNew": "(\"0.0.0.0\" if ARGS.public else ARGS.bind or \"127.0.0.1\")",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "rebound-bind",
+          "replaceOld": "BIND = ARGS.bind or",
+          "replaceNew": "BIND = \"127.0.0.1\"\nBIND = ARGS.bind or",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "server-target",
+          "replaceOld": "HTTPServer((BIND, port), Handler)",
+          "replaceNew": "HTTPServer((\"127.0.0.1\", port), Handler)",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "extra-wildcard",
+          "replaceOld": "ARGS = parse_args()",
+          "replaceNew": "EXTRA = \"0.0.0.0\"\nARGS = parse_args()",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        }
+      ]
+    },
+    {
+      "file": "tools/review-serve.py",
+      "reviewedSource": "#!/usr/bin/env python3\n# spec-chat-capabilities: git-baseline narrow-review-root\n\"\"\"spec-chat review-serve - HTTP transport for a narrow review collection.\n\nFSA requires the browser and the spool files to share a machine; over SSH they\ndon't. This serves a narrow review collection plus tiny spool and Git-baseline\nroutes. For remote review, bind directly to the host interface and treat the\nprinted URL as the secret. Stdlib only.\n\nusage: review-serve.py [ROOT] [PORT] [--public] [--bind HOST] [--host HOST]\n\n  GET  /api/events?dir=<review-dir-rel-path>            -> ordered event list\n  POST /api/events?dir=<...>&actor=human|agent  (JSON)  -> writes one event file\n  GET  /api/baseline?path=<spec-rel-path>[&base=<ref>]  -> local Git baseline\n\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport os\nimport re\nimport socket\nimport subprocess\nimport time\nfrom http.server import HTTPServer, SimpleHTTPRequestHandler\nfrom pathlib import Path\nfrom typing import TYPE_CHECKING, override\nfrom urllib.parse import parse_qs, urlparse\n\nif TYPE_CHECKING:\n    from socketserver import BaseServer\n    from typing import TypedDict\n\n    class StoredEvent(TypedDict):\n        actor: str\n        name: str\n        body: object\n\n\ndef parse_args() -> argparse.Namespace:\n    parser = argparse.ArgumentParser(description=__doc__)\n    parser.add_argument(\"root\", nargs=\"?\", default=\".\")\n    parser.add_argument(\"port\", nargs=\"?\", type=int, default=None)\n    parser.add_argument(\"--public\", action=\"store_true\", help=\"bind to all host interfaces\")\n    parser.add_argument(\"--bind\", default=None, help=\"bind address (default: loopback)\")\n    parser.add_argument(\n        \"--host\", default=None, help=\"host name or address printed in the review URL\"\n    )\n    return parser.parse_args()\n\n\nARGS = parse_args()\nROOT = os.path.realpath(ARGS.root)\nroot_path = Path(ROOT)\nport = ARGS.port if ARGS.port is not None else (0 if ARGS.public else 7160)\nBIND = ARGS.bind or (\"0.0.0.0\" if ARGS.public else \"127.0.0.1\")\n\n\ndef advertised_host() -> str:\n    if ARGS.host:\n        return ARGS.host\n    if not ARGS.public:\n        return \"127.0.0.1\"\n    try:\n        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n        probe.connect((\"8.8.8.8\", 80))\n        address = probe.getsockname()[0]\n        probe.close()\n        if address and not address.startswith(\"127.\"):\n            return address\n    except OSError:\n        pass\n    return socket.gethostname()\n\n\ntry:\n    repo_root = subprocess.check_output(\n        (\"/usr/bin/git\", \"-C\", ROOT, \"rev-parse\", \"--show-toplevel\"),\n        text=True,\n        stderr=subprocess.DEVNULL,\n    ).strip()\nexcept (OSError, subprocess.CalledProcessError):\n    repo_root = None\n\n\nclass _BroadReviewRootError(SystemExit):\n    def __init__(self) -> None:\n        super().__init__(\n            \"refusing broad root; serve a narrow review collection \"\n            \"strictly inside its Git repository\"\n        )\n\n\nif not repo_root or root_path.samefile(repo_root):\n    raise _BroadReviewRootError\n\n\ndef _is_file(target: str) -> bool:\n    try:\n        return Path(target).is_file()\n    except (OSError, ValueError):\n        return False\n\n\nclass Handler(SimpleHTTPRequestHandler):\n    def __init__(\n        self,\n        request: socket.socket | tuple[bytes, socket.socket],\n        client_address: object,\n        server: BaseServer,\n    ) -> None:\n        super().__init__(request, client_address, server, directory=ROOT)\n\n    def end_headers(self) -> None:\n        # dev loop: never let a stale runtime.js survive a reload\n        self.send_header(\"Cache-Control\", \"no-cache\")\n        super().end_headers()\n\n    @override\n    def log_message(self, format: str, *a: object) -> None:\n        line = format % a\n        if \"hxdebug\" in line:\n            super().log_message(\"DEBUG-BEACON: %s\", line)\n\n    def translate_path(self, path: str) -> str:\n        translated = super().translate_path(path)\n        resolved = os.path.realpath(translated)\n        if resolved != ROOT and not resolved.startswith(ROOT + os.sep):\n            return str(root_path / \".spec-chat-path-denied\")\n        return translated\n\n    def _review_dir(self, q: dict[str, list[str]]) -> Path | None:\n        rel = q.get(\"dir\", [\"\"])[0]\n        d = os.path.realpath(root_path / rel)\n        if not d.startswith(ROOT + os.sep) or not d.endswith(\".review\"):\n            return None\n        return Path(d)\n\n    def _json(self, obj: object, code: int = 200) -> None:\n        body = json.dumps(obj).encode()\n        self.send_response(code)\n        self.send_header(\"Content-Type\", \"application/json\")\n        self.send_header(\"Content-Length\", str(len(body)))\n        self.end_headers()\n        self.wfile.write(body)\n\n    def _baseline(self, q: dict[str, list[str]]) -> None:\n        rel = q.get(\"path\", [\"\"])[0]\n        target = os.path.realpath(root_path / rel)\n        if not rel or not target.startswith(ROOT + os.sep) or not _is_file(target):\n            return self._json({\"error\": \"bad path\"}, 400)\n        try:\n            repo = subprocess.check_output(\n                (\"/usr/bin/git\", \"-C\", ROOT, \"rev-parse\", \"--show-toplevel\"),\n                text=True,\n                stderr=subprocess.DEVNULL,\n            ).strip()\n            repo_rel = os.path.relpath(target, repo)\n            if repo_rel.startswith(\"..\" + os.sep) or repo_rel == \"..\":\n                return self._json({\"error\": \"path outside repository\"}, 400)\n            requested = q.get(\"base\", [\"\"])[0]\n            candidates = [requested] if requested else []\n            if not candidates:\n                try:\n                    candidates.append(\n                        subprocess.check_output(\n                            (\n                                \"/usr/bin/git\",\n                                \"-C\",\n                                repo,\n                                \"symbolic-ref\",\n                                \"--quiet\",\n                                \"--short\",\n                                \"refs/remotes/origin/HEAD\",\n                            ),\n                            text=True,\n                            stderr=subprocess.DEVNULL,\n                        ).strip()\n                    )\n                except subprocess.CalledProcessError:\n                    candidates.extend((\"main\", \"master\"))\n            base_ref = next(\n                (\n                    candidate\n                    for candidate in candidates\n                    if candidate\n                    and subprocess.run(\n                        (\n                            \"/usr/bin/git\",\n                            \"-C\",\n                            repo,\n                            \"rev-parse\",\n                            \"--verify\",\n                            \"--quiet\",\n                            candidate + \"^{commit}\",\n                        ),\n                        stdout=subprocess.DEVNULL,\n                        stderr=subprocess.DEVNULL,\n                        check=False,\n                    ).returncode\n                    == 0\n                ),\n                None,\n            )\n            if not base_ref:\n                return self._json({\"error\": \"no local base ref\"}, 409)\n            base = subprocess.check_output(\n                (\"/usr/bin/git\", \"-C\", repo, \"merge-base\", \"HEAD\", base_ref),\n                text=True,\n                stderr=subprocess.DEVNULL,\n            ).strip()\n            prior = subprocess.run(\n                (\"/usr/bin/git\", \"-C\", repo, \"show\", base + \":\" + repo_rel),\n                stdout=subprocess.PIPE,\n                stderr=subprocess.DEVNULL,\n                check=False,\n            )\n            # A newly seeded spec is absent from the change-request base. Use\n            # the first committed snapshot that introduced it. This seed must\n            # stay stable across later spec commits, or refresh would move the\n            # baseline to HEAD and erase the review diff.\n            if prior.returncode != 0:\n                seed = subprocess.run(\n                    (\"/usr/bin/git\", \"-C\", repo, \"rev-list\", \"--reverse\", \"HEAD\", \"--\", repo_rel),\n                    stdout=subprocess.PIPE,\n                    stderr=subprocess.DEVNULL,\n                    text=True,\n                    check=False,\n                )\n                seed = (\n                    seed.stdout.strip().splitlines()[0]\n                    if seed.returncode == 0 and seed.stdout.strip()\n                    else None\n                )\n                if seed:\n                    seed_prior = subprocess.run(\n                        (\"/usr/bin/git\", \"-C\", repo, \"show\", seed + \":\" + repo_rel),\n                        stdout=subprocess.PIPE,\n                        stderr=subprocess.DEVNULL,\n                        check=False,\n                    )\n                    if seed_prior.returncode == 0:\n                        prior = seed_prior\n            html = prior.stdout.decode(\"utf-8\") if prior.returncode == 0 else None\n            return self._json({\"base\": base, \"html\": html})\n        except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):\n            return self._json({\"error\": \"git baseline unavailable\"}, 409)\n\n    def do_GET(self) -> None:\n        u = urlparse(self.path)\n        if u.path == \"/api/baseline\":\n            return self._baseline(parse_qs(u.query))\n        if u.path != \"/api/events\":\n            return super().do_GET()\n        d = self._review_dir(parse_qs(u.query))\n        if not d:\n            return self._json({\"error\": \"bad dir\"}, 400)\n        events: list[StoredEvent] = []\n        for actor in (\"human\", \"agent\"):\n            p = d / actor\n            try:\n                actor_is_dir = p.is_dir()\n            except (OSError, ValueError):\n                actor_is_dir = False\n            if not actor_is_dir:\n                continue\n            for entry in p.iterdir():\n                name = entry.name\n                try:\n                    with entry.open() as f:\n                        events.append({\"actor\": actor, \"name\": name, \"body\": json.load(f)})\n                except (OSError, ValueError):\n                    pass\n        events.sort(key=lambda e: e[\"name\"])\n        self._json(events)\n        return None\n\n    def do_POST(self) -> None:\n        u = urlparse(self.path)\n        if u.path != \"/api/events\":\n            return self._json({\"error\": \"not found\"}, 404)\n        q = parse_qs(u.query)\n        d = self._review_dir(q)\n        actor = q.get(\"actor\", [\"human\"])[0]\n        if not d or actor not in (\"human\", \"agent\"):\n            return self._json({\"error\": \"bad dir or actor\"}, 400)\n        try:\n            ev = json.loads(self.rfile.read(int(self.headers.get(\"Content-Length\", 0))))\n        except ValueError:\n            return self._json({\"error\": \"bad json\"}, 400)\n        event = ev.get(\"event\")\n        event_id = ev.get(\"id\")\n        safe = re.compile(r\"[A-Za-z0-9._-]{1,128}\")\n        if (\n            not isinstance(event, str)\n            or not isinstance(event_id, str)\n            or not safe.fullmatch(event)\n            or not safe.fullmatch(event_id)\n        ):\n            return self._json({\"error\": \"bad event name\"}, 400)\n        (d / actor).mkdir(parents=True, exist_ok=True)\n        name = \"{:d}-{!s}-{!s}.json\".format(*(time.time_ns(), event, event_id))\n        with (d / actor / name).open(\"w\") as f:\n            json.dump(ev, f)\n        self._json({\"ok\": True, \"name\": name})\n        return None\n\n\nif __name__ == \"__main__\":\n    server = HTTPServer((BIND, port), Handler)\n    port = server.server_port\n    host = advertised_host()\n    print(\n        \"spec-chat review-serve on http://{!s}:{:d}  root={!s}\".format(*(host, port, ROOT)),\n        flush=True,\n    )\n    print(\"review URL is the secret; stop this process when review ends\", flush=True)\n    server.serve_forever()\n",
+      "sourceSha256": "c1371b64af1fd4d37c9281934e5a16d8af2383fe31cfc21e84d375fce5094a1d",
+      "manifest": "package.json",
+      "reviewedManifest": "{\n  \"name\": \"exosurface-tooling\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"pnpm\": {\n    \"packageExtensions\": {\n      \"bb-app@0.48.0\": {\n        \"dependencies\": {\n          \"esbuild\": \"0.28.1\",\n          \"@tailwindcss/node\": \"4.3.0\",\n          \"@tailwindcss/oxide\": \"4.3.0\",\n          \"tailwindcss\": \"4.3.0\"\n        }\n      }\n    },\n    \"overrides\": {\n      \"@get-bb/plugin-sdk>zod\": \"4.6.6\",\n      \"@a2ui/react>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"@a2ui/web_core>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"zod-to-json-schema>zod\": \"file:plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz\",\n      \"@a2ui/markdown-it>dompurify\": \"3.4.17\"\n    },\n    \"onlyBuiltDependencies\": [\"esbuild\"],\n    \"patchedDependencies\": {\n      \"@get-bb/plugin-sdk@0.6.15\": \"patches/@get-bb__plugin-sdk@0.6.15.patch\"\n    }\n  },\n  \"devDependencies\": {\n    \"bb-app\": \"0.48.0\",\n    \"yaml\": \"2.9.0\",\n    \"@tsconfig/node22\": \"22.0.6\",\n    \"@tsconfig/strictest\": \"2.0.8\",\n    \"typescript\": \"6.0.3\",\n    \"eslint\": \"10.13.0\",\n    \"typescript-eslint\": \"8.71.2\",\n    \"dependency-cruiser\": \"18.6.0\",\n    \"knip\": \"6.42.0\",\n    \"basedpyright\": \"1.40.2\",\n    \"@types/node\": \"22.20.5\"\n  }\n}\n",
+      "toolVersion": "0.17.1",
+      "configSha256": "5ce787e987a1dd0ddc0e53be46f3865ef60305ad23433d1713b450b3e0cd2e87",
+      "proofEvidence": null,
+      "id": "216-reviewserve-t201",
+      "rule": "T201",
+      "kind": "human-startup",
+      "decisionRef": "https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6824017278",
+      "controls": [
+        {
+          "name": "reviewed-Z-positive",
+          "replaceOld": "",
+          "replaceNew": "",
+          "mutateReviewedToo": false,
+          "expectedSemantic": true
+        },
+        {
+          "name": "flush",
+          "replaceOld": "flush=True,",
+          "replaceNew": "flush=False,",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "request-source",
+          "replaceOld": "host = advertised_host()",
+          "replaceNew": "host = self.path",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "extra-print",
+          "replaceOld": "    server.serve_forever()",
+          "replaceNew": "    print(\"extra\")\n    server.serve_forever()",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "server-loop-order",
+          "replaceOld": "    port = server.server_port",
+          "replaceNew": "    server.serve_forever()\n    port = server.server_port",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "wrong-port",
+          "replaceOld": "port = server.server_port",
+          "replaceNew": "port = 80",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        },
+        {
+          "name": "print-rebind",
+          "replaceOld": "if __name__ == \"__main__\":",
+          "replaceNew": "print = other\nif __name__ == \"__main__\":",
+          "mutateReviewedToo": true,
+          "expectedSemantic": false
+        }
+      ]
+    }
+  ]
+}

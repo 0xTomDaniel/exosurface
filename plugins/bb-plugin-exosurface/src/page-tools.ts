@@ -4,7 +4,7 @@ import { moduleIds } from './snapshot-data.ts';
 import { SNAPSHOT_FORMAT, surfaceSnapshot } from './snapshot-format.ts';
 import { checkUpdateArguments, OP_WORDS } from './update-arguments.ts';
 export default function pageTools(pi:any){
- const state=process.env.EXO_PAGE_STATE;
+ const state=process.env["EXO_PAGE_STATE"];
  if(!state)throw Error('Explicit private EXO_PAGE_STATE required for page tools');
  const text=(value:string,details:unknown={})=>({content:[{type:'text',text:value}],details});
  // Ordinary JSON schemas are consumed by Pi's public registerTool API; no runtime TypeBox/A2UI dependency.

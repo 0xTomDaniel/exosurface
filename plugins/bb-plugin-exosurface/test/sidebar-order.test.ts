@@ -30,7 +30,7 @@ const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')
 const entries = () => [...(sidebar()?.querySelectorAll('li') ?? [])].map(li => String(li.textContent));
 const until = waiter(() => `sidebar ${JSON.stringify(entries())}`);
 const boundaries = (threadId: string) => host.deltas(threadId).filter(d => d.kind === 'turn.boundary').length;
-const ids = async () => (await f.rpc.thread_list(null)).threads.map((t: any) => t.threadId as string);
+const ids = async () => (await f.rpc["thread_list"](null)).threads.map((t: any) => t.threadId as string);
 /** The person presses New surface; BB starts the new thread with its first message. Returns the new surface's thread. */
 async function newSurface() {
   const before = await ids(), count = entries().length;
@@ -45,18 +45,18 @@ async function newSurface() {
 /** The person's message on a surface (exo_send, as its input sends), until Exo's turn has ended. */
 async function turn(threadId: string, text: string) {
   const before = boundaries(threadId);
-  await f.rpc.exo_send({ threadId, text });
+  await f.rpc["exo_send"]({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before, 30000);
 }
 
 test('acceptance-tree-newest-first: after a send on "Garden plan", the less recently active of two surfaces, and Exo\'s finished turn, the tree lists "Garden plan", then "Weekend trip"', async () => {
   await until('Home listed', () => entries().join('|') === 'Home');
   const weekend = await newSurface();
-  await f.rpc.thread_rename({ threadId: weekend, name: 'Weekend trip' });
+  await f.rpc["thread_rename"]({ threadId: weekend, name: 'Weekend trip' });
   const garden = await newSurface();
   await turn(weekend, 'Plan a weekend trip to the coast');
   // Renamed after Weekend trip's turn: a rename is not activity, so Garden plan stays below.
-  await f.rpc.thread_rename({ threadId: garden, name: 'Garden plan' });
+  await f.rpc["thread_rename"]({ threadId: garden, name: 'Garden plan' });
   await until('Weekend trip, the more recently active, listed first', () => entries().join('|') === 'Home|Weekend trip|Garden plan');
 
   await turn(garden, 'Lay out three raised beds');
@@ -80,7 +80,7 @@ test('a send alone is activity (N9): right after a send from the input of the le
   await until('three surfaces listed', () => entries().join('|') === 'Home|New surface|Garden plan|Weekend trip');
   const row = [...sidebar()!.querySelectorAll('li button')].find(b => b.textContent === 'Weekend trip')!;
   fireEvent.click(row);
-  const weekend = (await f.rpc.thread_list(null)).threads.find((t: any) => t.title === 'Weekend trip')!.threadId as string;
+  const weekend = (await f.rpc["thread_list"](null)).threads.find((t: any) => t.title === 'Weekend trip')!.threadId as string;
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   await until('Weekend trip in view with its input', () => !!input() && !input()!.disabled && !!sidebar()!.querySelector('li button[aria-current="page"]') && sidebar()!.querySelector('li button[aria-current="page"]')!.textContent === 'Weekend trip');
   const before = boundaries(weekend);

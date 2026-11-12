@@ -11,8 +11,8 @@ if (process.argv[4] === '--build') {
   await build({ entryPoints: [join(root, 'legacy/primary/host.ts')], outfile: join(out, 'host.mjs'), platform: 'node', format: 'esm', bundle: true, banner: { js: "import {createRequire as __r} from 'node:module';const require=__r(import.meta.url);" }, plugins: [{ name: 'capture-only', setup(b) { b.onLoad({ filter: /legacy\/primary\/host\.ts$/ }, args => { let contents = readFileSync(args.path, 'utf8'); assert.ok(contents.includes('const io = createBridgeIo<any>();')); contents = contents.replace('const io = createBridgeIo<any>();', 'const io = (globalThis as any).__canonicalIo;').replace(/(async function construct\([^\n]+\{)/, '$1\n(globalThis as any).__canonicalMetrics.owner++;').replace(/(async function selectedPrompt\([^\n]+\{)/, '$1\n(globalThis as any).__canonicalMetrics.model++;'); return { contents, loader: 'ts', resolveDir: join(root, 'legacy/primary') }; }); } }] });
   console.log(JSON.stringify({ built: true, actualHostAndPublicSchemas: true, substitutions: ['bridge IO capture', 'entry counters only'], nativeDispatch: false }));
 } else {
-  assert.ok(process.env.EXO_CONFIG?.startsWith(process.env.PROOF_ROOT + '/'));
-  const cfg = JSON.parse(readFileSync(process.env.EXO_CONFIG)), home = cfg.primaryStateDir;
+  assert.ok(process.env["EXO_CONFIG"]?.startsWith(process.env["PROOF_ROOT"] + '/'));
+  const cfg = JSON.parse(readFileSync(process.env["EXO_CONFIG"])), home = cfg.primaryStateDir;
   assert.ok(!existsSync(home), 'Control proof requires fresh isolated state, not a prior resume audit');
   mkdirSync(home, { recursive: true });
   const operationId = 'host-control-operation', journal = { schema: 'exosurface-canonical-setup/0', request: { operationId, projectId: 'host-project', profile: 'fresh' }, stage: 'spawning' };

@@ -19,9 +19,9 @@ after(async () => {
 function alive(pid: number) { try { process.kill(pid, 0); return true; } catch { return false; } }
 
 test('two bound canonical threads run turns at once; each reply reaches only its own thread; neither is refused', async () => {
-  const second = await f.rpc.thread_bind({ threadId: 'second' });
+  const second = await f.rpc["thread_bind"]({ threadId: 'second' });
   assert.notEqual(second.profile, f.setup.profile, 'the bound thread has its own profile');
-  assert.deepEqual(await f.rpc.thread_bind({ threadId: 'second' }), second, 'binding is idempotent');
+  assert.deepEqual(await f.rpc["thread_bind"]({ threadId: 'second' }), second, 'binding is idempotent');
 
   // Both threads start; the bound thread gets a provider identity of its own, not the primary's.
   const home = await host.start('primary'), bound = await host.start('second');
