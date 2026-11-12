@@ -3341,7 +3341,6 @@
       "[\"scripts/probe-sdk-optional-types.ts\",\"@typescript-eslint/no-unnecessary-condition\",\"Unnecessary conditional, the types have no overlap.\"]": 2
     },
     "knip": {
-      "[\"package.json\",\"devDependencies\",\"yaml\"]": 1,
       "[\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/fixtures/schema-contracts.ts\",\"files\",\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/fixtures/schema-contracts.ts\"]": 1,
       "[\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/test/browser/chromium.mjs\",\"files\",\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/test/browser/chromium.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/test/browser/markdown-runtime.mjs\",\"files\",\"plugins/bb-plugin-exosurface/compat/a2ui-runtime/test/browser/markdown-runtime.mjs\"]": 1,
@@ -3434,11 +3433,6 @@
       "[\"plugins/bb-plugin-exosurface/test/canonical-process-crash.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/canonical-process-crash.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/test/canonical-real-local.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/canonical-real-local.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/test/canonical-rpc-authorization.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/canonical-rpc-authorization.mjs\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/test/consolidation-dispatch.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/consolidation-dispatch.mjs\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/test/consolidation-graph.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/consolidation-graph.mjs\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/test/consolidation-parity.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/consolidation-parity.mjs\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/test/consolidation-relocated.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/consolidation-relocated.mjs\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/test/consolidation-source-closure.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/consolidation-source-closure.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/test/context-loading-real.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/context-loading-real.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/test/dependency-fix-review.mjs\",\"files\",\"plugins/bb-plugin-exosurface/test/dependency-fix-review.mjs\"]": 1,
       "[\"plugins/bb-plugin-exosurface/test/exo-tab.ts\",\"exports\",\"shown\"]": 1,

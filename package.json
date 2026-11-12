@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "bb-app": "0.48.0",
-    "yaml": "2.9.0",
     "@tsconfig/node22": "22.0.6",
     "@tsconfig/strictest": "2.0.8",
     "typescript": "6.0.3",

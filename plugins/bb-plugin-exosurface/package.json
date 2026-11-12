@@ -46,11 +46,7 @@
     "jsdom": "30.1.3",
     "@asamuzakjp/css-color": "7.1.9",
     "@types/jsdom": "30.0.0",
-    "@types/css-tree": "3.2.0"
-  },
-  "overrides": {
-    "@get-bb/plugin-sdk": {
-      "zod": "4.6.6"
-    }
+    "@types/css-tree": "3.2.0",
+    "yaml": "2.9.0"
   }
 }

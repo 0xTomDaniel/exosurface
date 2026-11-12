@@ -638,7 +638,7 @@
     },
     {
       "path": "resources/provenance/workspace/package.json",
-      "sha256": "ab8ae06a8c6b7c1b8a4cc61dec17cf2083d3071610d0c85594d6faa293b84598"
+      "sha256": "8781a4b9bba0acddf15cd1f3c7ed22dc8e35b9b3fd728d5601119a945514a4e1"
     },
     {
       "path": "resources/provenance/workspace/patches/@get-bb__plugin-sdk@0.6.15.patch",
@@ -650,7 +650,7 @@
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/package.json",
-      "sha256": "514b71753378fcec76a93ac16430b1dc8274b68ad5c2b1e07136098a955f43bc"
+      "sha256": "7d4beb63c462e956ede561228e04a342427da2af94721ddbc1486995ea391270"
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz",
@@ -658,11 +658,11 @@
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
-      "sha256": "6ccf3938e312bd9ccf6f8e754b9c7c2e72624f082785d2a770542a390c4865c3"
+      "sha256": "860b214b95aef6dcd406acbe05d264ad54fe7becba1c470e691d0ed40757c2ea"
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",
-      "sha256": "aab58cbcea5a747de67062ccd75bd30981e0e4bff62a8891bf650f0d719cc563"
+      "sha256": "769836a28ad94ee1464888871fbc85324d10fe78ca20decd1e65f0f68c1c4a5f"
     },
     {
       "path": "resources/provenance/workspace/pnpm-workspace.yaml",
