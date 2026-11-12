@@ -221,7 +221,8 @@ export function themeColor(text: string, vars: Theme): string {
 export const toOklab = (color: string): [number, number, number] => convert.colorToOklab(color).slice(0, 3) as [number, number, number];
 /** WCAG 2 contrast ratio between two colours, from their relative luminance (CIE XYZ Y, D65). */
 export function contrast(a: string, b: string): number {
-  const [hi, lo] = [a, b].map(c => convert.colorToXyz(c)[1]).sort((x, y) => y - x);
+  const luminances: [number, number] = [convert.colorToXyz(a)[1], convert.colorToXyz(b)[1]];
+  const [hi, lo] = luminances.sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 const timing = new Set(['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end', 'normal', 'reverse', 'alternate', 'alternate-reverse', 'none', 'forwards', 'backwards', 'both', 'running', 'paused', 'infinite']);
