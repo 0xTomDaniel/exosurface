@@ -26,7 +26,7 @@ export type Config = {
   stateDir: string; agentDir: string; profile: string; models: Models; exosurfacePlugin: string;
 };
 
-export const configFile = (env: NodeJS.ProcessEnv = process.env) => env.EXO_CONFIG || join(homedir(), '.config', 'exosurface', 'config.json');
+export const configFile = (env: NodeJS.ProcessEnv = process.env) => env["EXO_CONFIG"] || join(homedir(), '.config', 'exosurface', 'config.json');
 const expand = (p: string) => (p === '~' ? homedir() : p.startsWith('~/') ? join(homedir(), p.slice(2)) : p);
 
 /** The plugin root (directory holding this package.json), wherever BB or the release installs it. */
@@ -42,8 +42,8 @@ export function pluginRoot(from = import.meta.url): string {
 
 export function modelChoice(value: unknown): value is ModelChoice {
   const v = value as Record<string, unknown> | null;
-  return !!v && typeof v === 'object' && typeof v.provider === 'string' && !!v.provider.trim() && typeof v.model === 'string' && !!v.model.trim()
-    && THINKING.includes(v.thinking as Thinking);
+  return !!v && typeof v === 'object' && typeof v["provider"] === 'string' && !!v["provider"].trim() && typeof v["model"] === 'string' && !!v["model"].trim()
+    && THINKING.includes(v["thinking"] as Thinking);
 }
 
 /** Never throws: problems are returned with the fix a person (or the installer) should apply. */
@@ -65,24 +65,24 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): { config?: Con
     if (!isAbsolute(p)) problems.push({ code: `${key}-invalid`, message: `Config key "${key}" must be absolute or start with ~/.`, fix: setup });
     return p;
   };
-  const stateDir = env.EXO_STATE_DIR || path('stateDir', false, join(homedir(), '.exosurface'));
+  const stateDir = env["EXO_STATE_DIR"] || path('stateDir', false, join(homedir(), '.exosurface'));
   if (!isAbsolute(stateDir)) problems.push({ code: 'stateDir-invalid', message: 'EXO_STATE_DIR must be absolute.', fix: setup });
   const config: Config = {
     file, vault: path('vault', true), piCli: path('piCli', true), optchat: path('optchat', true),
     node: path('node', false, process.execPath), stateDir, agentDir: path('agentDir', false, join(stateDir, 'pi-agent')),
-    profile: typeof raw.profile === 'string' && raw.profile ? raw.profile : 'exo',
+    profile: typeof raw["profile"] === 'string' && raw["profile"] ? raw["profile"] : 'exo',
     exosurfacePlugin: path('exosurfacePlugin', false),
     models: undefined as unknown as Models,
   };
   if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(config.profile)) problems.push({ code: 'profile-invalid', message: `Profile name "${config.profile}" is not a valid OptChat profile name.`, fix: 'Use 1–64 lowercase letters, digits, hyphens or underscores.' });
-  const models = (raw.models ?? {}) as Record<string, unknown>;
+  const models = (raw["models"] ?? {}) as Record<string, unknown>;
   const missing = (['main', 'compactor', 'subagent'] as const).filter(k => !modelChoice(models[k]));
   if (missing.length) problems.push({
     code: 'models-missing',
     message: `Model choices missing or invalid: ${missing.join(', ')}. Each needs {"provider","model","thinking"}; Exosurface never picks one for you.`,
     fix: `Re-run the installer with --models '<json>' or add "models": {"main":{...},"compactor":{...},"subagent":{...}} to ${file}. thinking is one of ${THINKING.join(', ')}.`,
   });
-  else config.models = { main: models.main as ModelChoice, compactor: models.compactor as ModelChoice, subagent: models.subagent as ModelChoice };
+  else config.models = { main: models["main"] as ModelChoice, compactor: models["compactor"] as ModelChoice, subagent: models["subagent"] as ModelChoice };
   return problems.length ? { config, problems } : { config, problems };
 }
 

@@ -1,0 +1,44 @@
+diff --git a/bundled-types/bb-plugin-sdk-app.d.ts b/bundled-types/bb-plugin-sdk-app.d.ts
+index fd3a748645d5b5aa18fdacf4c9931cf0cc002d61..524c601c42a94fac38769db02acd221ce9780a7c 100644
+--- a/bundled-types/bb-plugin-sdk-app.d.ts
++++ b/bundled-types/bb-plugin-sdk-app.d.ts
+@@ -65,7 +65,7 @@ interface StandardSchemaV1<Input = unknown, Output = Input> {
+         readonly types?: {
+             readonly input: Input;
+             readonly output: Output;
+-        };
++        } | undefined;
+     };
+ }
+ type StandardSchemaV1Result<Output> = {
+@@ -78,7 +78,7 @@ interface StandardSchemaV1Issue {
+     readonly message: string;
+     readonly path?: PropertyKey | readonly (PropertyKey | {
+         readonly key: PropertyKey;
+-    })[];
++    })[] | undefined;
+ }
+ type StandardSchemaV1InferInput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["input"];
+ type StandardSchemaV1InferOutput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["output"];
+diff --git a/bundled-types/bb-plugin-sdk.d.ts b/bundled-types/bb-plugin-sdk.d.ts
+index 6edcda3861fcd902511948630ed4cabd5016a846..fc2d9b707426c0a884f1542de9d29be5aa5c4ac1 100644
+--- a/bundled-types/bb-plugin-sdk.d.ts
++++ b/bundled-types/bb-plugin-sdk.d.ts
+@@ -17116,7 +17116,7 @@ interface StandardSchemaV1<Input = unknown, Output = Input> {
+         readonly types?: {
+             readonly input: Input;
+             readonly output: Output;
+-        };
++        } | undefined;
+     };
+ }
+ type StandardSchemaV1Result<Output> = {
+@@ -17129,7 +17129,7 @@ interface StandardSchemaV1Issue {
+     readonly message: string;
+     readonly path?: PropertyKey | readonly (PropertyKey | {
+         readonly key: PropertyKey;
+-    })[];
++    })[] | undefined;
+ }
+ type StandardSchemaV1InferInput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["input"];
+ type StandardSchemaV1InferOutput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["output"];
