@@ -638,7 +638,7 @@
     },
     {
       "path": "resources/provenance/workspace/package.json",
-      "sha256": "3a7f57df546a4bfda475fcf95d8e5c2647ad43a0a4d6bec6718e450b8baca935"
+      "sha256": "ab8ae06a8c6b7c1b8a4cc61dec17cf2083d3071610d0c85594d6faa293b84598"
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
@@ -658,7 +658,7 @@
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",
-      "sha256": "e2ea0f8aa7af2eade056bb70f1b080968fd23d340ada5e9897bebe7f91d8b4ff"
+      "sha256": "e72a10b9f293b4b2387378597d648bcf8336432c9d3406ff5d1e75af1bede82c"
     },
     {
       "path": "resources/provenance/workspace/pnpm-workspace.yaml",
