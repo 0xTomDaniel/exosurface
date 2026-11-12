@@ -4,7 +4,7 @@
 const PASS = ['HOME', 'USER', 'LOGNAME', 'PATH', 'SHELL', 'LANG', 'LC_ALL', 'LC_CTYPE', 'LC_MESSAGES', 'TMPDIR', 'TZ'];
 // BB desktop runs plugins under the BB.app (Electron) binary and does not leave ELECTRON_RUN_AS_NODE in process.env,
 // so children launched with process.execPath must be told to start as Node, not as a second (silent) app instance.
-const AS_NODE: Record<string, string> = process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {};
+const AS_NODE: Record<string, string> = process.versions["electron"] ? { ELECTRON_RUN_AS_NODE: '1' } : {};
 export const INHERITED_BINDING = /^(EXOSURFACE_|EXO_|OPTCHAT_|PI_)/;
 
 export function childEnv(explicit: Record<string, string> = {}, from: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {

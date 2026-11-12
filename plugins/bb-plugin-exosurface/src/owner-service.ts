@@ -20,7 +20,7 @@ export async function run(env: NodeJS.ProcessEnv = process.env, args = process.a
     return 0; // Must not read configuration, create files, or initialize authentication.
   }
   const { config, problems } = readConfig(env);
-  const l = layout(config?.stateDir || env.EXO_STATE_DIR || join(homedir(), '.exosurface'));
+  const l = layout(config?.stateDir || env["EXO_STATE_DIR"] || join(homedir(), '.exosurface'));
   const schema = schemaState(l);
   if (typeof schema === 'object') throw new Error(`Unsupported state schema: ${schema.unsupported}`);
   if (!atLeast(process.versions.node, PINS.node)) throw new Error(`Node >=${PINS.node} required`);
