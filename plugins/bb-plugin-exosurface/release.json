@@ -641,6 +641,10 @@
       "sha256": "ab8ae06a8c6b7c1b8a4cc61dec17cf2083d3071610d0c85594d6faa293b84598"
     },
     {
+      "path": "resources/provenance/workspace/patches/@get-bb__plugin-sdk@0.6.15.patch",
+      "sha256": "200f84d014d6bcc55e041c65040908a702eb7b39d50f878c9008cb9a695abbb3"
+    },
+    {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/legacy/surface/composition/package.json",
       "sha256": "504509ae54e2ef901f947cfdcccfc5a888fd6d5ca0c51e08362185844f8b4bee"
     },
@@ -654,7 +658,7 @@
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
-      "sha256": "5798fcdbd8b03393ea809125de9e13d5b0f3463bef3760b0f0c8916842205ee4"
+      "sha256": "6ccf3938e312bd9ccf6f8e754b9c7c2e72624f082785d2a770542a390c4865c3"
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",

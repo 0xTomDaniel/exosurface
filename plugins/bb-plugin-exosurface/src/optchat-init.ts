@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 const [source, op, name, choices] = process.argv.slice(2);
 const out = (value: unknown) => process.stdout.write(JSON.stringify(value) + '\n');
 try {
-  if (!process.env.OPTCHAT_HOME) throw new Error('OPTCHAT_HOME must be set explicitly');
+  if (!process.env["OPTCHAT_HOME"]) throw new Error('OPTCHAT_HOME must be set explicitly');
   const api = await import(pathToFileURL(join(source, 'src', 'profiles.ts')).href);
   const dir = api.profilePath(name);
   if (op === 'create') { api.createProfile(name); out({ ok: true, dir }); }

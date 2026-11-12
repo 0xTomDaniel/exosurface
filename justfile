@@ -12,22 +12,78 @@ set positional-arguments
 # scripts/own-tool-paths.ts names (its node found through `mise which`, which installs nothing): `mise bin-paths`
 # alone adds the user's global mise tools too (octo-feather #500). From another working directory
 # (`just --working-directory DIR`, where backticks run) the script is not found: none.
-export PATH := `command -v mise >/dev/null || { echo "just: mise is not on PATH, so this repo's tools (mise.toml) are not resolved; install mise $(cat mise-version) (mise-version)" >&2; printf '%s' "$PATH"; exit 0; }; m="$(mise ls --local --missing 2>/dev/null | awk '{print $1 "@" $2}' | paste -sd ' ' -)"; [[ -z "$m" ]] || echo "just: not installed: $m (mise.toml, mise.lock); run: octo-feather-mise-install (the octo-feather kit's scripts/)" >&2; n="$(mise which node 2>/dev/null)" || n=""; add="$([[ -z "$n" ]] || "$n" scripts/own-tool-paths.ts 2>/dev/null)" || add=""; out=""; put=""; IFS=: read -ra ds <<<"$PATH"; for d in "${ds[@]}"; do [[ -n "$d" ]] || continue; case "${d%/}" in /usr/local/sbin|/usr/local/bin|/usr/sbin|/usr/bin|/sbin|/bin) [[ -n "$put" ]] || { out+="${add:+$add:}"; put=1; } ;; esac; out+="$d:"; done; [[ -n "$put" ]] || out+="${add:+$add:}"; printf '%s' "${out%:}"`
+export PATH := `command -v mise >/dev/null || { echo "just: mise is not on PATH, so this repo's tools (mise.toml) are not resolved; install mise $(cat mise-version) (mise-version)" >&2; printf '%s' "$PATH"; exit 0; }; m="$(mise ls --local --missing 2>/dev/null | awk '{print $1 "@" $2}' | paste -sd ' ' -)"; [[ -z "$m" ]] || echo "just: not installed: $m (mise.toml, mise.lock); run: just setup (installs only this repo's locked tool requests)" >&2; n="$(mise which node 2>/dev/null)" || n=""; add="$([[ -z "$n" ]] || "$n" scripts/own-tool-paths.ts 2>/dev/null)" || add=""; out=""; put=""; IFS=: read -ra ds <<<"$PATH"; for d in "${ds[@]}"; do [[ -n "$d" ]] || continue; case "${d%/}" in /usr/local/sbin|/usr/local/bin|/usr/sbin|/usr/bin|/sbin|/bin) [[ -n "$put" ]] || { out+="${add:+$add:}"; put=1; } ;; esac; out+="$d:"; done; [[ -n "$put" ]] || out+="${add:+$add:}"; printf '%s' "${out%:}"`
 
 default:
     @just --list
 
-# Install the pinned tools (mise.toml, mise.lock), dependencies and the git hook. The tools: octo-feather-mise-install,
-# the octo-feather kit's one install of a repo's own locked mise tools (why not a bare mise install: its --help), when
-# on PATH (an agent pane's); else mise's own `mise install --locked`, and on its failure the kit command is named.
+# Bootstrap the locally requested Node, then ask mise for this repo's complete tool requests.
+# Explicit names prevent installation of unrelated global mise tools. Versions remain owned by mise.toml/mise.lock.
 setup:
-    @if command -v octo-feather-mise-install >/dev/null; then octo-feather-mise-install; else mise install --locked || { rc=$?; echo "just setup: mise install --locked failed (exit $rc); if it names tools of your global mise config, install only this repo's: octo-feather-mise-install, in the octo-feather kit's scripts dir (e.g. ~/src/octo-feather/scripts/octo-feather-mise-install)" >&2; exit "$rc"; }; fi
-    pnpm install --frozen-lockfile
+    mise install --locked --jobs 1 node
+    @n="$(mise which node)"; requests="$("$n" scripts/own-tool-paths.ts --names)"; mapfile -t tools <<<"$requests"; mise install --locked --jobs 1 "${tools[@]}"
+    just setup-dependencies
     git config core.hooksPath .githooks
 
-# Pilot: retain the native build/type/mock-BB pipeline offline. Gaps: docs/pnpm-migration.md.
+# Root shipping graph, then the separately locked nonshipping source-preparation workspace.
+# Initial pnpm import is a producer migration step, never ordinary setup or a check.
+setup-dependencies:
+    @test -f plugins/bb-plugin-exo-a2ui-spike/pnpm-workspace.yaml && test -f plugins/bb-plugin-exo-a2ui-spike/pnpm-lock.yaml || { echo 'Missing auxiliary preparation workspace/lock; consume the canonical producer inputs before setup' >&2; exit 1; }
+    pnpm install --frozen-lockfile
+    env -u NPM_CONFIG_WORKSPACE_DIR -u npm_config_workspace_dir pnpm --dir "{{justfile_directory()}}/plugins/bb-plugin-exo-a2ui-spike" --config.store-dir="{{justfile_directory()}}/.pnpm-store" --config.ignore-pnpmfile=true install --frozen-lockfile
+
+# The native bounded gate consumes this same list, under its existing flock.
+# check-python stays a manual recipe: Python lint/type is DEFERRED BY OWNER (issue #216 comment 6828772822),
+# not compliant, waived or exempt; scripts/check-languages.ts names the two deferred check_languages rows.
+GATE_RECIPES := "check-source-integrity check-languages check-scripts check-ts check-arch check-dead-code check-specs"
+check_languages := "TypeScript:tsc:check-ts:ts-files TypeScript:eslint:check-languages:eslint-files JavaScript:tsc:check-ts:ts-files JavaScript:eslint:check-languages:eslint-files Shell:shellcheck:check-scripts:shell-files BASH:shellcheck:check-scripts:shell-files Python:ruff:check-python:python-lint-files Python:basedpyright:check-python:python-type-files"
+
 check:
     plugins/bb-plugin-exosurface/scripts/check
+
+check-source-integrity:
+    PYTHONDONTWRITEBYTECODE=1 python -B scripts/source-inventory.py
+
+check-languages:
+    node scripts/check-languages.ts
+
+# Both compiler commands use the same real projects, native diagnostics and verified applicability.
+ts_projects := "tsconfig.json plugins/bb-plugin-exosurface/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.composition.json docs/specs/.viz/tsconfig.json plugins/bb-plugin-exosurface/compat/a2ui-runtime/tsconfig.json"
+
+ts-files:
+    @args=(); for project in {{ts_projects}}; do args+=("--project=$project"); done; node scripts/lint.ts --compiler-files "${args[@]}"
+
+# ESLint's own report, including files with diagnostics.
+eslint-files:
+    @node scripts/lint.ts --files
+
+shell-files:
+    @git ls-files ':(attr:shell)'
+
+check-scripts:
+    just shell-files | xargs -r -d '\n' shellcheck -S warning
+
+check-ts:
+    @args=(); for project in {{ts_projects}}; do args+=("--project=$project"); done; node scripts/lint.ts --compiler "${args[@]}"
+
+check-arch:
+    node plugins/bb-plugin-exosurface/scripts/check-arch.mjs
+
+check-dead-code:
+    node scripts/lint.ts --knip
+
+python-lint-files:
+    @inputs="$(python -B scripts/source-inventory.py --maintained)"; mapfile -t files <<<"$inputs"; ruff check --show-files "${files[@]}"
+
+# basedpyright's actual analyzed-file timing list, not its config's include declaration.
+python-type-files:
+    @inputs="$(python -B scripts/source-inventory.py --maintained)"; mapfile -t files <<<"$inputs"; { pnpm exec basedpyright --stats --verbose "${files[@]}" || true; } | node --input-type=module -e 'import { fileURLToPath } from "node:url"; let s = ""; process.stdin.on("data", d => s += d).on("end", () => { const files = s.split("\n").flatMap(line => { const match = /^\d+(?:\.\d+)?ms: (file:.*)$$/u.exec(line); return match ? [fileURLToPath(match[1])] : []; }); if (!files.length) throw new Error("basedpyright supplied no analyzed file timings"); console.log(files.join("\n")); });'
+
+check-python:
+    node scripts/lint.ts --python
+
+check-specs:
+    PYTHONDONTWRITEBYTECODE=1 python -B scripts/vendor/spec-status/check.py check docs/specs
 
 build:
     ./scripts/build

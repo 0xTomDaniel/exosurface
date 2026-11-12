@@ -1,9 +1,13 @@
 import{Provider}from'../composition/provider.ts';import{applyDelta,type Snapshot,type Delta}from'../src/workspace.ts';import{OBS_RUN,type Route,type ObserverStatus}from'./stream.ts';import{parseDocument,acceptHint,documentState,nodes,digest,type Document,type Hints}from'./document.ts';import{planDocument,compileDocument}from'./document-planner.ts';
 export{OBS_RUN};
 export class DocumentObserverTurn{
+readonly input: {id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider};
+
  readonly start=performance.now();readonly controller=new AbortController();readonly provider:Provider;readonly history:any[]=[];readonly events:any[]=[];readonly status:ObserverStatus;
  private source='';private firstSource='';private early:Promise<void>|null=null;private failure:Error|null=null;private frameDiagnostic:unknown=null;private final=false;private lastUpdate=0;private document:Document|null=null;private hints:Hints|null=null;
- constructor(readonly input:{id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider}){this.provider=input.provider??new Provider(this.start,undefined,undefined,4);this.status={id:input.id,route:input.route,surfaceId:input.surfaceId,phase:'Waiting for response',sourceChars:0,firstTextMs:null,sourceEndMs:null,firstPreviewMs:null,firstPreviewSourceChars:null,elapsedMs:0};this.update();}
+ constructor( input:{id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider}){
+this.input = input;
+this.provider=input.provider??new Provider(this.start,undefined,undefined,4);this.status={id:input.id,route:input.route,surfaceId:input.surfaceId,phase:'Waiting for response',sourceChars:0,firstTextMs:null,sourceEndMs:null,firstPreviewMs:null,firstPreviewSourceChars:null,elapsedMs:0};this.update();}
  get signal(){return AbortSignal.any([this.input.signal,this.controller.signal]);}
  private check(){this.signal.throwIfAborted();if(!this.input.fresh())throw Error('Stale observer generation');}
  private update(){this.lastUpdate=performance.now();this.status.elapsedMs=Math.round(performance.now()-this.start);this.input.update({...this.status});}

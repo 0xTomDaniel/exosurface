@@ -4,7 +4,9 @@
 // A process the test does not spawn itself (the Pi a product owner starts in-process) is registered with reapOnExit.
 import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, type ChildProcess, type ChildProcessByStdio } from 'node:child_process';
+import type { Writable } from 'node:stream';
+import type { Socket } from 'node:net';
 
 /** node arguments that preload the parent watch (test/parent-watch.mjs) into a spawned child. */
 export const PARENT_WATCH = ['--import', pathToFileURL(join(import.meta.dirname, 'parent-watch.mjs')).href];
@@ -30,12 +32,12 @@ process.stdin.on('data',c=>{buffer+=c;let end;while((end=buffer.indexOf('\\n'))>
 process.stdin.on('end',()=>{const mine=[...pids].filter(([p,s])=>started(p)===s).map(([p])=>p);
  for(const p of mine)try{process.kill(p,'SIGTERM');}catch{}
  setTimeout(()=>{for(const p of mine)if(started(p)===pids.get(p))try{process.kill(p,'SIGKILL');}catch{}process.exit(0);},2000);});`;
-let sidecar: ChildProcess | undefined;
+let sidecar: ChildProcessByStdio<Writable, null, null> | undefined;
 /** Registers a running process to be killed once this test process is gone, even when it was SIGKILLed. */
-export function reapOnExit(pid: number) {
+export function reapOnExit(pid: number): void {
   if (!sidecar) {
     sidecar = spawn(process.execPath, ['-e', SIDECAR], { detached: true, stdio: ['pipe', 'ignore', 'ignore'] });
-    sidecar.unref(); (sidecar.stdin as unknown as { unref(): void }).unref();
+    sidecar.unref(); (sidecar.stdin as Writable & Pick<Socket, 'unref'>).unref();
   }
-  sidecar.stdin!.write(`${pid}\n`);
+  sidecar.stdin.write(`${pid}\n`);
 }

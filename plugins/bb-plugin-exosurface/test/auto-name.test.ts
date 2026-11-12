@@ -40,7 +40,7 @@ const optchatRewrite = (profile: string) => {
 };
 /** New surface through the server, started by BB with its first message, as the sidebar's button does. */
 async function newSurface() {
-  const { threadId } = await f.rpc.thread_new(null);
+  const { threadId } = await f.rpc["thread_new"](null);
   assert.equal((await host.start(threadId, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(threadId) > 0);
   return threadId;
@@ -48,12 +48,12 @@ async function newSurface() {
 /** The person's message on a surface, through its input (exo_send), until Exo's turn has ended. */
 async function turn(threadId: string, text: string) {
   const before = boundaries(threadId);
-  await f.rpc.exo_send({ threadId, text });
+  await f.rpc["exo_send"]({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
-const listed = async () => (await f.rpc.thread_list(null)).threads.map((t: any) => t.title);
+const listed = async () => (await f.rpc["thread_list"](null)).threads.map((t: any) => t.title);
 /** The surface's name as the server lists it (thread_list, what every view reads). */
-const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
+const listedName = async (threadId: string) => (await f.rpc["thread_list"](null)).threads.find((t: any) => t.threadId === threadId)?.title;
 /** A published log line about this surface at this level. */
 const logged = (level: string, threadId: string, text: string | RegExp) => f.logs.some(l => l.startsWith(`${level}:`) && l.includes(threadId) && (typeof text === 'string' ? l.includes(text) : text.test(l)));
 
@@ -71,7 +71,7 @@ test('a new surface is named from its first message by the namer\'s answer, in t
     await until('Home listed', () => entries().join('|') === 'Home');
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().join('|') === 'Home|New surface');
-    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
+    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
     assert.ok(await unchanged(() => f.model.requests.length > 0 || title() !== 'New surface'), 'not named before its first message');
@@ -124,7 +124,7 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
+    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
@@ -170,7 +170,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
+    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
@@ -228,7 +228,7 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
     const count = entries().length;
     fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
+    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
     const asked = f.model.requests.length;

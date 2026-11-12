@@ -17,6 +17,8 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=1536
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - id: pins
         run: echo "mise=$(tr -d '[:space:]' < mise-version)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -29,8 +31,8 @@ jobs:
         with:
           version: ${{ steps.pins.outputs.mise }}
           cache: false
-      - name: frozen dependency installation
-        run: timeout -k 10 600 pnpm install --frozen-lockfile
+      - name: frozen shipping and nonshipping source preparation
+        run: timeout -k 10 600 just setup-dependencies
       - name: canonical offline gate
         run: just check
       - name: native BB packaging

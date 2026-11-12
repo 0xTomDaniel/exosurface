@@ -69,7 +69,7 @@ const num=(v:unknown,at:number,what:string)=>{const n=Number(String(v).replace(/
 const cells=(t:string|undefined)=>(t??'').split(/(?<!\\)\|/).map(s=>s.trim().replace(/\\\|/g,'|'));
 const joinCells=(c:string[])=>c.map(s=>String(s).replace(/\|/g,'\\|')).join(' | ');
 const prop=(n:Line,key:string)=>n.children.find(c=>c.role===`/${key}`)?.text;
-const tone=(n:Line)=>typeof n.attrs.tone==='string'?n.attrs.tone:undefined;
+const tone=(n:Line)=>typeof n.attrs["tone"]==='string'?n.attrs["tone"]:undefined;
 const clean=<T extends object>(o:T)=>Object.fromEntries(Object.entries(o).filter(([,v])=>v!==undefined)) as {[K in keyof T]:Exclude<T[K],undefined>};
 const L=(role:string,o:Partial<Line>={}):Line=>({depth:0,role,attrs:{},children:[],at:0,...o});
 const optionValue=(label:string)=>label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,60)||'option';
@@ -79,28 +79,28 @@ type Built={sid:string;title?:string;components:any[];data:Record<string,unknown
  *  from their parent (`<id>__label`, `<id>__body`, …) so translation is deterministic. */
 export function buildSurface(region:Line):Built{
  if(region.role!=='region')throw Error(`line ${region.at}: top-level lines must be pages (region lines)`);
- const sid=String(region.attrs.ref??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=page_id]`);
+ const sid=String(region.attrs["ref"]??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=page_id]`);
  const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']);let auto=0;
  const claim=(v:string,at:number)=>{if(!ID.test(v))throw Error(`line ${at}: bad ref ${v}`);if(used.has(v))throw Error(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
- const id=(n:Line,hint:string)=>{if(typeof n.attrs.ref==='string')return claim(n.attrs.ref,n.at);let v;do v=`${hint}${++auto}`;while(used.has(v));return claim(v,n.at);};
+ const id=(n:Line,hint:string)=>{if(typeof n.attrs["ref"]==='string')return claim(n.attrs["ref"],n.at);let v;do v=`${hint}${++auto}`;while(used.has(v));return claim(v,n.at);};
  const kids=(ls:Line[])=>ls.filter(k=>!k.role.startsWith('/'));
  const stack=(i:string,ls:Line[],layout:'Column'|'Row'='Column')=>{claim(i,0);const c:any={id:i,component:layout,children:[]};components.push(c);c.children=kids(ls).map(build);return i;};
  const titled=(name:string|undefined,owner:string,ls:Line[])=>name!==undefined?[L('heading',{name,attrs:{ref:`${owner}__title`,level:'3'}}),...ls]:ls;
  const build=(n:Line):string=>{
   const a=n.attrs;
   switch(n.role){
-   case 'heading':{const i=id(n,'h');components.push({id:i,component:'Text',text:n.name??n.text??'',variant:`h${Math.min(3,Math.max(1,Number(a.level??2)))}`});return i;}
-   case 'text':case 'paragraph':{const i=id(n,'t');components.push(clean({id:i,component:'Text',text:n.text??n.name??'',variant:a.caption?'caption':undefined}));return i;}
+   case 'heading':{const i=id(n,'h');components.push({id:i,component:'Text',text:n.name??n.text??'',variant:`h${Math.min(3,Math.max(1,Number(a["level"]??2)))}`});return i;}
+   case 'text':case 'paragraph':{const i=id(n,'t');components.push(clean({id:i,component:'Text',text:n.text??n.name??'',variant:a["caption"]?'caption':undefined}));return i;}
    case 'separator':{const i=id(n,'d');components.push({id:i,component:'Divider'});return i;}
    case 'article':{const i=id(n,'c'),c:any={id:i,component:'Card',child:''};components.push(c);c.child=stack(`${i}__body`,titled(n.name,i,n.children));return i;}
    case 'group':{
-    if(a.collapsible||'expanded' in a){const i=id(n,'x'),c:any=clean({id:i,component:'Disclosure',title:n.name??'Details',summary:prop(n,'summary'),open:a.expanded===true||a.expanded==='true',child:''});components.push(c);c.child=stack(`${i}__body`,n.children);return i;}
-    const i=id(n,'g'),c:any={id:i,component:a.layout==='row'?'Row':'Column',children:[]};components.push(c);c.children=kids(titled(n.name,i,n.children)).map(build);return i;}
+    if(a["collapsible"]||'expanded' in a){const i=id(n,'x'),c:any=clean({id:i,component:'Disclosure',title:n.name??'Details',summary:prop(n,'summary'),open:a["expanded"]===true||a["expanded"]==='true',child:''});components.push(c);c.child=stack(`${i}__body`,n.children);return i;}
+    const i=id(n,'g'),c:any={id:i,component:a["layout"]==='row'?'Row':'Column',children:[]};components.push(c);c.children=kids(titled(n.name,i,n.children)).map(build);return i;}
    case 'list':{
     const items=n.children.filter(k=>k.role==='listitem');
-    if(a.timeline){const i=id(n,'tl');components.push({id:i,component:'Timeline',items:items.map(k=>clean({label:k.name??k.text??'',when:typeof k.attrs.when==='string'?k.attrs.when:undefined,detail:k.name!==undefined?k.text:undefined,state:typeof k.attrs.state==='string'?k.attrs.state:undefined}))});return i;}
-    if(a.flow){const i=id(n,'fl'),nodes=items.map((k,j)=>({id:typeof k.attrs.ref==='string'?k.attrs.ref:`n${j+1}`,k}));
-     components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a.direction==='string'?a.direction:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>typeof k.attrs.to==='string'?k.attrs.to.split(',').map(t=>({from:id,to:t.trim()})):[])}));return i;}
+    if(a["timeline"]){const i=id(n,'tl');components.push({id:i,component:'Timeline',items:items.map(k=>clean({label:k.name??k.text??'',when:typeof k.attrs["when"]==='string'?k.attrs["when"]:undefined,detail:k.name!==undefined?k.text:undefined,state:typeof k.attrs["state"]==='string'?k.attrs["state"]:undefined}))});return i;}
+    if(a["flow"]){const i=id(n,'fl'),nodes=items.map((k,j)=>({id:typeof k.attrs["ref"]==='string'?k.attrs["ref"]:`n${j+1}`,k}));
+     components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a["direction"]==='string'?a["direction"]:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>typeof k.attrs["to"]==='string'?k.attrs["to"].split(',').map(t=>({from:id,to:t.trim()})):[])}));return i;}
     const i=id(n,'l'),c:any={id:i,component:'List',children:[]};
     const wrap=n.name!==undefined?`${i}__wrap`:null;
     if(wrap){claim(wrap,n.at);components.push({id:wrap,component:'Column',children:[]});}
@@ -111,24 +111,24 @@ export function buildSurface(region:Line):Built{
      return stack(item,[...(k.text?[L('text',{text:k.text,attrs:{ref:`${item}__text`}})]:[]),...k.children]);});
     return wrap??i;}
    case 'tablist':{const i=id(n,'tabs'),c:any={id:i,component:'Tabs',tabs:[]};components.push(c);c.tabs=n.children.filter(k=>k.role==='tab').map((k,j)=>({title:k.name??k.text??'Tab',child:stack(`${i}__tab${j+1}`,k.children)}));return i;}
-   case 'note':{const i=id(n,'n'),text=[n.text,...n.children.filter(k=>k.role==='text').map(k=>k.text)].filter(Boolean).join('\n\n');components.push(clean({id:i,component:'Callout',title:n.name,tone:typeof a.tone==='string'?a.tone:undefined,text}));return i;}
-   case 'meter':{const i=id(n,'m');components.push(clean({id:i,component:'Metric',label:n.name??'',value:n.text??'',detail:prop(n,'detail'),tone:tone(n),progress:a.progress!==undefined?num(a.progress,n.at,'progress'):undefined}));return i;}
-   case 'table':{const i=id(n,'tb'),rows=n.children.filter(k=>k.role==='row'),head=rows.find(r=>r.attrs.header)??rows[0];
-    components.push(clean({id:i,component:'Table',caption:n.name,columns:cells(head?.text),rows:rows.filter(r=>r!==head).map(r=>clean({cells:cells(r.text),tone:tone(r)})),highlightColumn:a.highlight!==undefined?num(a.highlight,n.at,'highlight'):undefined}));return i;}
-   case 'figure':{const i=id(n,'ch'),rows=[...n.children,...n.children.filter(k=>k.role==='table').flatMap(k=>k.children)].filter(k=>k.role==='row'&&!k.attrs.header);
+   case 'note':{const i=id(n,'n'),text=[n.text,...n.children.filter(k=>k.role==='text').map(k=>k.text)].filter(Boolean).join('\n\n');components.push(clean({id:i,component:'Callout',title:n.name,tone:typeof a["tone"]==='string'?a["tone"]:undefined,text}));return i;}
+   case 'meter':{const i=id(n,'m');components.push(clean({id:i,component:'Metric',label:n.name??'',value:n.text??'',detail:prop(n,'detail'),tone:tone(n),progress:a["progress"]!==undefined?num(a["progress"],n.at,'progress'):undefined}));return i;}
+   case 'table':{const i=id(n,'tb'),rows=n.children.filter(k=>k.role==='row'),head=rows.find(r=>r.attrs["header"])??rows[0];
+    components.push(clean({id:i,component:'Table',caption:n.name,columns:cells(head?.text),rows:rows.filter(r=>r!==head).map(r=>clean({cells:cells(r.text),tone:tone(r)})),highlightColumn:a["highlight"]!==undefined?num(a["highlight"],n.at,'highlight'):undefined}));return i;}
+   case 'figure':{const i=id(n,'ch'),rows=[...n.children,...n.children.filter(k=>k.role==='table').flatMap(k=>k.children)].filter(k=>k.role==='row'&&!k.attrs["header"]);
     const points=rows.filter(r=>Number.isFinite(Number(cells(r.text)[1]?.replace(/[,\s$%]/g,'')))).map(r=>{const [label,value,note]=cells(r.text);return clean({label,value:num(value.replace(/[$%]/g,''),r.at,'chart value'),note:note||undefined,tone:tone(r)});});
-    components.push(clean({id:i,component:'Chart',kind:a.chart==='line'?'line':'bar',caption:n.name,unit:typeof a.unit==='string'?a.unit:undefined,max:a.max!==undefined?num(a.max,n.at,'max'):undefined,points}));return i;}
-   case 'textbox':{const i=id(n,'in');data[i]=n.text??'';components.push({id:i,component:'TextField',label:n.name??'',value:{path:`/${i}`},variant:a.multiline?'longText':'shortText'});return i;}
-   case 'checkbox':{const i=id(n,'cb');data[i]=a.checked===true||a.checked==='true';components.push({id:i,component:'CheckBox',label:n.name??'',value:{path:`/${i}`}});return i;}
-   case 'slider':{const i=id(n,'sl'),min=num(a.min??0,n.at,'min'),max=num(a.max??10,n.at,'max');data[i]=n.text!==undefined?num(n.text,n.at,'slider value'):min;components.push({id:i,component:'Slider',label:n.name??'',min,max,value:{path:`/${i}`}});return i;}
+    components.push(clean({id:i,component:'Chart',kind:a["chart"]==='line'?'line':'bar',caption:n.name,unit:typeof a["unit"]==='string'?a["unit"]:undefined,max:a["max"]!==undefined?num(a["max"],n.at,'max'):undefined,points}));return i;}
+   case 'textbox':{const i=id(n,'in');data[i]=n.text??'';components.push({id:i,component:'TextField',label:n.name??'',value:{path:`/${i}`},variant:a["multiline"]?'longText':'shortText'});return i;}
+   case 'checkbox':{const i=id(n,'cb');data[i]=a["checked"]===true||a["checked"]==='true';components.push({id:i,component:'CheckBox',label:n.name??'',value:{path:`/${i}`}});return i;}
+   case 'slider':{const i=id(n,'sl'),min=num(a["min"]??0,n.at,'min'),max=num(a["max"]??10,n.at,'max');data[i]=n.text!==undefined?num(n.text,n.at,'slider value'):min;components.push({id:i,component:'Slider',label:n.name??'',min,max,value:{path:`/${i}`}});return i;}
    case 'radiogroup':case 'listbox':{const i=id(n,'ch'),opts=n.children.filter(k=>k.role==='radio'||k.role==='option');
-    const options=opts.map(k=>({label:k.name??k.text??'',value:typeof k.attrs.value==='string'?k.attrs.value:optionValue(k.name??k.text??'')}));
-    data[i]=opts.flatMap((k,j)=>k.attrs.checked||k.attrs.selected?[options[j].value]:[]);
-    components.push({id:i,component:'ChoicePicker',label:n.name??'',options,value:{path:`/${i}`},variant:n.role==='radiogroup'?'mutuallyExclusive':'multipleSelection',displayStyle:a.chips?'chips':'checkbox'});return i;}
+    const options=opts.map(k=>({label:k.name??k.text??'',value:typeof k.attrs["value"]==='string'?k.attrs["value"]:optionValue(k.name??k.text??'')}));
+    data[i]=opts.flatMap((k,j)=>k.attrs["checked"]||k.attrs["selected"]?[options[j].value]:[]);
+    components.push({id:i,component:'ChoicePicker',label:n.name??'',options,value:{path:`/${i}`},variant:n.role==='radiogroup'?'mutuallyExclusive':'multipleSelection',displayStyle:a["chips"]?'chips':'checkbox'});return i;}
    case 'button':{const i=id(n,'b'),label=claim(`${i}__label`,n.at);components.push({id:label,component:'Text',text:n.name??n.text??'OK'});
-    const sends=typeof a.sends==='string'?a.sends.split(',').map(s=>s.trim()).filter(Boolean):[];
+    const sends=typeof a["sends"]==='string'?a["sends"].split(',').map(s=>s.trim()).filter(Boolean):[];
     if(sends.length>MAX_SENDS)throw Error(`line ${n.at}: button "${n.name??i}" sends ${sends.length} inputs; at most ${MAX_SENDS}. Inputs are saved as the person edits them, so send only the ones the button is about, or none.`);
-    components.push({id:i,component:'Button',child:label,variant:a.primary?'primary':a.borderless?'borderless':'default',action:{event:{name:typeof a.action==='string'?a.action:i,context:Object.fromEntries(sends.map(s=>[s,{path:`/${s}`}]))}}});return i;}
+    components.push({id:i,component:'Button',child:label,variant:a["primary"]?'primary':a["borderless"]?'borderless':'default',action:{event:{name:typeof a["action"]==='string'?a["action"]:i,context:Object.fromEntries(sends.map(s=>[s,{path:`/${s}`}]))}}});return i;}
    default:throw Error(`line ${n.at}: unknown role "${n.role}"`);
   }
  };
@@ -166,7 +166,7 @@ export function surfaceLines(s:Snapshot,sid:string):Line{
     return L('text',{text:t,attrs:{...r,...(v==='caption'?{caption:true as const}:{})}});}
    case 'Divider':return L('separator',{attrs:r});
    case 'Row':case 'Column':{
-    const kids=children(n.children),title=kids[0]?.attrs.ref===undefined&&kids[0]?.role==='heading'&&String(n.children[0]).endsWith('__title')?kids.shift()!.name:undefined;
+    const kids=children(n.children),title=kids[0]?.attrs["ref"]===undefined&&kids[0]?.role==='heading'&&String(n.children[0]).endsWith('__title')?kids.shift()!.name:undefined;
     if(n.id.endsWith('__wrap')){const list=kids.find(k=>k.role==='list');if(list){list.name=title;return list;}}
     return L('group',{name:title,attrs:{...r,...(n.component==='Row'?{layout:'row'}:{})},children:kids});}
    case 'Card':{const body=inline(n.child),title=body[0]?.role==='heading'&&String(nodes.get(n.child)?.children?.[0]).endsWith('__title')?body.shift()!.name:undefined;return L('article',{name:title,attrs:r,children:body});}
@@ -201,13 +201,13 @@ export const surfaceSnapshot=(s:Snapshot,sid:string)=>formatLines([surfaceLines(
 // ---------- edits by ref ----------
 export type Edit={surface:string;ref:string;op:'replace'|'insertAfter'|'insertInto'|'remove';lines?:string};
 function find(lines:Line[],ref:string,parent:Line|null=null):{list:Line[];index:number;node:Line}|null{
- for(let i=0;i<lines.length;i++){const n=lines[i];if(n.attrs.ref===ref)return {list:lines,index:i,node:n};const hit=find(n.children,ref,n);if(hit)return hit;}
+ for(let i=0;i<lines.length;i++){const n=lines[i];if(n.attrs["ref"]===ref)return {list:lines,index:i,node:n};const hit=find(n.children,ref,n);if(hit)return hit;}
  return null;
 }
 export function applyEdits(region:Line,edits:Edit[]):Line{
  const root=structuredClone(region);
  for(const e of edits){
-  const hit=e.ref===root.attrs.ref?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw Error(`No ref ${e.ref} in page ${e.surface}`);
+  const hit=e.ref===root.attrs["ref"]?{list:[root],index:0,node:root}:find(root.children,e.ref);if(!hit)throw Error(`No ref ${e.ref} in page ${e.surface}`);
   const fresh=e.op==='remove'?[]:parseLines(e.lines??'');if(e.op!=='remove'&&!fresh.length)throw Error(`Edit ${e.op} on ${e.ref} needs lines`);
   if(e.op==='replace'){if(hit.node===root){if(fresh.length!==1||fresh[0].role!=='region')throw Error('Replacing a page needs one region line');Object.assign(root,fresh[0]);}else hit.list.splice(hit.index,1,...fresh);}
   else if(e.op==='insertAfter'){if(hit.node===root)throw Error('Insert after a page: draw a new page instead');hit.list.splice(hit.index+1,0,...fresh);}
@@ -238,7 +238,7 @@ export function changeMessages(current:Snapshot|null,args:{snapshot?:string;edit
   // A surface from history is reopened by editing it: it comes back as the current version.
   const source=current&&moduleIds(current).includes(sid)?current:history?.(sid)??null;
   if(!source)throw Error(`No page ${sid} on the surface or in its history`);if(drawn.includes(sid))throw Error(`Page ${sid} is both redrawn and edited; do one`);
-  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs.ref!==sid)throw Error('An edit cannot change a page ref');replace(buildSurface(region));edited.push(sid);
+  const region=applyEdits(surfaceLines(source,sid),edits);if(region.attrs["ref"]!==sid)throw Error('An edit cannot change a page ref');replace(buildSurface(region));edited.push(sid);
  }
  for(const sid of args.delete??[]){if(!existing.has(sid))throw Error(`No page ${sid} to delete`);messages.push({version:'v0.9.1',deleteSurface:{surfaceId:sid}});existing.delete(sid);}
  if(!messages.length)throw Error('Nothing to change: give snapshot, edits or delete');

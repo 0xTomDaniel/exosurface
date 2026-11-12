@@ -17,22 +17,22 @@ after(async () => {
   rmSync(f.root, { recursive: true, force: true });
 });
 const CATALOG = 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
-const pages = (threadId?: string) => f.rpc.workspace({ deployment: 'main', ...(threadId ? { threadId } : {}), cursor: null });
+const pages = (threadId?: string) => f.rpc["workspace"]({ deployment: 'main', ...(threadId ? { threadId } : {}), cursor: null });
 const until = async (check: () => Promise<boolean>, what: string) => { if (!(await settled(check, 10000, 25))) throw new Error(`timed out: ${what}`); };
 /** BB's dispatch of a sent message: the turn/start it hands the provider bridge. */
 const deliver = (sent: any) => host.send(sent.threadId, sent.input.map((i: any) => i.text).join(''));
 
 let made = '';
 test('New surface starts a top-level Exo thread like Home, listed after Home, with one empty page and an empty activity', async () => {
-  const before = (await f.rpc.thread_list(null)).threads;
+  const before = (await f.rpc["thread_list"](null)).threads;
   assert.deepEqual(before, [{ threadId: 'primary', title: 'Home', home: true }]);
 
-  made = (await f.rpc.thread_new(null)).threadId;
+  made = (await f.rpc["thread_new"](null)).threadId;
   const spawn = f.spawns.at(-1), home = f.spawns[0];
   assert.equal(spawn.parentThreadId, undefined, 'top-level');
   // S10: the same Exo provider, model, project and environment as Home.
   assert.deepEqual([spawn.providerId, spawn.model, spawn.projectId, spawn.environment], ['exo-spike', 'exo-opus-5-5', home.projectId, { type: 'reuse', environmentId: 'env' }]);
-  assert.deepEqual((await f.rpc.thread_list(null)).threads, [{ threadId: 'primary', title: 'Home', home: true }, { threadId: made, title: 'New surface', home: false }]);
+  assert.deepEqual((await f.rpc["thread_list"](null)).threads, [{ threadId: 'primary', title: 'Home', home: true }, { threadId: made, title: 'New surface', home: false }]);
 
   // BB starts the spawned thread with its first message: no Exo turn, no reply.
   const started = await host.start(made, [{ type: 'text', text: spawn.prompt }]);
@@ -70,7 +70,7 @@ test('a send on a surface is a turn in that surface only; a press on its page re
   const button = nodes.find((n: any) => n.action?.event);
   const surfaceId = drawn.messages.find((m: any) => m.createSurface).createSurface.surfaceId;
   const context = Object.fromEntries(Object.keys(button.action.event.context).map(k => [k, 'Grace']));
-  assert.deepEqual(await f.rpc.action({ threadId: made, revision: 1, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: [CATALOG] } } } }), { accepted: true });
+  assert.deepEqual(await f.rpc["action"]({ threadId: made, revision: 1, event: { version: 'v0.9.1', action: { name: button.action.event.name, surfaceId, sourceComponentId: button.id, timestamp: new Date().toISOString(), context } }, actionId: randomUUID(), metadata: { a2uiClientCapabilities: { 'v0.9.1': { supportedCatalogIds: [CATALOG] } } } }), { accepted: true });
   // The press's values were committed to the new surface's pages only, then its words were sent to its own thread.
   assert.equal((await pages(made)).revision, 2);
   assert.equal((await pages()).revision, 0);

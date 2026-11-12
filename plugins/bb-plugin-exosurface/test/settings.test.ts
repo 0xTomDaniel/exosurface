@@ -93,8 +93,8 @@ test('on a surface other than Home, Settings then Close shows that surface with 
     workspace: async (input: any) => input.threadId === 'garden' ? PAGES : HOME,
     exo_block: async () => ({ working: false, said: '', words: '' }),
     // The settings reads, as on the set-up fixture above.
-    canonical_setup_status: f.rpc.canonical_setup_status,
-    overview: f.rpc.overview,
+    canonical_setup_status: f.rpc["canonical_setup_status"],
+    overview: f.rpc["overview"],
   } });
   const s = screenOf(view);
   const until = waiter(() => `in view ${JSON.stringify(s.inView())}; pages ${JSON.stringify(s.pages())}; settings ${s.settings() ? 'shown' : 'none'}`);

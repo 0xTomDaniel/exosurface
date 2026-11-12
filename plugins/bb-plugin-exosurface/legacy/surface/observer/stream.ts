@@ -3,9 +3,13 @@ export const OBS_RUN='exosurface-observer-run',MARKER='OBSERVER_SPIKE_SYNTHETIC:
 export type Route='sidecar'|'direct';
 export type ObserverStatus={id:string;route:Route;surfaceId:string;phase:string;sourceChars:number;firstTextMs:number|null;sourceEndMs:number|null;firstPreviewMs:number|null;firstPreviewSourceChars:number|null;elapsedMs:number;error?:string;};
 export class ObserverTurn{
+readonly input: {id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider};
+
  readonly start=performance.now();readonly controller=new AbortController();readonly provider:Provider;readonly history:any[]=[];readonly atoms=new Map<string,Atom>();readonly events:any[]=[];readonly status:ObserverStatus;
  private source='';private firstSource='';private early:Promise<void>|null=null;private chain=Promise.resolve();private failure:Error|null=null;private frameDiagnostic:unknown=null;private final=false;private draws=0;private bound=false;private lastUpdate=0;
- constructor(readonly input:{id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider}){
+ constructor( input:{id:string;route:Route;surfaceId:string;base:Snapshot|null;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;update:(s:ObserverStatus)=>void;provider?:Provider}){
+this.input = input;
+
   this.provider=input.provider??new Provider(this.start,undefined,undefined,8);this.status={id:input.id,route:input.route,surfaceId:input.surfaceId,phase:'Waiting for response',sourceChars:0,firstTextMs:null,sourceEndMs:null,firstPreviewMs:null,firstPreviewSourceChars:null,elapsedMs:0};this.update();
  }
  get signal(){return AbortSignal.any([this.input.signal,this.controller.signal]);}

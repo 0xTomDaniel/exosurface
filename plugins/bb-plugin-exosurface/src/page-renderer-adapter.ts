@@ -5,10 +5,20 @@ type Draft={surfaceId:string;path:string;value:unknown};
 type View={committed:Snapshot|null;drafts:{edits:Map<string,Draft>};accept:(delivery:any)=>void};
 type Rpc=(method:'pageRead'|'pageEdit'|'pagePress',input:any)=>Promise<any>;
 export class PageRendererAdapter {
+readonly view: View;
+readonly rpc: Rpc;
+readonly threadId: string;
+readonly mutationId: ()=>string;
+
  private saving:Promise<void>|null=null;
  private pressing=false;
  private uncertain=false;
- constructor(readonly view:View,readonly rpc:Rpc,readonly threadId:string,readonly mutationId:()=>string=()=>crypto.randomUUID()){}
+ constructor( view:View, rpc:Rpc, threadId:string, mutationId:()=>string=()=>crypto.randomUUID()){
+this.view = view;
+this.rpc = rpc;
+this.threadId = threadId;
+this.mutationId = mutationId;
+}
  async refresh(){
   const page=await this.rpc('pageRead',null);
   this.view.accept({epoch:this.threadId,checkpoint:page.snapshot,updates:[],preview:null});

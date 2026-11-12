@@ -9,13 +9,21 @@ import {DraftStore,type Draft} from './drafts.ts';
 import type {Delivery} from './delivery.ts';
 const firstDiff=(a:any[],b:any[])=>{let i=0;while(i<a.length&&i<b.length&&JSON.stringify(a[i])===JSON.stringify(b[i]))i++;return i;};
 export class WorkspaceView{
+private action: (a:any)=>void;
+private changed: ()=>void;
+private catalogs: any[];
+
  processor:MessageProcessor<ReactCatalogComponent>;
  committed:Snapshot|null=null;displayed:Snapshot|null=null;epoch='';
  readonly drafts=new DraftStore();orphan:Draft[]=[];error='';
  preview:{id:string;messages:any[]}|null=null;
  private subscriptions:{unsubscribe():void}[]=[];private muted=false;
  // Frontend passes the React-rendered Exo catalog; tests use schema-only catalogs.
- constructor(private action:(a:any)=>void,private changed:()=>void,private catalogs:any[]=[basicCatalog,exoApiCatalog]){this.processor=this.create();}
+ constructor( action:(a:any)=>void, changed:()=>void, catalogs:any[]=[basicCatalog,exoApiCatalog]){
+this.action = action;
+this.changed = changed;
+this.catalogs = catalogs;
+this.processor=this.create();}
  private create(){return new MessageProcessor<ReactCatalogComponent>(this.catalogs,a=>this.action(a),{validationConfig:{...STRICT_VALIDATION,allowOrphanComponents:true,allowDanglingReferences:true,allowMissingRoot:true}});}
  cursor(){return {epoch:this.epoch,revision:this.committed?.revision??0};}
  private unsub(){this.subscriptions.forEach(s=>s.unsubscribe());this.subscriptions=[];}

@@ -56,6 +56,13 @@ for(const project of contract.dependencyProjects){
  }
 }
 for(const file of ['pnpm-workspace.yaml','.npmrc','mise.toml','mise.lock','mise-version'])assert.deepEqual(readFileSync(join(artifact,snapshot,file)),readFileSync(join(sourceRoot,file)));
+// The actual root pnpm map owns every patch input, including declaration-only SDK repairs.
+for(const [name,file] of Object.entries(json(join(sourceRoot,'package.json')).pnpm?.patchedDependencies??{})){
+ assert.equal(typeof file,'string');assert.equal(lock.patchedDependencies[name].path,file);
+ const resource=relative(artifact,join(artifact,snapshot,file)).replaceAll('\\','/');
+ const bytes=readFileSync(join(sourceRoot,file));assert.deepEqual(readFileSync(join(artifact,resource)),bytes);
+ assert.equal(contract.resources.find((/** @type {typeof import('../release.json').resources[number]} */ entry)=>entry.path===resource)?.sha256,sha(bytes));
+}
 const tar=readFileSync(join(artifact,inputs[1]));assert.equal(sha(tar),'df2fe07a78ee5288ac917a1b453aa6bf6cc2a437536c7208697e95dc14ce9fe5');
 assert.deepEqual(tar,readFileSync(join(artifact,'resources/provenance/zod3/zod-3.25.76-exosurface.1.tgz')));
 const tarPath='plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz';

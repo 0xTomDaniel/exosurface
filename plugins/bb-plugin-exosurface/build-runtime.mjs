@@ -46,7 +46,15 @@ const dependencyProjects=[
  {id:'composition',importer:pluginRoot+'/legacy/surface/composition'},
 ];
 const snapshot='resources/provenance/workspace';
-const graphFiles=['pnpm-lock.yaml','pnpm-workspace.yaml','.npmrc','mise.toml','mise.lock','mise-version',...dependencyProjects.map(({importer})=>importer==='.'?'package.json':importer+'/package.json'),pluginRoot+'/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz'];
+// pnpm's root patch declarations are installed-graph inputs, not an independent patch allowlist.
+const workspaceManifest=JSON.parse(readFileSync(join(workspace,'package.json'),'utf8'));
+const patchFiles=Object.values(workspaceManifest.pnpm?.patchedDependencies??{}).map(file=>{
+ if(typeof file!=='string')throw Error('pnpm patchedDependencies must name patch files');
+ const local=relative(workspace,resolve(workspace,file)).replaceAll('\\','/');
+ if(local==='..'||local.startsWith('../'))throw Error('pnpm patch escapes workspace: '+file);
+ return local;
+});
+const graphFiles=[...new Set(['pnpm-lock.yaml','pnpm-workspace.yaml','.npmrc','mise.toml','mise.lock','mise-version',...dependencyProjects.map(({importer})=>importer==='.'?'package.json':importer+'/package.json'),pluginRoot+'/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz',...patchFiles])];
 for(const file of graphFiles){
  const dest=join(root,snapshot,file);mkdirSync(dirname(dest),{recursive:true});
  cpSync(join(workspace,file),dest);

@@ -14,6 +14,18 @@ Root `pnpm.packageExtensions["bb-app@0.48.0"].dependencies` supplies the exact B
 
 Root pnpm overrides map SDK zod to 4.6.6 and A2UI react/web_core plus zod-to-json-schema to the retained surface vendored zod3 tarball. markdown-it's dompurify override stays 3.4.17. The surface's direct zod tarball remains relative to its own manifest. pnpm overrides are centralized at workspace root, rather than relying on npm's nested override semantics. Node resolution follows real package directories in the virtual store. Active lock generation, frozen install and cross-version resolution remain to be proved.
 
+## Nonshipping source preparation boundary
+
+The shipping graph above remains owned by the root workspace/lock. The original maintained A2UI parent and its composition package additionally use one normal nested pnpm workspace with one auxiliary lock, outside the shipping importer set. This boundary was selected after two real shared-root attempts changed protected shipping records through optional-peer pooling. It is not a retirement, source-data classification or additional shipping project.
+
+Auxiliary provenance/update owner: `plugins/bb-plugin-exo-a2ui-spike/pnpm-workspace.yaml` and its natively generated `pnpm-lock.yaml`, with exactly the parent and `composition` importers. The dependency producer maintains these two state files together using normal pnpm resolution/frozen consumption. Their original package manifests and two npm locks remain immutable migration provenance; setup never runs `pnpm import`. Root shipping updates remain isolated in root `pnpm-workspace.yaml`/`pnpm-lock.yaml`. The auxiliary YAML references the canonical repository SDK patch rather than copying it; an SDK patch update therefore requires explicit producer validation of both graphs, not a second patch ledger.
+
+`just setup-dependencies` owns the ordinary frozen-consumer sequence for both `just setup` and CI. It checks that auxiliary producer state exists, performs the existing root frozen install, then the normal nested frozen install. Only the nested invocation clears process-local workspace-directory overrides, uses the existing root content store and disables pnpmfile hooks. No global configuration or installed closure is copied. Missing auxiliary inputs stop setup before installation, rather than silently selecting the ancestor workspace. The actual root Node22/public TS6 checker stays root-owned; nested resolution is not permission to redirect it with nearest-workspace compiler selection.
+
+Producer source evidence proves native generation, one frozen nested install and pure published API/resolution checks under that producer's inputs, with shipping/root and SDK bytes preserved. The subsequent two-entry semantic attempt OOMed at heap1536; it produced no complete diagnostic bundle or governing pass. This setup/CI glue is prepared, not yet executed against a canonically combined candidate. Offline nested reinstall and negative consumer controls remain owed. No cap/skip/noCheck relaxation follows from that failure.
+
+This is source-preparation provenance only. The existing runtime producer's four `dependencyProjects` and packaged shipping provenance remain unchanged; the auxiliary graph is not added to release resources or declared a shipped dependency. Generated release bytes are untouched. Installation remains outside the offline check, with no alternate installer, scheduler or private-Kit setup/runtime dependency.
+
 ## Packaging adaptations in progress
 
 `./scripts/build` delegates to the actual owner/runtime scripts. BB packaging remains separate and uses the pinned real CLI, real host/server/app and SDK. No provider bridge or queue/store changes.

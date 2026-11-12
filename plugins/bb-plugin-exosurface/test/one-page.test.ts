@@ -81,7 +81,7 @@ test('when Exo\'s layout asks for the earlier page beside the new one, the new p
 test('pages that carry no focus (no grid of pages): the newest page is the one page in view, every other one a pill', async () => {
   // The surface's pages as saved without a stage (no layout): what the workspace RPC delivers is the only change.
   const bare = (s: any) => { if (s) delete s.layout; return s; };
-  const rpc = { ...f.rpc, async workspace(i: any) { const r = await f.rpc.workspace(i); bare(r.delivery.checkpoint); r.delivery.updates.forEach(bare); return r; } };
+  const rpc = { ...f.rpc, async workspace(i: any) { const r = await f.rpc["workspace"](i); bare(r.delivery.checkpoint); r.delivery.updates.forEach(bare); return r; } };
   view.unmount(); view = kit.renderSlot(panel, { subPath: '' }, { rpc });
   await until('the pages', () => inView().length > 0);
   assert.deepEqual(inView(), ['Seed list']);
