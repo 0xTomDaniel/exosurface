@@ -1,24 +1,35 @@
+# Exosurface CI: runs the same one deterministic gate the lanes run (owner ruling 2026-11-05, #105, #107).
+# No secrets, no model calls, no second test list: the gate step is only scripts/check.
 name: ci
+
 on:
   pull_request:
   push:
     branches: [main]
+
 permissions:
   contents: read
+
+# Private repo, Actions minutes matter: a newer run on the same ref cancels the superseded one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # Same Go-thread and heap bounds the local gate uses.
     env:
       GOMAXPROCS: 2
       NODE_OPTIONS: --max-old-space-size=1536
     steps:
+      # Exact pin: sha of release tag v7.0.1 (lightweight tag), runs.using node24.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      # Tools come from mise.toml/mise.lock at the version mise-version pins; downloads cached by mise.lock.
       - id: pins
         run: echo "mise=$(tr -d '[:space:]' < mise-version)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -31,10 +42,17 @@ jobs:
         with:
           version: ${{ steps.pins.outputs.mise }}
           cache: false
+
+      # Frozen pnpm installs of the root workspace and the nested a2ui spike workspace (justfile setup-dependencies).
       - name: frozen shipping and nonshipping source preparation
         run: timeout -k 10 600 just setup-dependencies
+
+      # The lanes' gate: just check runs scripts/check.
       - name: canonical offline gate
         run: just check
+
+      # Native packaging with the pinned local bb-app 0.48.0 from the root lock; no login, no secret.
+      # BB_DATA_DIR in runner temp so no state lands in the checkout.
       - name: native BB packaging
         working-directory: plugins/bb-plugin-exosurface
         env:

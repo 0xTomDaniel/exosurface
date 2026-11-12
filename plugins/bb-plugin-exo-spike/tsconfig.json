@@ -1,9 +1,6 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "allowJs": true,
-    "checkJs": true,
     "allowImportingTsExtensions": true,
     "target": "ES2022",
     "module": "ESNext",
@@ -33,9 +30,6 @@
     "src/runtime.ts",
     "components",
     "lib",
-    "hooks",
-    "src/**/*.ts",
-    "test/**/*.ts",
-    "test/**/*.mjs"
+    "hooks"
   ]
 }
