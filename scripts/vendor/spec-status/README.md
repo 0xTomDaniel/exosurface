@@ -27,7 +27,7 @@ Updates are explicit project-reviewed source changes: retain notices and record 
 
 ## Proof status
 
-Local three-set command passed. `scripts/prove-spec-status.py` exercised 29 original/local comparisons with exact exit/stdout/stderr equality. Under an actual Bubblewrap mount namespace hiding the upstream repository and CLI, the same 29 local cases matched recorded reference observations; two additional missing-helper cases failed closed. Reference/update mode is optional and never required by the gate. No acceptance records were changed.
+Reference/update mode is optional and never required by the gate. No acceptance records were changed.
 
 `relocation.patch` records the explicit modification. `scripts/source-inventory.json` owns literal source applicability; its verifier reverses this patch in scratch and compares the reconstructed core with the original audit hash above, and verifies both exact normalizers against this table. It uses no upstream runtime path. The patched checker is not claimed byte-identical to its original.
 

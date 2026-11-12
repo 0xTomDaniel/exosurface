@@ -7,7 +7,9 @@
   "workspaces": {
     ".": {
       "entry": [
-        "scripts/*.ts"
+        "scripts/lint.ts",
+        "scripts/check-languages.ts",
+        "scripts/own-tool-paths.ts"
       ],
       "project": [
         "scripts/**/*.ts"

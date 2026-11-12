@@ -75,12 +75,13 @@ check-dead-code:
 python-lint-files:
     @inputs="$(python -B scripts/source-inventory.py --maintained)"; mapfile -t files <<<"$inputs"; ruff check --show-files "${files[@]}"
 
-# basedpyright's actual analyzed-file timing list, not its config's include declaration.
+# The manual check-python recipe's input list (Python lint/type is DEFERRED BY OWNER; this row is never run by the gate).
 python-type-files:
-    @inputs="$(python -B scripts/source-inventory.py --maintained)"; mapfile -t files <<<"$inputs"; { pnpm exec basedpyright --stats --verbose "${files[@]}" || true; } | node --input-type=module -e 'import { fileURLToPath } from "node:url"; let s = ""; process.stdin.on("data", d => s += d).on("end", () => { const files = s.split("\n").flatMap(line => { const match = /^\d+(?:\.\d+)?ms: (file:.*)$$/u.exec(line); return match ? [fileURLToPath(match[1])] : []; }); if (!files.length) throw new Error("basedpyright supplied no analyzed file timings"); console.log(files.join("\n")); });'
+    @python -B scripts/source-inventory.py --maintained
 
+# Manual only, not in GATE_RECIPES: Python lint/type is DEFERRED BY OWNER (issue #216 comment 6828772822).
 check-python:
-    node scripts/lint.ts --python
+    @inputs="$(python -B scripts/source-inventory.py --maintained)"; mapfile -t files <<<"$inputs"; ruff check "${files[@]}"; pnpm exec basedpyright --project pyrightconfig.json "${files[@]}"
 
 check-specs:
     PYTHONDONTWRITEBYTECODE=1 python -B scripts/vendor/spec-status/check.py check docs/specs

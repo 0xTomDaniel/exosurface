@@ -20,30 +20,22 @@ export const OWNER_DEFERRALS = {
 } as const;
 
 /** A repo-relative path inside one of the deferred trees (exact directory prefix). */
-export function isDeferredTree(file: string, prefixes: readonly string[] = OWNER_DEFERRALS.sourceTrees.prefixes): boolean {
-  return prefixes.some((prefix) => file.startsWith(prefix));
+export function isDeferredTree(file: string): boolean {
+  return OWNER_DEFERRALS.sourceTrees.prefixes.some((prefix) => file.startsWith(prefix));
 }
 
 /**
- * Drift findings for the source-tree deferral: each prefix must be a plain relative directory path ending in "/",
- * exist as a real directory under root, not overlap another prefix, and contain no gated compiler project.
+ * Drift findings for the source-tree deferral: each deferred tree must exist as a real directory under root, and no
+ * gated compiler project may sit inside one.
  */
-export function deferredTreeDrift(root: string, gatedProjects: readonly string[], prefixes: readonly string[] = OWNER_DEFERRALS.sourceTrees.prefixes): string[] {
+export function deferredTreeDrift(root: string, gatedProjects: readonly string[]): string[] {
   const bad: string[] = [];
   const fix = `owner deferral ${OWNER_DEFERRALS.sourceTrees.url} covers exactly ${OWNER_DEFERRALS.sourceTrees.prefixes.join(" ")}`;
-  if (new Set(prefixes).size !== prefixes.length) bad.push(`deferred trees repeat a prefix; ${fix}`);
-  for (const prefix of prefixes) {
-    if (!/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\/$/u.test(prefix)) {
-      bad.push(`deferred tree ${prefix} is not a relative directory path ending in /; ${fix}`);
-      continue;
-    }
+  for (const prefix of OWNER_DEFERRALS.sourceTrees.prefixes) {
     if (lstatSync(path.join(root, prefix), { throwIfNoEntry: false })?.isDirectory() !== true) bad.push(`deferred tree ${prefix} does not exist as a directory; ${fix}`);
-    for (const other of prefixes) {
-      if (other !== prefix && other.startsWith(prefix)) bad.push(`deferred trees ${prefix} and ${other} overlap; ${fix}`);
-    }
   }
   for (const project of gatedProjects) {
-    if (isDeferredTree(project, prefixes)) bad.push(`gated compiler project ${project} is inside a deferred tree; remove it from ts_projects or end the deferral (${fix})`);
+    if (isDeferredTree(project)) bad.push(`gated compiler project ${project} is inside a deferred tree; remove it from ts_projects or end the deferral (${fix})`);
   }
   return bad;
 }

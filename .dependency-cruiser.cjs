@@ -10,7 +10,8 @@ module.exports = {
     },
   ],
   options: {
-    tsConfig: { fileName: require("node:path").resolve(__dirname, "plugins/bb-plugin-exosurface/tsconfig.json") },
+    // Absolute: dependency-cruiser resolves a relative tsconfig's include paths against the wrong base.
+    tsConfig: { fileName: `${__dirname}/plugins/bb-plugin-exosurface/tsconfig.json` },
     doNotFollow: { path: "node_modules" },
   },
 };
