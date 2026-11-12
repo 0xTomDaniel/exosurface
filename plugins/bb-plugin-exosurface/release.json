@@ -654,11 +654,11 @@
     },
     {
       "path": "resources/provenance/workspace/plugins/bb-plugin-exosurface/package.json",
-      "sha256": "4895c0a400d08fc845853a33ce2ed27019389b383f28a67dac7069d6a882c3ac"
+      "sha256": "5798fcdbd8b03393ea809125de9e13d5b0f3463bef3760b0f0c8916842205ee4"
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",
-      "sha256": "e72a10b9f293b4b2387378597d648bcf8336432c9d3406ff5d1e75af1bede82c"
+      "sha256": "aab58cbcea5a747de67062ccd75bd30981e0e4bff62a8891bf650f0d719cc563"
     },
     {
       "path": "resources/provenance/workspace/pnpm-workspace.yaml",

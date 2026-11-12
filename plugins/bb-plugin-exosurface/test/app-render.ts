@@ -115,23 +115,26 @@ const clear = (color: CssNode | null | undefined) => {
   if (!color) return true;
   if (color.type === 'Identifier') return color.name === 'transparent';
   if (color.type !== 'Function' || !['rgb', 'rgba'].includes(color.name)) return false;
-  const channels = [...color.children].filter(n => n.type === 'Number' || n.type === 'Percentage') as Array<{ value: string }>;
-  return channels.length === 4 && Number(channels[3].value) === 0;
+  const channels = [...color.children].filter(n => n.type === 'Number' || n.type === 'Percentage');
+  return channels.length === 4 && channels.slice(3).every(n => Number(n.value) === 0);
 };
 const downward = (direction: CssNode[]) => direction.length === 0 || direction.map(n => n.type === 'Identifier' ? n.name : '?').join(' ') === 'to bottom'
-  || (direction.length === 1 && direction[0].type === 'Dimension' && ((direction[0].unit === 'deg' && Number(direction[0].value) === 180) || (direction[0].unit === 'turn' && Number(direction[0].value) === 0.5)));
+  || (direction.length === 1 && direction.every(n => n.type === 'Dimension' && ((n.unit === 'deg' && Number(n.value) === 180) || (n.unit === 'turn' && Number(n.value) === 0.5))));
 /** Where a top-to-bottom linear gradient, clear at first and opaque at the bottom edge, begins (a fraction of the box's
  *  height); null for any other value. */
 function gradientStart(text: string): number | null {
   const only = value(text);
   if (!only || only.type !== 'Function' || only.name !== 'linear-gradient') return null;
-  const groups: CssNode[][] = [[]];
-  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push([]); else groups.at(-1)!.push(n); });
+  const initial: CssNode[] = [];
+  let last = initial;
+  const groups: CssNode[][] = [initial];
+  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push(last = []); else last.push(n); });
   const isStop = (g: CssNode[]) => g[0] && (g[0].type === 'Function' || g[0].type === 'Hash' || (g[0].type === 'Identifier' && g[0].name !== 'to'));
-  const direction = isStop(groups[0]) ? [] : groups.shift()!;
-  if (!downward(direction) || groups.length < 2) return null;
+  const startsWithStop = isStop(initial);
+  const direction = startsWithStop ? [] : initial;
+  const [first, second] = startsWithStop ? groups : groups.slice(1);
+  if (!downward(direction) || !first || !second) return null;
   const at = (g: CssNode[]) => { const p = g.find(n => n.type === 'Percentage'); return p && p.type === 'Percentage' ? Number(p.value) / 100 : null; };
-  const first = groups[0], last = groups.at(-1)!;
   if (!clear(first[0]) || clear(last[0]) || (at(last) !== null && at(last) !== 1)) return null;
   return at(first) ?? 0;
 }
@@ -221,7 +224,8 @@ export function themeColor(text: string, vars: Theme): string {
 export const toOklab = (color: string): [number, number, number] => convert.colorToOklab(color).slice(0, 3) as [number, number, number];
 /** WCAG 2 contrast ratio between two colours, from their relative luminance (CIE XYZ Y, D65). */
 export function contrast(a: string, b: string): number {
-  const [hi, lo] = [a, b].map(c => convert.colorToXyz(c)[1]).sort((x, y) => y - x);
+  const luminances: [number, number] = [convert.colorToXyz(a)[1], convert.colorToXyz(b)[1]];
+  const [hi, lo] = luminances.sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 const timing = new Set(['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end', 'normal', 'reverse', 'alternate', 'alternate-reverse', 'none', 'forwards', 'backwards', 'both', 'running', 'paused', 'infinite']);
