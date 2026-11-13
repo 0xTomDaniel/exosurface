@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { drawPages, editPages, pressPages, markPress, readPages } from '../src/pages.ts';
-import { moduleData, moduleNodes } from '../src/snapshot-data.ts';
+import { moduleData, moduleNodes, type ButtonNode } from '../src/snapshot-data.ts';
 import { snapshotToA2ui, surfaceSnapshot } from '../src/snapshot-format.ts';
 import { save } from '../src/store.ts';
 import { layout, type Config } from '../src/config.ts';
@@ -19,8 +19,8 @@ const longText=' leading whitespace\n🧪 multiline Unicode complete field\n'.re
 function temp(t:any){const home=mkdtempSync(join(tmpdir(),'exo-pages-'));return {home,cleanup:fixtureCleanup(t,home)};}
 test('extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime',()=>{
  const messages=snapshotToA2ui(source),s={revision:1,messages};
- assert.equal(moduleNodes(s,'page').find(n=>n.id==='entry').component,'TextField');
- assert.deepEqual(moduleNodes(s,'page').find(n=>n.id==='send').action.event,{name:'submit',context:{entry:{path:'/entry'}}});
+ assert.equal(moduleNodes(s,'page').find(n=>n.id==='entry')?.component,'TextField');
+ assert.deepEqual(moduleNodes(s,'page').find((n):n is ButtonNode=>n.id==='send'&&n.component==='Button')?.action.event,{name:'submit',context:{entry:{path:'/entry'}}});
  assert.match(surfaceSnapshot(s,'page'),/textbox "Full text" \[ref=entry\]/);
  for(const bad of [source.replace('ref=entry','ref=constructor'),source+'\n'+source,source.replace('[multiline]','[__proto__=x]'),' '.repeat(18)+'- region "Deep" [ref=deep]']) {
   if(bad===source+'\n'+source)continue; // Duplicate page is rejected at document admission, not by standalone conversion.
@@ -31,7 +31,7 @@ test('extracted snapshot grammar preserves stable refs and ordinary message conv
 test('durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite',t=>{
  const state=temp(t).home;assert.equal(drawPages(state,{baseRevision:0,mutationId:'draw1',snapshot:source}).revision,1);
  const edit={baseRevision:1,mutationId:'edit1',surfaceId:'page',ref:'entry',value:longText};
- assert.equal(editPages(state,edit).revision,2);assert.equal(moduleData(readPages(state)!.snapshot,'page').entry,longText);
+ assert.equal(editPages(state,edit).revision,2);assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
  assert.equal(editPages(state,edit).duplicate,true);
  const before=readFileSync(join(state,'current-pages.json'),'utf8');
  for(const mutation of [{...edit,mutationId:'stale'}, {...edit,baseRevision:2,mutationId:'missing',ref:'missing'}, {...edit,baseRevision:2,mutationId:'button',ref:'send'}, {...edit,baseRevision:2,mutationId:'huge',value:'x'.repeat(512*1024+1)}, {...edit,baseRevision:2,mutationId:'type',value:true}]) assert.throws(()=>editPages(state,mutation));
@@ -39,7 +39,7 @@ test('durable draw/ref edits/full textbox values and revision/mutation guards re
  assert.throws(()=>editPages(state,{...edit,value:'different'}),/Mutation ID reused/);
  assert.throws(()=>drawPages(state,{baseRevision:2,mutationId:'duplicatepage',snapshot:source+'\n'+source}),/drawn twice/);
  drawPages(state,{baseRevision:2,mutationId:'update',edits:[{surface:'page',ref:'heading',op:'replace',lines:'- heading "Updated" [ref=heading]'}]});
- assert.equal(moduleData(readPages(state)!.snapshot,'page').entry,longText);
+ assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
  assert.match(surfaceSnapshot(readPages(state)!.snapshot,'page'),/Updated/);
  assert.throws(()=>editPages(state,{baseRevision:3,mutationId:'nested',surfaceId:'page',ref:'entry',value:{bad:1}} as any));
 });
@@ -47,7 +47,7 @@ test('press uses only offered button refs/event/context and durable dispatch rec
  const state=temp(t).home;drawPages(state,{baseRevision:0,mutationId:'draw',snapshot:source});
  const press={baseRevision:1,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  const result=pressPages(state,press);assert.equal(JSON.parse(result.message!).values.entry,longText);
- assert.equal(moduleData(readPages(state)!.snapshot,'page').entry,longText);
+ assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
  assert.throws(()=>pressPages(state,press),/outcome unknown/);markPress(state,'press','unknown');assert.throws(()=>pressPages(state,press),/outcome unknown/);
  markPress(state,'press','sent');assert.equal(pressPages(state,press).duplicate,true);
  const before=readFileSync(join(state,'current-pages.json'),'utf8');
@@ -86,13 +86,13 @@ out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',mess
  const press={baseRevision:2,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  assert.equal((await handlers.pagePress(compiled.rpcContract.pagePress.input.parse({threadId:'primary',...press}))).revision,3);
  await settled(()=>ended,10000,10);assert.equal(ended,true);
- const page=readPages(config.stateDir)!;assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page').entry,longText);
+ const page=readPages(config.stateDir)!;assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page')?.['entry'],longText);
  assert.match(surfaceSnapshot(page.snapshot,'page'),/Owner updated page/);
  assert.equal(JSON.parse(readFileSync(join(config.stateDir,'response-page.json'),'utf8')).body,'Page action received full '+longText);
  assert.equal((await client.send('primary','page.press',press)).duplicate,true,'acknowledged duplicate cannot trigger another owner update');
  assert.equal(readPages(config.stateDir)!.revision,4);
  const read=compiled.rpcContract.pageRead.output.parse(await handlers.pageRead());assert.equal(read.revision,4);
- const reloaded=readPages(config.stateDir)!;assert.equal(moduleData(reloaded.snapshot,'page').entry,longText);
+ const reloaded=readPages(config.stateDir)!;assert.equal(moduleData(reloaded.snapshot,'page')?.['entry'],longText);
  // This exercises compiled tools and real socket transport with a MOCK Pi API, not browser rendering/paid inference.
 });
 
