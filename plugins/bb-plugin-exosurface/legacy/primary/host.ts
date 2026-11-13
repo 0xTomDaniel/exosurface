@@ -231,7 +231,7 @@ export function handleLine(line: string) {
   const schema = schemas[method];
   if (!schema) { io.sendError(id, -32601, `Method not found: ${method}`); return; }
   const parsed = schema.safeParse('params' in value ? value.params : undefined);
-  if (!parsed.success) { io.sendError(id, -32602, 'Invalid params', { issues: parsed.error.issues }); return; }
+  if (!parsed.success) { io.send({ jsonrpc: '2.0', id, error: { code: -32602, message: 'Invalid params', data: parsed.error.issues } }); return; }
   runBridgeRequest({ request: { id, method }, sendError: io.sendError, handleRequest: async () => { await request(id, method, parsed.data); } });
 }
 export const experimental_providerBridge = experimental_defineProviderBridge({ handleLine,

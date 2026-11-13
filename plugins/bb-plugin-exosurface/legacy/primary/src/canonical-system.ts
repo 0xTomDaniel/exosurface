@@ -1,11 +1,4 @@
 import { spawnSync } from 'node:child_process';
-// Owner artifacts relocate without node_modules; validate JSON with builtin-only guards.
-function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
-function document(bytes: string) {
-  const value: unknown = JSON.parse(bytes);
-  if (!isRecord(value)) throw Error('Invalid canonical setup document');
-  return value;
-}
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -14,7 +7,7 @@ import { CANONICAL_MODEL, primaryModelDefinition } from './state.ts';
 import { childEnv } from '../../../src/env.ts';
 import { save, loadIf, createExclusive } from '../../../src/store.ts';
 import { PiRpc } from './pi-rpc.ts';
-import { INITIALIZATION, canonicalRuntimeDirectories } from './canonical-fresh.ts';
+import { INITIALIZATION, canonicalRuntimeDirectories, isRecord, document } from './canonical-fresh.ts';
 import { initializationControl } from './canonical-control.ts';
 import type { CanonicalSetupPorts, SetupRequest } from './canonical-setup.ts';
 export interface NativeSetupApi {

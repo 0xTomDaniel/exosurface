@@ -314,7 +314,7 @@
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-control.ts\",\"@typescript-eslint/no-unsafe-return\"]": 1,
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-initialization.ts\",\"@typescript-eslint/no-unsafe-assignment\"]": 1,
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-initialization.ts\",\"@typescript-eslint/require-await\"]": 1,
-      "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-setup.ts\",\"@typescript-eslint/no-unnecessary-condition\"]": 3,
+      "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-setup.ts\",\"@typescript-eslint/no-unnecessary-condition\"]": 2,
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-setup.ts\",\"@typescript-eslint/no-unsafe-argument\"]": 1,
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-setup.ts\",\"@typescript-eslint/no-unsafe-assignment\"]": 1,
       "[\"plugins/bb-plugin-exosurface/legacy/primary/src/canonical-setup.ts\",\"@typescript-eslint/no-unsafe-member-access\"]": 4,

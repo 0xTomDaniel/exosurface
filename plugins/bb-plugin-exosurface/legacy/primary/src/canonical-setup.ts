@@ -20,8 +20,8 @@ export function setupStatus(home: string): SetupJournal | undefined {
   if (info && !info.isFile()) throw Error('Canonical setup journal must be a regular file; refusing foreign state');
   return loadIf(file);
 }
-function validate(request: SetupRequest) {
-  if (!request.authorizeInitialization || !/^[a-zA-Z0-9_-]{8,80}$/.test(request.operationId) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(request.profile) || !request.projectId) throw Error('Explicit initialization authorization and valid operation required');
+function validate(request: Omit<SetupRequest, 'authorizeInitialization'> & { authorizeInitialization: unknown }) {
+  if (request.authorizeInitialization !== true || !/^[a-zA-Z0-9_-]{8,80}$/.test(request.operationId) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(request.profile) || !request.projectId) throw Error('Explicit initialization authorization and valid operation required');
   for (const path of [request.home, request.optchatHome, request.vault, request.piCli, request.optchat]) {
     if (!isAbsolute(path) || resolve(path) !== path) throw Error('Canonical setup requires explicit normalized absolute paths');
     for (let p = path;;) { if (existsSync(p) && lstatSync(p).isSymbolicLink()) throw Error('Canonical setup refuses symlink paths'); const parent = resolve(p, '..'); if (parent === p) break; p = parent; }

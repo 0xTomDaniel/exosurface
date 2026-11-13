@@ -2,8 +2,8 @@
 // writes only Exosurface's receipt and existing binding/pointer formats.
 import { createHash } from 'node:crypto';
 // Owner artifacts relocate without node_modules; keep file validation builtin-only.
-function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
-function document(bytes: string) {
+export function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+export function document(bytes: string) {
   const value: unknown = JSON.parse(bytes);
   if (!isRecord(value)) throw Error('Invalid canonical setup document');
   return value;
