@@ -161,6 +161,19 @@ for (const members of ['string | boolean', 'boolean | string']) {
   });
 }
 
+void test('gate-key: distinct literal types that merely contain " | " never share an allowance', t => {
+  const f = gateFixture(); t.after(f.remove);
+  f.write('src/a.ts', 'export const x: "fixed" = "x(B | A)";\n');
+  const allowed = `["src/a.ts","TS2322","Type '\\"x(A | B)\\"' is not assignable to type '\\"fixed\\"'."]`;
+  f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(allowed)}:1}}}\n`);
+  git(f.root, 'add', '-A');
+  const result = compiler(f.root);
+  assert.equal(result.status, 1);
+  assert.deepEqual(gateLines(result.stderr), [...deferred,
+    'tsc:tsconfig.json: 1 findings, baseline 1; FAILED: 1 finding keys above the baseline',
+    '  src/a.ts TS2322 (1 > baseline 0): Type \'"x(B | A)"\' is not assignable to type \'"fixed"\'.']);
+});
+
 for (const members of ['string | number', 'number | string']) {
   void test(`gate-key: an ESLint finding passes against a baseline that printed its union as \`${members}\``, t => {
     const f = gateFixture(); t.after(f.remove);
