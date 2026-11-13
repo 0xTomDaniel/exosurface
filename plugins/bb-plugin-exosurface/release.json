@@ -622,7 +622,7 @@
     },
     {
       "path": "resources/provenance/workspace/.npmrc",
-      "sha256": "5ef2dff6d16a3e7e06a025c2a42fbf170247401482b709031c2c8d5a5fef7754"
+      "sha256": "7f5e60042bc90cfe80d297c1e61df5c3439fa540faa3728defe3689f67d0a376"
     },
     {
       "path": "resources/provenance/workspace/mise-version",
