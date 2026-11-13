@@ -1,0 +1,38 @@
+--- a/check.py
++++ b/check.py
+@@ -1,4 +1,6 @@
+ #!/usr/bin/env python3
++# Derived from octo-feather a58919e2446850b19f2482aa5fd93dbc0e59b4ac, Apache-2.0.
++# Modified by Exosurface 2026-11-11: project-local lane-helper relocation only. See README.md and NOTICE.
+ """octo-feather-spec-status: the per-criterion status file beside an accepted spec (docs/adr/0021).
+ 
+   octo-feather-spec-status check [DIR...]          check every DIR/*.status.json (default docs/specs)
+@@ -265,18 +267,20 @@
+ _LANE_KEYS: dict[str, bool] = {}
+ 
+ 
++# Modified by Exosurface on 2026-11-11: relocate only the tracker-helper discovery.
++# Both actual upstream grammars are packaged here; no launcher or skill-marker discovery.
+ def is_lane_key(lane: str) -> bool:
+-    """A lane key of either tracker: some kit tracker skill's lane-key (pi-role's TRACKERS) returns it unchanged."""
++    """A canonical lane: either packaged upstream normalizer returns it unchanged."""
+     if lane not in _LANE_KEYS:
+-        root = Path(__file__).resolve().parent.parent
+-        loader = importlib.machinery.SourceFileLoader("pi_role", str(root / "scripts" / "pi-role"))
+-        pr = importlib.util.module_from_spec(importlib.util.spec_from_loader("pi_role", loader))
+-        loader.exec_module(pr)
+-        skills = root / ".agents" / "skills"
++        root = Path(__file__).resolve().parent
++        helpers = (root / "github-issues.sh", root / "linear.sh")
++        for helper in helpers:
++            if not helper.is_file():
++                raise FileNotFoundError(f"spec-status: required packaged lane normalizer missing: {helper}")
+         _LANE_KEYS[lane] = any(
+-            subprocess.run([str(skills / pr.TRACKERS[t] / "scripts" / "lane-key"), lane],
++            subprocess.run([str(helper), lane],
+                            capture_output=True, text=True).stdout.strip() == lane
+-            for t in pr.kit_trackers(str(skills)))
++            for helper in helpers)
+     return _LANE_KEYS[lane]
+ 
+ 

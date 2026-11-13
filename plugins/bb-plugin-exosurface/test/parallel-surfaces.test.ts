@@ -55,15 +55,15 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
   fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
   await until('the new surface in view', () => current().join() === 'New surface');
   const opened = inView.length;
-  surface = (await f.rpc.thread_list(null)).threads[1].threadId;
+  surface = (await f.rpc["thread_list"](null)).threads[1].threadId;
   assert.equal((await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   profile = f.piRuns().at(-1).profile;
   assert.equal(host.turn('primary').end, undefined, 'Home\'s turn was still running when the other surface opened');
   f.release(f.setup.profile); // Home's turn may end now, with the other surface in view
   await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): hold: plan the week'));
   // Home's block has caught up with its finished turn (its owner state and journal), then one more full poll of the page.
-  await settled(async () => !(await f.rpc.exo_block({ threadId: 'primary' })).working, 10000);
-  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'hold: plan the week', words: 'Exo (exo-optchat): hold: plan the week' });
+  await settled(async () => !(await f.rpc["exo_block"]({ threadId: 'primary' })).working, 10000);
+  assert.deepEqual(await f.rpc["exo_block"]({ threadId: 'primary' }), { working: false, said: 'hold: plan the week', words: 'Exo (exo-optchat): hold: plan the week' });
   await new Promise(r => setTimeout(r, 5500));
   assert.deepEqual([...new Set(inView.slice(opened))], ['New surface']);
   // Home's turn reached the app over realtime while the other surface was in view.
@@ -81,8 +81,8 @@ test('send on a surface, open Home before Exo finishes, send on Home: each Exo b
   const home = inView.length;
   // Per-surface working status: Home shows its own last reply, not the other surface's busy state.
   await until('Home\'s own block', () => block()?.textContent === 'Exo (exo-optchat): hold: plan the week');
-  const statuses = Object.fromEntries((await f.rpc.overview(null)).threads.map((t: any) => [t.id, t.status]));
-  assert.deepEqual([statuses.primary, statuses[surface]], ['idle', 'running']);
+  const statuses = Object.fromEntries((await f.rpc["overview"](null)).threads.map((t: any) => [t.id, t.status]));
+  assert.deepEqual([statuses["primary"], statuses[surface]], ['idle', 'running']);
   // S9: Home's send is never refused, queued or gated by the other surface's turn.
   assert.equal(input()!.disabled, false);
   assert.equal(host.turn(surface).end, undefined, 'the surface\'s turn was still running when Home sent');

@@ -1,0 +1,731 @@
+{
+  "version": 1,
+  "integrity": {
+    "plugins/bb-plugin-exo-a2ui-spike/test/archive-presentation-experiments.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/archive-presentation-experiments.py"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/clone-exo.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/clone-exo.py"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/preservation.py": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/preservation.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/reopen.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "reopen.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/rpc-proof.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "rpc-proof.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/launch.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "launch.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/launch-fixed.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "launch-fixed.py"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/launch.py": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/SANITIZED.md",
+      "format": "sanitized-table",
+      "key": "native-prerequisite-evidence/launch.py"
+    },
+    "scripts/vendor/spec-status/check.py": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "reverse-patch",
+      "key": "check.py"
+    },
+    "scripts/vendor/spec-status/github-issues.sh": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "audit-table",
+      "key": "github-issues.sh"
+    },
+    "scripts/vendor/spec-status/linear.sh": {
+      "classification": "vendored-dependency",
+      "pin": "scripts/vendor/spec-status/README.md",
+      "format": "audit-table",
+      "key": "linear.sh"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-client.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-client.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-doc.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-doc.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-history.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-history.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/canvas-memory.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/canvas-memory.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/delivery.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/delivery.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/drafts.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/drafts.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/exo-catalog.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/exo-catalog.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/exo-components.tsx": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/exo-components.tsx"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/generation-policy.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/generation-policy.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/journal.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/journal.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/live.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/live.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/local-config.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/local-config.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/overview.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/overview.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/owner-client.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/owner-client.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/owner-service.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/owner-service.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/pi-rpc.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/pi-rpc.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/presentation-guide.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/presentation-guide.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/rewind-store.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/rewind-store.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/runtime.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/runtime.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/snapshot-format.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/snapshot-format.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/stage.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/stage.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/state.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/state.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/stream-frames.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/stream-frames.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/tool-contract.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/tool-contract.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-extension.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-extension.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-frame.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-frame.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace-view.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace-view.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/src/workspace.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "src/workspace.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/canvas-history.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/canvas-history.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/canvas-memory.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/canvas-memory.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/card-rule-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/card-rule-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/compose-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/compose-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-configure.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-configure.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-context.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-context.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition-visibility.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition-visibility.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/composition.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/composition.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-ordinary-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-ordinary-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-render-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-render-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-replay-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-replay-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document-schema-replay.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document-schema-replay.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/document.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/document.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/drawing-eval.mts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/drawing-eval.mts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generation-policy.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generation-policy.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generative-ui.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generative-ui.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/generative.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/generative.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/graduation-gates.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/graduation-gates.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/history-staged-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/history-staged-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-baseline.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-baseline.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-interaction.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-interaction.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/incremental.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/incremental.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/jev-direct-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/jev-direct-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/layout-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/layout-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-final.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-final.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-ordinary-live.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-ordinary-live.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-provider-probe.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-provider-probe.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-source-ref-probe.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-source-ref-probe.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/observer.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/observer.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/pill-staged-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/pill-staged-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/playwright.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/playwright.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/presentation-upgrade.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/presentation-upgrade.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/reply-metrics.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/reply-metrics.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/restart-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/restart-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/revert-direct-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/revert-direct-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/sample.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/sample.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/shared-state-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/shared-state-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/snapshot-format.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/snapshot-format.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage-fixtures.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage-fixtures.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage-render.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage-render.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stage.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stage.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/stream-component-verify.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/stream-component-verify.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/tool-contract.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/tool-contract.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/ui-proof.mjs": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/ui-proof.mjs"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/test/workspace.test.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "test/workspace.test.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/lib/document-style.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "lib/document-style.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/lib/exo-theme.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "lib/exo-theme.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/app.tsx": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "app.tsx"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/host.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "host.ts"
+    },
+    "plugins/bb-plugin-exo-a2ui-spike/server.ts": {
+      "classification": "fixture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/a2ui-runtime/legacy-fixtures.json",
+      "format": "legacy-fixtures",
+      "key": "server.ts"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1.min.js": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/dist/echarts.min.js"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/LICENSE": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/LICENSE"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/NOTICE": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/NOTICE"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/licenses/LICENSE-d3": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/licenses/LICENSE-d3"
+    },
+    "docs/specs/.viz/vendor/echarts-5.5.1/upstream-package.json": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/vendor/echarts-5.5.1/ORIGIN.json",
+      "format": "json-files",
+      "key": "package/package.json"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/guard.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "guard.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/proof.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "proof.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/setup-extension.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "setup-extension.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/fixture-owner.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "fixture-owner.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire-attempt-1.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire-attempt-1.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire-attempt-2.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire-attempt-2.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/installer-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "installer-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire-before-artifact.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire-before-artifact.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire-root-ci.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire-root-ci.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/npm-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "npm-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/regression-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "regression-tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/shell-ui-smoke.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "shell-ui-smoke.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "tripwire.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-smoke.mjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-smoke.mjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire-attempt-1.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire-attempt-1.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire-attempt-2.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire-attempt-2.cjs"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/ui-tripwire.cjs": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/SHA256SUMS",
+      "format": "sha256sum",
+      "key": "ui-tripwire.cjs"
+    },
+    "docs/specs/.viz/runtime.js": {
+      "classification": "vendored-dependency",
+      "pin": "docs/specs/.viz/PINNED.md",
+      "format": "audit-table",
+      "key": "docs/specs/.viz/runtime.js"
+    },
+    "plugins/bb-plugin-exosurface/compat/consolidation/evidence/initial-wrong-runtime-server.js": {
+      "classification": "capture-integrity",
+      "pin": "plugins/bb-plugin-exosurface/compat/consolidation/evidence/PINNED.md",
+      "format": "sanitized-table",
+      "key": "plugins/bb-plugin-exosurface/compat/consolidation/evidence/initial-wrong-runtime-server.js"
+    }
+  }
+}

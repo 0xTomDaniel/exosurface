@@ -1,0 +1,18 @@
+{
+  "metadata_url": "https://registry.npmjs.org/echarts/5.5.1",
+  "tarball_url": "https://registry.npmjs.org/echarts/-/echarts-5.5.1.tgz",
+  "dist_integrity_verified": "sha512-Fce8upazaAXUVUVsjgV6mBnGuqgO+JNDlcgF79Dksy4+wgGpQB2lmYoO4TSweFg/mZITdpGHomw/cNBJZj1icA==",
+  "dist_sha1_verified": "8dc9c68d0c548934bedcb5f633db07ed1dd2101c",
+  "archive_bytes": 10364258,
+  "archive_sha256": "1f0eae29c406496a77789a7d7f56b811cae034ac95c0b3808215998f4ba0fbf3",
+  "files": {
+    "package/dist/echarts.min.js": "e84270bd0cd5bdf60fefc26d00c2a391cb2e81f4d26a7a9ee16185a54773a3cf",
+    "package/LICENSE": "634293835b43a6dd2094fa39182a3d9a6b9ca43b7fdb9ac354e8037af2a3093a",
+    "package/NOTICE": "fa99ac3af859d0e13166906dc53a73ad34a08898da7e8ae83407275496e9e30c",
+    "package/licenses/LICENSE-d3": "e1211892da0b0e0585b7aebe8f98c1274fba15bafe47fa1f4ee8a7a502c06304",
+    "package/package.json": "78efb370bada0361462e889b79cf3ff3609ed789a9338d56d1e1a02b4cf75551"
+  },
+  "asset_member": "package/dist/echarts.min.js",
+  "local_asset": "../echarts-5.5.1.min.js",
+  "verification": "Full published archive SHA512/SHA1 verified and exact member bytes compared by producer; local gate checks named bytes offline. Full upstream LICENSE includes appended BSD-3-Clause d3 reference; accompanying NOTICE and licenses/LICENSE-d3 retained unchanged. upstream-package.json is the unchanged published package metadata, not an installation project."
+}

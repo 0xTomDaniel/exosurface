@@ -19,31 +19,42 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # Same Go-thread and heap bounds the local gate uses.
+    env:
+      GOMAXPROCS: 2
+      NODE_OPTIONS: --max-old-space-size=1536
     steps:
       # Exact pin: sha of release tag v7.0.1 (lightweight tag), runs.using node24.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # Node 22: the repo has no pin file; sebox pins node 22 through mise, and
-      # plugins/bb-plugin-exosurface/package.json engines needs node >=22.19.0 (22 resolves to latest 22.x).
-      # Exact pin: sha of release tag v7.1.0 (lightweight tag), runs.using node24.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            plugins/bb-plugin-exosurface/package-lock.json
-            plugins/bb-plugin-exosurface/legacy/surface/package-lock.json
+          fetch-depth: 0
 
-      - name: gate (scripts/check)
-        run: plugins/bb-plugin-exosurface/scripts/check
+      # Tools come from mise.toml/mise.lock at the version mise-version pins; downloads cached by mise.lock.
+      - id: pins
+        run: echo "mise=$(tr -d '[:space:]' < mise-version)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/mise/downloads
+          key: mise-downloads-${{ runner.os }}-${{ hashFiles('mise.lock') }}
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        env:
+          MISE_ALWAYS_KEEP_DOWNLOAD: "1"
+        with:
+          version: ${{ steps.pins.outputs.mise }}
+          cache: false
 
-      # bb CLI: the public MIT npm package bb-app (github.com/get-bb/bb) ships the `bb` bin; no login, no secret.
-      # Pinned to 0.48.0, the BB the lanes run. --ignore-scripts skips native add-ons `plugin build` does not need.
-      # BB_DATA_DIR in runner temp so no state lands in the checkout. Runs after the gate, which npm ci'd both trees.
-      - name: bb plugin build
+      # Frozen pnpm installs of the root workspace and the nested a2ui spike workspace (justfile setup-dependencies).
+      - name: frozen shipping and nonshipping source preparation
+        run: timeout -k 10 600 just setup-dependencies
+
+      # The lanes' gate: just check runs scripts/check.
+      - name: canonical offline gate
+        run: just check
+
+      # Native packaging with the pinned local bb-app 0.48.0 from the root lock; no login, no secret.
+      # BB_DATA_DIR in runner temp so no state lands in the checkout.
+      - name: native BB packaging
         working-directory: plugins/bb-plugin-exosurface
         env:
           BB_DATA_DIR: ${{ runner.temp }}/bb-data
-        run: |
-          npm install --prefix "$RUNNER_TEMP/bb-cli" --no-save --ignore-scripts --no-audit --no-fund bb-app@0.48.0
-          timeout -k 10 300 "$RUNNER_TEMP/bb-cli/node_modules/.bin/bb" plugin build
+        run: timeout -k 10 300 pnpm exec bb plugin build

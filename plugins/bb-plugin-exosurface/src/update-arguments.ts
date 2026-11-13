@@ -16,12 +16,12 @@ export function checkUpdateArguments(args: { baseRevision?: unknown; edits?: unk
   if (revision === undefined) problems.push(`baseRevision is missing; baseRevision accepts ${REVISION_WORDS}.`);
   else if (typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0) problems.push(`baseRevision ${shown(revision)} is not a revision; baseRevision accepts ${REVISION_WORDS}.`);
   (Array.isArray(args.edits) ? args.edits : []).forEach((edit: Record<string, unknown>, i) => {
-    const at = [edit.ref !== undefined && `ref ${shown(edit.ref).replace(/^"(.*)"$/, '$1')}`, edit[page] !== undefined && `on page ${shown(edit[page]).replace(/^"(.*)"$/, '$1')}`].filter(Boolean).join(' ');
+    const at = [edit["ref"] !== undefined && `ref ${shown(edit["ref"]).replace(/^"(.*)"$/, '$1')}`, edit[page] !== undefined && `on page ${shown(edit[page]).replace(/^"(.*)"$/, '$1')}`].filter(Boolean).join(' ');
     const name = `edit ${i + 1}${at ? ` (${at})` : ''}`;
     if (edit[page] === undefined) problems.push(`${name}: ${page} is missing; ${page} accepts the ref of the page the edit changes.`);
-    if (edit.ref === undefined) problems.push(`${name}: ref is missing; ref accepts the ref of the line the edit changes, as the page shows it.`);
-    if (edit.op === undefined) problems.push(`${name}: op is missing; op accepts ${OP_WORDS}.`);
-    else if (!(EDIT_OPS as readonly unknown[]).includes(edit.op)) problems.push(`${name}: op ${shown(edit.op)} is not an edit operation; op accepts ${OP_WORDS}.`);
+    if (edit["ref"] === undefined) problems.push(`${name}: ref is missing; ref accepts the ref of the line the edit changes, as the page shows it.`);
+    if (edit["op"] === undefined) problems.push(`${name}: op is missing; op accepts ${OP_WORDS}.`);
+    else if (!(EDIT_OPS as readonly unknown[]).includes(edit["op"])) problems.push(`${name}: op ${shown(edit["op"])} is not an edit operation; op accepts ${OP_WORDS}.`);
   });
   if (problems.length) throw Error(`update_exosurface not applied: ${problems.slice(0, 3).join(' ')}${problems.length > 3 ? ` (${problems.length - 3} more)` : ''}`);
 }

@@ -35,6 +35,9 @@ async function ensureOwner() {
 
 /** BB owns this connection, never the Pi process. Closing means detach. */
 export class OwnerClient {
+private event: (e: any) => void;
+private lost: (e: Error) => void;
+
   private socket!: Socket; private next = 0; private closing = false;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }>();
   private writes = Promise.resolve(); private nativePid?: number;
@@ -64,7 +67,10 @@ export class OwnerClient {
     if (hello.journalReplay !== 2) { await client.close(); throw new Error('Owner read-side upgrade required after active jobs finish; refusing an incompatible view'); }
     return client;
   }
-  constructor(private event: (e: any) => void, private lost: (e: Error) => void) {}
+  constructor( event: (e: any) => void,  lost: (e: Error) => void) {
+this.event = event;
+this.lost = lost;
+}
   get pid() { return this.nativePid; }
   private fail(error: Error) {
     for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(error); } this.pending.clear();

@@ -40,13 +40,13 @@ const title = () => view.container.querySelector('main h1')?.textContent ?? null
 /** Whether the sidebar shows an element of this role and name (a plain value to assert on, never the element). */
 const shows = (role: string, name: string | RegExp) => sidebar().queryByRole(role, { name }) !== null;
 /** The surface's name as the server lists it (thread_list, what every view reads). */
-const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
+const listedName = async (threadId: string) => (await f.rpc["thread_list"](null)).threads.find((t: any) => t.threadId === threadId)?.title;
 /** A new surface through the sidebar's New surface button, started by BB with its first message. */
 async function newSurface() {
   const count = entries().length;
   fireEvent.click(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li'))!);
   await until('the new surface listed', () => entries().length === count + 1);
-  const made = (await f.rpc.thread_list(null)).threads[1].threadId;
+  const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
   assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(made) > 0);
   return made;
@@ -54,7 +54,7 @@ async function newSurface() {
 /** The person's message on a surface (exo_send, as its input sends), until Exo's turn has ended. */
 async function turn(threadId: string, text: string) {
   const before = boundaries(threadId);
-  await f.rpc.exo_send({ threadId, text });
+  await f.rpc["exo_send"]({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
 /** The person renames the surface listed as `from` in the sidebar (the most recently active such row, the first: spec N9): its
@@ -141,12 +141,12 @@ test('acceptance-rename: a rename landing while the naming call is in flight win
 });
 
 test('the rename RPC refuses Home, an empty name, a too long name and a thread that is not a bound Exo surface', async () => {
-  const surface = (await f.rpc.thread_list(null)).threads[1].threadId;
-  await assert.rejects(f.rpc.thread_rename({ threadId: f.setup.threadId, name: 'My home' }), /Home/);
-  assert.equal((await f.rpc.thread_list(null)).threads[0].title, 'Home');
-  await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: '   ' }), /empty/);
-  await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: 'x'.repeat(81) }), /80/);
-  await assert.rejects(f.rpc.thread_rename({ threadId: 'not-a-surface', name: 'Backyard' }), /Exo surface/);
+  const surface = (await f.rpc["thread_list"](null)).threads[1].threadId;
+  await assert.rejects(f.rpc["thread_rename"]({ threadId: f.setup.threadId, name: 'My home' }), /Home/);
+  assert.equal((await f.rpc["thread_list"](null)).threads[0].title, 'Home');
+  await assert.rejects(f.rpc["thread_rename"]({ threadId: surface, name: '   ' }), /empty/);
+  await assert.rejects(f.rpc["thread_rename"]({ threadId: surface, name: 'x'.repeat(81) }), /80/);
+  await assert.rejects(f.rpc["thread_rename"]({ threadId: 'not-a-surface', name: 'Backyard' }), /Exo surface/);
   // The sidebar shows the refusal and keeps the field open.
   const listed = entries()[1]!;
   fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${listed}` }).at(-1)!);

@@ -8,7 +8,7 @@ import { INITIALIZATION } from './canonical-fresh.ts';
 export default function initialize(pi: ExtensionAPI) {
   pi.on('before_provider_request', () => { throw Error('Setup initialization forbids inference'); });
   pi.registerCommand('exosurface-initialize-session', { description: 'Initialize authorized Exosurface setup session without inference', handler: async (_args, ctx) => {
-    const home = process.env.EXOSURFACE_SETUP_HOME, operationId = process.env.EXOSURFACE_SETUP_OPERATION;
+    const home = process.env["EXOSURFACE_SETUP_HOME"], operationId = process.env["EXOSURFACE_SETUP_OPERATION"];
     if (!home || !operationId || !/^[a-zA-Z0-9_-]{8,80}$/.test(operationId)) throw Error('Explicit setup operation required');
     const file = join(home, 'canonical-pi-intent.json'), old = loadIf(file);
     if (old) throw Error('Initialization identity already issued; resume that exact session, never append again');

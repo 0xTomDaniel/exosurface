@@ -22,7 +22,7 @@ The complete experience needs **BB + this plugin + an Exocortex workspace + mode
 ### 1. Prepare BB, Node and your workspace
 
 - Install and open the normal **BB desktop app** (tested: 0.45.0); complete whatever first-launch setup BB itself requests. No BB account login or manual machine enrollment is needed for this plugin: BB's own launcher enrolls the local Mac automatically (verified in an isolated instance).
-- Install Git and **Node 22.19 or newer** with npm (tested: Node 24.15.0). Keep Node available when running the owner.
+- Install Git and mise at `mise-version`, then use the repository's locked Node22.23.3/pnpm10.7.0/just1.21.0 tools. Keep Node available when running the owner. The migration's local native-build evidence does not establish a fresh Mac or desktop acceptance result.
 - Provision your own Exocortex workspace/vault separately, including its `AGENTS.md` and `.agents/skills/`. The plugin does not install these or your private memory. Add it to BB as a normal project whose folder is **exactly** the workspace path (initialization refuses any other project before changing anything).
 - Obtain **OptChat 0.8.6** from its [upstream repository](https://github.com/jonaslsaa/pi-optchat), pinned to `aae1caf7715830051d327f819fc776792211167a`, and install its locked dependencies. The plugin uses its public extension/profile API, not the incompatible Pi SDK-root import.
 
@@ -34,16 +34,15 @@ Requires access to this private repository. Choose a writable checkout; BB rebui
 git clone https://github.com/0xTomDaniel/exosurface.git
 cd exosurface
 export PLUGIN="$PWD/plugins/bb-plugin-exosurface"
-export NODE="$(command -v node)"
+just setup
+export NODE="$(mise which node)"
 # Standard macOS BB.app location; adjust if you installed it elsewhere.
 export BB_CLI="/Applications/BB.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/dist/bb.js"
 
 cd "$PLUGIN"
-npm ci
-(cd legacy/surface && npm ci)
 ```
 
-Both installs are needed: the root and surface keep separate lockfiles/dependency graphs. The root lock includes **Pi 1.1.0** and **BB plugin SDK 0.6.15**. `npm ci` can download packages and run lifecycle scripts; review/trust the source first. BB may also obtain its compiler toolchain during the build. The previous isolated test used populated caches; uncached fresh-machine downloads have not been demonstrated.
+`just setup` performs the one frozen pnpm workspace installation. The shared root lock preserves distinct owner/SDK Zod4, surface vendored Zod3 and composition Zod4 graphs through explicit importer/selector mappings, not flattening. Pi1.1.0 and SDK0.6.15 remain pinned. Setup may download packages and runs only approved esbuild lifecycle scripts; review/trust sources first. BB0.48.0's exact local build toolchain is supplied through root pnpm packageExtensions, avoiding BB's download/npm fallback. Historical npm inputs remain byte-frozen compatibility provenance, never active install instructions. Full adoption, uncached Mac setup and desktop acceptance remain unproven; see [migration evidence and deferred standards](docs/pnpm-migration.md).
 
 ### 3. Set the local paths before registration
 
@@ -56,9 +55,8 @@ The default config location is read by BB and the owner. An `EXO_CONFIG` overrid
 From the same terminal/plugin directory as step 2, with BB running:
 
 ```sh
-"$NODE" "$BB_CLI" plugin build "$PLUGIN"
-"$NODE" build.mjs
-"$NODE" build-runtime.mjs
+pnpm exec bb plugin build
+../../scripts/build
 "$NODE" "$BB_CLI" plugin install "$PLUGIN" --yes --json
 ```
 

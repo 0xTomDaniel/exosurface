@@ -1,0 +1,37 @@
+# ShellCheck input list, including extensionless maintained launchers.
+*.sh shell
+.githooks/pre-commit shell
+scripts/build shell
+plugins/bb-plugin-exosurface/scripts/check shell
+plugins/bb-plugin-exosurface/demo/surfaces shell
+
+# Generator-owned lock data; scc otherwise reports the .lock extension as Unknown.
+mise.lock language-exempt
+
+# Captured command output in the consolidation evidence directories (stdout/stderr/exit-status logs, checksum
+# manifests, HTTP headers, TAP). Recorded data, not source; scc has no language for these extensions.
+plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/*.exit language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/*.stderr language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/canonical-session-proof/*.stdout language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/fresh-owner-install-spike/*.stderr language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/fresh-owner-install-spike/*.stdout language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/*.exit language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/*.sha256 language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/*.stderr language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-hook-evidence/*.stdout language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/*.exit language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/*.headers language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/*.stderr language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/native-prerequisite-evidence/*.stdout language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/repair-evidence/*.exit language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/repair-evidence/*.sha256 language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/repair-evidence/*.stderr language-exempt
+plugins/bb-plugin-exosurface/compat/consolidation/repair-evidence/*.tap language-exempt
+
+# Upstream license text shipped beside the vendored zod3 tarball.
+plugins/bb-plugin-exosurface/compat/zod3/LICENSE.upstream language-exempt
+plugins/bb-plugin-exosurface/legacy/surface/vendor/zod3/LICENSE.upstream language-exempt
+
+# Obsidian Bases fixture data in the spike test vaults.
+spikes/a2a-pi/fixtures/vault/Agenda.base language-exempt
+spikes/ag-ui-pi/fixtures/vault/Agenda.base language-exempt

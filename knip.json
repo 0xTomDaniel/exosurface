@@ -1,0 +1,70 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreBinaries": [
+    "setsid",
+    "mise"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/lint.ts",
+        "scripts/check-languages.ts",
+        "scripts/own-tool-paths.ts"
+      ],
+      "project": [
+        "scripts/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "basedpyright"
+      ]
+    },
+    "plugins/bb-plugin-exosurface": {
+      "entry": [
+        "host.ts",
+        "server.ts",
+        "app.tsx",
+        "src/*.ts",
+        "legacy/primary/release-owner.ts",
+        "legacy/primary/src/live.ts",
+        "legacy/primary/src/canonical-initialization.ts",
+        "test/**/*.test.ts",
+        "test/**/*.test.mjs",
+        "test/parent-watch.mjs",
+        "test/spawn-recorder.mjs",
+        "test/context-probe-extension.ts",
+        "demo/surfaces.ts",
+        "scripts/check-arch.mjs",
+        // Manual verification commands run by compat/consolidation/README.md, REPAIR.md and
+        // native-hook-evidence/commands.md.
+        "test/consolidation-dispatch.mjs",
+        "test/consolidation-graph.mjs",
+        "test/consolidation-parity.mjs",
+        "test/consolidation-relocated.mjs",
+        "test/consolidation-source-closure.mjs"
+      ],
+      "project": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mjs"
+      ]
+    },
+    "plugins/bb-plugin-exosurface/legacy/surface": {
+      "entry": [
+        "app.tsx",
+        "server.ts",
+        "src/workspace-extension.ts",
+        "src/workspace-frame.ts"
+      ],
+      "project": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mjs"
+      ]
+    },
+    "plugins/bb-plugin-exosurface/legacy/surface/composition": {
+      "project": [
+        "*.ts"
+      ]
+    }
+  }
+}

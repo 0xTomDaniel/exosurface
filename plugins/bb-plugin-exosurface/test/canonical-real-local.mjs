@@ -4,14 +4,14 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-const plugin = resolve(process.argv[2]), root = process.env.PROOF_ROOT;
-assert.ok(root && process.env.HOME.startsWith(root + '/') && process.env.EXO_CONFIG.startsWith(root + '/'));
+const plugin = resolve(process.argv[2]), root = process.env["PROOF_ROOT"];
+assert.ok(root && process.env["HOME"].startsWith(root + '/') && process.env["EXO_CONFIG"].startsWith(root + '/'));
 const { default: register } = await import(pathToFileURL(join(plugin, 'server.ts')));
 const { canonicalSystemPorts, canonicalBBNativeAdapter } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-system.ts')));
 const { HOME, CANONICAL_HOME, CANONICAL_PROFILE } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/state.ts')));
 const { setupStatus } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-setup.ts')));
 const { freshCanonicalReceipt } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-fresh.ts')));
-const input = { operationId: 'real-local-journal-proof', projectId: 'mock-native-project', vault: root + '/vault', piCli: process.env.PROOF_PI_CLI, optchat: root + '/optchat', authorizeInitialization: true, recoverDeadLock: false };
+const input = { operationId: 'real-local-journal-proof', projectId: 'mock-native-project', vault: root + '/vault', piCli: process.env["PROOF_PI_CLI"], optchat: root + '/optchat', authorizeInitialization: true, recoverDeadLock: false };
 function transport(threads) { const capture = {}; const bb = { providers: { register: p => { capture.provider = p; } }, rpc: { register: (_contract, handlers) => { capture.handlers = handlers; } }, sdk: { threads, projects: { async list() { return [{ id: input.projectId, name: 'Mock native project' }]; } } }, background: { service() {} }, realtime: { publish() {} }, ui: { registerMentionProvider() {} }, log: { warn() {} }, experimental_hooks: { on(name, handler) { assert.equal(name, 'message.dispatch'); assert.equal(capture.dispatch, undefined); capture.dispatch = handler; } } }; return { bb, capture }; }
 let spawns = 0, nativeThread, real, bridge;
 const replies = [], waiters = new Map(); globalThis.__canonicalMetrics = { owner: 0, model: 0 };
@@ -34,13 +34,13 @@ const threads = {
   },
   async get({ threadId }) { assert.equal(threadId, nativeThread.id); return nativeThread; },
 };
-const beforeGate = [existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)];
+const beforeGate = [existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env["EXO_CONFIG"])];
 const gated = transport({ async spawn() { throw Error('Production native adapter must not dispatch'); }, async get() { throw Error('Production native adapter must not read'); } }); register(gated.bb);
 assert.equal((await gated.capture.handlers.canonical_setup_status()).nativeDispatchAllowed, false);
 assert.equal((await gated.capture.handlers.canonical_setup_status()).initializationAvailable, true);
 for (const authorizeInitialization of [false, undefined, 'true']) await assert.rejects(gated.capture.handlers.canonical_setup({ ...input, authorizeInitialization, recoverDeadLock: true }));
-assert.deepEqual([existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env.EXO_CONFIG)], beforeGate);
-const ports = canonicalSystemPorts({ localConfig: process.env.EXO_CONFIG, runtimeRoot: plugin, node: process.execPath, native: canonicalBBNativeAdapter(threads, true), instrumentEnvironment: env => ({ ...env, NODE_OPTIONS: process.env.NODE_OPTIONS, PROOF_ROOT: root, PROOF_ALLOW_PI: '1', PROOF_PI_CLI: process.env.PROOF_PI_CLI, PROOF_PROFILE_DIR: join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE) }) });
+assert.deepEqual([existsSync(HOME), existsSync(CANONICAL_HOME), existsSync(process.env["EXO_CONFIG"])], beforeGate);
+const ports = canonicalSystemPorts({ localConfig: process.env["EXO_CONFIG"], runtimeRoot: plugin, node: process.execPath, native: canonicalBBNativeAdapter(threads, true), instrumentEnvironment: env => ({ ...env, NODE_OPTIONS: process.env["NODE_OPTIONS"], PROOF_ROOT: root, PROOF_ALLOW_PI: '1', PROOF_PI_CLI: process.env["PROOF_PI_CLI"], PROOF_PROFILE_DIR: join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE) }) });
 real = transport(threads); register(real.bb, ports);
 assert.deepEqual(await real.capture.handlers.canonical_setup_projects(), [{ id: input.projectId, name: 'Mock native project' }]);
 const first = await real.capture.handlers.canonical_setup(input), second = await real.capture.handlers.canonical_setup(input);
@@ -54,5 +54,5 @@ assert.ok(!existsSync(join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE, 'activ
 assert.equal(freshCanonicalReceipt(HOME, CANONICAL_HOME, CANONICAL_PROFILE).sessionId, reopened.id);
 assert.equal((await real.capture.handlers.canonical_setup_status()).stage, 'bound');
 const socketPathBytes = Buffer.byteLength(join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE, 'windows.sock'));
-if (process.env.PROOF_EXPECT_SOCKET_BYTES) assert.equal(socketPathBytes, Number(process.env.PROOF_EXPECT_SOCKET_BYTES));
+if (process.env["PROOF_EXPECT_SOCKET_BYTES"]) assert.equal(socketPathBytes, Number(process.env["PROOF_EXPECT_SOCKET_BYTES"]));
 console.log(JSON.stringify({ passed: true, socketPathBytes, retainedRPC: true, realOptchatProfileAPI: true, supportedPiCLI: true, actualHostControls: ['thread/start absent input + admitted provider options', 'turn/start'], controlMetrics: globalThis.__canonicalMetrics, nativeMockOnly: true, spawns, userRecords: messages.length, sessionId: reopened.id, sessionFile: reopened.file, profile: CANONICAL_PROFILE, home: HOME, optchatHome: CANONICAL_HOME, threadId: nativeThread.id, ownerReady: false, providerDispatch: false, releaseReady: false }, null, 2));

@@ -14,7 +14,7 @@ const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
 const view = kit.renderSlot(app.navPanels.find((p: { path: string }) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
 const reply = () => view.container.querySelector('[data-exo-reply]')?.textContent;
 const until = waiter(() => view.container.textContent ?? '');
-const workspace = () => f.rpc.workspace({ deployment: 'main', cursor: null });
+const workspace = () => f.rpc["workspace"]({ deployment: 'main', cursor: null });
 async function send(text: string) {
   await until('idle input', () => !!view.queryByRole('textbox', { name: 'Message' }) && !(view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement).disabled && view.container.querySelector('p.exo-status')?.getAttribute('data-busy') === 'false');
   fireEvent.change(view.getByRole('textbox', { name: 'Message' }), { target: { value: text } });
@@ -35,7 +35,7 @@ test('acceptance-keep: Keep persists the page through new topics, canvas retenti
   fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
   await until('public kept metadata', async () => (await workspace()).delivery.checkpoint?.kept?.includes('plum') === true);
   const saved = await workspace(), revision = saved.revision;
-  await assert.rejects(f.rpc.edit({ threadId: 'primary', revision: revision - 1, surfaceId: 'plum', updates: [], keep: true, mutationId: crypto.randomUUID() }), /stale_revision/);
+  await assert.rejects(f.rpc["edit"]({ threadId: 'primary', revision: revision - 1, surfaceId: 'plum', updates: [], keep: true, mutationId: crypto.randomUUID() }), /stale_revision/);
   assert.equal((await workspace()).revision, revision, 'stale Keep does not mutate the page');
   for (const [ref, title] of [['pear', 'Pear plan'], ['apple', 'Apple plan'], ['lime', 'Lime plan'], ['lemon', 'Lemon plan'], ['grape', 'Grape plan'], ['peach', 'Peach plan'], ['cherry', 'Cherry plan'], ['berry', 'Berry plan']]) await send(`draw ${ref}: ${title}`);
   assert.equal(!!view.queryByRole('button', { name: 'Plum plan (kept)', exact: true }), true);
@@ -51,8 +51,8 @@ test('acceptance-keep: Keep persists the page through new topics, canvas retenti
   fireEvent.click(view.getByRole('button', { name: 'Plum plan (kept)', exact: true }));
   await until('kept page selected', () => view.container.querySelector('.exo-stage [data-surface]')?.getAttribute('data-surface') === 'plum');
   await send('reply without changing or drawing a page');
-  const block = await f.rpc.exo_block({ threadId: 'primary', page: 'plum' });
+  const block = await f.rpc["exo_block"]({ threadId: 'primary', page: 'plum' });
   assert.equal(block.said, 'reply without changing or drawing a page');
   assert.equal(block.words, `Exo (${f.setup.profile}): reply without changing or drawing a page`);
-  assert.equal((await f.rpc.exo_block({ threadId: 'primary', page: 'berry' })).said, 'draw berry: Berry plan');
+  assert.equal((await f.rpc["exo_block"]({ threadId: 'primary', page: 'berry' })).said, 'draw berry: Berry plan');
 });

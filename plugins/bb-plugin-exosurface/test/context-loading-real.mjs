@@ -16,7 +16,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 const plugin = resolve('.');
 const [rootArg, piCli, optchat, variant] = process.argv.slice(2);
 const root = realpathSync(rootArg), shadow = variant === 'shadow', ancestor = variant === 'ancestor';
-assert.equal(process.env.HOME, join(root, 'h')); assert.equal(process.env.EXO_CONFIG, join(root, 'c.json'));
+assert.equal(process.env["HOME"], join(root, 'h')); assert.equal(process.env["EXO_CONFIG"], join(root, 'c.json'));
 assert.ok(!Object.keys(process.env).some(k => /KEY|TOKEN|SECRET/i.test(k)), 'fixture env must carry no credentials');
 const M = { vaultAgents: 'CTXFX_VAULT_AGENTS_MD_41', vaultSkill: 'CTXFX_VAULT_SKILL_DESC_41', homeSkill: 'CTXFX_HOME_SKILL_DESC_41', shadowSkill: 'CTXFX_SHADOW_EXOSURFACE_41', ancestorAgents: 'CTXFX_ANCESTOR_AGENTS_MD_41', ancestorSkill: 'CTXFX_ANCESTOR_SKILL_DESC_41', exosurfaceSkill: 'Reference for composing Exosurface pages', profile: 'This is the exo-optchat profile.', vaultHeading: 'Exocortex Agent Instructions', optchatMaster: 'You are OptChat', exosurfaceGuide: 'Exosurface: the surface beside this chat', optchatImport: 'Entries marked Historical are imported records' };
 const vault = join(root, 'v'), home = join(root, 's'), optchatHome = join(root, 'o');
@@ -33,14 +33,14 @@ const { canonicalSystemPorts, canonicalBBNativeAdapter } = await import(pathToFi
 const { canonicalSetup } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/canonical-setup.ts')));
 const threadId = 'ctxfx-native-thread', projectId = 'ctxfx-project';
 const threads = { async spawn(args) { assert.equal(args.environment.workspace.path, vault); return { id: threadId }; }, async get() { return { id: threadId, providerId: 'exo-spike', projectId }; } };
-const ports = canonicalSystemPorts({ localConfig: process.env.EXO_CONFIG, runtimeRoot: plugin, node: process.execPath, native: canonicalBBNativeAdapter(threads, true), ownerLabel: 'app.exosurface.owner.ctxfx' });
+const ports = canonicalSystemPorts({ localConfig: process.env["EXO_CONFIG"], runtimeRoot: plugin, node: process.execPath, native: canonicalBBNativeAdapter(threads, true), ownerLabel: 'app.exosurface.owner.ctxfx' });
 const request = { operationId: 'ctxfx-operation-1', projectId, home, optchatHome, profile: 'exo-optchat', vault, piCli, optchat, authorizeInitialization: true };
 const setup = await canonicalSetup(request, ports);
 assert.equal(setup.stage, 'bound');
 const profileAgents = readFileSync(join(optchatHome, 'profiles/exo-optchat/AGENTS.md'), 'utf8');
 
 // ---- Phase 1: the unmodified retained owner, launched as documented.
-const env = { HOME: join(root, 'h'), TMPDIR: join(root, 't'), PATH: process.env.PATH, EXO_CONFIG: process.env.EXO_CONFIG };
+const env = { HOME: join(root, 'h'), TMPDIR: join(root, 't'), PATH: process.env["PATH"], EXO_CONFIG: process.env["EXO_CONFIG"] };
 mkdirSync(env.TMPDIR, { recursive: true });
 const record = join(root, 'spawns.jsonl');
 const owner = spawn(process.execPath, ['--import', pathToFileURL(join(plugin, 'test/spawn-recorder.mjs')).href, join(plugin, 'dist/owner-service.js')], { env: { ...env, EXO_SPAWN_RECORD: record }, stdio: ['ignore', 'ignore', 'pipe'] });

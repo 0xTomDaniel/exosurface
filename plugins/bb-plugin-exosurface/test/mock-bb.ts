@@ -14,9 +14,15 @@ import { pathToFileURL } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { reaped, PARENT_WATCH } from './reap.ts';
 import { settled } from './wait.ts';
+import type { PluginRpcMethodContract, StandardSchemaV1InferOutput } from '@get-bb/plugin-sdk';
+
+type NativeRpcContract = typeof import('../server.ts').rpcContract;
+type FixtureRpc = {
+  [Method in keyof NativeRpcContract]: (input: unknown) => Promise<StandardSchemaV1InferOutput<NativeRpcContract[Method]['output']>>;
+};
 
 export const PLUGIN = resolve(import.meta.dirname, '..');
-const PI_CLI = join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js');
+const PI_CLI = realpathSync(join(PLUGIN, 'node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js'));
 const PI_AI = pathToFileURL(join(PLUGIN, 'node_modules/@earendil-works/pi-ai/dist/index.js')).href;
 export const INSTRUCTIONS = '# Exo\n\nThe one Exo instructions source.\n';
 
@@ -105,7 +111,7 @@ export default function optchat(pi){
 type Hook = (context: unknown) => Promise<{ action: string; message?: string }>;
 // BB 0.48's rpc host, as PluginRpc.register documents it (@get-bb/plugin-sdk bundled-types/bb-plugin-sdk.d.ts); its refusal
 // is thrown here.
-function checkedRpc(method: string, schema: { input: any; output: any } | undefined, handler: (input: unknown) => Promise<any>) {
+function checkedRpc(method: string, schema: PluginRpcMethodContract | undefined, handler: (input: unknown) => unknown | Promise<unknown>) {
   if (!schema) throw new Error(`mock BB: rpc ${method} registered without a contract entry`);
   const validated = async (side: 'input' | 'output', value: unknown) => {
     const r = await schema[side]['~standard'].validate(value);
@@ -116,7 +122,7 @@ function checkedRpc(method: string, schema: { input: any; output: any } | undefi
 }
 /** server.ts (package.json bb.server) registered against a mock BB; its RPC handlers and its message.dispatch hook. */
 async function serverRpc(vault: string) {
-  const handlers: Record<string, (input: unknown) => Promise<any>> = {}, hooks: Hook[] = [];
+  const handlers = {} as Record<string, (input: unknown) => Promise<unknown>> & FixtureRpc, hooks: Hook[] = [];
   // BB's threads: the ones spawned here (setup's is 'primary'), and any other id read as an existing Exo thread.
   const threads = new Map<string, any>(), spawns: any[] = [], sends: any[] = [];
   // The thread's provider as BB reaches it on a send (a test sets deliver to its host.ts bridge); unset, sends are only recorded.
@@ -154,7 +160,7 @@ async function serverRpc(vault: string) {
   const bb: any = { providers: { register() {} }, background: { service(name: string, s: { start: (signal: AbortSignal) => Promise<void> }) { services.push({ name, start: s.start }); } }, realtime: { publish(channel: string, payload: unknown) { realtime.deliver?.(channel, payload); } }, ui: { registerMentionProvider() {} },
     events: { on(name: string, handler: (payload: any) => unknown) { (listeners[name] ??= []).push(handler); } },
     log: Object.fromEntries(['debug', 'info', 'warn', 'error'].map(level => [level, (m: string) => { logs.push(`${level}: ${m}`); }])),
-    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(contract: Record<string, { input: any; output: any }>, h: typeof handlers) { for (const [method, handler] of Object.entries(h)) handlers[method] = checkedRpc(method, contract[method], handler); } },
+    experimental_hooks: { on(_name: string, hook: Hook) { hooks.push(hook); } }, rpc: { register(contract: Record<string, PluginRpcMethodContract>, h: typeof handlers) { for (const [method, handler] of Object.entries(h)) handlers[method] = checkedRpc(method, contract[method], handler); } },
     sdk: {
       threads: {
         async get({ threadId }: { threadId: string }) { if (faults.threadGet > 0) { faults.threadGet--; throw new Error('mock BB: connection lost'); } return thread(threadId); }, async list() { return [...threads.values()]; },
@@ -225,6 +231,8 @@ async function serverRpc(vault: string) {
   /** The person's queued message sent with BB's explicit Send-now: BB skips the dispatch pass for it by design (BB 0.48
    *  dispatch: `if (!sendNow && hasMessageDispatchHooks())`), then logs the request (author "user") and starts the turn. */
   const sendNow = (threadId: string, text: string) => { logRequest(threadId, text, 'user', null, 'tell'); provider.deliver!(threadId, text); };
+  // The native registration supplies these methods; checkedRpc validates every returned value with that method's public schema.
+  // Inputs intentionally remain unknown: negative tests send malformed public wire payloads through the same validator.
   return { handlers, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, metadata };
 }
 
@@ -241,7 +249,7 @@ export async function installedFixture() {
   // The installer's local config names the state homes and profile; setup confirms the rest and refuses any conflict.
   const config = join(root, 'exosurface.json');
   writeFileSync(config, JSON.stringify({ ownerLabel: 'fixture.owner', primaryStateDir: home, primaryOptchatHome: optchatHome, primaryProfile: 'exo-optchat', primaryAgentDir: join(home, 'pi-config'), vault, optchat, piCli: PI_CLI }));
-  process.env.EXO_CONFIG = config; // legacy/primary reads its local config once, at import: one fixture per process.
+  process.env["EXO_CONFIG"] = config; // legacy/primary reads its local config once, at import: one fixture per process.
   // The model as reached over HTTP (the namer's Pi): answers every request with model.state.reply. Closed when this process exits.
   const model = await fakeModelHttp(); model.agentDir(join(home, 'pi-config'));
   const { handlers: rpc, spawns, sends, provider, realtime, streams, retitle, idle, logs, tell, sendNow, faults, metadata } = await serverRpc(vault);
@@ -254,7 +262,7 @@ type Fixture = Awaited<ReturnType<typeof installedFixture>>;
 /** A fresh canonical install made through server.ts's canonical_setup RPC, as the setup panel runs it. Sets EXO_CONFIG. */
 export async function liveFixture() {
   const f = await installedFixture();
-  const setup = await f.rpc.canonical_setup({ operationId: 'fixture-operation', projectId: 'project', vault: f.vault, piCli: f.piCli, optchat: f.optchat, authorizeInitialization: true });
+  const setup = await f.rpc["canonical_setup"]({ operationId: 'fixture-operation', projectId: 'project', vault: f.vault, piCli: f.piCli, optchat: f.optchat, authorizeInitialization: true });
   // The person's own instructions, written after setup: every Exo thread must read exactly these.
   writeFileSync(join(f.optchatHome, 'profiles', setup.profile, 'AGENTS.md'), INSTRUCTIONS);
   return { ...f, setup };
@@ -262,7 +270,7 @@ export async function liveFixture() {
 /** Each request the model received, in order: its profile and messages as sent (the page state among them). */
 export const modelRequests = (f: Fixture): { profile: string; messages: any[]; started: { role: string; content?: unknown }[] }[] => { const file = join(f.optchatHome, 'model-requests.jsonl'); return existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l)) : []; };
 
-const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env.PATH ?? '/usr/bin:/bin' });
+const childEnv = (f: Fixture) => ({ EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env["PATH"] ?? '/usr/bin:/bin' });
 
 /** The release owner as launchd runs it, from source. Resolves once it reports ready. */
 export async function owner(f: Fixture) {
@@ -332,10 +340,10 @@ export function ownerRequest(f: Fixture, value: object) {
 export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}) {
   const blocks: any[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
   mkdirSync(gates, { recursive: true });
-  await f.rpc.exo_send({ threadId, text: `steps: ${topic}` });
+  await f.rpc["exo_send"]({ threadId, text: `steps: ${topic}` });
   for (const end = Date.now() + 60000; ;) {
     if (Date.now() > end) throw new Error(`Exo's turn did not end: ${JSON.stringify(blocks)}`);
-    const block = await f.rpc.exo_block({ threadId });
+    const block = await f.rpc["exo_block"]({ threadId });
     if (JSON.stringify(block) !== JSON.stringify(blocks.at(-1))) { blocks.push(block); seen(block); }
     for (const lines = new Set(blocks.map(b => b.activity).filter(Boolean)).size; released < lines;) writeFileSync(join(gates, `${topic}-${++released}`), '');
     if (!block.working) return blocks;

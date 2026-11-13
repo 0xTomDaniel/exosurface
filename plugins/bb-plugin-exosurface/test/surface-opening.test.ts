@@ -150,7 +150,7 @@ test('a press on an earlier version of the page, opened from its card in the cha
 });
 
 test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
-  const made = (await f.rpc.thread_new(null)).threadId;
+  const made = (await f.rpc["thread_new"](null)).threadId;
   f.retitle(made, 'Garden plan');
   view.unmount(); view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
@@ -170,7 +170,7 @@ test('a press on a button whose label holds " — " or " · " shows exactly that
   // Review of PR #146 (F6, acceptance-press-to-top: the bubble carries the button's label, never a rewritten one).
   // Each button sends the page's note, so each press commits it and the next press is on a new revision.
   const snapshot = '- region "Plan · Week" [ref=pw]:\n  - textbox "Note" [ref=note]\n  - button "Keep — later" [ref=later] [action=later] [sends=note]\n  - button "Plan · Keep" [ref=plankeep] [action=plan] [sends=note]';
-  const revision = (await f.rpc.workspace({ deployment: 'main', cursor: null })).revision;
+  const revision = (await f.rpc["workspace"]({ deployment: 'main', cursor: null })).revision;
   await until('the input idle', () => !!input() && !input()!.disabled);
   host.send('primary', `call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
   const button = (label: string) => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === label) as HTMLButtonElement | undefined;

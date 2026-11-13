@@ -5,7 +5,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
-export const LOCAL_CONFIG = process.env.EXO_CONFIG ?? join(homedir(), '.config', 'exo', 'exosurface.json');
+export const LOCAL_CONFIG = process.env["EXO_CONFIG"] ?? join(homedir(), '.config', 'exo', 'exosurface.json');
 const raw: Record<string, unknown> = existsSync(LOCAL_CONFIG) ? JSON.parse(readFileSync(LOCAL_CONFIG, 'utf8')) : {};
 const expand = (p: string) => (p.startsWith('~/') ? join(homedir(), p.slice(2)) : p);
 export function local(key: 'vault' | 'piCli' | 'optchat' | 'optchatCanvas' | 'playwright' | 'surfaceMain' | 'exosurfacePlugin' | 'primaryAgentDir' | 'primarySolProvider' | 'primaryStateDir' | 'primaryOptchatHome' | 'primaryProfile' | 'ownerLabel'): string {

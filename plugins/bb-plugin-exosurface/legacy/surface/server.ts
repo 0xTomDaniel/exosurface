@@ -152,10 +152,10 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         const next={deployment:d.name,threadId,surface:version.surface,revision:v.revision,title:v.title,at:v.at,updates:updates??[]};writeFileSync(pendingFile(d),JSON.stringify(next),{mode:0o600});bb.realtime.publish('pending-restore',next);return next;}
       return readPending(d);
     },
-    observerArm:async({threadId,...request})=>{const s=status(byName('clone'));if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||request.baseRevision!==s.revision)throw Error('Idle clone and current revision required');await armViaOwner(threadId,request);return{armed:status(byName('clone')).observer?.armed??false};},
+    observerArm:async({threadId,...request})=>{const s=status(byName('clone'));if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||request["baseRevision"]!==s.revision)throw Error('Idle clone and current revision required');await armViaOwner(threadId,request);return{armed:status(byName('clone')).observer?.armed??false};},
     compose:async({threadId,...request})=>{
-      const clone=byName('clone'),s=status(clone);if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.composition.configured||request.baseRevision!==s.revision)throw Error('Idle configured clone and current revision required');
-      await composeViaOwner(threadId,request);const after=status(clone);return {completed:after.revision===request.baseRevision+1&&after.composition.lastRun?.id===request.runId&&after.composition.lastRun?.status==='complete'};
+      const clone=byName('clone'),s=status(clone);if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.composition.configured||request["baseRevision"]!==s.revision)throw Error('Idle configured clone and current revision required');
+      await composeViaOwner(threadId,request);const after=status(clone);return {completed:after.revision===request["baseRevision"]+1&&after.composition.lastRun?.id===request["runId"]&&after.composition.lastRun?.status==='complete'};
     },
     edit:async({threadId,...request})=>{
       const d=deploymentFor(threadId),s=status(d);if(!s.ready||s.streaming||s.preview||!s.workspace)throw Error('busy');

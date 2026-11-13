@@ -80,8 +80,8 @@ out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',mess
  const edit={baseRevision:1,mutationId:'edit',surfaceId:'page',ref:'entry',value:longText};
  const compiled=await import(pathToFileURL(resolve(import.meta.dirname,'../dist/first-run-shell-server.js')).href);
  let handlers:any;compiled.default({providers:{register(){}},rpc:{register(_contract:any,value:any){handlers=value;}}});
- const priorConfig=process.env.EXO_CONFIG;process.env.EXO_CONFIG=config.file;
- t.after(()=>{if(priorConfig===undefined)delete process.env.EXO_CONFIG;else process.env.EXO_CONFIG=priorConfig;});
+ const priorConfig=process.env["EXO_CONFIG"];process.env["EXO_CONFIG"]=config.file;
+ t.after(()=>{if(priorConfig===undefined)delete process.env["EXO_CONFIG"];else process.env["EXO_CONFIG"]=priorConfig;});
  assert.equal((await handlers.pageEdit(compiled.rpcContract.pageEdit.input.parse({threadId:'primary',...edit}))).revision,2);
  const press={baseRevision:2,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  assert.equal((await handlers.pagePress(compiled.rpcContract.pagePress.input.parse({threadId:'primary',...press}))).revision,3);

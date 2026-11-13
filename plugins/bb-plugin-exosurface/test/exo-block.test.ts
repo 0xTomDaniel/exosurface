@@ -80,7 +80,7 @@ test('a surface made by New surface shows no transcript, not even its control fi
   fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
-  const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
+  const fresh = (await f.rpc["thread_list"](null)).threads[1].threadId;
   assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && reply()?.textContent === '');
   // S1: New surface's control first message is no transcript line anywhere in the view (sidebar, page, Exo block, input).
@@ -161,23 +161,23 @@ test('pages-and-activity#acceptance-exo-block-sent-page: a question sent from th
   await until('the earlier page restored on returning to its surface', () => inView() === 'plum');
   // Match the installed owner journal: origin, optchat.run, changed system prompt, user, no-draw assistant.
   writeFileSync(join(f.optchatHome, 'system-prompt'), 'Keep the full surface conversation.');
-  const question = 'which plums are ripe?', originalSend = f.rpc.exo_send;
+  const question = 'which plums are ripe?', originalSend = f.rpc["exo_send"];
   const payloads: unknown[] = [];
-  f.rpc.exo_send = async payload => { payloads.push(payload); return originalSend(payload); };
-  const threadId = (await f.rpc.thread_list(null)).threads[1].threadId;
-  try { await send(question); } finally { f.rpc.exo_send = originalSend; }
+  f.rpc["exo_send"] = async payload => { payloads.push(payload); return originalSend(payload); };
+  const threadId = (await f.rpc["thread_list"](null)).threads[1].threadId;
+  try { await send(question); } finally { f.rpc["exo_send"] = originalSend; }
   await until('the question to reach the model', () => JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages).includes(question));
-  await until('the no-draw turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working);
+  await until('the no-draw turn to finish', async () => !(await f.rpc["exo_block"]({ threadId })).working);
   assert.deepEqual(payloads, [{ threadId, text: question, page: 'plum' }]);
   const started = modelRequests(f).filter(r => r.profile === profile).at(-1)!.started;
   const user = started.findIndex(message => message.role === 'user' && JSON.stringify(message.content).includes(question));
   assert.ok(user >= 0 && started.slice(0, user).some(message => message.role === 'system'), 'Pi emits a system update before the question at its public message boundary');
   const context = JSON.stringify(modelRequests(f).filter(r => r.profile === profile).at(-1)?.messages);
   assert.ok(context.includes('Plum plan') && context.includes('Pear plan') && context.includes('book the cabin'), 'full thread context reaches the model, not just the selected page');
-  const selected = await f.rpc.exo_block({ threadId, page: 'plum' });
+  const selected = await f.rpc["exo_block"]({ threadId, page: 'plum' });
   assert.equal(selected.said, question);
   assert.equal(selected.words, `Exo (${profile}): ${question}`);
-  assert.equal((await f.rpc.exo_block({ threadId, page: 'pear' })).said, 'draw pear: Pear plan');
+  assert.equal((await f.rpc["exo_block"]({ threadId, page: 'pear' })).said, 'draw pear: Pear plan');
   await until('the selected page reply to render', () => reply()?.textContent === `Exo (${profile}): ${question}`);
   assert.equal(inView(), 'plum');
   assert.equal(said(), 'which plums are ripe?');

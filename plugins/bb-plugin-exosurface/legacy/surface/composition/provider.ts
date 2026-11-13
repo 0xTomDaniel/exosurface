@@ -19,11 +19,21 @@ export function copyFrame(frame:any,offer:Offer,put:(slot:string,text:string)=>v
  put(frame.slot,frame.text);
 }
 export class Provider{
+private origin: number;
+private transport: typeof fetch;
+private key: () => string;
+private budget: number;
+
  readonly calls:Call[]=[];readonly tasks:Promise<void>[]=[];private count=0;
- constructor(private origin=now(),private transport:typeof fetch=fetch,private key=()=>{
+ constructor( origin=now(), transport:typeof fetch=fetch, key=()=>{
   const auth=JSON.parse(readFileSync(join(process.env.PI_CODING_AGENT_DIR??join(homedir(),'.pi','agent'),'auth.json'),'utf8'));
   const key=auth.openrouter?.key;if(typeof key!=='string'||!key)throw Error('Existing OpenRouter credential unavailable');return key;
- },private budget=4){}
+ }, budget=4){
+this.origin = origin;
+this.transport = transport;
+this.key = key;
+this.budget = budget;
+}
  private begin(model:string,kind:string):Call{
   if(++this.count>this.budget)throw Error('Per-run provider-call budget exceeded');
   const call:Call={model,kind,startedMs:Math.round(now()-this.origin),elapsedMs:null,firstTokenMs:null,inputTokens:null,outputTokens:null,cachedTokens:null,costUsd:null,status:'running'};this.calls.push(call);return call;

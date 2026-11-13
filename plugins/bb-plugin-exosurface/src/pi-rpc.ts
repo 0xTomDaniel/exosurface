@@ -3,6 +3,9 @@ import { once } from 'node:events';
 
 /** Pi 1.1 public JSONL protocol. No private Pi or BB imports. */
 export class PiRpc {
+private event: (event: any) => void;
+private lost: (error: Error) => void;
+
   private child: ChildProcessWithoutNullStreams;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }>();
   private next = 0;
@@ -10,7 +13,10 @@ export class PiRpc {
   private writes = Promise.resolve();
   private exit: Promise<void>;
   constructor(cli: string, args: string[], cwd: string, env: NodeJS.ProcessEnv,
-    private event: (event: any) => void, private lost: (error: Error) => void) {
+     event: (event: any) => void,  lost: (error: Error) => void) {
+this.event = event;
+this.lost = lost;
+
     this.child = spawn(process.execPath, [cli, '--mode', 'rpc', ...args], { cwd, env, stdio: 'pipe' });
     let buffer = '';
     this.child.stdout.setEncoding('utf8');
