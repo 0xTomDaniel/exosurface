@@ -30,7 +30,7 @@ setup:
 setup-dependencies:
     @test -f plugins/bb-plugin-exo-a2ui-spike/pnpm-workspace.yaml && test -f plugins/bb-plugin-exo-a2ui-spike/pnpm-lock.yaml || { echo 'Missing auxiliary preparation workspace/lock; consume the canonical producer inputs before setup' >&2; exit 1; }
     pnpm install --frozen-lockfile
-    env -u NPM_CONFIG_WORKSPACE_DIR -u npm_config_workspace_dir pnpm --dir "{{justfile_directory()}}/plugins/bb-plugin-exo-a2ui-spike" --config.store-dir="{{justfile_directory()}}/.pnpm-store" --config.ignore-pnpmfile=true install --frozen-lockfile
+    env -u NPM_CONFIG_WORKSPACE_DIR -u npm_config_workspace_dir pnpm --dir "{{justfile_directory()}}/plugins/bb-plugin-exo-a2ui-spike" --config.ignore-pnpmfile=true install --frozen-lockfile
 
 # The native bounded gate consumes this same list, under its existing flock.
 # check-python stays a manual recipe: Python lint/type is DEFERRED BY OWNER (issue #216 comment 6828772822),
