@@ -1,6 +1,9 @@
 // Command-only owner connection for shared canvas state: no attachment, no model call.
-import {z} from 'zod';
-const responseSchema=z.object({id:z.string(),ok:z.boolean().optional(),error:z.string().nullish()});
+// Keep owner-graph modules relocatable: this reply guard needs no runtime dependency.
+function ownerResponse(value:unknown):{id:string;ok?:boolean;error?:string|null}{
+ if(typeof value!=='object'||value===null||!('id' in value)||typeof value.id!=='string'||('ok' in value&&value.ok!==undefined&&typeof value.ok!=='boolean')||('error' in value&&value.error!==undefined&&value.error!==null&&typeof value.error!=='string'))throw Error('Invalid owner response');
+ return {id:value.id,...('ok' in value&&typeof value.ok==='boolean'?{ok:value.ok}:{}),...('error' in value&&(typeof value.error==='string'||value.error===null)?{error:value.error}:{})};
+}
 import {assertOwnerCommand} from './canvas-input.ts';
 import type {PressEntry} from './press-line.ts';
 import{createConnection}from'node:net';import{join}from'node:path';import{HOME}from'./state.ts';
@@ -15,5 +18,5 @@ function ownerCommand(threadId:string,type:string,request:{mutationId:string},ho
  const s=createConnection(join(home,'owner/rpc.sock'));let buffer='',done=false;const end=(e?:Error)=>{if(done)return;done=true;s.destroy();if(e)reject(e);else resolve();};
  s.setEncoding('utf8');s.setTimeout(10000);s.once('timeout',()=> { end(Error('Canvas edit timed out')); });s.once('error',()=> { end(Error('Clone owner unavailable')); });
  s.once('connect',()=>s.write(JSON.stringify({id:request.mutationId,type,threadId,request})+'\n'));
- s.on('data',v=>{buffer+=typeof v==='string'?v:v.toString('utf8');if(buffer.length>16000){ end(Error('Owner response exceeds bound')); return; }let i:number;while((i=buffer.indexOf('\n'))>=0){const l=buffer.slice(0,i);buffer=buffer.slice(i+1);try{const r=responseSchema.parse(JSON.parse(l));if(r.id===request.mutationId)end(r.ok?undefined:Error(r.error??'Canvas edit rejected'));}catch{end(Error('Invalid owner response'));}}});
+ s.on('data',v=>{buffer+=typeof v==='string'?v:v.toString('utf8');if(buffer.length>16000){ end(Error('Owner response exceeds bound')); return; }let i:number;while((i=buffer.indexOf('\n'))>=0){const l=buffer.slice(0,i);buffer=buffer.slice(i+1);try{const r=ownerResponse(JSON.parse(l));if(r.id===request.mutationId)end(r.ok?undefined:Error(r.error??'Canvas edit rejected'));}catch{end(Error('Invalid owner response'));}}});
  s.once('close',()=>{if(!done)end(Error('Owner disconnected'));});});}
