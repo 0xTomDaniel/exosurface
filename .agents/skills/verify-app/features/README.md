@@ -13,7 +13,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Drive through the helper: `.agents/skills/verify-app/scripts/verify-app drive <feature>`.
 - Assert on the scenario's stdout lines and exit code; its stderr carries jsdom's React `act(...)` notices.
-- One heavy job at a time on this box (`GOMAXPROCS=2`, `NODE_OPTIONS=--max-old-space-size=1536`; the contract's entry sets both).
+- One heavy job at a time on this box, under the gate's bounds (AGENTS.md; the contract's entry applies them).
 
 ## Proof and skip reporting
 

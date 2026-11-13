@@ -26,7 +26,7 @@ Run: `.agents/skills/verify-app/scripts/verify-app drive new-surface`. Evidence:
 - **New surface pressed** (`new-surface`). Run `surfaces new-surface`. Observe exit 0 and, on stdout: `surface in view: <values.new_surface> (thread ...)`, `  page: one empty page`, `  input: shown, empty`, `  activity: 0 Exo message(s)`, `sidebar: <values.home>, <values.new_surface>`, then each surface's thread and the Exo runs (one Pi per surface).
 - **Side effects.** `.files` is empty (the scenario writes nothing in its cwd; its fixture is a temp dir it removes) and `.procs` is empty (no process of the scenario's group, bridge, owner or Pi, outlives it).
 
-What is real and what is faked on this path: real `server.ts` RPCs and its `message.dispatch` hook, `host.ts` provider bridge (a child on JSON-RPC stdio), the release owner (`legacy/primary/release-owner.ts`, packaged in `dist/`), the real Pi 1.1 CLI, and the rendered `app.tsx`. Faked at the boundary by the existing mock-BB harness (`plugins/bb-plugin-exosurface/test/mock-bb.ts`, ADR 0002 fallback): BB itself (SDK, JSON-RPC peer, thread spawn), OptChat (a Pi extension and its profile API) and the model (an offline stream). jsdom stands in for BB's window: no layout or paint.
+What is real and what is faked on this path: [README.md](./README.md#what-the-offline-surface-is).
 
 ## Gotchas
 

@@ -26,7 +26,7 @@ One helper, [`scripts/verify-app`](scripts/verify-app), executable: a thin `sh` 
 .agents/skills/verify-app/scripts/verify-app run                  # all of the above, end to end
 ```
 
-`run` does launch, doctor, `drive new-surface`, cleanup, then lists the evidence folder to show it survived. Exit 0 means every step passed. Any other argument prints the usage line and exits 1. On this box run it as the gate runs heavy jobs: one at a time, `GOMAXPROCS=2 NODE_OPTIONS=--max-old-space-size=1536` (the contract's entry sets both for the scenario).
+`run` does launch, doctor, `drive new-surface`, cleanup, then lists the evidence folder to show it survived. Exit 0 means every step passed. Any other argument prints the usage line and exits 1. On this box run it as the gate runs heavy jobs: one at a time, under the gate's bounds (AGENTS.md; the contract's entry applies them to the scenario).
 
 ## Contract
 
