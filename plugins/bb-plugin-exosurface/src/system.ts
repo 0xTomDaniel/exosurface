@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
 import { layout, type Config } from './config.ts';
 import { childEnv } from './env.ts';
+import { isRecord } from './store.ts';
 
 /** OptChat profile management in a fresh explicit environment. No provider/auth/network requests. */
 export function profileOperation(config: Config, op: 'create' | 'configure' | 'validate') {
@@ -14,8 +14,9 @@ export function profileOperation(config: Config, op: 'create' | 'configure' | 'v
     cwd: config.vault, encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024,
   });
   if (result.error || result.status !== 0) throw new Error(`OptChat ${op} failed: ${result.error?.message || result.stdout || result.stderr}`);
-  const answer = JSON.parse(result.stdout.trim());
-  if (!answer.ok) throw new Error(answer.error || 'OptChat profile operation failed');
+  const answer: unknown = JSON.parse(result.stdout.trim());
+  const error = isRecord(answer) ? answer['error'] : undefined;
+  if (!isRecord(answer) || !answer['ok']) throw new Error(typeof error === 'string' && error ? error : 'OptChat profile operation failed');
   return answer;
 }
 
@@ -24,7 +25,7 @@ export async function ensureOwner(config: Config) {
   const socket = layout(config.stateDir).ownerSocket;
   if (existsSync(socket)) return;
   if (process.platform !== 'darwin' || !process.getuid) throw new Error('Start the installed Exosurface owner service before sending');
-  const result = spawnSync('/bin/launchctl', ['kickstart', `gui/${process.getuid()}/app.exosurface.owner`], {
+  const result = spawnSync('/bin/launchctl', ['kickstart', `gui/${String(process.getuid())}/app.exosurface.owner`], {
     env: childEnv(), encoding: 'utf8', timeout: 5000,
   });
   if (result.error || result.status !== 0) throw new Error('Owner service is not installed or could not start; run installer/start and inspect owner status');

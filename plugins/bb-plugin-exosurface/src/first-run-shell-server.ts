@@ -33,7 +33,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!config || problems.length) throw new Error('Complete installer configuration first');
     await ensureOwner(config);
     const client = ownerConnection(config, () => undefined);
-    try { return pageResult.parse(await client.send(threadId, method, input)); } finally { client.close(); }
+    try { return await client.send(threadId, method, input); } finally { client.close(); }
   };
   bb.rpc.register(rpcContract, {
     pageRead: async () => {

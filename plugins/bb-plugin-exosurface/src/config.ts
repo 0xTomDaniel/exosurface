@@ -9,6 +9,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isRecord } from './store.ts';
 
 export const STATE_SCHEMA = 1;
 export const OWNER_LABEL = 'app.exosurface.owner';
@@ -18,13 +19,13 @@ export const PINS = { pi: '1.1.0', optchat: '0.8.6', node: '22.19.0' } as const;
 // Pi's and OptChat's own thinking levels (OptChat src/profiles.ts THINKING, Pi --thinking).
 export const THINKING = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type Thinking = (typeof THINKING)[number];
-export type ModelChoice = { provider: string; model: string; thinking: Thinking };
-export type Models = { main: ModelChoice; compactor: ModelChoice; subagent: ModelChoice };
-export type Problem = { code: string; message: string; fix: string };
-export type Config = {
+export interface ModelChoice { provider: string; model: string; thinking: Thinking }
+export interface Models { main: ModelChoice; compactor: ModelChoice; subagent: ModelChoice }
+export interface Problem { code: string; message: string; fix: string }
+export interface Config {
   file: string; vault: string; piCli: string; optchat: string; node: string;
   stateDir: string; agentDir: string; profile: string; models: Models; exosurfacePlugin: string;
-};
+}
 
 export const configFile = (env: NodeJS.ProcessEnv = process.env) => env["EXO_CONFIG"] || join(homedir(), '.config', 'exosurface', 'config.json');
 const expand = (p: string) => (p === '~' ? homedir() : p.startsWith('~/') ? join(homedir(), p.slice(2)) : p);
@@ -34,16 +35,15 @@ export function pluginRoot(from = import.meta.url): string {
   let dir = dirname(fileURLToPath(from));
   for (let i = 0; i < 6; i++) {
     const pkg = join(dir, 'package.json');
-    if (existsSync(pkg)) { try { if (JSON.parse(readFileSync(pkg, 'utf8')).name === 'bb-plugin-exosurface') return dir; } catch {} }
+    if (existsSync(pkg)) { try { const manifest: unknown = JSON.parse(readFileSync(pkg, 'utf8')); if (isRecord(manifest) && manifest['name'] === 'bb-plugin-exosurface') return dir; } catch {} }
     dir = dirname(dir);
   }
   throw new Error('bb-plugin-exosurface package root not found');
 }
 
 export function modelChoice(value: unknown): value is ModelChoice {
-  const v = value as Record<string, unknown> | null;
-  return !!v && typeof v === 'object' && typeof v["provider"] === 'string' && !!v["provider"].trim() && typeof v["model"] === 'string' && !!v["model"].trim()
-    && THINKING.includes(v["thinking"] as Thinking);
+  return isRecord(value) && typeof value["provider"] === 'string' && !!value["provider"].trim() && typeof value["model"] === 'string' && !!value["model"].trim()
+    && THINKING.includes(value["thinking"] as Thinking);
 }
 
 /** Never throws: problems are returned with the fix a person (or the installer) should apply. */
@@ -51,8 +51,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): { config?: Con
   const file = configFile(env), problems: Problem[] = [];
   const setup = `Write it with the Exosurface installer (tools/release), or edit ${file} directly.`;
   if (!existsSync(file)) return { problems: [{ code: 'config-missing', message: `No Exosurface config at ${file}.`, fix: setup }] };
-  let raw: Record<string, unknown>;
-  try { raw = JSON.parse(readFileSync(file, 'utf8')); if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('not an object'); }
+  let raw: Readonly<Record<string, unknown>>;
+  try { const parsed: unknown = JSON.parse(readFileSync(file, 'utf8')); if (!isRecord(parsed)) throw new Error('not an object'); raw = parsed; }
   catch (e) { return { problems: [{ code: 'config-invalid', message: `${file} is not a JSON object (${e instanceof Error ? e.message : String(e)}).`, fix: setup }] }; }
   const path = (key: string, required: boolean, fallback = '') => {
     const v = raw[key];
@@ -75,14 +75,15 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): { config?: Con
     models: undefined as unknown as Models,
   };
   if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(config.profile)) problems.push({ code: 'profile-invalid', message: `Profile name "${config.profile}" is not a valid OptChat profile name.`, fix: 'Use 1–64 lowercase letters, digits, hyphens or underscores.' });
-  const models = (raw["models"] ?? {}) as Record<string, unknown>;
+  const models = isRecord(raw["models"]) ? raw["models"] : {};
+  const main = models["main"], compactor = models["compactor"], subagent = models["subagent"];
   const missing = (['main', 'compactor', 'subagent'] as const).filter(k => !modelChoice(models[k]));
   if (missing.length) problems.push({
     code: 'models-missing',
     message: `Model choices missing or invalid: ${missing.join(', ')}. Each needs {"provider","model","thinking"}; Exosurface never picks one for you.`,
     fix: `Re-run the installer with --models '<json>' or add "models": {"main":{...},"compactor":{...},"subagent":{...}} to ${file}. thinking is one of ${THINKING.join(', ')}.`,
   });
-  else config.models = { main: models["main"] as ModelChoice, compactor: models["compactor"] as ModelChoice, subagent: models["subagent"] as ModelChoice };
+  else if (modelChoice(main) && modelChoice(compactor) && modelChoice(subagent)) config.models = { main, compactor, subagent };
   return problems.length ? { config, problems } : { config, problems };
 }
 
@@ -103,8 +104,9 @@ export function schemaState(l: Layout): 'absent' | 'supported' | { unsupported: 
   if (!existsSync(l.schemaFile)) return 'absent';
   try {
     if (!statSync(l.schemaFile).isFile()) return { unsupported: 'not a file' };
-    const v = JSON.parse(readFileSync(l.schemaFile, 'utf8'));
-    return v?.schema === STATE_SCHEMA ? 'supported' : { unsupported: JSON.stringify(v?.schema ?? null) };
+    const v: unknown = JSON.parse(readFileSync(l.schemaFile, 'utf8'));
+    const schema = isRecord(v) ? v["schema"] : undefined;
+    return schema === STATE_SCHEMA ? 'supported' : { unsupported: JSON.stringify(schema ?? null) };
   } catch (e) { return { unsupported: e instanceof Error ? e.message : String(e) }; }
 }
 
