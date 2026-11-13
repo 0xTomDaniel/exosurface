@@ -13,7 +13,7 @@ const props={
  Divider:z.object(key).strict(),
 };
 const element=z.object({type:z.enum(['Column','Row','Text','TextField','Button','Divider']),props:z.object(key).passthrough()}).strict();
-export const offerSchema=z.object({
+const offerSchema=z.object({
  surfaceId:id, purpose:z.string().min(1).max(600),
  candidates:z.array(z.object({id,description:z.string().min(1).max(500),element,root:z.boolean(),resource:id.optional()}).strict()).min(3).max(16),
  slots:z.record(id,z.object({brief:z.string().min(1).max(500),fallback:z.string().min(1).max(700)}).strict()),
@@ -31,7 +31,7 @@ export function validateOffer(raw:unknown):Offer{
   if(type==='TextField'&&(p.path.split('/').length!==2||typeof o.data[p.path.slice(1)]!=='string'))throw Error('Text field needs a known string leaf');
   if(type==='Button')for(const v of Object.values(p.context) as any[])if(v?.path&&(v.path.split('/').length!==2||typeof o.data[v.path.slice(1)]!=='string'))throw Error('Button needs a known data binding');
  }
- if(!roots||Object.keys(o.slots).length>12||usedSlots.size!==Object.keys(o.slots).length||o.data.copy!==undefined)throw Error('Incomplete bounded candidate contract');
+ if(!roots||Object.keys(o.slots).length>12||usedSlots.size!==Object.keys(o.slots).length||o.data['copy']!==undefined)throw Error('Incomplete bounded candidate contract');
  if(o.required.some(k=>!keys.has(k)))throw Error('Unknown required semantic key');return o;
 }
 // Explicitly recover only a failed native call's serialization, without regenerating
@@ -51,8 +51,8 @@ export const fallbacks=(o:Offer)=>Object.fromEntries(Object.entries(o.slots).map
 // Semantic keys, bindings, labels and offered events are app-owned, never inferred from a decision answer.
 export function mapSpec(o:Offer,spec:Spec,copy:Record<string,string>,current:Snapshot|null,complete=false):Delta{
  if(!specSchema.safeParse(spec).success)throw Error('Unsupported composer IR');
- const elements=Object.entries(spec.elements),byNode=new Map(elements.map(([k,e])=>[k,k===spec.root?'root':e.props.key as string]));
- const semantic=new Set(elements.map(([,e])=>e.props.key));if(semantic.size!==elements.length)throw Error('Duplicate semantic key');
+ const elements=Object.entries(spec.elements),byNode=new Map(elements.map(([k,e])=>[k,k===spec.root?'root':e.props['key'] as string]));
+ const semantic=new Set(elements.map(([,e])=>e.props['key']));if(semantic.size!==elements.length)throw Error('Duplicate semantic key');
  if(complete&&o.required.some(k=>!semantic.has(k)))throw Error('Composition omitted required information or controls');
  const nodes:any[]=[],known=new Map(o.candidates.map(c=>[JSON.stringify(c.element),c]));
  for(const [node,e]of elements){
@@ -67,9 +67,9 @@ export function mapSpec(o:Offer,spec:Spec,copy:Record<string,string>,current:Sna
  }
  const surfaceId=o.surfaceId,exists=!!current&&moduleIds(current).includes(surfaceId),messages:any[]=[];
  if(!exists)messages.push({version:'v0.9.1',createSurface:{surfaceId,catalogId:CATALOG}});
- const previous=exists?moduleNodes(current!,surfaceId):[],changed=nodes.filter(n=>JSON.stringify(previous.find(p=>p.id===n.id))!==JSON.stringify(n));
+ const previous=exists?moduleNodes(current,surfaceId):[],changed=nodes.filter(n=>JSON.stringify(previous.find(p=>p.id===n.id))!==JSON.stringify(n));
  if(changed.length)messages.push({version:'v0.9.1',updateComponents:{surfaceId,components:changed}});
- const oldData=exists?moduleData(current!,surfaceId):{},data={...o.data,...oldData,copy:{...(oldData?.copy??{}),...copy}};
+ const oldData=exists?moduleData(current,surfaceId):{},data={...o.data,...oldData,copy:{...(oldData?.copy??{}),...copy}};
  if(JSON.stringify(oldData)!==JSON.stringify(data))messages.push({version:'v0.9.1',updateDataModel:{surfaceId,path:'/',value:data}});
  // A no-op still has a valid standard message, useful for identical warm comparisons.
  if(!messages.length)messages.push({version:'v0.9.1',updateDataModel:{surfaceId,path:'/copy',value:data.copy}});
