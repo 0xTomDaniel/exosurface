@@ -3,19 +3,26 @@
 // Line moves never fail; a new key or a count above the baseline fails. Only an explicit record step writes the
 // baseline, and it refuses any rise. Integrity-pinned files (scripts/source-inventory.json) are never baselined.
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { z } from "zod";
 
-export interface Finding {
-  file: string;
-  code: string;
-  message: string;
-}
+// Tool and baseline files are external input: parsed JSON is validated with these schemas (Zod, as the rest of the
+// repo); anything else is unanswered, never counted or recorded.
+export const findingSchema = z.object({ file: z.string(), code: z.string(), message: z.string() });
+export type Finding = z.infer<typeof findingSchema>;
 
 export type Counts = Record<string, number>;
 
-interface Baseline {
-  version: 1;
-  gates: Record<string, Counts>;
-}
+const keySchema = z.tuple([z.string(), z.string(), z.string()]);
+const baselineSchema = z.object({
+  version: z.literal(1),
+  gates: z.record(z.string(), z.record(z.string(), z.number().int().min(1).max(Number.MAX_SAFE_INTEGER))),
+});
+type Baseline = z.infer<typeof baselineSchema>;
+const nameSchema = z.looseObject({ name: z.string() });
+// knip 6 --reporter json: one row per file, one list per issue type (duplicates: lists of names).
+const knipReportSchema = z.object({
+  issues: z.array(z.object({ file: z.string() }).catchall(z.array(z.union([nameSchema, z.array(nameSchema)])))),
+});
 
 interface Raised {
   finding: Finding;
@@ -31,16 +38,102 @@ interface GateResult {
   ok: boolean;
 }
 
+// Key canonicalization (keys only; tool output is printed unchanged). TypeScript prints union members in type-id
+// order, which differs between runs of the same inputs, so the same finding could print as `A | B` or `B | A`.
+// Within quoted type text (ESLint backticks, tsc single quotes) union members are sorted at every nesting depth.
+// Unions are commutative, so two keys only meet when they are the same type printed two ways.
+const CLOSERS: Readonly<Record<string, string>> = { "(": ")", "[": "]", "{": "}", "<": ">" };
+
+/** Pieces of text split at separator where no bracket is open (string literals and "=>" are not brackets). */
+function topLevel(text: string, separators: readonly string[]): { piece: string; separator: string }[] {
+  const result: { piece: string; separator: string }[] = [];
+  const open: string[] = [];
+  let from = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text.charAt(index);
+    if (char === "\"") {
+      const end = text.indexOf("\"", index + 1);
+      if (end < 0) break;
+      index = end;
+      continue;
+    }
+    if (open.length === 0) {
+      const separator = separators.find((candidate) => text.startsWith(candidate, index));
+      if (separator !== undefined) {
+        result.push({ piece: text.slice(from, index), separator });
+        index += separator.length - 1;
+        from = index + 1;
+        continue;
+      }
+    }
+    if (char === ">" && text.charAt(index - 1) === "=") continue;
+    const closer = CLOSERS[char];
+    if (closer !== undefined) open.push(closer);
+    else if (char === open.at(-1)) open.pop();
+  }
+  result.push({ piece: text.slice(from), separator: "" });
+  return result;
+}
+
+/** Type text with every union's members sorted; text without unions comes back unchanged. */
+function canonicalType(text: string): string {
+  const arrow = topLevel(text, [" => "]);
+  if (arrow.length > 1) {
+    const [parameters, ...rest] = arrow;
+    return `${canonicalGroups(parameters?.piece ?? "")} => ${canonicalType(rest.map(({ piece, separator }) => piece + separator).join(""))}`;
+  }
+  const members = topLevel(text, [" | "]).map(({ piece }) => canonicalGroups(piece));
+  return members.length > 1 ? [...members].sort().join(" | ") : (members[0] ?? "");
+}
+
+/** Text with the contents of each bracket group canonicalized (lists, properties and nested types). */
+function canonicalGroups(text: string): string {
+  let result = "";
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text.charAt(index);
+    const closer = CLOSERS[char];
+    if (closer === undefined || (char === ">" && text.charAt(index - 1) === "=")) {
+      result += char;
+      continue;
+    }
+    const inner = topLevel(text.slice(index + 1), [closer]);
+    if (inner.length < 2) {
+      result += text.slice(index);
+      break;
+    }
+    const body = inner[0]?.piece ?? "";
+    result += char + canonicalList(body) + closer;
+    index += body.length + 1;
+  }
+  return result;
+}
+
+/** A bracket body: comma/semicolon-separated items, each a type or a `key: type` property. */
+function canonicalList(body: string): string {
+  return topLevel(body, [",", ";"]).map(({ piece, separator }) => {
+    const leading = /^\s*/u.exec(piece)?.[0] ?? "";
+    const trailing = /\s*$/u.exec(piece.slice(leading.length))?.[0] ?? "";
+    const core = piece.slice(leading.length, piece.length - trailing.length);
+    const property = topLevel(core, [": "]);
+    const item = property.length > 1
+      ? `${canonicalGroups(property[0]?.piece ?? "")}: ${canonicalType(property.slice(1).map(({ piece: part, separator: next }) => part + next).join(""))}`
+      : canonicalType(core);
+    return leading + item + trailing + separator;
+  }).join("");
+}
+
+function canonicalMessage(message: string): string {
+  return message.replace(/`[^`]*`|'[^']*'/gu, (quoted) => quoted.charAt(0) + canonicalType(quoted.slice(1, -1)) + quoted.charAt(0));
+}
+
 function key(finding: Finding): string {
-  return JSON.stringify([finding.file, finding.code, finding.message]);
+  return JSON.stringify([finding.file, finding.code, canonicalMessage(finding.message)]);
 }
 
 function decode(entry: string): Finding {
-  const parsed: unknown = JSON.parse(entry);
-  if (!Array.isArray(parsed) || parsed.length !== 3 || !parsed.every((part) => typeof part === "string")) {
-    throw new Error(`standards baseline: malformed key ${entry}`);
-  }
-  const [file, code, message] = parsed as [string, string, string];
+  const parsed = keySchema.safeParse(JSON.parse(entry));
+  if (!parsed.success) throw new Error(`standards baseline: malformed key ${entry}`);
+  const [file, code, message] = parsed.data;
   return { file, code, message };
 }
 
@@ -59,20 +152,19 @@ function total(values: Counts): number {
 
 function readBaseline(file: string): Baseline {
   if (!existsSync(file)) throw new Error(`standards baseline: ${file} is missing; record one with the gate's record step`);
-  const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
-  if (typeof parsed !== "object" || parsed === null || !("version" in parsed) || parsed.version !== 1 || !("gates" in parsed)) {
-    throw new Error(`standards baseline: ${file} is not a version 1 baseline`);
-  }
-  const gates: unknown = parsed.gates;
-  if (typeof gates !== "object" || gates === null || Array.isArray(gates)) throw new Error(`standards baseline: ${file} has no gates`);
-  for (const [gate, values] of Object.entries(gates as Record<string, unknown>)) {
-    if (typeof values !== "object" || values === null || Array.isArray(values)) throw new Error(`standards baseline: gate ${gate} is not a count map`);
+  const parsed = baselineSchema.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  if (!parsed.success) throw new Error(`standards baseline: ${file} is not a version 1 baseline of positive counts: ${z.prettifyError(parsed.error)}`);
+  // Keys are canonical when read, so a baseline written before canonicalization (or in the other union order) matches.
+  const gates: Record<string, Counts> = {};
+  for (const [gate, values] of Object.entries(parsed.data.gates)) {
+    const canonical: Counts = {};
     for (const [entry, count] of Object.entries(values)) {
-      decode(entry);
-      if (!Number.isSafeInteger(count) || (count as number) < 1) throw new Error(`standards baseline: gate ${gate} has a non-positive count for ${entry}`);
+      const name = key(decode(entry));
+      canonical[name] = (canonical[name] ?? 0) + count;
     }
+    gates[gate] = canonical;
   }
-  return { version: 1, gates: gates as Record<string, Counts> };
+  return { version: 1, gates };
 }
 
 function compare(gate: string, current: Counts, baseline: Counts): GateResult {
@@ -90,21 +182,13 @@ function compare(gate: string, current: Counts, baseline: Counts): GateResult {
  * compiler's integrity-only partition. Any other report shape throws: the gate is then unanswered.
  */
 export function knipFindings(report: unknown, integrity: ReadonlySet<string>): Finding[] {
-  const shape = (why: string): Error => new Error(`knip report unanswered: ${why}`);
-  if (typeof report !== "object" || report === null || !("issues" in report) || !Array.isArray(report.issues)) throw shape("no issues array");
+  const parsed = knipReportSchema.safeParse(report);
+  if (!parsed.success) throw new Error(`knip report unanswered: ${z.prettifyError(parsed.error)}`);
   const findings: Finding[] = [];
-  for (const row of report.issues as unknown[]) {
-    if (typeof row !== "object" || row === null || !("file" in row) || typeof row.file !== "string") throw shape("issue row without file");
-    const file = row.file;
-    for (const [type, list] of Object.entries(row)) {
-      if (type === "file") continue;
-      if (!Array.isArray(list)) throw shape(`${file} ${type} is not a list`);
-      for (const item of list as unknown[]) {
-        const items: unknown[] = Array.isArray(item) ? item : [item];
-        const names = items.map((entry) => {
-          if (typeof entry !== "object" || entry === null || !("name" in entry) || typeof entry.name !== "string") throw shape(`${file} ${type} entry has no name`);
-          return entry.name;
-        });
+  for (const { file, ...types } of parsed.data.issues) {
+    for (const [type, list] of Object.entries(types)) {
+      for (const item of list) {
+        const names = (Array.isArray(item) ? item : [item]).map((entry) => entry.name);
         if (!integrity.has(file)) findings.push({ file, code: type, message: names.join(", ") });
       }
     }

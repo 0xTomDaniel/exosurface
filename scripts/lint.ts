@@ -6,7 +6,8 @@
 import { spawnSync, execFileSync } from "node:child_process";
 import path from "node:path";
 import type ts from "typescript";
-import { check, counts, describeResult, knipFindings, record, recordInitial, type Counts, type Finding } from "./standards-baseline.ts";
+import { z } from "zod";
+import { check, counts, describeResult, findingSchema, knipFindings, record, recordInitial, type Counts, type Finding } from "./standards-baseline.ts";
 import { deferredTreeDrift, deferredTreeLines, isDeferredTree } from "./owner-deferrals.ts";
 
 const baselineFile = "scripts/standards-baseline.json";
@@ -26,18 +27,6 @@ const exempt = new Set(execFileSync("python", ["-B", "scripts/source-inventory.p
 // Owner-deferred source trees (scripts/owner-deferrals.ts) leave the TS/JS universe: not assessed, never baselined.
 const unique = [...new Set(files)].filter((file) => !exempt.has(file) && !isDeferredTree(file)).sort();
 
-const child = process.argv.find((arg) => arg.startsWith("--compiler-project="));
-if (child !== undefined) {
-  await compilerProject(child.slice("--compiler-project=".length));
-} else {
-  const projects = process.argv.filter((arg) => arg.startsWith("--project=")).map((arg) => arg.slice("--project=".length));
-  const drift = deferredTreeDrift(process.cwd(), projects);
-  if (drift.length > 0) throw new Error(`owner deferral drift: ${drift.join("; ")}`);
-  for (const line of deferredTreeLines([...new Set(files)])) console.error(line);
-  if (process.argv.includes("--compiler") || process.argv.includes("--compiler-files")) compiler(projects);
-  else if (process.argv.includes("--knip")) knip();
-  else eslint();
-}
 
 /** Check or record each measured gate; returns false when any gate fails or recording refuses. */
 function ratchet(gates: Record<string, Finding[]>): boolean {
@@ -91,27 +80,20 @@ function knip(): void {
   process.exitCode = ratchet({ knip: findings }) ? 0 : 1;
 }
 
-interface LintMessage { ruleId: string | null; message: string; line: number; column: number; fatal?: boolean }
-interface LintResult { filePath: string; messages: LintMessage[]; errorCount: number; warningCount: number; fatalErrorCount: number }
+// ESLint's JSON formatter output (`--format json`); anything else is unanswered.
+const lintResultsSchema = z.array(z.looseObject({
+  filePath: z.string(),
+  messages: z.array(z.looseObject({ ruleId: z.string().nullable(), message: z.string(), line: z.number().default(0), column: z.number().default(0), fatal: z.boolean().optional() })),
+  errorCount: z.number(),
+  warningCount: z.number(),
+  fatalErrorCount: z.number(),
+}));
+type LintResult = z.infer<typeof lintResultsSchema>[number];
 
-/** ESLint's JSON formatter output (`--format json`), checked field by field; anything else is unanswered. */
 function lintResults(value: unknown): LintResult[] {
-  const shape = (why: string) => new Error(`ESLint report unanswered: ${why}`);
-  if (!Array.isArray(value)) throw shape("not a list");
-  return value.map((entry: unknown) => {
-    if (typeof entry !== "object" || entry === null || !("filePath" in entry) || typeof entry.filePath !== "string"
-      || !("messages" in entry) || !Array.isArray(entry.messages)
-      || !("errorCount" in entry) || typeof entry.errorCount !== "number" || !("warningCount" in entry) || typeof entry.warningCount !== "number"
-      || !("fatalErrorCount" in entry) || typeof entry.fatalErrorCount !== "number") throw shape("result without filePath/messages/counts");
-    const messages = (entry.messages as unknown[]).map((message): LintMessage => {
-      if (typeof message !== "object" || message === null || !("ruleId" in message) || (message.ruleId !== null && typeof message.ruleId !== "string")
-        || !("message" in message) || typeof message.message !== "string") throw shape("a message without ruleId/message");
-      const line = "line" in message && typeof message.line === "number" ? message.line : 0;
-      const column = "column" in message && typeof message.column === "number" ? message.column : 0;
-      return { ruleId: message.ruleId, message: message.message, line, column, fatal: "fatal" in message && message.fatal === true };
-    });
-    return { filePath: entry.filePath, messages, errorCount: entry.errorCount, warningCount: entry.warningCount, fatalErrorCount: entry.fatalErrorCount };
-  });
+  const parsed = lintResultsSchema.safeParse(value);
+  if (!parsed.success) throw new Error(`ESLint report unanswered: ${z.prettifyError(parsed.error)}`);
+  return parsed.data;
 }
 
 // Typed ESLint over the maintained TS/JS universe in bounded batches (gate `eslint`). --files prints each linted file
@@ -157,24 +139,14 @@ function eslint(): void {
   process.exitCode = ratchet({ eslint: findings }) ? 0 : 1;
 }
 
-/** One compiler project's answer, as its child process prints it. */
-interface CompilerReport { project: string; files: string[]; governing: Finding[]; integrityOnly: number }
+/** One compiler project's answer, as its child process prints it; anything else is unanswered. */
+const compilerReportSchema = z.object({ project: z.string(), files: z.array(z.string()), governing: z.array(findingSchema), integrityOnly: z.number().int().min(0) });
+type CompilerReport = z.infer<typeof compilerReportSchema>;
 
 function compilerReport(value: unknown): CompilerReport {
-  const shape = (why: string) => new Error(`compiler report unanswered: ${why}`);
-  if (typeof value !== "object" || value === null || !("project" in value) || typeof value.project !== "string"
-    || !("files" in value) || !Array.isArray(value.files) || !("governing" in value) || !Array.isArray(value.governing)
-    || !("integrityOnly" in value) || typeof value.integrityOnly !== "number") throw shape("missing project/files/governing/integrityOnly");
-  const reportFiles = (value.files as unknown[]).map((file) => {
-    if (typeof file !== "string") throw shape("a program file is not a path");
-    return file;
-  });
-  const governing = (value.governing as unknown[]).map((finding): Finding => {
-    if (typeof finding !== "object" || finding === null || !("file" in finding) || typeof finding.file !== "string"
-      || !("code" in finding) || typeof finding.code !== "string" || !("message" in finding) || typeof finding.message !== "string") throw shape("a finding without file/code/message");
-    return { file: finding.file, code: finding.code, message: finding.message };
-  });
-  return { project: value.project, files: reportFiles, governing, integrityOnly: value.integrityOnly };
+  const parsed = compilerReportSchema.safeParse(value);
+  if (!parsed.success) throw new Error(`compiler report unanswered: ${z.prettifyError(parsed.error)}`);
+  return parsed.data;
 }
 
 // Each project compiles in its own child process (bounded; native compiler memory is released per project). A child
@@ -250,4 +222,18 @@ async function compilerProject(project: string): Promise<void> {
   const programFiles = program.getSourceFiles().map((file) => path.resolve(file.fileName));
   console.log(JSON.stringify({ project: configPath, files: programFiles, governing, integrityOnly }));
   process.exitCode = governing.length > 0 ? 1 : 0;
+}
+
+// Dispatch last: every schema and function above is initialized before the first run.
+const child = process.argv.find((arg) => arg.startsWith("--compiler-project="));
+if (child !== undefined) {
+  await compilerProject(child.slice("--compiler-project=".length));
+} else {
+  const projects = process.argv.filter((arg) => arg.startsWith("--project=")).map((arg) => arg.slice("--project=".length));
+  const drift = deferredTreeDrift(process.cwd(), projects);
+  if (drift.length > 0) throw new Error(`owner deferral drift: ${drift.join("; ")}`);
+  for (const line of deferredTreeLines([...new Set(files)])) console.error(line);
+  if (process.argv.includes("--compiler") || process.argv.includes("--compiler-files")) compiler(projects);
+  else if (process.argv.includes("--knip")) knip();
+  else eslint();
 }

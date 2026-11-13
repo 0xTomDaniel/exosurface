@@ -638,7 +638,7 @@
     },
     {
       "path": "resources/provenance/workspace/package.json",
-      "sha256": "8781a4b9bba0acddf15cd1f3c7ed22dc8e35b9b3fd728d5601119a945514a4e1"
+      "sha256": "beb0f45cb2d7f5aa11a5c82c2b7bc603cb44b499f0dfe7f5b65967a530c5134b"
     },
     {
       "path": "resources/provenance/workspace/patches/@get-bb__plugin-sdk@0.6.15.patch",
@@ -662,7 +662,7 @@
     },
     {
       "path": "resources/provenance/workspace/pnpm-lock.yaml",
-      "sha256": "769836a28ad94ee1464888871fbc85324d10fe78ca20decd1e65f0f68c1c4a5f"
+      "sha256": "c2f1d6d84eb251dc1473c88edc2ce9fbc325a5142c64c6343801fb125a6eacbf"
     },
     {
       "path": "resources/provenance/workspace/pnpm-workspace.yaml",
