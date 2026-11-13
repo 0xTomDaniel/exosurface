@@ -1,4 +1,11 @@
 import { spawnSync } from 'node:child_process';
+// Owner artifacts relocate without node_modules; validate JSON with builtin-only guards.
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+function document(bytes: string) {
+  const value: unknown = JSON.parse(bytes);
+  if (!isRecord(value)) throw Error('Invalid canonical setup document');
+  return value;
+}
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -31,10 +38,14 @@ export function canonicalNativeAdapter(api: NativeSetupApi, dispatchAllowed = fa
 }
 /** BB requires an explicit machine for an unmanaged workspace: use the project's own source at the vault path. */
 export async function vaultHost(projects: Pick<BbPluginApi['sdk']['projects'], 'get'>, request: SetupRequest): Promise<string> {
-  const project: any = await projects.get({ projectId: request.projectId });
-  const hosts = new Set((project?.sources ?? []).filter((s: any) => s?.path === request.vault && typeof s.hostId === 'string').map((s: any) => s.hostId as string));
+  const project: unknown = await projects.get({ projectId: request.projectId });
+  const sources = isRecord(project) ? project['sources'] : undefined;
+  if (sources != null && !Array.isArray(sources)) throw Error('Invalid BB project sources');
+  const hosts = new Set((sources ?? []).flatMap((s: unknown) => isRecord(s) && s['path'] === request.vault && typeof s['hostId'] === 'string' ? [s['hostId']] : []));
   if (hosts.size !== 1) throw Error('Select a BB project whose source on this Mac is exactly the workspace path');
-  return [...hosts][0] as string;
+  const host = [...hosts][0];
+  if (host === undefined) throw Error('Select a BB project whose source on this Mac is exactly the workspace path');
+  return host;
 }
 export function canonicalBBNativeAdapter(threads: Pick<BbPluginApi['sdk']['threads'], 'spawn' | 'get'>, dispatchAllowed = false, projects?: Pick<BbPluginApi['sdk']['projects'], 'get'>) {
   return canonicalNativeAdapter({ create: async (request, prompt) => threads.spawn({ projectId: request.projectId, environment: { type: 'host', ...(projects ? { hostId: await vaultHost(projects, request) } : {}), workspace: { type: 'unmanaged', path: request.vault } }, providerId: 'exo-spike', model: CANONICAL_MODEL.id, reasoningLevel: 'high', permissionMode: 'full', title: 'Exo initialization', prompt }), get: id => threads.get({ threadId: id }) }, dispatchAllowed);
@@ -55,16 +66,16 @@ export function canonicalSystemPorts(options: {
     const helper = join(options.runtimeRoot, 'dist', 'optchat-init.js');
     const answer = spawnSync(options.node, ['--experimental-transform-types', helper, r.optchat, op, r.profile], { cwd: r.vault, env: environment(r), encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024 });
     if (answer.status !== 0 || answer.error) throw Error(`OptChat supported profile API ${op} failed: ${(answer.error?.message ?? (answer.stdout || answer.stderr || `exit ${answer.status}`)).replace(/\s+/g, ' ').trim().slice(0, 400)}`);
-    let result: any; try { result = JSON.parse(answer.stdout); } catch { throw Error(`OptChat supported profile API ${op} returned no result: ${String(answer.stderr).replace(/\s+/g, ' ').trim().slice(0, 400)}`); }
-    if (!result.ok || result.dir !== join(r.optchatHome, 'profiles', r.profile)) throw Error('OptChat profile identity mismatch');
+    let result; try { result = document(answer.stdout); } catch { throw Error(`OptChat supported profile API ${op} returned no result: ${String(answer.stderr).replace(/\s+/g, ' ').trim().slice(0, 400)}`); }
+    if (!result['ok'] || result['dir'] !== join(r.optchatHome, 'profiles', r.profile)) throw Error('OptChat profile identity mismatch');
   };
   return {
     ...options.native,
     async configureLocal(r) {
       const dirs = canonicalRuntimeDirectories(r.home);
-      const pkg = JSON.parse(readFileSync(join(r.optchat, 'package.json'), 'utf8'));
-      const piRoot = resolvePiPackage(r.piCli), pi = JSON.parse(readFileSync(join(piRoot, 'package.json'), 'utf8'));
-      if (pkg.name !== 'pi-optchat' || pkg.version !== '0.8.6' || pi.name !== '@earendil-works/pi-coding-agent' || pi.version !== '1.1.0') throw Error('Unsupported installed OptChat/Pi provenance; no dependency repair attempted');
+      const pkg = document(readFileSync(join(r.optchat, 'package.json'), 'utf8'));
+      const piRoot = resolvePiPackage(r.piCli), pi = document(readFileSync(join(piRoot, 'package.json'), 'utf8'));
+      if (pkg['name'] !== 'pi-optchat' || pkg['version'] !== '0.8.6' || pi['name'] !== '@earendil-works/pi-coding-agent' || pi['version'] !== '1.1.0') throw Error('Unsupported installed OptChat/Pi provenance; no dependency repair attempted');
       const desired = { ownerLabel: options.ownerLabel ?? 'app.exosurface.owner', primaryStateDir: r.home, primaryOptchatHome: r.optchatHome, primaryProfile: r.profile, primaryAgentDir: join(r.home, 'pi-config'), vault: r.vault, optchat: r.optchat, piCli: r.piCli };
       const old = loadIf(options.localConfig);
       if (old && Object.entries(desired).some(([key, value]) => old[key] !== value)) throw Error('Existing local canonical configuration conflicts; refusing overwrite');

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, openSync, closeSync, unlinkSync, lstatSync, real
 import { join, isAbsolute, resolve } from 'node:path';
 import { save, loadIf } from '../../../src/store.ts';
 import { commitFreshCanonicalBinding, freshCanonicalReceipt, validateFreshCanonicalSession, canonicalRuntimeDirectories } from './canonical-fresh.ts';
-export interface SetupTarget { home: string; optchatHome: string; profile: string; vault: string; piCli: string; optchat: string; projectId: string; }
+interface SetupTarget { home: string; optchatHome: string; profile: string; vault: string; piCli: string; optchat: string; projectId: string; }
 export interface SetupRequest extends SetupTarget { operationId: string; authorizeInitialization: true; }
 export interface SetupJournal { schema: 'exosurface-canonical-setup/0'; request: SetupRequest; stage: 'claimed' | 'profile-intent' | 'profile-ready' | 'session-intent' | 'session-ready' | 'spawning' | 'thread-ready' | 'bound'; session?: { id: string; file: string }; threadId?: string; }
 export interface CanonicalSetupPorts {
@@ -14,14 +14,14 @@ export interface CanonicalSetupPorts {
   spawnThread(request: SetupRequest): Promise<{ id: string }>;
   verifyThread(request: SetupRequest, threadId: string): Promise<void>;
 }
-export const setupJournalPath = (home: string) => join(home, 'canonical-setup.json');
+const setupJournalPath = (home: string) => join(home, 'canonical-setup.json');
 export function setupStatus(home: string): SetupJournal | undefined {
   const file = setupJournalPath(home), info = lstatSync(file, { throwIfNoEntry: false });
   if (info && !info.isFile()) throw Error('Canonical setup journal must be a regular file; refusing foreign state');
   return loadIf(file);
 }
 function validate(request: SetupRequest) {
-  if (request.authorizeInitialization !== true || !/^[a-zA-Z0-9_-]{8,80}$/.test(request.operationId) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(request.profile) || !request.projectId) throw Error('Explicit initialization authorization and valid operation required');
+  if (!request.authorizeInitialization || !/^[a-zA-Z0-9_-]{8,80}$/.test(request.operationId) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(request.profile) || !request.projectId) throw Error('Explicit initialization authorization and valid operation required');
   for (const path of [request.home, request.optchatHome, request.vault, request.piCli, request.optchat]) {
     if (!isAbsolute(path) || resolve(path) !== path) throw Error('Canonical setup requires explicit normalized absolute paths');
     for (let p = path;;) { if (existsSync(p) && lstatSync(p).isSymbolicLink()) throw Error('Canonical setup refuses symlink paths'); const parent = resolve(p, '..'); if (parent === p) break; p = parent; }
@@ -71,7 +71,7 @@ export async function canonicalSetup(request: SetupRequest, ports: CanonicalSetu
       j = { schema: 'exosurface-canonical-setup/0', request, stage: 'claimed' }; save(file, j);
     }
     await ports.configureLocal(request);
-    const checkpoint = (stage: SetupJournal['stage']) => { j!.stage = stage; save(file, j); };
+    const checkpoint = (stage: SetupJournal['stage']) => { j.stage = stage; save(file, j); };
     if (j.stage === 'claimed') checkpoint('profile-intent');
     if (j.stage === 'profile-intent') {
       if (!existsSync(profile)) await ports.createProfile(request);
