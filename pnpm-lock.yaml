@@ -52,6 +52,9 @@ importers:
       typescript-eslint:
         specifier: 8.71.2
         version: 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@6.0.3)
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
 
   plugins/bb-plugin-exosurface:
     dependencies:

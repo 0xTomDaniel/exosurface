@@ -32,7 +32,11 @@ This is source-preparation provenance only. The existing runtime producer's four
 
 Runtime license traversal follows declared production dependency edges through Node lookup paths and real symlink targets instead of npm's copied directory layout. Platform-specific dependencies remain outside portable provenance, as before; packages entering bundles still contribute notices. Shared pnpm graph and workspace/override manifest are copied into generated provenance. Installed peer dependency edges are included in license traversal when resolvable, including SDK peers; absent theoretical peers are skipped. Their coverage and generated release identities require another build after this fix. Release mappings and harness dependency-layout assumptions require validation against the actual installed graph. `sourcePackage`/`sourceLock` continue to mean original source locations; `package`/`lock` mean packaged provenance. The earlier draft sourceLock mapping was incomplete. The 16:45 continuation decision authorizes the explicit workspace-root adaptation defined below; generated validation is still pending. Existing npm locks are retained until replacement graph/provenance is demonstrated; historical snapshots are never regenerated.
 
-## Template inventory
+## Current standards gate (#216)
+
+The pilot table below and the "Enforcement handoff" section are #217 history. Current policy: strict TS (root `tsconfig.json`, owner tsconfigs extend it), typed ESLint, knip, dependency-cruiser, ShellCheck, language coverage and spec/status validation run in `just check` (`GATE_RECIPES`). The TS/JS tool gates are a counted no-raise ratchet against `scripts/standards-baseline.json` ([owner decision](https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6829935664)). DEFERRED BY OWNER, not compliant, waived or exempt: Python lint/type ([6828772822](https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6828772822)) and the trees `plugins/bb-plugin-exo-spike/`, `spikes/a2a-pi/`, `spikes/ag-ui-pi/` ([6830616474](https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6830616474)); `scripts/owner-deferrals.ts` holds both.
+
+## Template inventory (#217 pilot, historical)
 
 | Template standard/files | Pilot treatment | Evidence / remaining work |
 | --- | --- | --- |
@@ -169,7 +173,7 @@ Notice traversal now takes all active product dependencyProjects excluding root 
 
 Prior-art research: [pnpm10.7 release](https://github.com/pnpm/pnpm/releases/tag/v10.7.0), [pnpm adoption/releases](https://mise-tools.jdx.dev/tools/pnpm), [YAML registry](https://registry.npmjs.org/yaml), [YAML releases](https://github.com/eemeli/yaml/releases), [mise releases](https://mise.jdx.dev/releases.html), [mise registry](https://crates.io/crates/mise), [just releases/adoption](https://mise-tools.jdx.dev/tools/just). Exact template/supervisor-approved pins retained, not a latest-version claim: pnpm10.7.0 (2025-03-26; project latest2026-11-10,2.89M tool downloads, MIT), YAML2.9.0 (2026-05-11;2.9.1 latest2026-09-11,312,920,069 downloads for2026-11-04..2026-11-10 ([dated npm API](https://api.npmjs.org/downloads/point/2026-11-04:2026-11-10/yaml), retrieved2026-11-11T18:11:32Z..18:11:33Z), ISC), mise2026.10.21 (latest2026-11-11,448K crate downloads, MIT), just1.21.0 (2023-12-29; latest2026-10-15,410,428 all-time tool downloads ([mise tool page](https://mise-tools.jdx.dev/tools/just), measured2026-11-11T18:11:32Z..18:11:33Z), CC0). YAML parses only the maintained workspace lock here. No hand-written YAML parser or alternate test runner.
 
-### Enforcement handoff, not pilot adoption
+### Enforcement handoff, not pilot adoption (#217, historical; delivered by #216, see Current standards gate)
 
 The later corrector request is held: root @tsconfig/node22=22.0.6,@tsconfig/strictest=2.0.8,typescript6.0.3,eslint10.13.0,typescript-eslint8.71.2,dependency-cruiser18.6.0,knip6.42.0,basedpyright1.40.2; reuse @types/node22.20.5 and preserve SDK/React/zod. Python3.13.5/ruff0.17.1 native backend pins require their own compatibility proof. No such dependency or enforcement change is part of this pilot. No Vitest replacement, app scaffold or alternate package manager is introduced.
 

@@ -4,7 +4,7 @@
 // gate lines and the exact baseline bytes. Expected values are literals, never recomputed by the code under test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -142,6 +142,52 @@ void test('gate-knip: one added unused export fails the knip gate, naming the ga
   assert.deepEqual(gateLines(result.stderr), [...deferred,
     'knip: 2 findings, baseline 1; FAILED: 1 finding keys above the baseline',
     '  src/lib.ts exports (1 > baseline 0): added']);
+});
+
+// TypeScript prints union members in an order that differs between runs; a key must not depend on it.
+const UNION_TSC = (members: string) => `["src/a.ts","TS2322","Type '${members}' is not assignable to type 'number'.\\nType 'string' is not assignable to type 'number'."]`;
+for (const members of ['string | boolean', 'boolean | string']) {
+  void test(`gate-key: a compiler finding passes against a baseline that printed its union as '${members}', and records it canonically`, t => {
+    const f = gateFixture(); t.after(f.remove);
+    f.write('src/a.ts', 'declare const u: string | boolean;\nexport const n: number = u;\n');
+    f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(UNION_TSC(members))}:1}}}\n`);
+    git(f.root, 'add', '-A');
+    const result = compiler(f.root);
+    assert.equal(result.status, 0);
+    assert.deepEqual(gateLines(result.stderr), [...deferred, 'tsc:tsconfig.json: 1 findings, baseline 1; no finding above the baseline']);
+    assert.equal(compiler(f.root, '--record-baseline').status, 0);
+    assert.equal(readFileSync(baselineFile(f.root), 'utf8'),
+      `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify(UNION_TSC('boolean | string'))}: 1\n    }\n  }\n}\n`);
+  });
+}
+
+for (const members of ['string | number', 'number | string']) {
+  void test(`gate-key: an ESLint finding passes against a baseline that printed its union as \`${members}\``, t => {
+    const f = gateFixture(); t.after(f.remove);
+    withPackageTools(f);
+    f.write('.gitignore', 'node_modules\neslint.config.js\n');
+    f.write('src/a.ts', 'export function take(x: string | number): string {\n  return String(x);\n}\ndeclare const loose: any;\nexport const out = take(loose);\n');
+    const keyAny = '["src/a.ts","@typescript-eslint/no-explicit-any","Unexpected any. Specify a different type."]';
+    const keyArgument = `["src/a.ts","@typescript-eslint/no-unsafe-argument","Unsafe argument of type \`any\` assigned to a parameter of type \`${members}\`."]`;
+    f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"eslint":{${JSON.stringify(keyAny)}:1,${JSON.stringify(keyArgument)}:1}}}\n`);
+    git(f.root, 'add', '-A');
+    const result = run(f.root, lintCommand, ['--files']);
+    assert.equal(result.status, 0);
+    assert.deepEqual(gateLines(result.stderr), [...deferred, 'eslint: 2 findings, baseline 2; no finding above the baseline']);
+  });
+}
+
+void test('gate-knip: a malformed tool report is unanswered: exit 1, nothing recorded', t => {
+  const f = gateFixture(); t.after(f.remove);
+  f.write('src/a.ts', 'export const a = 1;\n');
+  // A stand-in `pnpm` whose `exec knip` prints JSON that is not a knip report (issues is not a list).
+  f.write('bin/pnpm', '#!/bin/sh\necho \'{"issues":"not-a-list"}\'\nexit 1\n');
+  chmodSync(join(f.root, 'bin/pnpm'), 0o755);
+  git(f.root, 'add', '-A');
+  const result = run(f.root, lintCommand, ['--knip', '--record-initial'], cleanEnv({ PATH: `${join(f.root, 'bin')}:${process.env['PATH'] ?? ''}` }));
+  assert.equal(result.status, 1);
+  assert.ok(result.stderr.includes('knip report unanswered: ✖ Invalid input: expected array, received string\n  → at issues'));
+  assert.equal(existsSync(baselineFile(f.root)), false);
 });
 
 void test('gate-deferral: a missing deferred tree or a gated project inside one refuses, naming it (lint.ts)', t => {
