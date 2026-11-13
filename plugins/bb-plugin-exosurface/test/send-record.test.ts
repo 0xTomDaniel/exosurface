@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // #187 qc (spec pages-and-activity E10, S3; acceptance-exo-block-sent-page): a send's record (the page it came from) is a
 // silent journal entry or nothing; it never reaches the model or the person as a message. Here Exo runs without its page
 // extension (local config surfaceMain off, the rollback), so no Pi command takes the record. The app (app.tsx) is rendered
@@ -35,10 +36,10 @@ const until = waiter(() => `bubble ${JSON.stringify(said())}; reply ${JSON.strin
 const personMessages = () => modelRequests(f).flatMap(r => r.messages).filter(m => m.role === 'user')
   .map(m => typeof m.content === 'string' ? m.content : m.content.map((c: any) => c.text ?? '').join(''));
 
-test('a send that no Pi command can record goes alone: the model and the Exo block see only the person\'s message', async () => {
+void test('a send that no Pi command can record goes alone: the model and the Exo block see only the person\'s message', async () => {
   for (const text of ['plan the week', 'which plums are ripe?']) {
-    await until('the input to take a message', () => !!input() && !input()!.disabled && !block()?.querySelector('[role="status"]'));
-    fireEvent.change(input()!, { target: { value: text } });
+    await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && !block()?.querySelector('[role="status"]'));
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: text } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply() === `Exo (exo-optchat): ${text}` && !block()?.querySelector('[role="status"]'));
     assert.equal(said(), text);

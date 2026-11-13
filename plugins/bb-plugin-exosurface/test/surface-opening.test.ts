@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // #79 (spec pages-and-activity S12, E8; acceptance-name-header, acceptance-opening): the top of the surface in view is its
 // own name, then the Exo block opens the page: the person's latest message as a bubble, Exo's reply as plain text, then the
 // page's content. The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on
@@ -32,13 +33,13 @@ const reply = () => block()?.querySelector('[data-exo-reply]') as HTMLElement | 
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const until = waiter(() => `page: ${main()?.textContent}`);
 async function send(text: string) {
-  await until('the input to take a message', () => !!input() && !input()!.disabled);
-  fireEvent.change(input()!, { target: { value: text } });
+  await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: text } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
 }
 const before = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-test('after a second send and Exo\'s finished turn: the name, the second message as a bubble, Exo\'s reply as plain text, then the page; nothing of the first message', async () => {
+void test('after a second send and Exo\'s finished turn: the name, the second message as a bubble, Exo\'s reply as plain text, then the page; nothing of the first message', async () => {
   await send('draw: Week plan');
   await until('the first reply', () => reply()?.textContent === 'Exo (exo-optchat): draw: Week plan');
   await until('the drawn page', () => !!main().querySelector('[data-surface]'));
@@ -46,25 +47,25 @@ test('after a second send and Exo\'s finished turn: the name, the second message
   await send('hold: plan the week, with Friday off');
   // While Exo works, the bubble is the message just sent and the block's one working line follows it.
   await until('the working block', () => bubble()?.textContent === 'hold: plan the week, with Friday off' && reply()?.textContent === 'Reading your message');
-  assert.equal(block()!.querySelectorAll('[role="status"]').length, 1);
+  assert.equal(required(block(), "Expected block() to be non-null").querySelectorAll('[role="status"]').length, 1);
   f.release('exo-optchat');
   await until('the second reply', () => reply()?.textContent === 'Exo (exo-optchat): hold: plan the week, with Friday off');
 
   const page = main().querySelector('[data-surface]') as HTMLElement;
-  assert.equal(title()!.textContent, 'Home');
-  assert.equal(bubble()!.textContent, 'hold: plan the week, with Friday off');
+  assert.equal(required(title(), "Expected title() to be non-null").textContent, 'Home');
+  assert.equal(required(bubble(), "Expected bubble() to be non-null").textContent, 'hold: plan the week, with Friday off');
   // Screen order: the title, the bubble, the reply, the page's content; one scrolling region holds them all.
-  assert.ok(before(title()!, bubble()!) && before(bubble()!, reply()!) && before(reply()!, page), main().innerHTML);
+  assert.ok(before(required(title(), "Expected title() to be non-null"), required(bubble(), "Expected bubble() to be non-null")) && before(required(bubble(), "Expected bubble() to be non-null"), required(reply(), "Expected reply() to be non-null")) && before(required(reply(), "Expected reply() to be non-null"), page), main().innerHTML);
   assert.ok(main().contains(bubble()) && main().contains(page));
   // The bubble sits on the right; the reply is plain text, not in a box (computed styles; layout: the owner's RDP walkthrough).
-  assert.equal(rightAligned(bubble()!), true);
-  assert.equal(boxed(reply()!, block()!), false);
+  assert.equal(rightAligned(required(bubble(), "Expected bubble() to be non-null")), true);
+  assert.equal(boxed(required(reply(), "Expected reply() to be non-null"), required(block(), "Expected block() to be non-null")), false);
   // Nothing of the first message or its reply.
-  assert.equal(view.container.textContent!.includes('draw: Week plan'), false);
-  assert.equal(input()!.value, '');
+  assert.equal(required(view.container.textContent, "Expected view.container.textContent to be non-null").includes('draw: Week plan'), false);
+  assert.equal(required(input(), "Expected input() to be non-null").value, '');
 });
 
-test('a press on its page and a send both scroll the surface back to its top through the one eased scroll (instantly under reduced motion); Exo\'s turn ending and a poll leave the scroll where it was', async () => {
+void test('a press on its page and a send both scroll the surface back to its top through the one eased scroll (instantly under reduced motion); Exo\'s turn ending and a poll leave the scroll where it was', async () => {
   // Owner walkthrough on PR #89 (spec E8, F1/F4) and owner ruling 2026-11-05 on #138 (F6, acceptance-press-to-top: a
   // press must not jump, it eases exactly like a send). jsdom does no layout or scrolling: through the browser stand-ins
   // of test/app-render.ts it proves what the surface asks its scroll container for (top 0, smooth or instant) and that
@@ -73,7 +74,7 @@ test('a press on its page and a send both scroll the surface back to its top thr
   // The press is the person clicking the page's Book button in the rendered surface.
   const revision = () => view.container.querySelector('[aria-label="Surface revision"]')?.textContent;
   const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
-  const idle = () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled;
+  const idle = () => !!book() && !required(book(), "Expected book() to be non-null").closest('[inert]') && !!input() && !required(input(), "Expected input() to be non-null").disabled;
   // Each step starts scrolled down, below the first screen; it returns the scrolls the surface asked for during it.
   async function step(what: string, act: () => Promise<void>) {
     main().scrollTop = 400;
@@ -86,13 +87,13 @@ test('a press on its page and a send both scroll the surface back to its top thr
     await until('the page\'s Book button, idle', idle);
     const at = revision(), field = main().querySelector('[data-surface] input') as HTMLInputElement;
     fireEvent.input(field, { target: { value: who } });
-    fireEvent.click(book()!);
+    fireEvent.click(required(book(), "Expected book() to be non-null"));
     // Exo's turn on the press ends and the pressed page is polled in; neither scrolls again.
     await until('the press turn\'s reply and the pressed page polled in', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && revision() !== at);
   }
   async function sent(text: string) {
     await send(text);
-    await until('the send accepted', () => input()!.value === '' && bubble()?.textContent === text);
+    await until('the send accepted', () => required(input(), "Expected input() to be non-null").value === '' && bubble()?.textContent === text);
     await until('the send\'s reply', () => reply()?.textContent === `Exo (exo-optchat): ${text}`);
   }
   const eased = '[{"top":0,"behavior":"smooth"}]', instant = '[{"top":0,"behavior":"auto"}]';
@@ -110,74 +111,74 @@ test('a press on its page and a send both scroll the surface back to its top thr
   } finally { browser.reducedMotion = false; }
 });
 
-test('after a press and Exo\'s finished turn, the person\'s bubble is the button\'s label, right-aligned, and Exo\'s reply to the press is plain text below it', async () => {
+void test('after a press and Exo\'s finished turn, the person\'s bubble is the button\'s label, right-aligned, and Exo\'s reply to the press is plain text below it', async () => {
   // #141 (acceptance-press-to-top, F6: a press shows as the person's bubble with the button's label, never the press line).
   const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
-  await until('the page\'s Book button, idle', () => !!book() && !book()!.closest('[inert]') && !!input() && !input()!.disabled);
+  await until('the page\'s Book button, idle', () => !!book() && !required(book(), "Expected book() to be non-null").closest('[inert]') && !!input() && !required(input(), "Expected input() to be non-null").disabled);
   fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: 'Ada' } });
-  fireEvent.click(book()!);
-  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && reply()!.textContent!.includes('Ada'));
+  fireEvent.click(required(book(), "Expected book() to be non-null"));
+  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply()!.textContent to be non-null").includes('Ada'));
   assert.equal(bubble()?.textContent, 'Book');
-  assert.equal(rightAligned(bubble()!), true);
-  assert.equal(before(bubble()!, reply()!), true);
-  assert.equal(boxed(reply()!, block()!), false);
+  assert.equal(rightAligned(required(bubble(), "Expected bubble() to be non-null")), true);
+  assert.equal(before(required(bubble(), "Expected bubble() to be non-null"), required(reply(), "Expected reply() to be non-null")), true);
+  assert.equal(boxed(required(reply(), "Expected reply() to be non-null"), required(block(), "Expected block() to be non-null")), false);
 });
 
-test('a press on an earlier version of the page, opened from its card in the chat, scrolls the surface back to its top through the same eased scroll', async () => {
+void test('a press on an earlier version of the page, opened from its card in the chat, scrolls the surface back to its top through the same eased scroll', async () => {
   // Owner ruling 2026-11-05 on #138 (F6: every press, an earlier-version press included). The person clicks the chat card
   // of the page as first drawn (revision 1, since edited by the presses above), the surface shows that earlier version, and
   // they press its Book button; as above, what the surface asks its scroll container for and its scrollTop.
   const card = /::exo-surface\{surface="([^"]+)" revision="1" action="drew"\}/;
-  const drawn = host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean)!;
+  const drawn = required(host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean), "Expected host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean) to be non-null");
   assert.ok(drawn, 'the chat card of the drawn page');
   const directive = app.messageDirectives.find((d: any) => d.id === 'exo-surface');
   const chat = kit.renderSlot(directive, { attributes: { surface: drawn[1], revision: '1', action: 'drew' }, message: { threadId: 'primary' } }, { rpc: f.rpc });
   try {
     const earlier = () => [...main().querySelectorAll('[role="status"]')].some(s => s.textContent?.startsWith('Earlier version'));
     const book = () => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === 'Book') as HTMLButtonElement | undefined;
-    await until('the input idle', () => !!input() && !input()!.disabled);
-    fireEvent.click(chat.container.querySelector('button')!);
-    await until('the earlier version with its Book button', () => earlier() && !!book() && !book()!.closest('[inert]'));
+    await until('the input idle', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+    fireEvent.click(required(chat.container.querySelector('button'), "Expected chat.container.querySelector('button') to be non-null"));
+    await until('the earlier version with its Book button', () => earlier() && !!book() && !required(book(), "Expected book() to be non-null").closest('[inert]'));
     main().scrollTop = 400;
     assert.equal(main().scrollTop, 400, 'scrolled down before the press');
     const asked = browser.scrolls.length;
-    fireEvent.input(main().querySelector('[data-surface] input')!, { target: { value: 'Ada' } });
-    fireEvent.click(book()!);
-    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && reply()!.textContent!.includes('Brought back'));
+    fireEvent.input(required(main().querySelector('[data-surface] input'), "Expected main().querySelector('[data-surface] input') to be non-null"), { target: { value: 'Ada' } });
+    fireEvent.click(required(book(), "Expected book() to be non-null"));
+    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply()!.textContent to be non-null").includes('Brought back'));
     const pressed = { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
     assert.ok(pressed.top === 0 && pressed.asked === '[{"top":0,"behavior":"smooth"}]', `after a press on the earlier version: ${JSON.stringify(pressed)}`);
   } finally { chat.unmount(); }
 });
 
-test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
-  const made = (await f.rpc["thread_new"](null)).threadId;
+void test('a surface whose stored name is "Garden plan" shows "Garden plan" as its title at the top; Home shows "Home"; never "Exosurface"', async () => {
+  const made = (await f.rpc.thread_new(null)).threadId;
   f.retitle(made, 'Garden plan');
   view.unmount(); view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
-  const open = (name: string) => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === name)!);
+  const open = (name: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === name), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textContent === name) to be non-null"));
   const headings = () => [...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].map(h => h.textContent);
   await until('Garden plan in the sidebar', () => !!sidebar() && [...sidebar().querySelectorAll('li button')].some(b => b.textContent === 'Garden plan'));
   open('Garden plan');
   await until('Garden plan as the title', () => title()?.textContent === 'Garden plan');
-  assert.ok(main().textContent!.startsWith('Garden plan'), main().textContent!);
+  assert.ok(required(main().textContent, "Expected main().textContent to be non-null").startsWith('Garden plan'), required(main().textContent, "Expected main().textContent to be non-null"));
   assert.deepEqual(headings().filter(h => h?.includes('Exosurface')), []);
   open('Home');
   await until('Home as the title', () => title()?.textContent === 'Home');
   assert.deepEqual(headings().filter(h => h?.includes('Exosurface')), []);
 });
 
-test('a press on a button whose label holds " — " or " · " shows exactly that label as the person\'s bubble; a typed message that looks like a press shows as typed', async () => {
+void test('a press on a button whose label holds " — " or " · " shows exactly that label as the person\'s bubble; a typed message that looks like a press shows as typed', async () => {
   // Review of PR #146 (F6, acceptance-press-to-top: the bubble carries the button's label, never a rewritten one).
   // Each button sends the page's note, so each press commits it and the next press is on a new revision.
   const snapshot = '- region "Plan · Week" [ref=pw]:\n  - textbox "Note" [ref=note]\n  - button "Keep — later" [ref=later] [action=later] [sends=note]\n  - button "Plan · Keep" [ref=plankeep] [action=plan] [sends=note]';
-  const revision = (await f.rpc["workspace"]({ deployment: 'main', cursor: null })).revision;
-  await until('the input idle', () => !!input() && !input()!.disabled);
+  const revision = (await f.rpc.workspace({ deployment: 'main', cursor: null })).revision;
+  await until('the input idle', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
   host.send('primary', `call: ${JSON.stringify({ baseRevision: revision, snapshot })}`);
   const button = (label: string) => [...main().querySelectorAll('[data-surface] button')].find(b => b.textContent?.trim() === label) as HTMLButtonElement | undefined;
   for (const [label, note] of [['Keep — later', 'first'], ['Plan · Keep', 'second']]) {
-    await until(`the ${label} button, idle`, () => !!button(label) && !button(label)!.closest('[inert]') && !!input() && !input()!.disabled);
+    await until(`the ${label} button, idle`, () => !!button(label) && !required(button(label), "Expected button(label) to be non-null").closest('[inert]') && !!input() && !required(input(), "Expected input() to be non-null").disabled);
     fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: note } });
-    fireEvent.click(button(label)!);
+    fireEvent.click(required(button(label), "Expected button(label) to be non-null"));
     await until(`Exo's reply to the ${label} press`, () => reply()?.textContent === `Exo (exo-optchat): ▸ Plan · Week · ${label} — Note: “${note}”`);
     assert.equal(bubble()?.textContent, label);
   }

@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // #80 (spec pages-and-activity S11; acceptance-input-floats): the input floats over the bottom of the scrolling surface in
 // the page's column, the page scrolls beneath it, and the content under it fades out from its middle down. The app (app.tsx)
 // is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send goes through the mock
@@ -30,36 +31,36 @@ const input = () => form()?.querySelector('textarea') as HTMLTextAreaElement | n
 const reply = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
 const until = waiter(() => `page: ${main()?.textContent}`);
 async function send(text: string) {
-  await until('the input to take a message', () => !!input() && !input()!.disabled);
-  fireEvent.change(input()!, { target: { value: text } });
+  await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: text } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
 }
 const before = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-test('on a drawn page, the input floats over the bottom of the scrolling surface at the page\'s width, fading the content beneath it from its middle down', { timeout: 60000 }, async () => {
+void test('on a drawn page, the input floats over the bottom of the scrolling surface at the page\'s width, fading the content beneath it from its middle down', { timeout: 60000 }, async () => {
   await send('draw: Week plan');
   await until('the reply', () => reply()?.textContent === 'Exo (exo-optchat): draw: Week plan');
   await until('the drawn page', () => !!main().querySelector('[data-surface]'));
   const page = main().querySelector('[data-surface]') as HTMLElement;
   // Assertions compare booleans only: a failing assert on jsdom elements makes node inspect the whole DOM graph.
   // Pinned over the bottom of the surface that scrolls the page, not of the window.
-  const held = pinnedToBottom(form()!);
+  const held = pinnedToBottom(required(form(), "Expected form() to be non-null"));
   assert.ok(held !== null, 'the input is held against the bottom of a scrolling region');
-  assert.ok(held!.scroller.contains(page), 'the region the input floats over is the one the page scrolls in');
+  assert.ok(required(held, "Expected held to be non-null").scroller.contains(page), 'the region the input floats over is the one the page scrolls in');
   // In flow after the page, so the page's last lines scroll clear above it.
-  assert.ok(before(page, held!.pinned), 'the input comes after the page');
+  assert.ok(before(page, required(held, "Expected held to be non-null").pinned), 'the input comes after the page');
   // Its width follows the page's column, not the window.
   const col = column(page);
-  assert.ok(col !== null && col !== held!.scroller, 'the page sits in a column narrower than the surface');
-  assert.ok(column(form()!) === col, 'the input follows the page\'s column');
+  assert.ok(col !== null && col !== required(held, "Expected held to be non-null").scroller, 'the page sits in a column narrower than the surface');
+  assert.ok(column(required(form(), "Expected form() to be non-null")) === col, 'the input follows the page\'s column');
   // The fade starts at the input's middle and runs to the bottom edge.
-  assert.equal(fadeStart(held!.pinned), 0.5);
-  assert.equal(centeredIn(form()!, held!.pinned), true);
+  assert.equal(fadeStart(required(held, "Expected held to be non-null").pinned), 0.5);
+  assert.equal(centeredIn(required(form(), "Expected form() to be non-null"), required(held, "Expected held to be non-null").pinned), true);
 });
 
-test('the floating input still sends and is empty again after the send', { timeout: 60000 }, async () => {
+void test('the floating input still sends and is empty again after the send', { timeout: 60000 }, async () => {
   await send('plan the week, with Friday off');
   await until('the reply', () => reply()?.textContent === 'Exo (exo-optchat): plan the week, with Friday off');
-  assert.equal(input()!.value, '');
-  assert.ok(pinnedToBottom(form()!) !== null, 'the input is still pinned');
+  assert.equal(required(input(), "Expected input() to be non-null").value, '');
+  assert.ok(pinnedToBottom(required(form(), "Expected form() to be non-null")) !== null, 'the input is still pinned');
 });

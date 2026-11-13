@@ -41,7 +41,7 @@ async function shown(bundle: Awaited<ReturnType<typeof renderedApp>>) {
   return result;
 }
 
-test('a second app bundle in the same window renders the page the first one did, without a tag name collision', async () => {
+void test('a second app bundle in the same window renders the page the first one did, without a tag name collision', async () => {
   const one = await shown(first);
   assert.ok(one.title === 'Week plan' && one.text.includes('Week plan') && one.upgraded && !!one.root?.startsWith('a2ui-basic-column'), `bundle 1: ${JSON.stringify(one)}`);
   const two = await shown(second);

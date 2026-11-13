@@ -9,6 +9,7 @@
     ".": {
       "entry": [
         "scripts/lint.ts",
+        "scripts/codemods/test-hygiene.ts",
         "scripts/check-languages.ts",
         "scripts/own-tool-paths.ts"
       ],

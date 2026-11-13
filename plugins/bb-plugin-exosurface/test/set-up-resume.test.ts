@@ -24,7 +24,7 @@ after(async () => {
   rmSync(f.root, { recursive: true, force: true });
 });
 
-test('a set-up that stopped part way shows as resumable in settings and resumes from there', async () => {
+void test('a set-up that stopped part way shows as resumable in settings and resumes from there', async () => {
   f.faults.threadGet = 1;
   let view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   let s = exoTab(view, kit.testing.fireEvent);

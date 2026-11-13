@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // #85 (spec pages-and-activity E9, amends E4; acceptance-live-activity, acceptance-live-activity-ends): while Exo works, the
 // Exo block of the page in view shows one line of what Exo is doing, replaced as Exo goes; once the turn ends it shows
 // Exo's reply and no line. The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run
@@ -37,9 +38,9 @@ const status = () => reply()?.querySelector('[role="status"]') as HTMLElement | 
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const until = waiter(() => `Exo block: ${reply()?.textContent}`);
 
-test('a send Exo answers in several steps: the Exo block shows one line of what Exo does, changing as it goes, then only the reply', async () => {
-  await until('the input to take a message', () => !!input() && !input()!.disabled);
-  fireEvent.change(input()!, { target: { value: 'steps: garden' } });
+void test('a send Exo answers in several steps: the Exo block shows one line of what Exo does, changing as it goes, then only the reply', async () => {
+  await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'steps: garden' } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
   // Each sample: the line's text, and as strings what keeps it one line and announced, the fixed one-line height, and the
   // shimmer jsdom computes from the app's own stylesheet: on the element inside the line that paints the text, sized to the
@@ -52,11 +53,11 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
     const s = status(); if (!s) return undefined;
     const css = getComputedStyle(s);
     const shimmer = [s, ...s.querySelectorAll('*')].find(e => animation(getComputedStyle(e).animation)) ?? s, glyphs = getComputedStyle(shimmer);
-    if (!canvas) { source = declared(shimmer); canvas = getComputedStyle(s.closest('main[aria-label="Exo"]')!); }
-    shown.push(JSON.stringify({ alone: reply()!.textContent === s.textContent && reply()!.children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow,
+    if (!canvas) { source = declared(shimmer); canvas = getComputedStyle(required(s.closest('main[aria-label="Exo"]'), "Expected s.closest('main[aria-label=\"Exo\"]') to be non-null")); }
+    shown.push(JSON.stringify({ alone: required(reply(), "Expected reply() to be non-null").textContent === s.textContent && required(reply(), "Expected reply() to be non-null").children.length === 1, live: s.getAttribute('aria-live'), wrap: css.whiteSpace, overflow: css.overflow || css.overflowX, ellipsis: css.textOverflow,
       inside: shimmer !== s && shimmer.textContent === s.textContent, sized: glyphs.display,
       animation: animation(glyphs.animation), clip: glyphs.getPropertyValue('background-clip'), color: glyphs.color, lineHeight: css.lineHeight, height: css.height }));
-    return s.textContent!;
+    return required(s.textContent, "Expected s.textContent to be non-null");
   };
   const lines = await stepsShown(f, 'garden', line, () => status() === null && !!reply()?.textContent);
   assert.deepEqual(lines, ['Reading your message', 'Planning the garden', 'Reading the garden note', 'Now I can answer about the garden.']);
@@ -95,7 +96,7 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   const bands = [...new Set(at.filter(x => x.stop !== base).map(x => x.stop))];
   for (const [theme, colours] of Object.entries(bb)) {
     const vars: Record<string, string> = new Proxy({ ...colours, '--background': 'var(--canvas)', '--foreground': 'var(--ink)' } as Record<string, string>, { get: (o, k: string) => o[k] ?? canvas!.getPropertyValue(k) });
-    const paper = themeColor('var(--exo-paper)', vars), quiet = themeColor(base!, vars), ok = toOklab(paper);
+    const paper = themeColor('var(--exo-paper)', vars), quiet = themeColor(required(base, "Expected base to be non-null"), vars), ok = toOklab(paper);
     const far = (c: ReturnType<typeof themeColor>) => Math.hypot(...toOklab(c).map((v, i) => v - ok[i]));
     for (const stop of bands) {
       const glyph = themeColor(stop, vars), shown = `${theme}: band ${stop} ${contrast(glyph, paper).toFixed(2)}:1 on the background, base ${base} ${contrast(quiet, paper).toFixed(2)}:1`;
@@ -113,27 +114,27 @@ test('a send Exo answers in several steps: the Exo block shows one line of what 
   // After the turn ends no element shimmers.
   assert.deepEqual([...view.container.querySelectorAll('*')].filter(e => animation(getComputedStyle(e).animation)?.name === sample.animation.name), []);
   // acceptance-live-activity-ends: the reply, and no activity line.
-  assert.equal(reply()!.textContent, `Exo (${f.setup.profile}): steps: garden`);
+  assert.equal(required(reply(), "Expected reply() to be non-null").textContent, `Exo (${f.setup.profile}): steps: garden`);
   assert.equal(status(), null);
-  assert.equal(input()!.value, '');
+  assert.equal(required(input(), "Expected input() to be non-null").value, '');
 });
 
-test('a send on a new surface whose turn the provider fails before any step: the Exo block shows one line from the send until the turn ends, then none', async () => {
+void test('a send on a new surface whose turn the provider fails before any step: the Exo block shows one line from the send until the turn ends, then none', async () => {
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
-  fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
+  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface') to be non-null"));
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
-  const fresh = (await f.rpc["thread_list"](null)).threads[1].threadId;
+  const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
-  await until('the new surface to take a message', () => !!input() && !input()!.disabled && reply()?.textContent === '');
+  await until('the new surface to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && reply()?.textContent === '');
   const profile = f.piRuns().at(-1).profile, opened = host.deltas(fresh).filter(d => d.kind === 'turn.open').length;
   // The provider fails the turn once released: no reasoning, no tool step, no words, only an error.
-  fireEvent.change(input()!, { target: { value: 'hold: fail: create a design for a flying car' } });
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'hold: fail: create a design for a flying car' } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
-  await until('BB to take the send', () => input()!.value === '');
+  await until('BB to take the send', () => required(input(), "Expected input() to be non-null").value === '');
   // Each sample: the activity line on screen and whether it is the block's one element, from the send until the bridge
   // reports the turn's end; the provider holds the turn for 3 s of wall-clock time first.
-  const samples: string[] = [], sample = () => { const s = status(); samples.push(JSON.stringify(s ? { line: s.textContent, alone: reply()!.children.length === 1 } : null)); };
+  const samples: string[] = [], sample = () => { const s = status(); samples.push(JSON.stringify(s ? { line: s.textContent, alone: required(reply(), "Expected reply() to be non-null").children.length === 1 } : null)); };
   for (const held = Date.now() + 3000; Date.now() < held;) { sample(); await new Promise(r => setTimeout(r, 25)); }
   f.release(profile);
   const ended = () => { const d = host.deltas(fresh), open = d.filter(x => x.kind === 'turn.open')[opened]; return !!open && d.slice(d.indexOf(open)).some(x => x.kind === 'turn.boundary'); };
@@ -143,5 +144,5 @@ test('a send on a new surface whose turn the provider fails before any step: the
   assert.deepEqual([...new Set(samples)], [JSON.stringify({ line: 'Reading your message', alone: true })]);
   // acceptance-live-activity-ends: once the turn has ended, no line (the failed turn has no words to show).
   await until('the line to go once the turn has ended', () => status() === null);
-  assert.equal(reply()!.textContent, '');
+  assert.equal(required(reply(), "Expected reply() to be non-null").textContent, '');
 });

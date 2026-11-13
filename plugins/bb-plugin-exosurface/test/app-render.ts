@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // Rendered-app harness (#68): package.json bb.app (app.tsx) bundled as BB bundles it, loaded into the BB SDK's own app test
 // runtime (@get-bb/plugin-sdk/testing/app: renderSlot with fake rpc handlers) on a jsdom document. One React for the app
 // and the runtime, as in BB. Used by test/*.test.ts and demo/surfaces.
@@ -72,10 +73,10 @@ export function rightAligned(el: Element): boolean {
   const own = css(el), parent = el.parentElement ? css(el.parentElement) : null, display = parent?.display ?? '';
   if (own.float === 'right') return true;
   if (display.endsWith('flex')) {
-    const column = (parent!.flexDirection ?? '').startsWith('column');
-    return own.marginLeft === 'auto' || (column ? edge(own.alignSelf) || (['', 'auto'].includes(own.alignSelf) && edge(parent!.alignItems)) : edge(parent!.justifyContent));
+    const column = (required(parent, "Expected parent to be non-null").flexDirection ?? '').startsWith('column');
+    return own.marginLeft === 'auto' || (column ? edge(own.alignSelf) || (['', 'auto'].includes(own.alignSelf) && edge(required(parent, "Expected parent to be non-null").alignItems)) : edge(required(parent, "Expected parent to be non-null").justifyContent));
   }
-  if (display.endsWith('grid')) return own.marginLeft === 'auto' || edge(own.justifySelf) || (['', 'auto'].includes(own.justifySelf) && edge(parent!.justifyItems));
+  if (display.endsWith('grid')) return own.marginLeft === 'auto' || edge(own.justifySelf) || (['', 'auto'].includes(own.justifySelf) && edge(required(parent, "Expected parent to be non-null").justifyItems));
   if (own.display.startsWith('inline')) return ['right', 'end'].includes(parent?.textAlign ?? '');
   // A block box: an auto left margin moves it right only when it is narrower than its container.
   const shrunk = !['', 'auto', '100%'].includes(own.width) || !['', 'none', '100%'].includes(own.maxWidth) || own.display === 'table';
@@ -202,10 +203,10 @@ export function gradientStops(text: string): { color: string; at: number | null 
   const only = value(text);
   if (!only || only.type !== 'Function' || only.name !== 'linear-gradient') return [];
   const groups: CssNode[][] = [[]];
-  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push([]); else groups.at(-1)!.push(n); });
+  only.children.forEach(n => { if (n.type === 'Operator' && n.value === ',') groups.push([]); else required(groups.at(-1), "Expected groups.at(-1) to be non-null").push(n); });
   const direction = (g: CssNode[]) => g.some(n => n.type === 'Dimension' && /deg|turn|rad/.test(n.unit)) || (g[0]?.type === 'Identifier' && g[0].name === 'to');
   return groups.filter(g => g.length && !direction(g)).map(g => {
-    const p = g.at(-1)!, at = g.length > 1 && p.type === 'Percentage' ? Number(p.value) / 100 : null;
+    const p = required(g.at(-1), "Expected g.at(-1) to be non-null"), at = g.length > 1 && p.type === 'Percentage' ? Number(p.value) / 100 : null;
     return { color: (at === null ? g : g.slice(0, -1)).map(n => generate(n)).join(' '), at };
   });
 }

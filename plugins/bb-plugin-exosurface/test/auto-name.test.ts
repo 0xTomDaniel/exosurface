@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 // #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until the person's first message
 // is sent; then, beside Exo's turn, the naming model from the Exosurface local config names it once from that message (and Exo's
 // reply if it has already arrived). Home never is.
@@ -40,7 +41,7 @@ const optchatRewrite = (profile: string) => {
 };
 /** New surface through the server, started by BB with its first message, as the sidebar's button does. */
 async function newSurface() {
-  const { threadId } = await f.rpc["thread_new"](null);
+  const { threadId } = await f.rpc.thread_new(null);
   assert.equal((await host.start(threadId, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(threadId) > 0);
   return threadId;
@@ -48,20 +49,20 @@ async function newSurface() {
 /** The person's message on a surface, through its input (exo_send), until Exo's turn has ended. */
 async function turn(threadId: string, text: string) {
   const before = boundaries(threadId);
-  await f.rpc["exo_send"]({ threadId, text });
+  await f.rpc.exo_send({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
-const listed = async () => (await f.rpc["thread_list"](null)).threads.map((t: any) => t.title);
+const listed = async () => (await f.rpc.thread_list(null)).threads.map((t: any) => t.title);
 /** The surface's name as the server lists it (thread_list, what every view reads). */
-const listedName = async (threadId: string) => (await f.rpc["thread_list"](null)).threads.find((t: any) => t.threadId === threadId)?.title;
+const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
 /** A published log line about this surface at this level. */
 const logged = (level: string, threadId: string, text: string | RegExp) => f.logs.some(l => l.startsWith(`${level}:`) && l.includes(threadId) && (typeof text === 'string' ? l.includes(text) : text.test(l)));
 
-test('a new surface is named from its first message by the namer\'s answer, in the rendered sidebar and the title at the top; a second turn does not rename it; Home keeps its name', async () => {
+void test('a new surface is named from its first message by the namer\'s answer, in the rendered sidebar and the title at the top; a second turn does not rename it; Home keeps its name', async () => {
   f.model.state.reply = 'Spring vegetable garden';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
-  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const sidebar = () => required(view.container.querySelector('nav[aria-label="Surfaces"]'), "Expected view.container.querySelector('nav[aria-label=\"Surfaces\"]') to be non-null");
   const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   /** The surface's title at the top of the view (the header's text). */
@@ -69,17 +70,17 @@ test('a new surface is named from its first message by the namer\'s answer, in t
   const { fireEvent } = kit.testing;
   try {
     await until('Home listed', () => entries().join('|') === 'Home');
-    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
     await until('the new surface listed', () => entries().join('|') === 'Home|New surface');
-    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
-    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    await until('the new surface ready', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && boundaries(made) > 0 && title() === 'New surface');
     assert.ok(await unchanged(() => f.model.requests.length > 0 || title() !== 'New surface'), 'not named before its first message');
     assert.deepEqual(entries(), ['Home', 'New surface'], 'not named before its first message');
     assert.equal(f.model.requests.length, 0);
 
     const sent = boundaries(made);
-    fireEvent.change(input()!, { target: { value: 'Help me plan a vegetable garden for spring' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'Help me plan a vegetable garden for spring' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('Exo\'s first turn ends', () => boundaries(made) > sent);
     await until('the sidebar shows the name', () => entries().join('|') === 'Home|Spring vegetable garden');
@@ -91,7 +92,7 @@ test('a new surface is named from its first message by the namer\'s answer, in t
 
     const second = boundaries(made);
     f.model.state.reply = 'Something else entirely';
-    fireEvent.change(input()!, { target: { value: 'Add tomatoes to the plan' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'Add tomatoes to the plan' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('Exo\'s second turn ends', () => boundaries(made) > second);
     assert.ok(await unchanged(() => f.model.requests.length > 1 || entries()[1] !== 'Spring vegetable garden' || title() !== 'Spring vegetable garden'), 'a second turn does not rename it');
@@ -110,11 +111,11 @@ test('a new surface is named from its first message by the namer\'s answer, in t
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('acceptance-auto-name: the name shows in the title and the sidebar while Exo\'s first turn is still running, from the first message alone; it stays after the turn and a later send; the namer is asked once', async () => {
+void test('acceptance-auto-name: the name shows in the title and the sidebar while Exo\'s first turn is still running, from the first message alone; it stays after the turn and a later send; the namer is asked once', async () => {
   f.model.state.reply = 'Garden beds while working';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
-  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const sidebar = () => required(view.container.querySelector('nav[aria-label="Surfaces"]'), "Expected view.container.querySelector('nav[aria-label=\"Surfaces\"]') to be non-null");
   const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
@@ -122,16 +123,16 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
-    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    await until('the new surface ready', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && boundaries(made) > 0 && title() === 'New surface');
     const asked = f.model.requests.length, sent = boundaries(made);
 
     // Exo's turn is held (the fake Exo model answers a "hold:" message only on release): the name must come meanwhile.
-    fireEvent.change(input()!, { target: { value: 'hold: Help me plan raised garden beds' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'hold: Help me plan raised garden beds' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('the title and the sidebar show the name while Exo\'s turn runs', () => title() === 'Garden beds while working' && entries()[1] === 'Garden beds while working');
     assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
@@ -145,7 +146,7 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
     await until('Exo\'s turn ends', () => boundaries(made) > sent);
     f.model.state.reply = 'Something else entirely';
     const later = boundaries(made);
-    fireEvent.change(input()!, { target: { value: 'Add a herb bed' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'Add a herb bed' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('the later turn ends', () => boundaries(made) > later);
     assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Garden beds while working' || entries()[1] !== 'Garden beds while working'), true, 'the name stays after the turn and a later send');
@@ -156,11 +157,11 @@ test('acceptance-auto-name: the name shows in the title and the sidebar while Ex
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('acceptance-auto-name: an agent\'s or the system\'s message on a new surface before the person\'s first message names nothing and uses up nothing; the person\'s first message then names it while Exo\'s turn runs, once', async () => {
+void test('acceptance-auto-name: an agent\'s or the system\'s message on a new surface before the person\'s first message names nothing and uses up nothing; the person\'s first message then names it while Exo\'s turn runs, once', async () => {
   f.model.state.reply = 'Rose garden';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
-  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const sidebar = () => required(view.container.querySelector('nav[aria-label="Surfaces"]'), "Expected view.container.querySelector('nav[aria-label=\"Surfaces\"]') to be non-null");
   const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
@@ -168,12 +169,12 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
     const profile = f.piRuns().at(-1).profile;
-    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    await until('the new surface ready', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && boundaries(made) > 0 && title() === 'New surface');
     const asked = f.model.requests.length;
 
     // First another thread tells the surface something (agent), then a system notice reaches it; each is a full Exo turn.
@@ -189,7 +190,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
 
     // The person's first message names it, from that message, while Exo's turn is still running.
     const sent = boundaries(made);
-    fireEvent.change(input()!, { target: { value: 'hold: Plan a rose garden by the porch' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'hold: Plan a rose garden by the porch' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('the name while Exo\'s turn runs', () => title() === 'Rose garden' && entries()[1] === 'Rose garden');
     assert.equal(boundaries(made) === sent, true, 'Exo\'s turn had not ended when the name showed');
@@ -205,7 +206,7 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
     await f.tell(made, 'quiet: another agent note', { senderThreadId: 'thread-other' });
     await until('the agent\'s later turn ends', () => boundaries(made) > later);
     const last = boundaries(made);
-    fireEvent.change(input()!, { target: { value: 'Add climbing roses' } });
+    fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'Add climbing roses' } });
     fireEvent.click(view.getByRole('button', { name: 'Send' }));
     await until('the later turn ends', () => boundaries(made) > last);
     assert.equal(await unchanged(() => f.model.requests.length - asked > 1 || title() !== 'Rose garden'), true, 'named once');
@@ -214,11 +215,11 @@ test('acceptance-auto-name: an agent\'s or the system\'s message on a new surfac
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('acceptance-auto-name: 150 agent messages on a new surface, then the person\'s first message sent with BB\'s Send-now (no dispatch pass): it is found past BB\'s event page of 100 and names the surface once Exo\'s turn ends', async () => {
+void test('acceptance-auto-name: 150 agent messages on a new surface, then the person\'s first message sent with BB\'s Send-now (no dispatch pass): it is found past BB\'s event page of 100 and names the surface once Exo\'s turn ends', async () => {
   f.model.state.reply = 'Creek orchard';
   const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
   f.realtime.deliver = (channel, payload) => { void view.emitRealtime(channel, payload); };
-  const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]')!;
+  const sidebar = () => required(view.container.querySelector('nav[aria-label="Surfaces"]'), "Expected view.container.querySelector('nav[aria-label=\"Surfaces\"]') to be non-null");
   const entries = () => [...(view.container.querySelector('nav[aria-label="Surfaces"]')?.querySelectorAll('li') ?? [])].map(li => li.textContent);
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
   const title = () => view.container.querySelector('main h1')?.textContent ?? null;
@@ -226,11 +227,11 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li'))!);
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
-    const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
+    const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
-    await until('the new surface ready', () => !!input() && !input()!.disabled && boundaries(made) > 0 && title() === 'New surface');
+    await until('the new surface ready', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && boundaries(made) > 0 && title() === 'New surface');
     const asked = f.model.requests.length;
     // Another thread tells the surface 150 things: BB admits and logs each (author "agent"); their turns are not what this
     // is about, so the provider is not reached for them.
@@ -253,7 +254,7 @@ test('acceptance-auto-name: 150 agent messages on a new surface, then the person
   } finally { view.unmount(); f.realtime.deliver = undefined; }
 });
 
-test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
+void test('the namer is the Exosurface local config\'s "namer" (provider, model, thinking), kept through OptChat\'s own profile rewrites; absent, openai/gpt-6-luna with thinking off', async () => {
   // Absent: the default, as the model receives it.
   setNamer(undefined);
   f.model.state.reply = 'Cabin trip';
@@ -272,7 +273,7 @@ test('the namer is the Exosurface local config\'s "namer" (provider, model, thin
   optchatRewrite(f.piRuns().at(-1).profile);
   await turn(haiku, 'What do I need for my tax return?');
   await until('named', async () => (await listedName(haiku)) === 'Tax return checklist');
-  const asked = f.model.requests.at(-1)!;
+  const asked = required(f.model.requests.at(-1), "Expected f.model.requests.at(-1) to be non-null");
   assert.deepEqual([asked.path.split('?')[0], asked.body.model], ['/v1/messages', 'claude-haiku-5-5']);
   // Thinking as the model receives it: Pi sends a managed-effort model's level as the trailing system message's effort.
   assert.equal(asked.body.messages.filter((m: any) => m.role === 'system').at(-1)?.output_config?.effort, 'low');
@@ -280,7 +281,7 @@ test('the namer is the Exosurface local config\'s "namer" (provider, model, thin
   setNamer(undefined);
 });
 
-test('a failing namer leaves "New surface" and logs why; an invalid namer is never replaced by another model', async () => {
+void test('a failing namer leaves "New surface" and logs why; an invalid namer is never replaced by another model', async () => {
   f.model.state.fail = 400;
   const failing = await newSurface();
   await turn(failing, 'Sort out the garage');
