@@ -45,7 +45,7 @@ export function parseLines(src:string,base=0):Line[]{
  src.replace(/\r/g,'').split('\n').forEach((raw,i)=>{
   if(!raw.trim()||raw.trim().startsWith('#'))return;
   const indent=raw.match(/^ */)![0].length,m=HEAD.exec(raw.trim());
-  if(!m)throw Error(`line ${base+i+1}: expected "- role \\"name\\" [attrs]: text", got: ${raw.trim().slice(0,80)}`);
+  if(!m)throw Error(`line ${String(base+i+1)}: expected "- role \\"name\\" [attrs]: text", got: ${raw.trim().slice(0,80)}`);
   const attrs:Record<string,string|true>={};
   for(const a of (m[3]??'').match(/\[[^\]]*\]/g)??[]){const [k,...v]=a.slice(1,-1).split('=');attrs[k.trim()]=v.length?v.join('=').trim():true;}
   const node:Line={depth:indent,role:m[1],name:m[2]!==undefined?JSON.parse(`"${m[2]}"`):undefined,attrs,text:m[4]?.trim()?unescapeText(m[4].trim()):undefined,children:[],at:base+i+1};
@@ -65,7 +65,7 @@ export function formatLines(lines:Line[],depth=0):string{
  }).join('\n');
 }
 
-const num=(v:unknown,at:number,what:string)=>{const n=Number(String(v).replace(/[,\s]/g,''));if(!Number.isFinite(n))throw Error(`line ${at}: ${what} must be a number, got ${v}`);return n;};
+const num=(v:unknown,at:number,what:string)=>{const n=Number(String(v).replace(/[,\s]/g,''));if(!Number.isFinite(n))throw Error(`line ${String(at)}: ${what} must be a number, got ${v}`);return n;};
 const cells=(t:string|undefined)=>(t??'').split(/(?<!\\)\|/).map(s=>s.trim().replace(/\\\|/g,'|'));
 const joinCells=(c:string[])=>c.map(s=>String(s).replace(/\|/g,'\\|')).join(' | ');
 const prop=(n:Line,key:string)=>n.children.find(c=>c.role===`/${key}`)?.text;
@@ -78,18 +78,18 @@ type Built={sid:string;title?:string;components:any[];data:Record<string,unknown
 /** One region line → one surface (components root-first, data). Helper nodes get ids derived
  *  from their parent (`<id>__label`, `<id>__body`, …) so translation is deterministic. */
 export function buildSurface(region:Line):Built{
- if(region.role!=='region')throw Error(`line ${region.at}: top-level lines must be pages (region lines)`);
- const sid=String(region.attrs["ref"]??'');if(!ID.test(sid))throw Error(`line ${region.at}: region needs [ref=page_id]`);
+ if(region.role!=='region')throw Error(`line ${String(region.at)}: top-level lines must be pages (region lines)`);
+ const sid=String(region.attrs["ref"]??'');if(!ID.test(sid))throw Error(`line ${String(region.at)}: region needs [ref=page_id]`);
  const components:any[]=[],data:Record<string,unknown>={},used=new Set<string>(['root']);let auto=0;
- const claim=(v:string,at:number)=>{if(!ID.test(v))throw Error(`line ${at}: bad ref ${v}`);if(used.has(v))throw Error(`line ${at}: duplicate ref ${v}`);used.add(v);return v;};
- const id=(n:Line,hint:string)=>{if(typeof n.attrs["ref"]==='string')return claim(n.attrs["ref"],n.at);let v;do v=`${hint}${++auto}`;while(used.has(v));return claim(v,n.at);};
+ const claim=(v:string,at:number)=>{if(!ID.test(v))throw Error(`line ${String(at)}: bad ref ${v}`);if(used.has(v))throw Error(`line ${String(at)}: duplicate ref ${v}`);used.add(v);return v;};
+ const id=(n:Line,hint:string)=>{if(typeof n.attrs["ref"]==='string')return claim(n.attrs["ref"],n.at);let v;do v=`${hint}${String(++auto)}`;while(used.has(v));return claim(v,n.at);};
  const kids=(ls:Line[])=>ls.filter(k=>!k.role.startsWith('/'));
  const stack=(i:string,ls:Line[],layout:'Column'|'Row'='Column')=>{claim(i,0);const c:any={id:i,component:layout,children:[]};components.push(c);c.children=kids(ls).map(build);return i;};
  const titled=(name:string|undefined,owner:string,ls:Line[])=>name!==undefined?[L('heading',{name,attrs:{ref:`${owner}__title`,level:'3'}}),...ls]:ls;
  const build=(n:Line):string=>{
   const a=n.attrs;
   switch(n.role){
-   case 'heading':{const i=id(n,'h');components.push({id:i,component:'Text',text:n.name??n.text??'',variant:`h${Math.min(3,Math.max(1,Number(a["level"]??2)))}`});return i;}
+   case 'heading':{const i=id(n,'h');components.push({id:i,component:'Text',text:n.name??n.text??'',variant:`h${String(Math.min(3,Math.max(1,Number(a["level"]??2))))}`});return i;}
    case 'text':case 'paragraph':{const i=id(n,'t');components.push(clean({id:i,component:'Text',text:n.text??n.name??'',variant:a["caption"]?'caption':undefined}));return i;}
    case 'separator':{const i=id(n,'d');components.push({id:i,component:'Divider'});return i;}
    case 'article':{const i=id(n,'c'),c:any={id:i,component:'Card',child:''};components.push(c);c.child=stack(`${i}__body`,titled(n.name,i,n.children));return i;}
@@ -99,18 +99,18 @@ export function buildSurface(region:Line):Built{
    case 'list':{
     const items=n.children.filter(k=>k.role==='listitem');
     if(a["timeline"]){const i=id(n,'tl');components.push({id:i,component:'Timeline',items:items.map(k=>clean({label:k.name??k.text??'',when:typeof k.attrs["when"]==='string'?k.attrs["when"]:undefined,detail:k.name!==undefined?k.text:undefined,state:typeof k.attrs["state"]==='string'?k.attrs["state"]:undefined}))});return i;}
-    if(a["flow"]){const i=id(n,'fl'),nodes=items.map((k,j)=>({id:typeof k.attrs["ref"]==='string'?k.attrs["ref"]:`n${j+1}`,k}));
+    if(a["flow"]){const i=id(n,'fl'),nodes=items.map((k,j)=>({id:typeof k.attrs["ref"]==='string'?k.attrs["ref"]:`n${String(j+1)}`,k}));
      components.push(clean({id:i,component:'Flow',caption:n.name,direction:typeof a["direction"]==='string'?a["direction"]:undefined,nodes:nodes.map(({id,k})=>clean({id,label:k.name??k.text??'',detail:k.name!==undefined?k.text:undefined,tone:tone(k)})),edges:nodes.flatMap(({id,k})=>typeof k.attrs["to"]==='string'?k.attrs["to"].split(',').map(t=>({from:id,to:t.trim()})):[])}));return i;}
     const i=id(n,'l'),c:any={id:i,component:'List',children:[]};
     const wrap=n.name!==undefined?`${i}__wrap`:null;
     if(wrap){claim(wrap,n.at);components.push({id:wrap,component:'Column',children:[]});}
     components.push(c);
     if(wrap){const w=components.find(x=>x.id===wrap);claim(`${i}__title`,n.at);components.push({id:`${i}__title`,component:'Text',text:n.name,variant:'h3'});w.children=[`${i}__title`,i];}
-    c.children=items.map((k,j)=>{const item=`${i}__item${j+1}`;
+    c.children=items.map((k,j)=>{const item=`${i}__item${String(j+1)}`;
      if(!k.children.length){claim(item,k.at);components.push({id:item,component:'Text',text:k.text??k.name??''});return item;}
      return stack(item,[...(k.text?[L('text',{text:k.text,attrs:{ref:`${item}__text`}})]:[]),...k.children]);});
     return wrap??i;}
-   case 'tablist':{const i=id(n,'tabs'),c:any={id:i,component:'Tabs',tabs:[]};components.push(c);c.tabs=n.children.filter(k=>k.role==='tab').map((k,j)=>({title:k.name??k.text??'Tab',child:stack(`${i}__tab${j+1}`,k.children)}));return i;}
+   case 'tablist':{const i=id(n,'tabs'),c:any={id:i,component:'Tabs',tabs:[]};components.push(c);c.tabs=n.children.filter(k=>k.role==='tab').map((k,j)=>({title:k.name??k.text??'Tab',child:stack(`${i}__tab${String(j+1)}`,k.children)}));return i;}
    case 'note':{const i=id(n,'n'),text=[n.text,...n.children.filter(k=>k.role==='text').map(k=>k.text)].filter(Boolean).join('\n\n');components.push(clean({id:i,component:'Callout',title:n.name,tone:typeof a["tone"]==='string'?a["tone"]:undefined,text}));return i;}
    case 'meter':{const i=id(n,'m');components.push(clean({id:i,component:'Metric',label:n.name??'',value:n.text??'',detail:prop(n,'detail'),tone:tone(n),progress:a["progress"]!==undefined?num(a["progress"],n.at,'progress'):undefined}));return i;}
    case 'table':{const i=id(n,'tb'),rows=n.children.filter(k=>k.role==='row'),head=rows.find(r=>r.attrs["header"])??rows[0];
@@ -127,16 +127,16 @@ export function buildSurface(region:Line):Built{
     components.push({id:i,component:'ChoicePicker',label:n.name??'',options,value:{path:`/${i}`},variant:n.role==='radiogroup'?'mutuallyExclusive':'multipleSelection',displayStyle:a["chips"]?'chips':'checkbox'});return i;}
    case 'button':{const i=id(n,'b'),label=claim(`${i}__label`,n.at);components.push({id:label,component:'Text',text:n.name??n.text??'OK'});
     const sends=typeof a["sends"]==='string'?a["sends"].split(',').map(s=>s.trim()).filter(Boolean):[];
-    if(sends.length>MAX_SENDS)throw Error(`line ${n.at}: button "${n.name??i}" sends ${sends.length} inputs; at most ${MAX_SENDS}. Inputs are saved as the person edits them, so send only the ones the button is about, or none.`);
+    if(sends.length>MAX_SENDS)throw Error(`line ${String(n.at)}: button "${n.name??i}" sends ${String(sends.length)} inputs; at most ${String(MAX_SENDS)}. Inputs are saved as the person edits them, so send only the ones the button is about, or none.`);
     components.push({id:i,component:'Button',child:label,variant:a["primary"]?'primary':a["borderless"]?'borderless':'default',action:{event:{name:typeof a["action"]==='string'?a["action"]:i,context:Object.fromEntries(sends.map(s=>[s,{path:`/${s}`}]))}}});return i;}
-   default:throw Error(`line ${n.at}: unknown role "${n.role}"`);
+   default:throw Error(`line ${String(n.at)}: unknown role "${n.role}"`);
   }
  };
  // The region name titles the surface; rendered only when the surface doesn't open with its own heading.
  const first=kids(region.children)[0],body=region.name!==undefined&&first?.role!=='heading'?[L('heading',{name:region.name,attrs:{ref:`${sid}__title`,level:'2'}}),...region.children]:region.children;
  const root:any={id:'root',component:'Column',children:[]};components.push(root);root.children=kids(body).map(build);
  components.sort((x,y)=>x.id==='root'?-1:y.id==='root'?1:0);
- if(components.length>64)throw Error(`page ${sid}: ${components.length} components exceeds 64`);
+ if(components.length>64)throw Error(`page ${sid}: ${String(components.length)} components exceeds 64`);
  return {sid,title:region.name,components,data};
 }
 

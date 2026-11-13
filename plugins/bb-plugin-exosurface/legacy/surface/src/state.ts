@@ -15,7 +15,7 @@ export const PI_CLI = local('piCli');
 export const OPTCHAT = local('optchatCanvas');
 export function save(file: string, value: unknown) {
   mkdirSync(join(file, '..'), { recursive: true, mode: 0o700 });
-  const temporary = `${file}.${process.pid}.tmp`;
+  const temporary = `${file}.${String(process.pid)}.tmp`;
   writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 }); renameSync(temporary, file);
 }
 export function load(file: string): any { return JSON.parse(readFileSync(file, 'utf8')); }

@@ -40,7 +40,7 @@ this.budget = budget;
  }
  private async request(path:string,body:unknown,call:Call,signal:AbortSignal){
   const r=await this.transport(`https://openrouter.ai/api/v1/${path}`,{method:'POST',headers:{Authorization:`Bearer ${this.key()}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.any([signal,AbortSignal.timeout(20000)])});
-  call.httpStatus=r.status;if(!r.ok)throw Error(`Composition provider HTTP ${r.status}; response hidden`);return r;
+  call.httpStatus=r.status;if(!r.ok)throw Error(`Composition provider HTTP ${String(r.status)}; response hidden`);return r;
  }
  private usage(c:Call,u:any){if(!u)return;c.inputTokens=u.input_tokens??u.prompt_tokens??null;c.outputTokens=u.output_tokens??u.completion_tokens??null;c.cachedTokens=u.prompt_tokens_details?.cached_tokens??null;c.costUsd=typeof u.cost==='number'?u.cost:null;}
  private done(c:Call,ok:boolean){c.status=ok?'complete':'failed';c.elapsedMs=Math.round(now()-this.origin-c.startedMs);}

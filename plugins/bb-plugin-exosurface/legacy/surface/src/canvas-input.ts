@@ -5,12 +5,12 @@ import {retirement,versionSnapshot,type Version} from './canvas-history.ts';
 // so a press's typed text is never refused here (#143). The owners' socket checks use the same number.
 export const MAX_OWNER_COMMAND_UNITS=20000;
 export function assertOwnerCommand(request:unknown){
- if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error(`Page command exceeds ${MAX_OWNER_COMMAND_UNITS} serialized UTF-16 units. Nothing was changed or sent.`);
+ if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error(`Page command exceeds ${String(MAX_OWNER_COMMAND_UNITS)} serialized UTF-16 units. Nothing was changed or sent.`);
 }
 export type DataRequest={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
 export function planData(current:Snapshot,r:DataRequest){
  assertOwnerCommand(r);
- if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);
+ if(r.revision!==current.revision)throw Error(`stale_revision ${String(current.revision)}`);
  if(r.keep===true){
   if(!/^[0-9a-f-]{36}$/.test(r.mutationId)||!Array.isArray(r.updates)||r.updates.length||!moduleIds(current).includes(r.surfaceId))throw Error('Invalid Keep');
   const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages:[],kept:[...new Set([...(current.kept??[]),r.surfaceId])]};

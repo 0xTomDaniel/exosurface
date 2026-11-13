@@ -27,7 +27,7 @@ export const MAX_NAME = 80;
 export function personName(name: string) {
   const clean = name.trim().replace(/\s+/g, ' ');
   if (!clean) throw new Error('A surface name cannot be empty');
-  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${MAX_NAME} characters`);
+  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${String(MAX_NAME)} characters`);
   return clean;
 }
 

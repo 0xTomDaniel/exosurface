@@ -30,7 +30,7 @@ function audit(s: Session, event: string, extra: Record<string, unknown> = {}) {
 }
 function open(s: Session) { if (!s.open) { s.open = true; s.failed = false; emit(s, [{ kind: 'turn.open' }]); } }
 function message(s: Session, value: string) {
-  open(s); const key = { providerItemId: `exo-${++s.serial}` };
+  open(s); const key = { providerItemId: `exo-${String(++s.serial)}` };
   emit(s, [{ kind: 'item.open', key, item: { type: 'agentMessage', text: '' } },
     { kind: 'item.textClose', key, channel: 'agentMessage', text: value }]);
 }
@@ -42,7 +42,7 @@ function event(s: Session, e: any) {
   audit(s, e.type, e.type === 'extension_ui_request' ? { method: e.method } : {});
   if (e.type === 'agent_start') open(s);
   if (e.type === 'message_start' && e.message.role === 'assistant') {
-    open(s); s.messageKey = `exo-${++s.serial}`;
+    open(s); s.messageKey = `exo-${String(++s.serial)}`;
     emit(s, [{ kind: 'item.open', key: { providerItemId: s.messageKey }, item: { type: 'agentMessage', text: '' } }]);
   }
   if (e.type === 'message_update' && e.assistantMessageEvent.type === 'text_delta' && s.messageKey)

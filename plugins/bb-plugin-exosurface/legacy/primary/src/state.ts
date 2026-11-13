@@ -19,7 +19,7 @@ export const PI_CLI = local('piCli');
 export const OPTCHAT = local('optchat');
 export function save(file: string, value: unknown) {
   mkdirSync(join(file, '..'), { recursive: true, mode: 0o700 });
-  const temporary = `${file}.${process.pid}.tmp`;
+  const temporary = `${file}.${String(process.pid)}.tmp`;
   writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 }); renameSync(temporary, file);
 }
 export function load(file: string): any { return JSON.parse(readFileSync(file, 'utf8')); }
@@ -59,7 +59,7 @@ export function runs(profile: string, limit?: number): any[] {
   if (!limit) return readdirSync(directory).filter(f => f.endsWith('.optchat.json')).map(f => load(join(directory, f)));
   // Native metadata is atomically replaced: directory mtime invalidates this
   // bounded view cache. Historical reports aren't reread/transmitted per poll.
-  const mtime = statSync(directory).mtimeMs, key = `${directory}:${limit}`;
+  const mtime = statSync(directory).mtimeMs, key = `${directory}:${String(limit)}`;
   const cached = recentRuns.get(key); if (cached?.mtime === mtime) return cached.rows;
   const rows = readdirSync(directory).filter(f => f.endsWith('.optchat.json'))
     .map(f => ({ f, at: statSync(join(directory,f)).mtimeMs })).sort((a,b) => b.at-a.at).slice(0,limit)
