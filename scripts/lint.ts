@@ -28,9 +28,12 @@ const exempt = new Set(execFileSync("python", ["-B", "scripts/source-inventory.p
 const unique = [...new Set(files)].filter((file) => !exempt.has(file) && !isDeferredTree(file)).sort();
 
 
-/** Check or record each measured gate; returns false when any gate fails or recording refuses. */
-function ratchet(gates: Record<string, Finding[]>): boolean {
-  const current: Record<string, Counts> = Object.fromEntries(Object.entries(gates).map(([gate, list]) => [gate, counts(list)]));
+/**
+ * Check or record each measured gate; returns false when any gate fails or recording refuses. withMessage: the
+ * message is part of the key (knip); compiler and ESLint key by [file, rule] (scripts/standards-baseline.ts).
+ */
+function ratchet(gates: Record<string, Finding[]>, withMessage: boolean): boolean {
+  const current: Record<string, Counts> = Object.fromEntries(Object.entries(gates).map(([gate, list]) => [gate, counts(list, withMessage)]));
   if (recording) {
     if (initial && process.argv.includes("--record-baseline")) {
       console.error("standards baseline: refused: use --record-initial or --record-baseline, not both");
@@ -56,6 +59,11 @@ function ratchet(gates: Record<string, Finding[]>): boolean {
     try {
       const result = check(gate, values, baselineFile);
       for (const line of describeResult(result)) console.error(line);
+      // A raised [file, rule] key: print its findings' messages so the new one can be found.
+      for (const { finding } of result.raised) {
+        if (finding.message !== undefined) continue;
+        for (const listed of gates[gate] ?? []) if (listed.file === finding.file && listed.code === finding.code) console.error(`    ${listed.message}`);
+      }
       ok &&= result.ok;
     } catch (error) {
       console.error(`${gate}: unanswered: ${error instanceof Error ? error.message : String(error)}`);
@@ -77,7 +85,7 @@ function knip(): void {
   const byType = new Map<string, number>();
   for (const finding of findings) byType.set(finding.code, (byType.get(finding.code) ?? 0) + 1);
   console.error(`knip: ${[...byType].map(([type, count]) => `${type} ${String(count)}`).join(", ") || "no issues"}`);
-  process.exitCode = ratchet({ knip: findings }) ? 0 : 1;
+  process.exitCode = ratchet({ knip: findings }, true) ? 0 : 1;
 }
 
 // ESLint's JSON formatter output (`--format json`); anything else is unanswered.
@@ -136,7 +144,7 @@ function eslint(): void {
     }
   }
   console.error(`ESLint: ${String(errors)} errors, ${String(warnings)} warnings`);
-  process.exitCode = ratchet({ eslint: findings }) ? 0 : 1;
+  process.exitCode = ratchet({ eslint: findings }, false) ? 0 : 1;
 }
 
 /** One compiler project's answer, as its child process prints it; anything else is unanswered. */
@@ -183,7 +191,7 @@ function compiler(projects: string[]): void {
   if (process.argv.includes("--compiler-files")) {
     for (const file of unique.filter((file) => union.has(path.resolve(file)))) console.log(path.resolve(file));
   }
-  const covered = ratchet(gates);
+  const covered = ratchet(gates, false);
   process.exitCode = covered && missing.length === 0 ? 0 : 1;
 }
 

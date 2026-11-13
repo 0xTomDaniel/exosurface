@@ -18,12 +18,14 @@ const deferred = [
 ];
 const covers = `owner deferral ${TREES} covers exactly plugins/bb-plugin-exo-spike/ spikes/a2a-pi/ spikes/ag-ui-pi/`;
 const STRING_TO_NUMBER = "Type 'string' is not assignable to type 'number'.";
-const keyA = `["src/a.ts","TS2322","${STRING_TO_NUMBER}"]`;
-const eslintKey = '["src/z.ts","@typescript-eslint/no-explicit-any","Unexpected any. Specify a different type."]';
+// Compiler and ESLint keys are [file, rule/code] (TypeScript prints type text non-deterministically); knip keys keep
+// the issue name. Accepted: within one file and one rule, fixing one finding and adding another passes.
+const keyA = '["src/a.ts","TS2322"]';
+const eslintKey = '["src/z.ts","@typescript-eslint/no-explicit-any"]';
 const baselineFile = (root: string) => join(root, 'scripts/standards-baseline.json');
 const compiler = (root: string, ...flags: string[]) => run(root, lintCommand, ['--compiler', ...flags, '--project=tsconfig.json']);
 
-void test('gate-ratchet: one added compiler finding fails, naming the gate, its count, its baseline and the raised key', t => {
+void test('gate-ratchet: a finding in a new file fails, naming the gate, its count, its baseline, the raised key and its message', t => {
   const f = gateFixture(); t.after(f.remove);
   f.write('src/a.ts', 'export const a: number = "x";\n');
   f.write('scripts/standards-baseline.json', `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify(keyA)}: 1\n    }\n  }\n}\n`);
@@ -33,7 +35,44 @@ void test('gate-ratchet: one added compiler finding fails, naming the gate, its 
   assert.equal(result.status, 1);
   assert.deepEqual(gateLines(result.stderr), [...deferred,
     'tsc:tsconfig.json: 2 findings, baseline 1; FAILED: 1 finding keys above the baseline',
-    `  src/b.ts TS2322 (1 > baseline 0): ${STRING_TO_NUMBER}`]);
+    '  src/b.ts TS2322 (1 > baseline 0)']);
+  assert.ok(result.stderr.includes(`  src/b.ts TS2322 (1 > baseline 0)\n    ${STRING_TO_NUMBER}\n`));
+});
+
+void test('gate-ratchet: a count rise within one file and rule fails', t => {
+  const f = gateFixture(); t.after(f.remove);
+  f.write('src/a.ts', 'export const a: number = "x";\nexport const c: number = "z";\n');
+  f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(keyA)}:1}}}\n`);
+  git(f.root, 'add', '-A');
+  const result = compiler(f.root);
+  assert.equal(result.status, 1);
+  assert.deepEqual(gateLines(result.stderr), [...deferred,
+    'tsc:tsconfig.json: 2 findings, baseline 1; FAILED: 1 finding keys above the baseline',
+    '  src/a.ts TS2322 (2 > baseline 1)']);
+});
+
+void test('gate-ratchet: a new rule in a file that already has baselined findings fails', t => {
+  const f = gateFixture(); t.after(f.remove);
+  f.write('src/a.ts', 'export const a: number = "x";\nexport const m = missing;\n');
+  f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(keyA)}:1}}}\n`);
+  git(f.root, 'add', '-A');
+  const result = compiler(f.root);
+  assert.equal(result.status, 1);
+  assert.deepEqual(gateLines(result.stderr), [...deferred,
+    'tsc:tsconfig.json: 2 findings, baseline 1; FAILED: 1 finding keys above the baseline',
+    '  src/a.ts TS2304 (1 > baseline 0)']);
+  assert.ok(result.stderr.includes("    Cannot find name 'missing'.\n"));
+});
+
+void test('gate-ratchet: replacing one finding by another of the same rule in the same file passes (documented cost)', t => {
+  const f = gateFixture(); t.after(f.remove);
+  // The baseline allowance came from a string assigned to a number; now a boolean is: same file, same TS2322.
+  f.write('src/a.ts', 'export const a: number = true;\n');
+  f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(keyA)}:1}}}\n`);
+  git(f.root, 'add', '-A');
+  const result = compiler(f.root);
+  assert.equal(result.status, 0);
+  assert.deepEqual(gateLines(result.stderr), [...deferred, 'tsc:tsconfig.json: 1 findings, baseline 1; no finding above the baseline']);
 });
 
 void test('gate-ratchet: covered debt passes and still prints its count against the baseline', t => {
@@ -144,52 +183,6 @@ void test('gate-knip: one added unused export fails the knip gate, naming the ga
     '  src/lib.ts exports (1 > baseline 0): added']);
 });
 
-// TypeScript prints union members in an order that differs between runs; a key must not depend on it.
-const UNION_TSC = (members: string) => `["src/a.ts","TS2322","Type '${members}' is not assignable to type 'number'.\\nType 'string' is not assignable to type 'number'."]`;
-for (const members of ['string | boolean', 'boolean | string']) {
-  void test(`gate-key: a compiler finding passes against a baseline that printed its union as '${members}', and records it canonically`, t => {
-    const f = gateFixture(); t.after(f.remove);
-    f.write('src/a.ts', 'declare const u: string | boolean;\nexport const n: number = u;\n');
-    f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(UNION_TSC(members))}:1}}}\n`);
-    git(f.root, 'add', '-A');
-    const result = compiler(f.root);
-    assert.equal(result.status, 0);
-    assert.deepEqual(gateLines(result.stderr), [...deferred, 'tsc:tsconfig.json: 1 findings, baseline 1; no finding above the baseline']);
-    assert.equal(compiler(f.root, '--record-baseline').status, 0);
-    assert.equal(readFileSync(baselineFile(f.root), 'utf8'),
-      `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify(UNION_TSC('boolean | string'))}: 1\n    }\n  }\n}\n`);
-  });
-}
-
-void test('gate-key: distinct literal types that merely contain " | " never share an allowance', t => {
-  const f = gateFixture(); t.after(f.remove);
-  f.write('src/a.ts', 'export const x: "fixed" = "x(B | A)";\n');
-  const allowed = `["src/a.ts","TS2322","Type '\\"x(A | B)\\"' is not assignable to type '\\"fixed\\"'."]`;
-  f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"tsc:tsconfig.json":{${JSON.stringify(allowed)}:1}}}\n`);
-  git(f.root, 'add', '-A');
-  const result = compiler(f.root);
-  assert.equal(result.status, 1);
-  assert.deepEqual(gateLines(result.stderr), [...deferred,
-    'tsc:tsconfig.json: 1 findings, baseline 1; FAILED: 1 finding keys above the baseline',
-    '  src/a.ts TS2322 (1 > baseline 0): Type \'"x(B | A)"\' is not assignable to type \'"fixed"\'.']);
-});
-
-for (const members of ['string | number', 'number | string']) {
-  void test(`gate-key: an ESLint finding passes against a baseline that printed its union as \`${members}\``, t => {
-    const f = gateFixture(); t.after(f.remove);
-    withPackageTools(f);
-    f.write('.gitignore', 'node_modules\neslint.config.js\n');
-    f.write('src/a.ts', 'export function take(x: string | number): string {\n  return String(x);\n}\ndeclare const loose: any;\nexport const out = take(loose);\n');
-    const keyAny = '["src/a.ts","@typescript-eslint/no-explicit-any","Unexpected any. Specify a different type."]';
-    const keyArgument = `["src/a.ts","@typescript-eslint/no-unsafe-argument","Unsafe argument of type \`any\` assigned to a parameter of type \`${members}\`."]`;
-    f.write('scripts/standards-baseline.json', `{"version":1,"gates":{"eslint":{${JSON.stringify(keyAny)}:1,${JSON.stringify(keyArgument)}:1}}}\n`);
-    git(f.root, 'add', '-A');
-    const result = run(f.root, lintCommand, ['--files']);
-    assert.equal(result.status, 0);
-    assert.deepEqual(gateLines(result.stderr), [...deferred, 'eslint: 2 findings, baseline 2; no finding above the baseline']);
-  });
-}
-
 void test('gate-knip: a malformed tool report is unanswered: exit 1, nothing recorded', t => {
   const f = gateFixture(); t.after(f.remove);
   f.write('src/a.ts', 'export const a = 1;\n');
@@ -245,7 +238,7 @@ void test('gate-hook: in a linked worktree under a commit hook env, the gate see
   const result = run(linked, lintCommand, ['--compiler', '--record-initial', '--project=tsconfig.json'], hook);
   assert.equal(result.status, 0);
   assert.equal(readFileSync(baselineFile(linked), 'utf8'),
-    `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify(`["src/staged.ts","TS2322","${STRING_TO_NUMBER}"]`)}: 1\n    }\n  }\n}\n`);
+    `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify('["src/staged.ts","TS2322"]')}: 1\n    }\n  }\n}\n`);
 });
 
 function writeStaged(root: string, file: string, text: string): void {

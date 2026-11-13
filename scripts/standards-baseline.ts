@@ -1,9 +1,11 @@
 // Counted no-raise ratchet for the TS gates (owner decision #216 comment 6829935664). Zero is the end target.
-// The baseline is a position-free multiset per gate: key = file + code/rule + message, value = count.
+// The baseline is a position-free multiset per gate, value = count. Key = [file, rule/code] for the TS compiler and
+// ESLint gates: TypeScript prints type text non-deterministically (union member order), so no message text is part of
+// their keys; messages stay in the printed output. Key = [file, issue type, name] for knip (no printed type text).
+// Accepted cost (#216 review): within one file and one rule, fixing one finding and adding another passes.
 // Line moves never fail; a new key or a count above the baseline fails. Only an explicit record step writes the
 // baseline, and it refuses any rise. Integrity-pinned files (scripts/source-inventory.json) are never baselined.
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import ts from "typescript";
 import { z } from "zod";
 
 // Tool and baseline files are external input: parsed JSON is validated with these schemas (Zod, as the rest of the
@@ -13,7 +15,7 @@ export type Finding = z.infer<typeof findingSchema>;
 
 export type Counts = Record<string, number>;
 
-const keySchema = z.tuple([z.string(), z.string(), z.string()]);
+const keySchema = z.union([z.tuple([z.string(), z.string()]), z.tuple([z.string(), z.string(), z.string()])]);
 const baselineSchema = z.object({
   version: z.literal(1),
   gates: z.record(z.string(), z.record(z.string(), z.number().int().min(1).max(Number.MAX_SAFE_INTEGER))),
@@ -25,8 +27,15 @@ const knipReportSchema = z.object({
   issues: z.array(z.object({ file: z.string() }).catchall(z.array(z.union([nameSchema, z.array(nameSchema)])))),
 });
 
+/** A baseline key: [file, code] for compiler/ESLint findings, [file, code, message] for knip findings. */
+interface Keyed {
+  file: string;
+  code: string;
+  message?: string;
+}
+
 interface Raised {
-  finding: Finding;
+  finding: Keyed;
   count: number;
   baseline: number;
 }
@@ -39,69 +48,22 @@ interface GateResult {
   ok: boolean;
 }
 
-// Key canonicalization (keys only; tool output is printed unchanged). TypeScript prints union members in type-id
-// order, which differs between runs of the same inputs, so the same finding could print as `A | B` or `B | A`.
-// Each quoted segment (ESLint backticks, tsc single quotes) is parsed as a type by the pinned TypeScript parser; only
-// if it parses as exactly one type without diagnostics are the members of its genuine union types sorted, at every
-// depth. Everything else, including literal contents and text that is not a type, stays byte-identical.
-const canonicalTypes = new Map<string, string>();
-
-function canonicalType(text: string): string {
-  const known = canonicalTypes.get(text);
-  if (known !== undefined) return known;
-  const prefix = "type T = ";
-  const code = `${prefix}${text};`;
-  let result = text;
-  if (ts.transpileModule(code, { reportDiagnostics: true }).diagnostics?.length === 0) {
-    const source = ts.createSourceFile("key.ts", code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const [statement] = source.statements;
-    if (source.statements.length === 1 && statement !== undefined && ts.isTypeAliasDeclaration(statement)
-      && statement.type.getStart(source) === prefix.length && statement.type.end === prefix.length + text.length) {
-      result = render(statement.type, source);
-    }
-  }
-  canonicalTypes.set(text, result);
-  return result;
+function key(finding: Finding, withMessage: boolean): string {
+  return JSON.stringify(withMessage ? [finding.file, finding.code, finding.message] : [finding.file, finding.code]);
 }
 
-/** A type node's source text with each union's members sorted by their own rendered text. */
-function render(node: ts.Node, source: ts.SourceFile): string {
-  if (ts.isUnionTypeNode(node)) {
-    const members = node.types.map((member) => render(member, source)).sort();
-    const first = node.types[0];
-    // Keep a leading "|" written before the first member, as printed.
-    const lead = first === undefined ? "" : source.text.slice(node.getStart(source), first.getStart(source));
-    return lead + members.join(" | ");
-  }
-  let out = "";
-  let position = node.getStart(source);
-  node.forEachChild((child) => {
-    const start = child.getStart(source);
-    out += source.text.slice(position, start) + render(child, source);
-    position = child.end;
-  });
-  return out + source.text.slice(position, node.end);
-}
-
-function canonicalMessage(message: string): string {
-  return message.replace(/`[^`]*`|'[^']*'/gu, (quoted) => quoted.charAt(0) + canonicalType(quoted.slice(1, -1)) + quoted.charAt(0));
-}
-
-function key(finding: Finding): string {
-  return JSON.stringify([finding.file, finding.code, canonicalMessage(finding.message)]);
-}
-
-function decode(entry: string): Finding {
+function decode(entry: string): Keyed {
   const parsed = keySchema.safeParse(JSON.parse(entry));
   if (!parsed.success) throw new Error(`standards baseline: malformed key ${entry}`);
   const [file, code, message] = parsed.data;
-  return { file, code, message };
+  return message === undefined ? { file, code } : { file, code, message };
 }
 
-export function counts(findings: Finding[]): Counts {
+/** Per-key counts; withMessage only for gates whose messages are deterministic (knip). */
+export function counts(findings: Finding[], withMessage: boolean): Counts {
   const result: Counts = {};
   for (const finding of findings) {
-    const name = key(finding);
+    const name = key(finding, withMessage);
     result[name] = (result[name] ?? 0) + 1;
   }
   return result;
@@ -115,17 +77,8 @@ function readBaseline(file: string): Baseline {
   if (!existsSync(file)) throw new Error(`standards baseline: ${file} is missing; record one with the gate's record step`);
   const parsed = baselineSchema.safeParse(JSON.parse(readFileSync(file, "utf8")));
   if (!parsed.success) throw new Error(`standards baseline: ${file} is not a version 1 baseline of positive counts: ${z.prettifyError(parsed.error)}`);
-  // Keys are canonical when read, so a baseline written before canonicalization (or in the other union order) matches.
-  const gates: Record<string, Counts> = {};
-  for (const [gate, values] of Object.entries(parsed.data.gates)) {
-    const canonical: Counts = {};
-    for (const [entry, count] of Object.entries(values)) {
-      const name = key(decode(entry));
-      canonical[name] = (canonical[name] ?? 0) + count;
-    }
-    gates[gate] = canonical;
-  }
-  return { version: 1, gates };
+  for (const values of Object.values(parsed.data.gates)) for (const entry of Object.keys(values)) decode(entry);
+  return parsed.data;
 }
 
 function compare(gate: string, current: Counts, baseline: Counts): GateResult {
@@ -168,7 +121,7 @@ export function describeResult(result: GateResult): string[] {
   if (result.ok) return [`${head}; no finding above the baseline${result.total < result.baselineTotal ? " (lower: record it)" : ""}`];
   return [
     `${head}; FAILED: ${String(result.raised.length)} finding keys above the baseline`,
-    ...result.raised.map(({ finding, count, baseline }) => `  ${finding.file} ${finding.code} (${String(count)} > baseline ${String(baseline)}): ${finding.message}`),
+    ...result.raised.map(({ finding, count, baseline }) => `  ${finding.file} ${finding.code} (${String(count)} > baseline ${String(baseline)})${finding.message === undefined ? "" : `: ${finding.message}`}`),
   ];
 }
 

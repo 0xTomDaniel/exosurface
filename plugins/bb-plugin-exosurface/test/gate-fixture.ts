@@ -55,5 +55,5 @@ export function run(cwd: string, command: string, args: string[], env: NodeJS.Pr
 
 /** The gate's own summary/deferral lines from a run, in order (every other line is native tool output). */
 export function gateLines(output: string): string[] {
-  return output.split('\n').filter((line) => /^\S+: \d+ findings, baseline \d+;|^ {2}\S.* \(\d+ > baseline \d+\): |DEFERRED BY OWNER|unanswered|refused/u.test(line));
+  return output.split('\n').filter((line) => /^\S+: \d+ findings, baseline \d+;|^ {2}\S.* \(\d+ > baseline \d+\)(?:: |$)|DEFERRED BY OWNER|unanswered|refused/u.test(line));
 }
