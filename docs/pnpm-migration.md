@@ -2,6 +2,14 @@
 
 Owner: owner ruling 2026-11-11, #216. Ticket #217 owns the native pipeline pilot only. Template baseline: octo-feather a58919e2446850b19f2482aa5fd93dbc0e59b4ac `templates/typescript/**`. Factory ADR0008 and ADR0017 apply. This record is preparation, not a claim that validation passed.
 
+## Compat inventory and owner deferral (#266)
+
+The existing source-inventory registry now pins the frozen files from consolidation, browser-roundtrip, pnpm-migration and a2ui-runtime/evidence. `scripts/compat-evidence-pins.json` records exact SHA256 bytes and per-file provenance grouped by the sole Git evidence commit. The trees' README records and compat/README.md identify their diagnostic/evidence purpose. Git path history shows no later edits for the newly pinned files; maintained code import/path-reference search found only the consumers below. All compat bytes remain unchanged. Existing pins retain their original metadata.
+
+Kept maintained and gated: `compat/browser-roundtrip/roundtrip.mjs` (modified by #217 after its evidence date), `compat/consolidation/desktop-install-spike/README.md` (later documentation edits), and `compat/consolidation/repro/markdown/document-before.ts` plus `compat/consolidation/evidence/nested-final-package-lock.json` (read by maintained test/consolidation-parity.mjs). Paths here are relative to plugins/bb-plugin-exosurface. No maintained compat source is newly pinned.
+
+The a2ui-runtime harness source directories `fixtures/` (1 file) and `test/` (4 files) are DEFERRED BY OWNER, not assessed, not compliant, waived or exempt, under [#259 comment 6865599114](https://github.com/0xTomDaniel/exosurface/issues/259#issuecomment-6865599114), pending the Zod3 backport shipping decision. Its frozen evidence is integrity-pinned separately, never included in these deferral prefixes. The existing per-owner deferral mechanism reports each decision's URL; the standalone harness compiler project leaves ts_projects. Config/global diagnostics in remaining compiler projects continue to govern.
+
 ## Installation and dependency closure
 
 Proposed active workspace: root tooling (BB CLI 0.48.0), `plugins/bb-plugin-exosurface`, `legacy/surface`, `legacy/surface/composition` beneath that plugin. Existing host/server/app metadata and engine requirements remain unchanged. Source imports, not directory names, determine activity:

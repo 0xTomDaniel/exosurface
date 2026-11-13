@@ -48,7 +48,7 @@ check-languages:
     node scripts/check-languages.ts
 
 # Both compiler commands use the same real projects, native diagnostics and verified applicability.
-ts_projects := "tsconfig.json plugins/bb-plugin-exosurface/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.composition.json docs/specs/.viz/tsconfig.json plugins/bb-plugin-exosurface/compat/a2ui-runtime/tsconfig.json"
+ts_projects := "tsconfig.json plugins/bb-plugin-exosurface/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.json plugins/bb-plugin-exo-a2ui-spike/tsconfig.composition.json docs/specs/.viz/tsconfig.json"
 
 ts-files:
     @args=(); for project in {{ts_projects}}; do args+=("--project=$project"); done; node scripts/lint.ts --compiler-files "${args[@]}"

@@ -8,14 +8,22 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, wr
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cleanEnv, gateFixture, gateLines, git, languagesCommand, lintCommand, run, withPackageTools } from './gate-fixture.ts';
+import { cleanEnv, gateFixture as baseGateFixture, gateLines, git, languagesCommand, lintCommand, run, withPackageTools } from './gate-fixture.ts';
 
+const HARNESS = 'plugins/bb-plugin-exosurface/compat/a2ui-runtime/';
+function gateFixture(registry?: object) {
+  const fixture = baseGateFixture(registry);
+  for (const directory of ['fixtures/', 'test/']) mkdirSync(join(fixture.root, HARNESS, directory), { recursive: true });
+  return fixture;
+}
 const TREES = 'https://github.com/0xTomDaniel/exosurface/issues/216#issuecomment-6830616474';
 const deferred = [
   `plugins/bb-plugin-exo-spike/: DEFERRED BY OWNER ${TREES}; 0 files not assessed, not compliant, waived or exempt`,
   `spikes/a2a-pi/: DEFERRED BY OWNER ${TREES}; 0 files not assessed, not compliant, waived or exempt`,
   `spikes/ag-ui-pi/: DEFERRED BY OWNER ${TREES}; 0 files not assessed, not compliant, waived or exempt`,
 ];
+const harnessUrl = 'https://github.com/0xTomDaniel/exosurface/issues/259#issuecomment-6865599114';
+for (const directory of ['fixtures/', 'test/']) deferred.push(`${HARNESS}${directory}: DEFERRED BY OWNER ${harnessUrl}; 0 files not assessed, not compliant, waived or exempt`);
 const covers = `owner deferral ${TREES} covers exactly plugins/bb-plugin-exo-spike/ spikes/a2a-pi/ spikes/ag-ui-pi/`;
 const STRING_TO_NUMBER = "Type 'string' is not assignable to type 'number'.";
 // Compiler and ESLint keys are [file, rule/code] (TypeScript prints type text non-deterministically); knip keys keep
@@ -135,12 +143,30 @@ void test('gate-integrity: a file pinned in the integrity registry is never base
   const f = gateFixture({ version: 1, integrity: { 'src/pinned.ts': { classification: 'capture-integrity', pin: 'PINS.sha256', format: 'sha256sum', key: 'src/pinned.ts' } } });
   t.after(f.remove);
   f.write('src/pinned.ts', pinned);
+  f.write(`${HARNESS}fixtures/failure.ts`, 'export const failure: number = "deferred";\n');
+  f.write('src/deferred.ts', `import '../${HARNESS}fixtures/failure.js';\n`);
   f.write('PINS.sha256', `${sha}  src/pinned.ts\n`);
   f.write('src/a.ts', 'export const a: number = "x";\n');
   git(f.root, 'add', '-A');
   const result = compiler(f.root, '--record-initial');
   assert.equal(result.status, 0);
   assert.equal(readFileSync(baselineFile(f.root), 'utf8'), `{\n  "version": 1,\n  "gates": {\n    "tsc:tsconfig.json": {\n      ${JSON.stringify(keyA)}: 1\n    }\n  }\n}\n`);
+});
+
+void test('gate-deferral: config and global diagnostics remain fatal despite deferred file diagnostics', t => {
+  const f = gateFixture(); t.after(f.remove);
+  f.write(`${HARNESS}fixtures/failure.ts`, 'export const failure: number = "deferred";\n');
+  f.write('scripts/standards-baseline.json', '{"version":1,"gates":{"tsc:tsconfig.json":{}}}');
+  f.write('tsconfig.json', JSON.stringify({ compilerOptions: { noLib: true, types: [], noEmit: true }, files: [`${HARNESS}fixtures/failure.ts`] }));
+  git(f.root, 'add', '-A');
+  const global = compiler(f.root);
+  assert.equal(global.status, 1);
+  assert.ok(global.stderr.includes('TS2318'));
+  assert.ok(!global.stderr.includes('TS2322'));
+  f.write('tsconfig.json', '{"compilerOptions":{"target":"invalid"}}');
+  const config = compiler(f.root);
+  assert.equal(config.status, 1);
+  assert.ok(config.stderr.includes('TS6046'));
 });
 
 void test('gate-eslint: a fatal ESLint result (file outside every project) is unanswered: exit 1, never counted or recorded', t => {
@@ -230,7 +256,7 @@ void test('gate-hook: in a linked worktree under a commit hook env, the gate see
   const linked = join(home, 'linked');
   git(f.root, 'worktree', 'add', '-q', '-b', 'linked', linked, 'HEAD');
   // Empty deferred trees are not tracked; the worktree recreates them as the main checkout has them.
-  for (const tree of ['plugins/bb-plugin-exo-spike', 'spikes/a2a-pi', 'spikes/ag-ui-pi']) mkdirSync(join(linked, tree), { recursive: true });
+  for (const tree of ['plugins/bb-plugin-exo-spike', 'spikes/a2a-pi', 'spikes/ag-ui-pi', `${HARNESS}fixtures`, `${HARNESS}test`]) mkdirSync(join(linked, tree), { recursive: true });
   writeStaged(linked, 'src/staged.ts', 'export const s: number = "staged";\n');
   // The env git exports to a pre-commit hook in a linked worktree: absolute GIT_DIR and GIT_INDEX_FILE, cwd = root.
   const gitDir = git(linked, 'rev-parse', '--absolute-git-dir').trim();
