@@ -3,6 +3,7 @@
 // Line moves never fail; a new key or a count above the baseline fails. Only an explicit record step writes the
 // baseline, and it refuses any rise. Integrity-pinned files (scripts/source-inventory.json) are never baselined.
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import ts from "typescript";
 import { z } from "zod";
 
 // Tool and baseline files are external input: parsed JSON is validated with these schemas (Zod, as the rest of the
@@ -40,86 +41,46 @@ interface GateResult {
 
 // Key canonicalization (keys only; tool output is printed unchanged). TypeScript prints union members in type-id
 // order, which differs between runs of the same inputs, so the same finding could print as `A | B` or `B | A`.
-// Within quoted type text (ESLint backticks, tsc single quotes) union members are sorted at every nesting depth.
-// Unions are commutative, so two keys only meet when they are the same type printed two ways.
-const CLOSERS: Readonly<Record<string, string>> = { "(": ")", "[": "]", "{": "}", "<": ">" };
+// Each quoted segment (ESLint backticks, tsc single quotes) is parsed as a type by the pinned TypeScript parser; only
+// if it parses as exactly one type without diagnostics are the members of its genuine union types sorted, at every
+// depth. Everything else, including literal contents and text that is not a type, stays byte-identical.
+const canonicalTypes = new Map<string, string>();
 
-/** Pieces of text split at separator where no bracket is open (string literals and "=>" are not brackets). */
-function topLevel(text: string, separators: readonly string[]): { piece: string; separator: string }[] {
-  const result: { piece: string; separator: string }[] = [];
-  const open: string[] = [];
-  let from = 0;
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text.charAt(index);
-    if (char === "\"") {
-      const end = text.indexOf("\"", index + 1);
-      if (end < 0) break;
-      index = end;
-      continue;
-    }
-    if (open.length === 0) {
-      const separator = separators.find((candidate) => text.startsWith(candidate, index));
-      if (separator !== undefined) {
-        result.push({ piece: text.slice(from, index), separator });
-        index += separator.length - 1;
-        from = index + 1;
-        continue;
-      }
-    }
-    if (char === ">" && text.charAt(index - 1) === "=") continue;
-    const closer = CLOSERS[char];
-    if (closer !== undefined) open.push(closer);
-    else if (char === open.at(-1)) open.pop();
-  }
-  result.push({ piece: text.slice(from), separator: "" });
-  return result;
-}
-
-/** Type text with every union's members sorted; text without unions comes back unchanged. */
 function canonicalType(text: string): string {
-  const arrow = topLevel(text, [" => "]);
-  if (arrow.length > 1) {
-    const [parameters, ...rest] = arrow;
-    return `${canonicalGroups(parameters?.piece ?? "")} => ${canonicalType(rest.map(({ piece, separator }) => piece + separator).join(""))}`;
-  }
-  const members = topLevel(text, [" | "]).map(({ piece }) => canonicalGroups(piece));
-  return members.length > 1 ? [...members].sort().join(" | ") : (members[0] ?? "");
-}
-
-/** Text with the contents of each bracket group canonicalized (lists, properties and nested types). */
-function canonicalGroups(text: string): string {
-  let result = "";
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text.charAt(index);
-    const closer = CLOSERS[char];
-    if (closer === undefined || (char === ">" && text.charAt(index - 1) === "=")) {
-      result += char;
-      continue;
+  const known = canonicalTypes.get(text);
+  if (known !== undefined) return known;
+  const prefix = "type T = ";
+  const code = `${prefix}${text};`;
+  let result = text;
+  if (ts.transpileModule(code, { reportDiagnostics: true }).diagnostics?.length === 0) {
+    const source = ts.createSourceFile("key.ts", code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const [statement] = source.statements;
+    if (source.statements.length === 1 && statement !== undefined && ts.isTypeAliasDeclaration(statement)
+      && statement.type.getStart(source) === prefix.length && statement.type.end === prefix.length + text.length) {
+      result = render(statement.type, source);
     }
-    const inner = topLevel(text.slice(index + 1), [closer]);
-    if (inner.length < 2) {
-      result += text.slice(index);
-      break;
-    }
-    const body = inner[0]?.piece ?? "";
-    result += char + canonicalList(body) + closer;
-    index += body.length + 1;
   }
+  canonicalTypes.set(text, result);
   return result;
 }
 
-/** A bracket body: comma/semicolon-separated items, each a type or a `key: type` property. */
-function canonicalList(body: string): string {
-  return topLevel(body, [",", ";"]).map(({ piece, separator }) => {
-    const leading = /^\s*/u.exec(piece)?.[0] ?? "";
-    const trailing = /\s*$/u.exec(piece.slice(leading.length))?.[0] ?? "";
-    const core = piece.slice(leading.length, piece.length - trailing.length);
-    const property = topLevel(core, [": "]);
-    const item = property.length > 1
-      ? `${canonicalGroups(property[0]?.piece ?? "")}: ${canonicalType(property.slice(1).map(({ piece: part, separator: next }) => part + next).join(""))}`
-      : canonicalType(core);
-    return leading + item + trailing + separator;
-  }).join("");
+/** A type node's source text with each union's members sorted by their own rendered text. */
+function render(node: ts.Node, source: ts.SourceFile): string {
+  if (ts.isUnionTypeNode(node)) {
+    const members = node.types.map((member) => render(member, source)).sort();
+    const first = node.types[0];
+    // Keep a leading "|" written before the first member, as printed.
+    const lead = first === undefined ? "" : source.text.slice(node.getStart(source), first.getStart(source));
+    return lead + members.join(" | ");
+  }
+  let out = "";
+  let position = node.getStart(source);
+  node.forEachChild((child) => {
+    const start = child.getStart(source);
+    out += source.text.slice(position, start) + render(child, source);
+    position = child.end;
+  });
+  return out + source.text.slice(position, node.end);
 }
 
 function canonicalMessage(message: string): string {
