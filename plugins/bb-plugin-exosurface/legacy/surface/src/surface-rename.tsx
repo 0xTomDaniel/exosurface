@@ -21,7 +21,7 @@ export type Rename=ReturnType<typeof useRename>;
 
 /** The name as a text field while it is being renamed. */
 export function RenameField({rename,className}:{rename:Rename;className?:string}){
- return <input type="text" aria-label="Surface name" autoFocus value={rename.draft} maxLength={80} onChange={e=>rename.setDraft(e.target.value)}
+ return <input type="text" aria-label="Surface name" autoFocus value={rename.draft} maxLength={80} onChange={e=> { rename.setDraft(e.target.value); }}
   onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();void rename.save();}else if(e.key==='Escape'){e.preventDefault();rename.cancel();}}}
   onBlur={rename.leave} className={className}/>;
 }

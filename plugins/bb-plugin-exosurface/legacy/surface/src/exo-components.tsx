@@ -1,7 +1,7 @@
 // React views for the Exo visual catalog. Presentational only: no actions,
 // no URLs, no HTML from the model except through the official sanitized
 // Markdown renderer. Meaning is always carried by words; tone colour only adds.
-import {useEffect,useMemo,useState,type ReactNode} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import {createComponentImplementation,useMarkdownRenderer} from '@a2ui/react/v0_9';
 import {CalloutApi,MetricApi,TimelineApi,TableApi,ChartApi,FlowApi,DisclosureApi,exoCatalog} from './exo-catalog.ts';
 
@@ -111,9 +111,9 @@ const Flow=createComponentImplementation(FlowApi,({props})=>{
 
 const Disclosure=createComponentImplementation(DisclosureApi,({props,buildChild})=>{
  const [open,setOpen]=useState(!!props.open),child:any=props.child,id=typeof child==='string'?child:child?.id;
- return <details className="exo-disclosure" open={open} onToggle={e=>setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+ return <details className="exo-disclosure" open={open} onToggle={e=> { setOpen((e.currentTarget).open); }}>
   <summary><span className="exo-disclosure-title">{props.title}</span>{props.summary&&<span className="exo-disclosure-summary">{props.summary}</span>}</summary>
-  <div className="exo-disclosure-body">{open&&id?buildChild(id) as ReactNode:null}</div>
+  <div className="exo-disclosure-body">{open&&id?buildChild(id):null}</div>
  </details>;
 });
 
