@@ -7,6 +7,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { liveFixture, installedFixture, owner, bridge, stepsTurn, stepsShown, modelRequests } from '../test/mock-bb.ts';
 import { exoTab } from '../test/exo-tab.ts';
+import { required } from '../test/required.ts';
 import { renderedApp, rightAligned, boxed, divided, pinnedToBottom, column, fadeStart, centeredIn } from '../test/app-render.ts';
 import { waiter, settled } from '../test/wait.ts';
 import { reapOnExit } from '../test/reap.ts';
@@ -727,7 +728,7 @@ async function activityLine() {
     const text = 'steps: garden', lines = [];
     console.log(`${at()}  sending: ${JSON.stringify(text)}`);
     const blocks = await stepsTurn(f, 'primary', 'garden', b => { if (b.working && b.activity && b.activity !== lines.at(-1)) { lines.push(b.activity); console.log(`${at()}  working, activity: ${JSON.stringify(b.activity)}`); } });
-    const block = blocks.at(-1);
+    const block = required(blocks.at(-1), 'Expected the completed steps turn block');
     console.log(`${at()}  turn ended: words ${JSON.stringify(block.words)}, activity: ${'activity' in block ? JSON.stringify(block.activity) : 'none'}`);
     if (lines.length < 2) throw new Error(`activity-line failed: the line never changed (${lines.length} line(s))`);
     if ('activity' in block || block.words !== `Exo (${f.setup.profile}): ${text}`) throw new Error('activity-line failed: the line survived the reply, or no reply');
