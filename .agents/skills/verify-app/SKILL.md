@@ -15,7 +15,7 @@ What is real and what is faked there (the header of `demo/surfaces.ts` and `test
 
 ## Helpers
 
-One helper, [`scripts/verify-app`](scripts/verify-app), executable: a thin `sh` launcher that runs [`scripts/verify-app.ts`](scripts/verify-app.ts) with `node` (type stripping, no build). It reads `qc.toml` with `python3`'s `tomllib` (mise.toml pins python 3.13; this repo has no TOML package in its Node graph). It needs this repo's tools and packages (`just setup`). The root `tsconfig.json` includes the script, so `just check` types and lints it. Run it from anywhere; it finds the repo from its own path:
+One helper, [`scripts/verify-app`](scripts/verify-app), executable: a thin `sh` launcher that runs [`scripts/verify-app.ts`](scripts/verify-app.ts) with `node` (type stripping, no build). It reads `qc.toml` with `python3`'s `tomllib` (mise.toml pins python 3.13; this repo has no TOML package in its Node graph) and validates it, its own run state and the plugin's `package.json` fields it reads with Zod (the root package's dev dependency). It needs this repo's tools and packages (`just setup`). The root `tsconfig.json` includes the script, so `just check` types and lints it. Run it from anywhere; it finds the repo from its own path:
 
 ```
 .agents/skills/verify-app/scripts/verify-app setup                # the contract's setup only (install + builds)

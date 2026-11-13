@@ -11,6 +11,7 @@ import { spawn, spawnSync, type SpawnSyncReturns } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { z } from "zod";
 
 const ME = "verify-app";
 const USAGE = "usage: verify-app setup|launch|doctor|drive <feature>|cleanup|run";
@@ -120,31 +121,29 @@ function gitRev(repo: string): string {
 }
 
 /**
- * The app-driver contract, qc.toml at the repo root (format 1). The helper sets up, enters and resets the
- * app only through it; its commands run under sh with QC_REPO set.
+ * The app-driver contract, qc.toml at the repo root (format 1: the kit's schemas/qc.v1.schema.json). The helper
+ * sets up, enters and resets the app only through it; its commands run under sh with QC_REPO set.
  */
-interface Contract {
-  setup: string;
-  entry: string;
-  services: string[];
-  fixtures: Record<string, string>; // name: reset command
-  values: Record<string, string>;
-}
+const ContractFile = z.strictObject({
+  format: z.literal(1),
+  setup: z.string().min(1).optional(),
+  entry: z.strictObject({ command: z.string().min(1) }),
+  services: z.record(z.string(), z.strictObject({ command: z.string().min(1), ready: z.string().min(1).optional() })),
+  fixture: z.record(z.string(), z.strictObject({ reset: z.string().min(1), path: z.string().min(1).optional() })),
+  values: z.record(z.string(), z.string()),
+  // Read by the kit's qc, not by this helper.
+  demo: z.record(z.string(), z.unknown()).optional(),
+  browser: z.unknown().optional(),
+});
 
-/** A plain object (a TOML table, as tomllib's JSON gives it). */
-function isTable(t: unknown): t is Record<string, unknown> {
-  return Object.prototype.toString.call(t) === "[object Object]";
-}
-
-function strings(t: unknown): Record<string, string> | undefined {
-  if (!isTable(t)) return undefined;
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(t)) {
-    if (typeof v !== "string") return undefined;
-    out[k] = v;
-  }
-  return out;
-}
+const Contract = z.strictObject({
+  setup: z.string(),
+  entry: z.string(),
+  services: z.array(z.string()),
+  fixtures: z.record(z.string(), z.string()), // name: reset command
+  values: z.record(z.string(), z.string()),
+});
+type Contract = z.infer<typeof Contract>;
 
 /** qc.toml as data, read by python3's tomllib (no TOML package in this repo's graph). */
 function parseToml(file: string): unknown {
@@ -155,27 +154,18 @@ function parseToml(file: string): unknown {
 }
 
 function readContract(): Contract {
-  const c = parseToml(CONTRACT);
-  if (!isTable(c)) die(`${CONTRACT} does not match format 1 (validate: octo-feather-contract)`);
-  const { format, entry, services, fixture, values: rawValues, setup = "" } = c;
-  if (format !== 1) {
-    die(`${CONTRACT}: format ${format === undefined ? "None" : JSON.stringify(format)}; this helper reads format 1 (validate: octo-feather-contract)`);
+  const parsed = ContractFile.safeParse(parseToml(CONTRACT));
+  if (!parsed.success) {
+    die(`${CONTRACT} does not match format 1 (${z.prettifyError(parsed.error).replaceAll("\n", "; ")}; validate: octo-feather-contract)`);
   }
-  const values = strings(rawValues);
-  const fixtures: Record<string, string> = {};
-  let fixturesOk = isTable(fixture);
-  if (isTable(fixture)) {
-    for (const [name, f] of Object.entries(fixture)) {
-      const reset = isTable(f) ? f["reset"] : undefined;
-      if (typeof reset === "string") fixtures[name] = reset;
-      else fixturesOk = false;
-    }
-  }
-  const command = isTable(entry) ? entry["command"] : undefined;
-  if (typeof command !== "string" || !isTable(services) || !fixturesOk || values === undefined || typeof setup !== "string") {
-    die(`${CONTRACT} does not match format 1 (validate: octo-feather-contract)`);
-  }
-  return { setup, entry: command, services: Object.keys(services), fixtures, values };
+  const c = parsed.data;
+  return {
+    setup: c.setup ?? "",
+    entry: c.entry.command,
+    services: Object.keys(c.services),
+    fixtures: Object.fromEntries(Object.entries(c.fixture).map(([name, f]) => [name, f.reset])),
+    values: c.values,
+  };
 }
 
 /** A contract command, as the contract says it runs: under sh, in the repo, with QC_REPO set. */
@@ -184,18 +174,21 @@ function shInRepo(command: string): boolean {
   return r.status === 0;
 }
 
-interface State {
-  contract: Contract;
-  app: string;
-  node: string;
-  repo: string;
-  rev: string;
-  launched: string;
-}
+const State = z.strictObject({
+  contract: Contract,
+  app: z.string(),
+  node: z.string(),
+  repo: z.string(),
+  rev: z.string(),
+  launched: z.string(),
+});
+type State = z.infer<typeof State>;
 
 function loadState(): State {
   if (!fs.existsSync(STATE)) die(`no run state at ${STATE}: run 'verify-app launch' first`);
-  return JSON.parse(fs.readFileSync(STATE, "utf8")) as State;
+  const parsed = State.safeParse(JSON.parse(fs.readFileSync(STATE, "utf8")));
+  if (!parsed.success) die(`run state ${STATE} is not this helper's (${z.prettifyError(parsed.error).replaceAll("\n", "; ")}): run 'verify-app launch' again`);
+  return parsed.data;
 }
 
 function cmdSetup(contract?: Contract): void {
@@ -255,15 +248,14 @@ function atLeast(a: string, b: string): boolean {
   return true;
 }
 
-function field(o: unknown, k: string): unknown {
-  return isTable(o) ? o[k] : undefined;
-}
+/** The plugin package.json fields doctor reads (the rest is BB's and pnpm's). */
+const PluginPackage = z.object({ version: z.string().catch("unknown"), engines: z.object({ node: z.string() }).catch({ node: "unknown" }) });
+/** build-runtime.mjs's graph: its entries name the bundles it wrote. */
+const RuntimeGraph = z.object({ entries: z.record(z.string(), z.unknown()) });
 
 function pluginPackage(): { version: string; engines: string } {
-  const p: unknown = JSON.parse(fs.readFileSync(path.join(PLUGIN, "package.json"), "utf8"));
-  const version = field(p, "version");
-  const engines = field(field(p, "engines"), "node");
-  return { version: typeof version === "string" ? version : "unknown", engines: typeof engines === "string" ? engines : "unknown" };
+  const p = PluginPackage.parse(JSON.parse(fs.readFileSync(path.join(PLUGIN, "package.json"), "utf8")));
+  return { version: p.version, engines: p.engines.node };
 }
 
 /** The build outputs each build step writes, missing or older than their source: [missing, stale]. */
@@ -282,8 +274,8 @@ function buildGaps(): { owner: [string[], string[]]; runtime: string[] } {
   // build:runtime (build-runtime.mjs): dist/runtime-graph.json and each bundle its entries name.
   const graph = path.join(dist, "runtime-graph.json");
   if (mtime(graph) === undefined) return { owner: [missing, stale], runtime: ["dist/runtime-graph.json"] };
-  const entries = field(JSON.parse(fs.readFileSync(graph, "utf8")) as unknown, "entries");
-  const names = isTable(entries) ? Object.keys(entries) : [];
+  const parsed = RuntimeGraph.safeParse(JSON.parse(fs.readFileSync(graph, "utf8")));
+  const names = parsed.success ? Object.keys(parsed.data.entries) : [];
   if (names.length === 0) return { owner: [missing, stale], runtime: ["dist/runtime-graph.json entries"] };
   return { owner: [missing, stale], runtime: names.map((n) => `dist/${n}.js`).filter((f) => mtime(path.join(PLUGIN, f)) === undefined) };
 }
