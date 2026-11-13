@@ -1,10 +1,10 @@
 // Small JSON state helpers. Adapted from bb-plugin-exo-spike/src/state.ts (save/load) at 368cba4.
-import { appendFileSync, closeSync, fsyncSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync, writeSync } from 'node:fs';
+import { appendFileSync, closeSync, fsyncSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, writeSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export function save(file: string, value: unknown) {
   mkdirSync(dirname(file), { recursive: true, mode: 0o700 });
-  const temporary = `${file}.${process.pid}.tmp`;
+  const temporary = `${file}.${String(process.pid)}.tmp`;
   const fd = openSync(temporary, 'w', 0o600);
   try { writeSync(fd, JSON.stringify(value, null, 2) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
   renameSync(temporary, file);
@@ -13,6 +13,10 @@ export function save(file: string, value: unknown) {
 }
 export function load(file: string): any { return JSON.parse(readFileSync(file, 'utf8')); }
 export function loadIf(file: string): any { return existsSync(file) ? load(file) : undefined; }
+/** A parsed JSON object (not null, not an array): the first narrowing step for untyped JSON state and wire records. */
+export function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 /** Creates `file` only if it does not exist yet. Returns false (and writes nothing) when it already exists. */
 export function createExclusive(file: string, value: unknown): boolean {
