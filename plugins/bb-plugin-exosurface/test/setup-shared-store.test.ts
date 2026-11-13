@@ -9,6 +9,8 @@ import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSyn
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { parse } from 'yaml';
+import { z } from 'zod';
 import { reaped } from './reap.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
@@ -23,13 +25,16 @@ function callerEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-/** The store an install used, as pnpm recorded it (top-level `storeDir:` of node_modules/.modules.yaml). */
+// pnpm's install record: only its top-level storeDir is read.
+const ModulesRecord = z.object({ storeDir: z.string() });
+
+/** The store an install used, as pnpm recorded it (top-level `storeDir` of node_modules/.modules.yaml). */
 function storeOf(project: string): string {
   const record = join(project, 'node_modules/.modules.yaml');
   assert.ok(existsSync(record), `no pnpm install record at ${record}`);
-  const store = /^storeDir: (\S+)$/mu.exec(readFileSync(record, 'utf8'))?.[1];
-  assert.ok(store !== undefined, `no storeDir in ${record}`);
-  return store;
+  const parsed = ModulesRecord.safeParse(parse(readFileSync(record, 'utf8')));
+  assert.ok(parsed.success, `no string storeDir in ${record}`);
+  return parsed.data.storeDir;
 }
 
 const inside = (path: string, dir: string) => { const r = relative(dir, path); return r === '' || (!r.startsWith('..') && !isAbsolute(r)); };
