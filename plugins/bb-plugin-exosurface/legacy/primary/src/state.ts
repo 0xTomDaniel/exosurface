@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { local } from './local-config.ts';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -10,7 +11,7 @@ export const HOME = local('primaryStateDir') || join(homedir(), '.exo-bb-spike')
 // rather than assuming a fixed depth; keep the historical parent for unconsolidated copies.
 function pluginRoot(start: string) {
   for (let dir = start, i = 0; i < 6; i++, dir = join(dir, '..')) {
-    try { if (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name === 'bb-plugin-exosurface') return dir; } catch {}
+    try { if (z.object({ name: z.string().optional() }).parse(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as unknown).name === 'bb-plugin-exosurface') return dir; } catch {}
   }
   return join(start, '..');
 }
@@ -82,5 +83,5 @@ export function primaryModelDefinition(id: string, solProvider = local('primaryS
 }
 export const isExoModel = (id: unknown): id is string => typeof id === 'string' && Object.hasOwn(EXO_MODELS, id);
 export const mainModelFile = () => join(HOME, 'main-model.json');
-export function mainModel(): string { try { const id = load(mainModelFile()).id; return isExoModel(id) ? id : 'exo-opus-5-5'; } catch { return 'exo-opus-5-5'; } }
+export function mainModel(): string { try { const id = z.object({ id: z.unknown() }).parse(load(mainModelFile()) as unknown).id; return isExoModel(id) ? id : 'exo-opus-5-5'; } catch { return 'exo-opus-5-5'; } }
 export const VAULT = local('vault');
