@@ -1,17 +1,19 @@
 // Command-only owner connection for shared canvas state: no attachment, no model call.
+import {z} from 'zod';
+const responseSchema=z.object({id:z.string(),ok:z.boolean().optional(),error:z.string().nullish()});
 import {assertOwnerCommand} from './canvas-input.ts';
 import type {PressEntry} from './press-line.ts';
 import{createConnection}from'node:net';import{join}from'node:path';import{HOME}from'./state.ts';
-export type CanvasData={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
+export interface CanvasData {revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true}
 export function canvasDataViaOwner(threadId:string,request:CanvasData,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-data',request,home);}
-export type CanvasRestore={surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string;announced?:boolean};
+export interface CanvasRestore {surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string;announced?:boolean}
 export function restoreViaOwner(threadId:string,request:CanvasRestore,home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-restore',request,home);}
 /** The pressed button's label beside the press line, and the page a send or press came from (press-line.ts), journaled
  *  just before its message is sent. */
 export function pressViaOwner(threadId:string,request:PressEntry&{mutationId:string},home=HOME):Promise<void>{return ownerCommand(threadId,'canvas-press',request,home);}
 function ownerCommand(threadId:string,type:string,request:{mutationId:string},home:string):Promise<void>{assertOwnerCommand(request);return new Promise((resolve,reject)=>{
- const s=createConnection(join(home,'owner/rpc.sock'));let buffer='',done=false;const end=(e?:Error)=>{if(done)return;done=true;s.destroy();e?reject(e):resolve();};
- s.setEncoding('utf8');s.setTimeout(10000);s.once('timeout',()=>end(Error('Canvas edit timed out')));s.once('error',()=>end(Error('Clone owner unavailable')));
+ const s=createConnection(join(home,'owner/rpc.sock'));let buffer='',done=false;const end=(e?:Error)=>{if(done)return;done=true;s.destroy();if(e)reject(e);else resolve();};
+ s.setEncoding('utf8');s.setTimeout(10000);s.once('timeout',()=> { end(Error('Canvas edit timed out')); });s.once('error',()=> { end(Error('Clone owner unavailable')); });
  s.once('connect',()=>s.write(JSON.stringify({id:request.mutationId,type,threadId,request})+'\n'));
- s.on('data',v=>{buffer+=v;if(buffer.length>16000)return end(Error('Owner response exceeds bound'));let i:number;while((i=buffer.indexOf('\n'))>=0){const l=buffer.slice(0,i);buffer=buffer.slice(i+1);try{const r=JSON.parse(l);if(r.id===request.mutationId)end(r.ok?undefined:Error(r.error??'Canvas edit rejected'));}catch{end(Error('Invalid owner response'));}}});
+ s.on('data',v=>{buffer+=typeof v==='string'?v:v.toString('utf8');if(buffer.length>16000){ end(Error('Owner response exceeds bound')); return; }let i:number;while((i=buffer.indexOf('\n'))>=0){const l=buffer.slice(0,i);buffer=buffer.slice(i+1);try{const r=responseSchema.parse(JSON.parse(l));if(r.id===request.mutationId)end(r.ok?undefined:Error(r.error??'Canvas edit rejected'));}catch{end(Error('Invalid owner response'));}}});
  s.once('close',()=>{if(!done)end(Error('Owner disconnected'));});});}
