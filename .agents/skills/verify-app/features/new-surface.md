@@ -32,5 +32,5 @@ What is real and what is faked on this path: [README.md](./README.md#what-the-of
 
 - The scenario's spawned thread is started by the scenario itself (`host.start` with the spawn's first message), as BB does after spawn; a real BB doing that is not proven here (live-BB-only).
 - React prints `not wrapped in act(...)` notices on stderr from jsdom; they are expected and not checked. Assert on stdout only.
-- Needs `verify-app setup` after a source change: doctor fails on a missing or older `dist/` build, which the scenario would otherwise run stale.
+- `verify-app run` and `launch` rerun the qc.toml setup (`./scripts/build`), so a run drives fresh builds. A standalone `drive` after a source change needs `launch` (or `setup`) first: doctor fails on a missing owner build or one older than `src/`, and on a missing runtime bundle, but does not see a runtime bundle older than its source (`legacy/`), which the scenario would then run stale.
 - The fixture lives under `$TMPDIR` (`exo-live-*`); Pi's OptChat lock socket sits in it, so a very long `TMPDIR` can exceed the unix socket path limit. Keep the default temp dir.

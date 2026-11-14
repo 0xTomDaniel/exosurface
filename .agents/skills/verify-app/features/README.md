@@ -5,7 +5,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 ## Baseline preconditions
 
 - This repo's tools on PATH (`just setup`: node at the plugin's `engines.node`, pnpm, python 3.11+ for `tomllib`); `verify-app launch` has run and printed `ready`.
-- `verify-app doctor` exits 0 for this checkout (owner and runtime builds present and current, Pi CLI installed).
+- `verify-app doctor` exits 0 for this checkout (owner build present and not older than `src/`, runtime build present, Pi CLI installed). Doctor does not check the runtime build's freshness: `launch` and `run` rerun the qc.toml setup (`./scripts/build`) first, so a run always drives fresh builds; a standalone doctor or drive after a runtime source change needs `launch` (or `setup`) first.
 - Each case runs in its own empty working directory under `$VERIFY_APP_RUN_DIR/scratch`, as its own process group.
 - Never drive a BB app, BB daemon, OptChat install, model provider or another box from this skill: no live evaluation is authorized.
 
