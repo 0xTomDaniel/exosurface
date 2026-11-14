@@ -2,7 +2,7 @@
 
 Existing native BB plugin, not a standalone CLI. Pilot migration scope and remaining standards: [docs/pnpm-migration.md](docs/pnpm-migration.md). No full template-conformance claim.
 
-Repo skills: typescript, pnpm, nodejs
+Repo skills: typescript, pnpm, nodejs, verify-app
 
 ## Commands
 
@@ -10,6 +10,7 @@ Repo skills: typescript, pnpm, nodejs
 - `just check`: canonical offline native owner/runtime build, existing TypeScript check and bounded mock-BB Node test harness. Hook and CI call the same gate.
 - `./scripts/build`: real owner and runtime artifacts in `plugins/bb-plugin-exosurface/dist` and generated resources.
 - `pnpm --dir plugins/bb-plugin-exosurface exec bb plugin build`: native BB host/server/app packaging. Use an isolated `BB_DATA_DIR`, no service or provider calls.
+- `.agents/skills/verify-app/scripts/verify-app run`: offline drive of one `demo/surfaces` scenario plus an evidence record; no live BB. Skill: [.agents/skills/verify-app](.agents/skills/verify-app/SKILL.md).
 - Narrow harness: `plugins/bb-plugin-exosurface/scripts/check [test file ...]`, paths relative to caller when present, otherwise plugin directory.
 
 ## Layout and pins
