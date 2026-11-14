@@ -1,3 +1,4 @@
+export {};
 // Release entry adapter only. The existing owner/session/projection implementation is unchanged.
 // These probes deliberately do not import config/state/owner modules or touch credentials/state.
 if(process.argv.includes('--release-selftest')){

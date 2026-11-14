@@ -149,7 +149,7 @@ async function serverRpc(vault: string) {
   };
   // BB faults a test sets: the next `threadGet` reads of a thread (bb.sdk.threads.get) fail as a lost connection does.
   const faults = { threadGet: 0 };
-  const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, createdAt: 0 });
+  const thread = (threadId: string) => threads.get(threadId) ?? others.get(threadId) ?? ({ id: threadId, providerId: 'exo-spike', projectId: 'project', parentThreadId: null, environmentId: 'env', title: null, status: 'idle', createdAt: 0 });
   // BB's thread lifecycle events (bb.events) and the plugin's log lines.
   const listeners: Record<string, ((payload: any) => unknown)[]> = {}, logs: string[] = [];
   /** BB fires thread.idle when a thread's turn ends; resolves once every listener has returned. */
@@ -181,7 +181,7 @@ async function serverRpc(vault: string) {
           const id = threads.size ? `thread-${threads.size + 1}` : 'primary';
           // createdAt as BB stamps it: the wall-clock milliseconds it was made, each thread after the one before.
           const createdAt = Math.max(Date.now(), ...[...threads.values()].map(t => t.createdAt + 1));
-          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, createdAt };
+          const created = { id, providerId: args.providerId, projectId: args.projectId, parentThreadId: args.parentThreadId ?? null, environmentId: 'env', title: args.title ?? null, status: 'idle', createdAt };
           threads.set(id, created);
           for (const hook of hooks) {
             const decision = await hook({ thread: created, project: { id: args.projectId }, environment: null, input: { text: args.prompt, blocks: [{ type: 'text', text: args.prompt }] }, attemptKind: 'start-turn', initiator: 'user', senderThreadId: null, queuedMessages: [] });

@@ -2,6 +2,7 @@
 // the owner, so its turns run beside the primary's (spec pages-and-activity S9). Same Exo (S10): the profile's AGENTS.md
 // is the primary profile's (symlink, one source), its compactor/subagent choices are the primary's, and Pi runs on the
 // vault with the primary model (runtime.ts). Profiles are made only through OptChat's own API (src/optchat-init.ts).
+import { z } from 'zod';
 import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,8 +16,9 @@ function optchat(op: 'create' | 'validate' | 'configure', profile: string, choic
   const agentDir = requireLocal(local('primaryAgentDir'), 'primaryAgentDir');
   const answer = spawnSync(process.execPath, ['--experimental-transform-types', helper, requireLocal(OPTCHAT, 'optchat'), op, profile, ...(choices ? [JSON.stringify(choices)] : [])],
     { cwd: requireLocal(VAULT, 'vault'), env: childEnv({ OPTCHAT_HOME: CANONICAL_HOME, PI_CODING_AGENT_DIR: agentDir }), encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024 });
-  let result: any; try { result = JSON.parse(answer.stdout); } catch { result = undefined; }
-  if (answer.error || answer.status !== 0 || !result?.ok) throw new Error(`OptChat ${op} failed: ${(answer.error?.message ?? result?.error ?? (answer.stderr || `exit ${answer.status}`)).replace(/\s+/g, ' ').trim().slice(0, 400)}`);
+  let result: { ok?: boolean | undefined; error?: string | undefined } | undefined;
+  try { result = z.object({ ok: z.boolean().optional(), error: z.string().optional() }).parse(JSON.parse(answer.stdout) as unknown); } catch { result = undefined; }
+  if (answer.error || answer.status !== 0 || !result?.ok) throw new Error(`OptChat ${op} failed: ${(answer.error?.message ?? result?.error ?? (answer.stderr || `exit ${String(answer.status)}`)).replace(/\s+/g, ' ').trim().slice(0, 400)}`);
   return result;
 }
 
@@ -33,7 +35,7 @@ export function bindThread(threadId: string) {
   const dir = join(CANONICAL_HOME, 'profiles', profile), agents = join(dir, 'AGENTS.md'), primary = join(CANONICAL_HOME, 'profiles', CANONICAL_PROFILE);
   if (!existsSync(dir)) optchat('create', profile);
   if (!lstatSync(agents, { throwIfNoEntry: false })?.isSymbolicLink()) { rmSync(agents, { force: true }); symlinkSync(join(primary, 'AGENTS.md'), agents); }
-  const { compactor, subagent } = JSON.parse(readFileSync(join(primary, 'config.json'), 'utf8'));
+  const { compactor, subagent } = z.object({ compactor: z.unknown().optional(), subagent: z.unknown().optional() }).parse(JSON.parse(readFileSync(join(primary, 'config.json'), 'utf8')) as unknown);
   optchat('configure', profile, { compactor, subagent });
   optchat('validate', profile);
   if (!createExclusive(file, { providerThreadId: `exo:${profile}:main`, profile, runtimeKind: 'canonical', cursor: 0 })) throw new Error('Thread binding changed concurrently');

@@ -6,17 +6,18 @@ import type {Offer} from './contract.ts';
 import {sourceSegments,bindSource} from '../observer/source.ts';
 export const JEV='typesafe/jev-1.13-20260917', HAIKU='anthropic/claude-haiku-5.5';
 export type Mode='jev'|'haiku'|'haiku-both';
-export type Call={model:string;kind:string;startedMs:number;elapsedMs:number|null;firstTokenMs:number|null;inputTokens:number|null;outputTokens:number|null;cachedTokens:number|null;costUsd:number|null;httpStatus?:number;finishReason?:string;errorCode?:number|string;status:'running'|'complete'|'failed';};
+export interface Call {model:string;kind:string;startedMs:number;elapsedMs:number|null;firstTokenMs:number|null;inputTokens:number|null;outputTokens:number|null;cachedTokens:number|null;costUsd:number|null;httpStatus?:number;finishReason?:string;errorCode?:number|string;status:'running'|'complete'|'failed';}
 type Questions=Record<string,{criteria:Record<string,unknown>}>;
-type EvaluatorRequest={state:Record<string,unknown>;questions:Questions};
+interface EvaluatorRequest {state:Record<string,unknown>;questions:Questions}
 const now=()=>performance.now();
-export function choices(raw:any,questions:Questions){
- if(!raw||typeof raw!=='object'||Object.keys(raw).length!==Object.keys(questions).length)throw Error('Missing/extra decisions');
- return Object.fromEntries(Object.entries(questions).map(([name,q])=>{const a=raw[name],choice=typeof a==='string'?a:a?.choice;if(typeof choice!=='string'||!Object.hasOwn(q.criteria,choice))throw Error('Invalid offered choice');return [name,{choice,...(typeof a?.confidence==='number'?{confidence:a.confidence}:{})}];}));
+const record=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
+export function choices(raw:unknown,questions:Questions){
+ if(!record(raw)||Object.keys(raw).length!==Object.keys(questions).length)throw Error('Missing/extra decisions');
+ return Object.fromEntries(Object.entries(questions).map(([name,q])=>{const a=raw[name],choice=typeof a==='string'?a:record(a)?a['choice']:undefined;if(typeof choice!=='string'||!Object.hasOwn(q.criteria,choice))throw Error('Invalid offered choice');return [name,{choice,...(record(a)&&typeof a['confidence']==='number'?{confidence:a['confidence']}:{})}];}));
 }
-export function copyFrame(frame:any,offer:Offer,put:(slot:string,text:string)=>void){
- if(!frame||Object.keys(frame).sort().join()!=='slot,text'||!Object.hasOwn(offer.slots,frame.slot)||typeof frame.text!=='string'||!frame.text.trim()||frame.text.length>700)throw Error('Invalid complete copy frame');
- put(frame.slot,frame.text);
+export function copyFrame(frame:unknown,offer:Offer,put:(slot:string,text:string)=>void){
+ if(!record(frame)||Object.keys(frame).sort().join()!=='slot,text'||typeof frame['slot']!=='string'||!Object.hasOwn(offer.slots,frame['slot'])||typeof frame['text']!=='string'||!frame['text'].trim()||frame['text'].length>700)throw Error('Invalid complete copy frame');
+ put(frame['slot'],frame['text']);
 }
 export class Provider{
 private origin: number;
@@ -26,8 +27,8 @@ private budget: number;
 
  readonly calls:Call[]=[];readonly tasks:Promise<void>[]=[];private count=0;
  constructor( origin=now(), transport:typeof fetch=fetch, key=()=>{
-  const auth=JSON.parse(readFileSync(join(process.env.PI_CODING_AGENT_DIR??join(homedir(),'.pi','agent'),'auth.json'),'utf8'));
-  const key=auth.openrouter?.key;if(typeof key!=='string'||!key)throw Error('Existing OpenRouter credential unavailable');return key;
+  const auth:unknown=JSON.parse(readFileSync(join(process.env['PI_CODING_AGENT_DIR']??join(homedir(),'.pi','agent'),'auth.json'),'utf8'));
+  const router=record(auth)?auth['openrouter']:undefined,key=record(router)?router['key']:undefined;if(typeof key!=='string'||!key)throw Error('Existing OpenRouter credential unavailable');return key;
  }, budget=4){
 this.origin = origin;
 this.transport = transport;
@@ -42,7 +43,7 @@ this.budget = budget;
   const r=await this.transport(`https://openrouter.ai/api/v1/${path}`,{method:'POST',headers:{Authorization:`Bearer ${this.key()}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.any([signal,AbortSignal.timeout(20000)])});
   call.httpStatus=r.status;if(!r.ok)throw Error(`Composition provider HTTP ${String(r.status)}; response hidden`);return r;
  }
- private usage(c:Call,u:any){if(!u)return;c.inputTokens=u.input_tokens??u.prompt_tokens??null;c.outputTokens=u.output_tokens??u.completion_tokens??null;c.cachedTokens=u.prompt_tokens_details?.cached_tokens??null;c.costUsd=typeof u.cost==='number'?u.cost:null;}
+ private usage(c:Call,u:unknown){if(!u)return;if(!record(u))throw Error('Invalid provider usage');const input=u['input_tokens']??u['prompt_tokens']??null,output=u['output_tokens']??u['completion_tokens']??null,details=u['prompt_tokens_details'],cached=record(details)?details['cached_tokens']??null:null;if((input!==null&&typeof input!=='number')||(output!==null&&typeof output!=='number')||(cached!==null&&typeof cached!=='number'))throw Error('Invalid provider token usage');c.inputTokens=input;c.outputTokens=output;c.cachedTokens=cached;c.costUsd=typeof u['cost']==='number'?u['cost']:null;}
  private done(c:Call,ok:boolean){c.status=ok?'complete':'failed';c.elapsedMs=Math.round(now()-this.origin-c.startedMs);}
  private async chat(state:unknown,instruction:string,signal:AbortSignal,onFrame:(v:any)=>void,kind:string,schema?:Record<string,unknown>){
   const c=this.begin(HAIKU,kind);let ok=false;
@@ -77,7 +78,7 @@ this.budget = budget;
   const c=this.begin(JEV,'observer-structure');let ok=false;try{const r=await this.request('systemone',{model:JEV,state,questions},c,signal),v=await r.json();this.usage(c,v.usage);if(v.model!==JEV)throw Error('Unexpected resolved Jev model');const answers=choices(v.answers,questions);ok=true;return answers;}finally{this.done(c,ok);}
  }
  copy(offer:Offer,context:unknown,signal:AbortSignal,put:(slot:string,text:string)=>void){
-  return this.chat({presentationRequest:(context as any)?.presentationRequest,purpose:offer.purpose,slots:offer.slots},'Write concise interface copy for EVERY offered slot, following its brief and source fallback. Preserve all substantive alternatives, uncertainties and synthetic-only scope. Each line is {"slot":"offered slot","text":"copy"}. Do not write decisions, input values or new slots.',signal,f=>copyFrame(f,offer,put),'copy');
+  return this.chat({presentationRequest:(context as any)?.presentationRequest,purpose:offer.purpose,slots:offer.slots},'Write concise interface copy for EVERY offered slot, following its brief and source fallback. Preserve all substantive alternatives, uncertainties and synthetic-only scope. Each line is {"slot":"offered slot","text":"copy"}. Do not write decisions, input values or new slots.',signal,f=> { copyFrame(f,offer,put); },'copy');
  }
  evaluator(mode:Mode,offer:Offer,context:unknown,signal:AbortSignal,put:(slot:string,text:string)=>void){
   let first=true;

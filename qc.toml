@@ -1,0 +1,24 @@
+# This plugin's driver contract (octo-feather quality spec #qc-contract), read by the verify-app skill.
+# Validate it with the kit's octo-feather-contract.
+format = 1
+
+# The repo's frozen install, then the owner and runtime builds the surfaces demo runs on (scripts/build:
+# build:owner and build:runtime into plugins/bb-plugin-exosurface/dist). Offline once the store is filled.
+setup = "pnpm install --frozen-lockfile && ./scripts/build"
+
+# The plugin's offline run surface: the ADR 0002 fallback demo launcher, `surfaces <scenario>`. It runs the real
+# server.ts RPCs, host.ts bridge, release owner and Pi CLI; BB, OptChat and the model are faked at the boundary by
+# the existing mock-BB harness (test/mock-bb.ts). Bounded as the gate bounds its Node steps.
+[entry]
+command = 'env GOMAXPROCS=2 NODE_OPTIONS=--max-old-space-size=1536 "$QC_REPO/plugins/bb-plugin-exosurface/demo/surfaces"'
+
+# None: each scenario starts its own fixture processes (bridge, owner, Pi) and stops them before it exits.
+[services]
+
+# None: each scenario makes its own fixture under the temp dir and removes it.
+[fixture]
+
+# The new-surface drive's expected names (a worked example, never rebuilt by the helper).
+[values]
+home = "Home"
+new_surface = "New surface"

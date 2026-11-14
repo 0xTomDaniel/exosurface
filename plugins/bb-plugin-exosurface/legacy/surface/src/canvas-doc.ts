@@ -4,7 +4,7 @@
 //
 //  Concept                | Today (pi-coding-agent + this plugin)                         | pi-durable
 //  -----------------------|---------------------------------------------------------------|------------------------------------------
-//  Document definition    | CANVAS_DOC (kind/version/scope/history/fork/initial)          | defineDoc({kind,version,scope,history,fork,initial})
+//  Document definition    | conversation-scoped canvas value                            | defineDoc({kind,version,scope,history,fork,initial})
 //  Value                  | Snapshot | null                                               | doc value
 //  Change / commit        | CanvasChange → one native entry (tool-result details or       | conversation.commit(tx => tx.doc(Canvas,id) …) with
 //                         | exosurface-composition-commit custom entry)                   | the agent's entries in the same commit
@@ -17,7 +17,6 @@
 // Keep this module free of Pi APIs so the reducer, fold and section move unchanged.
 import {applyDelta,latestSnapshot,type Snapshot,type Delta} from './workspace.ts';
 import {snapshotOutline,type Earlier} from './canvas-memory.ts';
-export const CANVAS_DOC={kind:'exosurface.canvas',version:1,scope:'conversation',history:'latest',fork:'current',initial:():CanvasValue=>null} as const;
 export type CanvasValue=Snapshot|null;
 /** Who changed the canvas and how. `agent` = an update_exosurface (or legacy apply_workspace) call; `edit` = the person typing (no turn);
  *  `press` = values a button submitted, committed by code before Exo's turn; `reset` = cleared. */
@@ -32,6 +31,6 @@ export function reduceCanvas(value:CanvasValue,change:CanvasChange):Snapshot{
 }
 /** Current value from the conversation's active branch (pi-durable: harness.snapshot). Decodes
  *  every historical encoding (legacy checkpoints, tool deltas, commit entries, resets). */
-export const foldCanvas=(branch:readonly any[]):CanvasValue=>latestSnapshot(branch);
+export const foldCanvas=(branch:readonly unknown[]):CanvasValue=>latestSnapshot(branch);
 /** What the model sees of the canvas each request (pi-durable: a prompt section reading the doc). */
 export const canvasSection=(value:CanvasValue,earlier?:Earlier)=>value?snapshotOutline(value,earlier):null;

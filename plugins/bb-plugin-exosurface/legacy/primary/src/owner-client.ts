@@ -12,7 +12,7 @@ async function probe() {
   return new Promise<boolean>(resolve => {
     const socket = createConnection(OWNER_SOCKET); socket.setTimeout(500);
     socket.once('connect', () => { socket.destroy(); resolve(true); });
-    socket.once('error', () => resolve(false)); socket.once('timeout', () => { socket.destroy(); resolve(false); });
+    socket.once('error', () => { resolve(false); }); socket.once('timeout', () => { socket.destroy(); resolve(false); });
   });
 }
 async function ensureOwner() {
@@ -25,7 +25,7 @@ async function ensureOwner() {
     const uid = process.getuid?.();
     if (uid === undefined) throw new Error('Approved owner supervisor unavailable on this runtime');
     const launcher = spawn('/bin/launchctl', ['kickstart', `gui/${String(uid)}/${local('ownerLabel') || 'local.exocortex.exo-owner'}`], { stdio: 'ignore' });
-    await new Promise<void>((resolve, reject) => { launcher.once('error', reject); launcher.once('exit', code => code === 0 ? resolve() : reject(new Error('Exo launchd owner is not provisioned; no fallback owner spawned by BB'))); });
+    await new Promise<void>((resolve, reject) => { launcher.once('error', reject); launcher.once('exit', code => { if (code === 0) resolve(); else reject(new Error('Exo launchd owner is not provisioned; no fallback owner spawned by BB')); }); });
     const until = Date.now() + 30_000;
     while (Date.now() < until) { if (await probe()) return; await new Promise(r => setTimeout(r, 200)); }
     throw new Error('Independent Exo owner did not start; inspect owner/state.json. No lock takeover attempted.');
@@ -61,8 +61,8 @@ private lost: (e: Error) => void;
       }
       if (buffer.length > 64 * 1024 * 1024) { client.fail(new Error('Exo view frame exceeds bound')); client.socket.destroy(); }
     });
-    client.socket.on('error', e => client.fail(e));
-    client.socket.on('close', () => client.fail(new Error('Exo owner connection closed')));
+    client.socket.on('error', e => { client.fail(e); });
+    client.socket.on('close', () => { client.fail(new Error('Exo owner connection closed')); });
     const hello = await client.send('hello', { threadId }); client.nativePid = hello.piPid;
     if (hello.journalReplay !== 2) { await client.close(); throw new Error('Owner read-side upgrade required after active jobs finish; refusing an incompatible view'); }
     return client;
@@ -84,7 +84,7 @@ this.lost = lost;
   }
   private write(value: any) {
     this.writes = this.writes.then(async () => { if (!this.socket.write(JSON.stringify(value) + '\n')) await once(this.socket, 'drain'); });
-    void this.writes.catch(e => this.fail(e));
+    void this.writes.catch(e => { this.fail(e); });
   }
   notify(type: string, fields: Record<string, unknown>) { if (!this.closing) this.write({ type, ...fields }); }
   async close() { this.closing = true; for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('View detached')); } this.pending.clear(); this.socket.end(); }

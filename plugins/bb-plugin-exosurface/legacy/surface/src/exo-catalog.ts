@@ -25,11 +25,10 @@ export const exoCatalog=<T extends {name:string;schema:z.ZodTypeAny}>(implementa
 // Server/validator catalog: identical schemas, no rendering code.
 export const exoApiCatalog=exoCatalog(EXO_APIS);
 // Semantic checks beyond per-prop schemas, applied to every committed surface.
-export function checkExoComponent(raw:any){
- const {id:_id,component,...props}=raw,api=EXO_APIS.find(a=>a.name===component);if(!api)throw Error('Unknown Exo component');
- const parsed=api.schema.safeParse(props);if(!parsed.success)throw Error(`${component} ${raw.id}: ${parsed.error.issues.slice(0,3).map(i=>`${i.path.join('.')||'props'} ${i.message}`).join('; ')}`);
- const n:any=raw;
- if(n.component==='Table'){for(const r of n.rows)if(r.cells.length!==n.columns.length)throw Error('Table rows must match columns');if(n.highlightColumn!==undefined&&n.highlightColumn>=n.columns.length)throw Error('Table highlight outside columns');}
- if(n.component==='Flow'){const ids=new Set<string>();for(const x of n.nodes){if(ids.has(x.id))throw Error('Duplicate Flow node');ids.add(x.id);}for(const e of n.edges)if(!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Flow edge must join two distinct declared nodes');}
- if(n.component==='Chart'&&n.max!==undefined&&n.points.some((p:any)=>p.value>n.max))throw Error('Chart value exceeds declared max');
+export function checkExoComponent(raw:unknown){
+ const {id,component,...props}=z.object({id:z.unknown(),component:z.string()}).catchall(z.unknown()).parse(raw),api=EXO_APIS.find(a=>a.name===component);if(!api)throw Error('Unknown Exo component');
+ const parsed=api.schema.safeParse(props);if(!parsed.success)throw Error(`${component} ${String(id)}: ${parsed.error.issues.slice(0,3).map(i=>`${i.path.join('.')||'props'} ${i.message}`).join('; ')}`);
+ if(component==='Table'){const n=TableApi.schema.parse(props);for(const r of n.rows)if(r.cells.length!==n.columns.length)throw Error('Table rows must match columns');if(n.highlightColumn!==undefined&&n.highlightColumn>=n.columns.length)throw Error('Table highlight outside columns');}
+ if(component==='Flow'){const n=FlowApi.schema.parse(props);const ids=new Set<string>();for(const x of n.nodes){if(ids.has(x.id))throw Error('Duplicate Flow node');ids.add(x.id);}for(const e of n.edges)if(!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw Error('Flow edge must join two distinct declared nodes');}
+ if(component==='Chart'){const n=ChartApi.schema.parse(props),max=n.max;if(max!==undefined&&n.points.some(p=>p.value>max))throw Error('Chart value exceeds declared max');}
 }
