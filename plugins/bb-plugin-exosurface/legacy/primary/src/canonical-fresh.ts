@@ -1,6 +1,39 @@
 // Fresh canonical binding primitives. Pi/OptChat own their native files; this module
 // writes only Exosurface's receipt and existing binding/pointer formats.
 import { createHash } from 'node:crypto';
+// Owner artifacts relocate without node_modules; keep file validation builtin-only.
+export function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+export function document(bytes: string) {
+  const value: unknown = JSON.parse(bytes);
+  if (!isRecord(value)) throw Error('Invalid canonical setup document');
+  return value;
+}
+interface SessionEntry {
+  type: string; id?: unknown; customType?: unknown; data?: unknown;
+  message?: { role?: unknown; content?: { type?: unknown; text?: unknown }[] | null } | null;
+}
+function isSessionEntry(value: unknown): value is SessionEntry {
+  if (!isRecord(value) || typeof value['type'] !== 'string') return false;
+  const message = value['message'];
+  if (message == null) return true;
+  if (!isRecord(message)) return false;
+  const content = message['content'];
+  return content == null || (Array.isArray(content) && content.every(isRecord));
+}
+function sessionEntry(bytes: string) {
+  const value: unknown = JSON.parse(bytes);
+  if (!isSessionEntry(value)) throw Error('Invalid canonical session entry');
+  return value;
+}
+interface Receipt extends FreshBinding { schema?: unknown; sessionPrefix: number; sessionPrefixHash: string; }
+function isReceipt(value: unknown): value is Receipt {
+  return isRecord(value) && ['operationId', 'home', 'optchatHome', 'profile', 'threadId', 'sessionFile', 'sessionId', 'sessionPrefixHash'].every(key => typeof value[key] === 'string') && typeof value['sessionPrefix'] === 'number';
+}
+function receiptDocument(bytes: string) {
+  const value: unknown = JSON.parse(bytes);
+  if (!isReceipt(value)) throw Error('Invalid canonical setup receipt');
+  return value;
+}
 import { existsSync, lstatSync, readFileSync, openSync, readSync, closeSync, statSync } from 'node:fs';
 import { createExclusive } from '../../../src/store.ts';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -50,17 +83,17 @@ function facts(input: FreshBinding) {
   // A fresh proof is bounded. Later ordinary conversations are checked by the
   // immutable prefix rather than re-reading unbounded history.
   if (bytes.length > 65536) throw Error('Fresh canonical session exceeds setup bound');
-  const entries = bytes.trim().split('\n').map(line => JSON.parse(line));
-  if (entries[0]?.type !== 'session' || entries[0]?.id !== input.sessionId) throw Error('Canonical Pi session identity mismatch');
+  const entries = bytes.trim().split('\n').map(line => sessionEntry(line));
+  if (entries[0]?.type !== 'session' || entries[0].id !== input.sessionId) throw Error('Canonical Pi session identity mismatch');
   const messages = entries.filter(e => e.type === 'message');
-  if (messages.length !== 1 || messages[0].message?.role !== 'user' || messages[0].message.content?.length !== 1 || messages[0].message.content[0]?.type !== 'text' || messages[0].message.content[0]?.text !== INITIALIZATION) throw Error('Exactly one authorized initialization user record required');
-  if (!entries.some(e => e.type === 'custom' && e.customType === 'optchat.profile' && e.data?.name === input.profile)) throw Error('Real OptChat session binding required');
+  if (messages.length !== 1 || messages[0]?.message?.role !== 'user' || messages[0].message.content?.length !== 1 || messages[0].message.content[0]?.type !== 'text' || messages[0].message.content[0].text !== INITIALIZATION) throw Error('Exactly one authorized initialization user record required');
+  if (!entries.some(e => e.type === 'custom' && e.customType === 'optchat.profile' && isRecord(e.data) && e.data['name'] === input.profile)) throw Error('Real OptChat session binding required');
   const dir = join(input.optchatHome, 'profiles', input.profile);
   noLinks(dir);
   if (existsSync(join(dir, 'active-memory.json')) || existsSync(join(dir, 'imports', 'pending.json'))) throw Error('Fresh setup cannot adopt imported or pending profile state');
   noLinks(join(dir, 'config.json')); noLinks(join(dir, 'AGENTS.md'));
-  const config = JSON.parse(readFileSync(join(dir, 'config.json'), 'utf8'));
-  if (!config.compactor || !config.subagent || !readFileSync(join(dir, 'AGENTS.md'), 'utf8')) throw Error('OptChat API profile validation required');
+  const config = document(readFileSync(join(dir, 'config.json'), 'utf8'));
+  if (!config['compactor'] || !config['subagent'] || !readFileSync(join(dir, 'AGENTS.md'), 'utf8')) throw Error('OptChat API profile validation required');
   return { profileConfigHash: digest(join(dir, 'config.json')), profileInstructionsHash: digest(join(dir, 'AGENTS.md')), sessionPrefix: Buffer.byteLength(bytes), sessionPrefixHash: digest(input.sessionFile) };
 }
 export function validateFreshCanonicalSession(input: Omit<FreshBinding, 'threadId'>) { return facts({ ...input, threadId: 'pending-canonical-setup' }); }
@@ -94,10 +127,10 @@ export function freshCanonicalReceipt(home: string, optchatHome: string, profile
   const file = join(home, 'canonical-fresh.json');
   if (!existsSync(file)) return undefined;
   noLinks(file); noLinks(join(home, 'canonical-fresh-committed.json'));
-  const receipt = JSON.parse(readFileSync(file, 'utf8'));
+  const receipt = receiptDocument(readFileSync(file, 'utf8'));
   if (!/^[a-zA-Z0-9_-]+$/.test(receipt.threadId) || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(profile)) throw Error('Invalid canonical receipt identity');
-  const committed = JSON.parse(readFileSync(join(home, 'canonical-fresh-committed.json'), 'utf8'));
-  if (receipt.schema !== 'exosurface-canonical-fresh/0' || receipt.home !== home || receipt.optchatHome !== optchatHome || receipt.profile !== profile || committed.operationId !== receipt.operationId || committed.receiptHash !== digest(file)) throw Error('Uncommitted or mismatched canonical setup receipt');
+  const committed = document(readFileSync(join(home, 'canonical-fresh-committed.json'), 'utf8'));
+  if (receipt.schema !== 'exosurface-canonical-fresh/0' || receipt.home !== home || receipt.optchatHome !== optchatHome || receipt.profile !== profile || committed['operationId'] !== receipt.operationId || committed['receiptHash'] !== digest(file)) throw Error('Uncommitted or mismatched canonical setup receipt');
   // Native session must remain the exact file issued by setup, even after turns.
   inside(join(optchatHome, 'pi-sessions'), receipt.sessionFile);
   if (!Number.isSafeInteger(receipt.sessionPrefix) || receipt.sessionPrefix < 1 || receipt.sessionPrefix > 65536) throw Error('Invalid canonical session receipt bound');
@@ -106,8 +139,8 @@ export function freshCanonicalReceipt(home: string, optchatHome: string, profile
   const dir = join(optchatHome, 'profiles', profile); noLinks(dir);
   for (const path of [join(dir, 'config.json'), join(dir, 'AGENTS.md'), join(home, 'canonical-thread.json'), join(home, 'bindings', `${receipt.threadId}.json`)]) noLinks(path);
   if (!existsSync(join(dir, 'config.json')) || !existsSync(join(dir, 'AGENTS.md'))) throw Error('Missing fresh canonical profile');
-  const pointer = JSON.parse(readFileSync(join(home, 'canonical-thread.json'), 'utf8'));
-  const binding = JSON.parse(readFileSync(join(home, 'bindings', `${receipt.threadId}.json`), 'utf8'));
-  if (pointer.threadId !== receipt.threadId || pointer.profile !== profile || pointer.providerThreadId !== `exo:${profile}:main` || binding.providerThreadId !== `exo:${profile}:main` || pointer.sessionFile !== receipt.sessionFile || binding.profile !== profile || binding.runtimeKind !== 'canonical' || binding.sessionFile !== receipt.sessionFile) throw Error('Canonical setup binding/receipt mismatch');
+  const pointer = document(readFileSync(join(home, 'canonical-thread.json'), 'utf8'));
+  const binding = document(readFileSync(join(home, 'bindings', `${receipt.threadId}.json`), 'utf8'));
+  if (pointer['threadId'] !== receipt.threadId || pointer['profile'] !== profile || pointer['providerThreadId'] !== `exo:${profile}:main` || binding['providerThreadId'] !== `exo:${profile}:main` || pointer['sessionFile'] !== receipt.sessionFile || binding['profile'] !== profile || binding['runtimeKind'] !== 'canonical' || binding['sessionFile'] !== receipt.sessionFile) throw Error('Canonical setup binding/receipt mismatch');
   return receipt as FreshBinding;
 }

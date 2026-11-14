@@ -15,7 +15,7 @@ this.provider=input.provider??new Provider(this.start,undefined,undefined,4);thi
  cancel(){this.fail(Error('Observer cancelled; no automatic restart'));}
  append(delta:string,completedSnapshot=false){if(this.final)return;if(this.source.length+delta.length>18000){this.fail(Error('Response exceeds observer 18000-character bound'));return;}this.source+=delta;this.status.sourceChars=this.source.length;this.status.firstTextMs??=Math.round(performance.now()-this.start);
   if(this.failure){if(performance.now()-this.lastUpdate>=250)this.update();return;}
-  if(!completedSnapshot&&this.input.route==='sidecar'&&!this.early){const cut=[...this.source.matchAll(/\n\s*\n/g)].map(m=>m.index!+m[0].length).find(c=>c>=600);if(cut){this.firstSource=this.source.slice(0,cut);this.early=this.compose(this.firstSource,false).catch(e=>this.fail(e));}}
+  if(!completedSnapshot&&this.input.route==='sidecar'&&!this.early){const cut=[...this.source.matchAll(/\n\s*\n/g)].map(m=>m.index+m[0].length).find(c=>c>=600);if(cut){this.firstSource=this.source.slice(0,cut);this.early=this.compose(this.firstSource,false).catch(e=> { this.fail(e); });}}
   if(performance.now()-this.lastUpdate>=250)this.update();
  }
  sourceComplete(){this.status.sourceEndMs=Math.round(performance.now()-this.start);this.update();}

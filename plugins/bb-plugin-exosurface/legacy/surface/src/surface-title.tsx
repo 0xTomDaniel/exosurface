@@ -18,8 +18,8 @@ export function SurfaceTitle({threadId}:{threadId?:string}){
  if(!threadId)return <h1>{name}</h1>;
  return <div className="exo-renamable flex min-w-0 items-center gap-1">
   {rename.editing===threadId?<RenameField rename={rename} className="min-w-0 rounded-md border border-border bg-background px-2 py-0.5"/>:<>
-   <h1 onDoubleClick={()=>rename.start(threadId,name)}>{name}</h1>
-   <RenameButton title={name} onClick={()=>rename.start(threadId,name)}/></>}
+   <h1 onDoubleClick={()=> { rename.start(threadId,name); }}>{name}</h1>
+   <RenameButton title={name} onClick={()=> { rename.start(threadId,name); }}/></>}
   {rename.error&&<span role="alert" className="text-sm text-destructive">{rename.error}</span>}
  </div>;
 }

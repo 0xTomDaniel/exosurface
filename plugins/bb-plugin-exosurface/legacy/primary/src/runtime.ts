@@ -15,7 +15,7 @@ export async function assertNativeOwner(profile: string, pid: number | undefined
     const socket = createConnection(socketPath); let result = '';
     socket.setTimeout(2000, () => { socket.destroy(); reject(new Error('Profile owner did not respond; no lock takeover')); });
     socket.on('data', chunk => { result += chunk.toString(); });
-    socket.on('end', () => resolve(result)); socket.on('error', reject);
+    socket.on('end', () => { resolve(result); }); socket.on('error', reject);
   });
   // Persisted binding entries alone do not prove this process acquired a profile:
   // a resumed session can retain an old binding after an extension startup fault.

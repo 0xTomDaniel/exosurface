@@ -1,7 +1,7 @@
 import {Type} from 'typebox';
 // Do not use top-level Any for JSON records: the real model emitted JSON strings.
 const id=()=>Type.String({pattern:'^[a-zA-Z][a-zA-Z0-9_-]{0,47}$'}),key={key:id()};
-const props:Record<string,any>={
+const props={
  Column:Type.Object(key),Row:Type.Object(key),
  Text:Type.Object({...key,slot:id(),variant:Type.Union(['h1','h2','h3','body','caption'].map(v=>Type.Literal(v)))}),
  TextField:Type.Object({...key,label:Type.String(),path:Type.String()}),
