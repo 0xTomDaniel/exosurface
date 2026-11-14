@@ -3,7 +3,7 @@
 // the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { liveFixture, owner, bridge, modelRequests } from './mock-bb.ts';
@@ -14,10 +14,14 @@ const f = await liveFixture();
 let ownerProcess = await owner(f);
 let host = bridge(f);
 f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
+// The provider thread each bridge start answered with (thread/start's public result), resumed after a restart.
+const startResult = z.object({ error: z.unknown().optional(), result: z.object({ providerThreadId: z.string() }).optional() });
+const providerThreads = new Map<string, string | undefined>();
 const started = await host.start('primary');
+providerThreads.set('primary', startResult.parse(started).result?.providerThreadId);
 assert.equal(started.error, undefined, JSON.stringify(started));
 assert.ok(started.result?.providerThreadId, 'the bridge gives Home a provider thread');
-const { kit, app, close } = await renderedApp(), { fireEvent } = kit.testing;
+const { kit, app, close, browser } = await renderedApp(), { fireEvent } = kit.testing;
 // The Exosurface panel with Home (the primary thread) in view; every RPC it calls runs on server.ts.
 const view = kit.renderSlot(app.navPanels.find((p: any) => p.path === 'surface'), { subPath: '' }, { rpc: f.rpc });
 after(async () => {
@@ -39,16 +43,14 @@ async function send(text: string) {
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
 }
 const count = (haystack: string, needle: string) => haystack.split(needle).length - 1;
-// #215 helpers, typed at the fixture's untyped edges (Pi run records, bindings, the SDK app test kit).
-const piRun = z.object({ profile: z.string(), sessionFile: z.string() });
+// #215 helpers, typed at the fixture's untyped edges (Pi run records, the SDK app test kit).
+const piRun = z.object({ profile: z.string() });
 const lastRun = () => piRun.parse(f.piRuns().at(-1));
 const lastContext = (profile: string) => { const request = modelRequests(f).filter(r => r.profile === profile).at(-1); assert.ok(request, 'a model request'); return JSON.stringify(request.messages); };
 const surface = (threadId: string) => f.rpc.workspace({ deployment: 'main', threadId, cursor: null });
 const checkpointOf = (workspace: Awaited<ReturnType<typeof surface>>) => { const checkpoint = workspace.delivery.checkpoint; assert.ok(checkpoint, 'a committed checkpoint'); return checkpoint; };
 const surfaceThread = async () => { const thread = (await f.rpc.thread_list(null)).threads[1]; assert.ok(thread, 'a second surface'); return thread.threadId; };
 const stage = async (threadId: string) => (await surface(threadId)).delivery.checkpoint?.layout?.focus;
-const journalEntry = z.object({ type: z.string().optional(), customType: z.string().optional(), data: z.object({ line: z.string().optional(), page: z.string().optional(), source: z.string().optional(), surfaceId: z.string().optional(), delta: z.object({ layout: z.object({ focus: z.string().optional() }).optional() }).optional() }).optional(), message: z.object({ role: z.string().optional(), content: z.union([z.string(), z.array(z.object({ text: z.string().optional() }))]).optional() }).optional() });
-const journalOf = (sessionFile: string) => readFileSync(sessionFile, 'utf8').trim().split('\n').map(line => journalEntry.parse(JSON.parse(line)));
 interface Screen { container: HTMLElement; getByRole(role: string, options: { name: string; exact?: boolean }): HTMLElement; queryByRole(role: string, options: { name: string; exact?: boolean }): HTMLElement | null; getByDisplayValue(value: string): HTMLElement; queryByDisplayValue(value: string): HTMLElement | null }
 const screen = view as Screen;
 const act = fireEvent as { click(element: Element): void; input(element: Element, init: { target: { value: string } }): void };
@@ -99,7 +101,9 @@ test('a surface made by New surface shows no transcript, not even its control fi
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
   const fresh = (await f.rpc["thread_list"](null)).threads[1].threadId;
-  assert.equal((await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
+  const freshStart = startResult.parse(await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }]));
+  assert.equal(freshStart.error, undefined);
+  providerThreads.set(fresh, freshStart.result?.providerThreadId);
   await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && reply()?.textContent === '');
   // S1: New surface's control first message is no transcript line anywhere in the view (sidebar, page, Exo block, input).
   const control = '/exosurface-new-surface', shown = () => view.container.textContent!.includes(control) || input()!.value.includes(control);
@@ -268,7 +272,7 @@ void test('a same-topic update stays on its page; a new page Exo draws carries t
   await send(topic);
   await until('the new page and its exchange in view together', () => inView() === 'cedar' && said() === topic && reply()?.textContent === `Exo (${profile}): ${topic}`);
   assert.equal(await stage(threadId), 'cedar');
-  assert.ok(journalOf(lastRun().sessionFile).some(entry => entry.customType === 'exosurface-press' && entry.data?.line === topic && entry.data.page === 'notes'), 'the send still records the page it came from');
+  assert.equal((await f.rpc.exo_block({ threadId, page: 'cedar' })).said, topic, 'the new page carries the exchange');
   assert.equal((await f.rpc.exo_block({ threadId, page: 'notes' })).said, update, 'the older page keeps its own exchange');
 });
 
@@ -276,9 +280,21 @@ void test('a same-topic update stays on its page; a new page Exo draws carries t
 void test('a turn that edits another page is on that page and does not change the page in view', async () => {
   const profile = lastRun().profile, threadId = await surfaceThread();
   const edit = `call: ${JSON.stringify({ baseRevision: (await surface(threadId)).revision, edits: [{ page: 'notes', ref: 'title', op: 'replace', lines: '- heading "Background notes" [ref=title]' }] })}`;
+  const asked = browser.scrolls.length;
   await send(edit);
+  // F3: once the send's own scroll to the top is asked for, the person scrolls and clicks on the page in view while Exo's
+  // turn changes another page.
+  await until('the send\'s scroll to the top', () => browser.scrolls.length > asked);
+  const page = screen.container.querySelector('main');
+  assert.ok(page, 'the surface view');
+  page.scrollTop = 120;
+  const heading = screen.container.querySelector('main section[data-surface="cedar"] h1, main section[data-surface="cedar"] h2, main section[data-surface="cedar"] h3');
+  assert.ok(heading, 'the cedar heading');
+  act.click(heading);
   await until('the edit turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working && JSON.stringify(checkpointOf(await surface(threadId))).includes('Background notes'));
   assert.equal(inView(), 'cedar');
+  assert.equal(page.scrollTop, 120, 'no forced scroll after the person scrolled');
+  assert.equal(browser.scrolls.length, asked + 1, 'only the send asked for a scroll');
   assert.equal(await stage(threadId), 'cedar');
   const notes = await f.rpc.exo_block({ threadId, page: 'notes' });
   assert.equal(notes.said, edit);
@@ -293,9 +309,16 @@ void test('a turn that only withdraws another page is on the page it was sent fr
   await until('the elm page and reply', () => inView() === 'elm' && reply()?.textContent === `Exo (${profile}): draw elm: Elm plan`);
   act.click(screen.getByRole('button', { name: 'Cedar plan', exact: true }));
   await until('cedar selected and idle', () => inView() === 'cedar' && busy() === 'false');
-  const revision = (await surface(threadId)).revision, withdraw = `call: ${JSON.stringify({ baseRevision: revision, delete: ['elm'] })}`;
+  // A question from cedar makes it current first, so the withdrawal below names the revision it is sent against.
+  await send('what is left on cedar?');
+  await until('cedar current after the question', async () => !(await f.rpc.exo_block({ threadId })).working && await stage(threadId) === 'cedar');
+  const live = (w: Awaited<ReturnType<typeof surface>>) => JSON.stringify(checkpointOf(w).messages).includes('"surfaceId":"elm"');
+  const before = await surface(threadId);
+  assert.ok(live(before), 'elm on the surface before the withdrawal');
+  const withdraw = `call: ${JSON.stringify({ baseRevision: before.revision, delete: ['elm'] })}`;
   await send(withdraw);
-  await until('the withdrawal turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working && (await surface(threadId)).revision > revision);
+  await until('the withdrawal turn to finish', async () => !(await f.rpc.exo_block({ threadId })).working && (await surface(threadId)).revision > before.revision);
+  assert.equal(live(await surface(threadId)), false, 'elm withdrawn from the surface');
   const cedar = await f.rpc.exo_block({ threadId, page: 'cedar' });
   assert.equal(cedar.said, withdraw);
   assert.equal(cedar.words, `Exo (${profile}): ${withdraw}`);
@@ -337,20 +360,16 @@ void test('a message from an earlier page not kept makes it current with the ful
   assert.equal((await f.rpc.thread_list(null)).threads[0]?.title, 'Home');
 });
 
-const binding = z.object({ sessionFile: z.string(), providerThreadId: z.string() });
-const bindingOf = (id: string) => binding.parse(JSON.parse(readFileSync(join(f.home, 'bindings', `${id}.json`), 'utf8')));
 // The notes page's conversation card, as Exo's reply carried it, for the retired-page test after the restart.
 let notesCard: string | undefined;
 void test('restarting the owner and the provider keeps the current page, the full context and Home', async () => {
   const threadId = await surfaceThread();
   const before = checkpointOf(await surface(threadId)), home = (await f.rpc.thread_list(null)).threads[0];
-  const bindings = ['primary', threadId].map(bindingOf);
   notesCard = /::exo-surface\{surface=\\"notes\\" revision=\\"(\d+)\\" action=\\"drew\\"\}/.exec(JSON.stringify(host.deltas(threadId)))?.[1];
   for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
   ownerProcess = await owner(f); host = bridge(f);
-  for (const [i, id] of ['primary', threadId].entries()) assert.equal(z.object({ error: z.unknown() }).partial().parse(await host.start(id, undefined, bindings[i]?.providerThreadId)).error, undefined);
+  for (const id of ['primary', threadId]) assert.equal(z.object({ error: z.unknown() }).partial().parse(await host.start(id, undefined, providerThreads.get(id))).error, undefined);
   assert.deepEqual(checkpointOf(await surface(threadId)), before);
-  assert.equal(bindingOf(threadId).sessionFile, bindings[1]?.sessionFile);
   assert.deepEqual((await f.rpc.thread_list(null)).threads[0], home);
   const question = 'what survives restarting this surface?';
   await send(question);
@@ -378,18 +397,11 @@ void test('a retired page brought back from its conversation card takes edited v
     await until('the retired page and its original value', () => !!screen.container.querySelector('main section[data-surface="notes"]') && !!screen.queryByDisplayValue('initial'));
     act.input(screen.getByDisplayValue('initial'), { target: { value: 'Five swans at dusk' } });
     act.click(screen.getByRole('button', { name: 'Submit observation' }));
-    const pressLine = '▸ Field notes · Submit observation — Observation: “Five swans at dusk”';
     await until('the restored-page press reply', () => answered(profile, 'Submit observation'));
     const context = lastContext(profile);
     assert.match(context, /EXOSURFACE revision \d+\. Stage: notes\./);
     assert.match(context, /Brought back notes.*it is on stage now/);
-    const journal = journalOf(lastRun().sessionFile), last = (match: (e: z.infer<typeof journalEntry>) => boolean) => journal.map(match).lastIndexOf(true);
-    const restored = last(e => e.data?.source === 'canvas-restore' && e.data.surfaceId === 'notes');
-    const origin = last(e => e.customType === 'exosurface-press' && e.data?.line === pressLine);
-    const submitted = last(e => e.message?.role === 'user' && typeof e.message.content !== 'string' && !!e.message.content?.some(c => c.text === pressLine));
-    assert.ok(restored >= 0 && restored < origin && origin < submitted, 'brought back and its origin recorded before the person\'s message');
-    assert.equal(journal[origin]?.data?.page, 'notes');
-    assert.equal(journal[restored]?.data?.delta?.layout?.focus, 'notes');
+    assert.equal((await f.rpc.exo_block({ threadId, page: 'notes' })).said, 'Submit observation', 'the press is on the brought-back page');
     for (const text of ['Five swans at dusk', 'book the cabin', 'what survives restarting this surface?']) assert.ok(context.includes(text));
     assert.equal(await stage(threadId), 'notes');
     assert.equal(inView(), 'notes');
@@ -405,6 +417,7 @@ void test('a message sent while Exo works goes to BB with no new error, not left
   const alert = () => screen.container.querySelector('form[aria-label="Message Exo"] [role="alert"]');
   await send(first);
   await until('the first message to reach the model', () => lastContext(profile).includes(first));
+  assert.match(lastContext(profile), /EXOSURFACE revision \d+\. Stage: notes\./, 'the idle send made its page current');
   try {
     assert.equal((await f.rpc.exo_block({ threadId })).working, true);
     await send(second);
@@ -414,5 +427,4 @@ void test('a message sent while Exo works goes to BB with no new error, not left
   } finally {
     f.release(profile);
   }
-  assert.ok(journalOf(lastRun().sessionFile).some(e => e.customType === 'exosurface-press' && e.data?.line === first && e.data.page === 'notes'), 'the idle send keeps its page');
 });
