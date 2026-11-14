@@ -40,7 +40,7 @@ this.lost = lost;
     });
     // Drain diagnostics without retaining or printing provider output/credentials.
     this.child.stderr.on('data', () => {});
-    this.child.on('error', e => this.fail(e));
+    this.child.on('error', e => { this.fail(e); });
     this.exit = new Promise(resolve => this.child.once('close', (code, signal) => {
       this.fail(new Error(`Pi exited (${code}, ${signal})`)); resolve();
     }));
@@ -54,7 +54,7 @@ this.lost = lost;
   }
   async send(type: string, fields: Record<string, unknown> = {}, timeoutMs = 30_000): Promise<any> {
     if (this.failure) throw this.failure;
-    const id = `exo-${++this.next}`;
+    const id = `exo-${String(++this.next)}`;
     const response = new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`Pi ${type} timed out`)); }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
@@ -62,7 +62,7 @@ this.lost = lost;
     this.writes = this.writes.then(async () => {
       if (!this.child.stdin.write(JSON.stringify({ id, type, ...fields }) + '\n')) await once(this.child.stdin, 'drain');
     });
-    void this.writes.catch(error => this.fail(error));
+    void this.writes.catch(error => { this.fail(error); });
     return response;
   }
   notify(type: string, fields: Record<string, unknown>) {
@@ -70,7 +70,7 @@ this.lost = lost;
     this.writes = this.writes.then(async () => {
       if (!this.child.stdin.write(JSON.stringify({ type, ...fields }) + '\n')) await once(this.child.stdin, 'drain');
     });
-    void this.writes.catch(error => this.fail(error));
+    void this.writes.catch(error => { this.fail(error); });
   }
   async close() {
     if (this.failure) return this.exit;

@@ -1,9 +1,9 @@
-import { required } from './required.ts';
 // #82 (spec pages-and-activity N7, N5; acceptance-auto-name): a new surface is "New surface" until the person's first message
 // is sent; then, beside Exo's turn, the naming model from the Exosurface local config names it once from that message (and Exo's
 // reply if it has already arrived). Home never is.
 // Through the live entry points (server.ts RPCs, events and dispatch hook, host.ts bridge, the release owner, real Pi);
 // fake at the boundaries: BB, OptChat, Exo's model (a Pi extension) and the namer's model (HTTP, test/fake-model-http.ts).
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -70,7 +70,7 @@ void test('a new surface is named from its first message by the namer\'s answer,
   const { fireEvent } = kit.testing;
   try {
     await until('Home listed', () => entries().join('|') === 'Home');
-    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
     await until('the new surface listed', () => entries().join('|') === 'Home|New surface');
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
@@ -123,7 +123,7 @@ void test('acceptance-auto-name: the name shows in the title and the sidebar whi
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
@@ -169,7 +169,7 @@ void test('acceptance-auto-name: an agent\'s or the system\'s message on a new s
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
@@ -227,7 +227,7 @@ void test('acceptance-auto-name: 150 agent messages on a new surface, then the p
   try {
     await until('the sidebar listed', () => entries()[0] === 'Home');
     const count = entries().length;
-    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')) to be non-null"));
+    fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface' && !b.closest('li')), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
     await until('the new surface listed', () => entries().length === count + 1);
     const made = (await f.rpc.thread_list(null)).threads[1].threadId;
     assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);

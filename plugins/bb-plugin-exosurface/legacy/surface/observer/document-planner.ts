@@ -15,7 +15,7 @@ export async function planDocument(doc:Document,hints:Hints,provider:Pick<Provid
   if(hints.roles[s.id]==='alternatives'&&s.children.length>=2&&s.children.length<=3&&s.children.every(n=>n.kind==='section'&&n.title.length<=80&&reconstruct(n).length<=700)&&!nodes({ ...doc,root:s}).some(n=>n.kind==='block'&&(n.ordered||n.raw.includes('?')))){
    layouts.Row='Short independent alternative sections, side by side on wide screens.';layouts.Tabs='Independent alternative sections, each explicitly labelled by its own source heading.';
   }
-  questions[s.id+'_layout']=q(`Layout of children of ${s.id}, role=${hints.roles[s.id]}? Keep all source parents/order, priority and qualifications.`,layouts);
+  questions[s.id+'_layout']=q(`Layout of children of ${s.id}, role=${String(hints.roles[s.id])}? Keep all source parents/order, priority and qualifications.`,layouts);
  }
  const selected=await provider.decide({document:documentState(doc),roles:hints.roles,instructions:'Presentation only. The semantic hierarchy is immutable, not optional content. Choose helpful boundaries and layouts, never a summary or a page template.'},questions,signal);
  return Object.fromEntries(sections.map(s=>[s.id,{style:selected[s.id+'_style'].choice,layout:selected[s.id+'_layout'].choice}]));
@@ -28,15 +28,15 @@ export function compileDocument(doc:Document,hints:Hints,plan:DocumentPlan,base:
   if(n.kind==='block'){
    components.push({id:n.id,component:'Text',variant:'body',text:n.raw.trim()});
    const own=inputs.map((q,i)=>({q,i})).filter(({q})=>q.blockId===n.id);if(!own.length)return n.id;
-   const children=[n.id];for(const{i}of own){const id=inputKey(i),previous=old.find(c=>c.id===id);data[id]=previous?.value?.path==='/'+id&&typeof oldData[id]==='string'?oldData[id]:'';components.push({id,component:'TextField',label:`Answer ${i+1}`,variant:'longText',value:{path:'/'+id}});children.push(id);}
-   if(n.id===lastBlock){const label='doc_discuss_label',button='doc_discuss';components.push({id:label,component:'Text',variant:'body',text:'Discuss answers'},{id:button,component:'Button',variant:'primary',child:label,action:{event:{name:'observer_discuss',context:Object.fromEntries(inputs.map((_,i)=>['answer_'+(i+1),{path:'/'+inputKey(i)}]))}}});children.push(button);}
+   const children=[n.id];for(const{i}of own){const id=inputKey(i),previous=old.find(c=>c.id===id);data[id]=previous?.value?.path==='/'+id&&typeof oldData[id]==='string'?oldData[id]:'';components.push({id,component:'TextField',label:`Answer ${String(i+1)}`,variant:'longText',value:{path:'/'+id}});children.push(id);}
+   if(n.id===lastBlock){const label='doc_discuss_label',button='doc_discuss';components.push({id:label,component:'Text',variant:'body',text:'Discuss answers'},{id:button,component:'Button',variant:'primary',child:label,action:{event:{name:'observer_discuss',context:Object.fromEntries(inputs.map((_,i)=>['answer_'+String((i+1)),{path:'/'+inputKey(i)}]))}}});children.push(button);}
    const id=n.id+'_answers';components.push({id,component:'Column',children});return id;
   }
   const p=plan[n.id];if(!p||!['Column','Card'].includes(p.style)||!['Column','List','Row','Tabs'].includes(p.layout))throw Error('Invalid document composition');
   const id=n===doc.root?'root':n.id,children:string[]=[];
   if(n.raw.trim()){
    const title=n.id+'_title';// Only actual source headings can become headings. Long titles degrade to body, never huge prose.
-   const isHeading=n.level>0&&n.title.length<=100&&!/[\[*_`]/.test(n.title),text=n.level?n.title:n.raw.trim();components.push({id:title,component:'Text',text:isHeading?text:n.level&&n.title.length>100?text:n.raw.trim(),variant:isHeading?'h'+Math.min(n.level,3):'body'});children.push(title);
+   const isHeading=n.level>0&&n.title.length<=100&&!/[\[*_`]/.test(n.title),text=n.level?n.title:n.raw.trim();components.push({id:title,component:'Text',text:isHeading?text:n.level&&n.title.length>100?text:n.raw.trim(),variant:isHeading?'h'+String(Math.min(n.level,3)):'body'});children.push(title);
   }
   const childIds=n.children.map(build);
   if(p.layout==='Tabs'){

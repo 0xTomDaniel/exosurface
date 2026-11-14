@@ -5,6 +5,7 @@
 // own config and shared by every profile (spec N7), never in an OptChat profile config. The file is read at each naming, so a change applies to the next surface named. It is called through Pi (the
 // same CLI and JSONL RPC client the runtime uses, pi-rpc.ts) with no tools, extensions, context files or session, and must
 // run on exactly that model and thinking: anything else is a failure, never a substitute.
+import { z } from 'zod';
 import { createReadStream, existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -22,18 +23,18 @@ export type NameRecord = { by: 'exo'; state: 'named'; name: string; model: strin
   | { by: 'person'; state: 'named'; name: string; at: string };
 
 /** The longest name the person may give a surface. */
-export const MAX_NAME = 80;
+const MAX_NAME = 80;
 /** The person's name for a surface: trimmed, inner whitespace one space; empty or longer than MAX_NAME throws. */
 export function personName(name: string) {
   const clean = name.trim().replace(/\s+/g, ' ');
   if (!clean) throw new Error('A surface name cannot be empty');
-  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${MAX_NAME} characters`);
+  if (clean.length > MAX_NAME) throw new Error(`A surface name is at most ${String(MAX_NAME)} characters`);
   return clean;
 }
 
 /** The naming model from the Exosurface local config file: its "namer", or the default when absent. An invalid one throws. */
 export function namerChoice(configFile: string): { choice: ModelChoice; from: 'config' | 'default' } {
-  const config = existsSync(configFile) ? JSON.parse(readFileSync(configFile, 'utf8')) : {};
+  const config = existsSync(configFile) ? z.object({ namer: z.unknown().optional() }).parse(JSON.parse(readFileSync(configFile, 'utf8')) as unknown) : { namer: undefined };
   if (config.namer === undefined) return { choice: DEFAULT_NAMER, from: 'default' };
   if (!modelChoice(config.namer)) throw new Error(`Invalid "namer" in ${configFile}: needs {"provider","model","thinking"} like "compactor"`);
   const { provider, model, thinking } = config.namer;
@@ -66,7 +67,9 @@ export async function personsFirstInLog(page: (afterSeq: string | undefined) => 
     const rows = await page(after);
     const found = personsFirst(rows, skip);
     if (found !== undefined || rows.length < EVENT_PAGE) return found;
-    after = String(rows.at(-1)!.seq);
+    const last = rows.at(-1);
+    if (!last) return undefined;
+    after = String(last.seq);
   }
 }
 
@@ -94,7 +97,7 @@ export const namePrompt = (message: string, reply: string) =>
 
 /** The model's answer as a sidebar name: its first line, unquoted, at most 5 words and 60 characters. Empty throws. */
 export function cleanName(answer: string) {
-  const line = answer.trim().split('\n')[0].trim().replace(/^["'“‘`*#\s]+|["'”’`*.!?\s]+$/g, '').replace(/\s+/g, ' ');
+  const line = (answer.trim().split('\n')[0] ?? '').trim().replace(/^["'“‘`*#\s]+|["'”’`*.!?\s]+$/g, '').replace(/\s+/g, ' ');
   const name = line.split(' ').slice(0, 5).join(' ').slice(0, 60).trim();
   if (!name) throw new Error('The naming model gave no name');
   return name;
@@ -123,7 +126,7 @@ export function namerAgentDir(stateDir: string, primaryAgentDir: string) {
 function piConfig(file: string, comments: boolean) {
   const text = readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
   try {
-    return JSON.parse(comments ? text.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, m => (m[0] === '"' ? m : '')).replace(/"(?:\\.|[^"\\])*"|,(\s*[}\]])/g, (m, tail) => tail ?? (m[0] === '"' ? m : '')) : text);
+    return JSON.parse(comments ? text.replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, m => (m.startsWith('"') ? m : '')).replace(/"(?:\\.|[^"\\])*"|,(\s*[}\]])/g, (m, tail) => tail ?? (m.startsWith('"') ? m : '')) : text);
   } catch { throw new Error(`${basename(file)} in the primary Pi agent folder is not valid JSON`); }
 }
 
@@ -161,8 +164,8 @@ export async function callNamer(choice: ModelChoice, prompt: string, at: { piCli
         else if (last.stopReason === 'error' || last.stopReason === 'aborted') finish(new Error(`The naming model failed: ${String(last.errorMessage ?? last.stopReason).slice(0, 300)}`));
         else finish({ text: said(last), usage: last.usage ? { input: last.usage.input ?? 0, output: last.usage.output ?? 0 } : undefined });
       }
-    }, error => finish(error));
-    timer = setTimeout(() => finish(new Error('The naming model timed out')), timeoutMs);
+    }, error => { finish(error); });
+    timer = setTimeout(() => { finish(new Error('The naming model timed out')); }, timeoutMs);
     const state = await rpc.send('get_state');
     if (state.model?.provider !== choice.provider || state.model?.id !== choice.model || state.thinkingLevel !== choice.thinking)
       throw new Error(`Pi would run ${state.model?.provider}/${state.model?.id} thinking ${state.thinkingLevel}, not the configured ${choice.provider}/${choice.model} thinking ${choice.thinking}`);

@@ -1,7 +1,7 @@
 // React views for the Exo visual catalog. Presentational only: no actions,
 // no URLs, no HTML from the model except through the official sanitized
 // Markdown renderer. Meaning is always carried by words; tone colour only adds.
-import {useEffect,useMemo,useState,type ReactNode} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import {createComponentImplementation,useMarkdownRenderer} from '@a2ui/react/v0_9';
 import {CalloutApi,MetricApi,TimelineApi,TableApi,ChartApi,FlowApi,DisclosureApi,exoCatalog} from './exo-catalog.ts';
 
@@ -25,7 +25,7 @@ const Metric=createComponentImplementation(MetricApi,({props})=>
  <div className={`exo-metric${toneClass(props.tone)}`}>
   <span className="exo-metric-label">{props.label}</span>
   <span className="exo-metric-value">{props.value}</span>
-  {props.progress!==undefined&&<span className="exo-meter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(props.progress*100)} aria-label={`${props.label} progress`}><span style={{width:`${props.progress*100}%`}}/></span>}
+  {props.progress!==undefined&&<span className="exo-meter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(props.progress*100)} aria-label={`${props.label} progress`}><span style={{width:`${String(props.progress*100)}%`}}/></span>}
   {props.detail&&<span className="exo-metric-detail">{props.detail}</span>}
  </div>);
 
@@ -52,7 +52,7 @@ const Chart=createComponentImplementation(ChartApi,({props})=>{
   {props.caption&&<figcaption>{props.caption}</figcaption>}
   {props.points.map((p,i)=><div key={i} className={`exo-bar${toneClass(p.tone)}`}>
    <span className="exo-bar-label">{p.label}</span>
-   <span className="exo-bar-track"><span style={{width:`${max>min?Math.max(0,(p.value-min)/(max-min))*100:0}%`}}/></span>
+   <span className="exo-bar-track"><span style={{width:`${String(max>min?Math.max(0,(p.value-min)/(max-min))*100:0)}%`}}/></span>
    <span className="exo-bar-value">{fmt(p.value,props.unit)}{p.note&&<span className="exo-bar-note">{p.note}</span>}</span>
   </div>)}
  </figure>;
@@ -61,7 +61,7 @@ const Chart=createComponentImplementation(ChartApi,({props})=>{
  const d=props.points.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
  return <figure className="exo-chart exo-line">
   {props.caption&&<figcaption>{props.caption}</figcaption>}
-  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary}>
+  <svg viewBox={`0 0 ${String(W)} ${String(H)}`} role="img" aria-label={summary}>
    <line x1={pad.l} x2={W-pad.r} y1={H-pad.b} y2={H-pad.b} className="exo-axis"/>
    <path d={d} className="exo-line-path"/>
    {props.points.map((p,i)=><g key={i} className={toneClass(p.tone).trim()||undefined}>
@@ -91,16 +91,16 @@ const Flow=createComponentImplementation(FlowApi,({props})=>{
  const summary=(props.caption?props.caption+'. ':'')+props.edges.map(e=>`${byId.get(e.from)?.label} → ${byId.get(e.to)?.label}${e.label?` (${e.label})`:''}`).join('; ');
  return <figure className="exo-flow">
   {props.caption&&<figcaption>{props.caption}</figcaption>}
-  <svg viewBox={`-6 -6 ${geo.W+12} ${geo.H+12}`} style={{maxWidth:geo.W+12}} role="img" aria-label={summary||props.nodes.map(n=>n.label).join(', ')}>
+  <svg viewBox={`-6 -6 ${String(geo.W+12)} ${String(geo.H+12)}`} style={{maxWidth:geo.W+12}} role="img" aria-label={summary||props.nodes.map(n=>n.label).join(', ')}>
    <defs><marker id="exo-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" className="exo-arrowhead"/></marker></defs>
    {props.edges.map((e,i)=>{const a=geo.pos.get(e.from)!,b=geo.pos.get(e.to)!;
     const[x1,y1,x2,y2]=down?[a.x+NW/2,a.y+NH,b.x+NW/2,b.y]:[a.x+NW,a.y+NH/2,b.x,b.y+NH/2];
     const back=down?y2<=y1:x2<=x1,c=down?Math.max(20,Math.abs(y2-y1)/2):Math.max(20,Math.abs(x2-x1)/2);
     if(back){// loop under (left→right) or beside (top→down) the chain, so it never crosses nodes
      const[sx,sy,ex,ey]=down?[a.x+NW,a.y+NH/2,b.x+NW,b.y+NH/2]:[a.x+NW/2,a.y+NH,b.x+NW/2,b.y+NH],off=down?Math.max(sx,ex)+40:Math.max(sy,ey)+34;
-     const d=down?`M${sx},${sy} C${off},${sy} ${off},${ey} ${ex},${ey}`:`M${sx},${sy} C${sx},${off} ${ex},${off} ${ex},${ey}`;
+     const d=down?`M${String(sx)},${String(sy)} C${String(off)},${String(sy)} ${String(off)},${String(ey)} ${String(ex)},${String(ey)}`:`M${String(sx)},${String(sy)} C${String(sx)},${String(off)} ${String(ex)},${String(off)} ${String(ex)},${String(ey)}`;
      return <g key={i}><path d={d} className="exo-edge exo-edge-back" markerEnd="url(#exo-arrow)"/>{e.label&&<text x={down?off-8:(sx+ex)/2} y={down?(sy+ey)/2:off-4} textAnchor={down?'end':'middle'} className="exo-edge-label">{e.label}</text>}</g>;}
-    const d=down?`M${x1},${y1} C${x1},${y1+c} ${x2},${y2-c} ${x2},${y2}`:`M${x1},${y1} C${x1+c},${y1} ${x2-c},${y2} ${x2},${y2}`;
+    const d=down?`M${String(x1)},${String(y1)} C${String(x1)},${String(y1+c)} ${String(x2)},${String(y2-c)} ${String(x2)},${String(y2)}`:`M${String(x1)},${String(y1)} C${String(x1+c)},${String(y1)} ${String(x2-c)},${String(y2)} ${String(x2)},${String(y2)}`;
     return <g key={i}><path d={d} className="exo-edge" markerEnd="url(#exo-arrow)"/>{e.label&&<text x={(x1+x2)/2} y={(y1+y2)/2-6} textAnchor="middle" className="exo-edge-label">{e.label}</text>}</g>;})}
    {props.nodes.map(n=>{const p=geo.pos.get(n.id)!;return <foreignObject key={n.id} x={p.x} y={p.y} width={NW} height={NH}>
     <div className={`exo-node${toneClass(n.tone)}`}><span className="exo-node-label">{n.label}</span>{n.detail&&<span className="exo-node-detail">{n.detail}</span>}</div>
@@ -111,9 +111,9 @@ const Flow=createComponentImplementation(FlowApi,({props})=>{
 
 const Disclosure=createComponentImplementation(DisclosureApi,({props,buildChild})=>{
  const [open,setOpen]=useState(!!props.open),child:any=props.child,id=typeof child==='string'?child:child?.id;
- return <details className="exo-disclosure" open={open} onToggle={e=>setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+ return <details className="exo-disclosure" open={open} onToggle={e=> { setOpen((e.currentTarget).open); }}>
   <summary><span className="exo-disclosure-title">{props.title}</span>{props.summary&&<span className="exo-disclosure-summary">{props.summary}</span>}</summary>
-  <div className="exo-disclosure-body">{open&&id?buildChild(id) as ReactNode:null}</div>
+  <div className="exo-disclosure-body">{open&&id?buildChild(id):null}</div>
  </details>;
 });
 

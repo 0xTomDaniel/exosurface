@@ -4,6 +4,7 @@
 scripts/build shell
 plugins/bb-plugin-exosurface/scripts/check shell
 plugins/bb-plugin-exosurface/demo/surfaces shell
+.agents/skills/verify-app/scripts/verify-app shell
 
 # Generator-owned lock data; scc otherwise reports the .lock extension as Unknown.
 mise.lock language-exempt

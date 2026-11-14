@@ -2,11 +2,12 @@
 // (EXO_CONFIG, default ~/.config/exo/exosurface.json), with "~/" expanded. Missing values are
 // empty strings here and rejected by `requireLocal` where a process is actually launched.
 // One non-path key: "namer", the surface naming model, read fresh at each naming by surface-name.ts (namerChoice).
+import { z } from 'zod';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 export const LOCAL_CONFIG = process.env["EXO_CONFIG"] ?? join(homedir(), '.config', 'exo', 'exosurface.json');
-const raw: Record<string, unknown> = existsSync(LOCAL_CONFIG) ? JSON.parse(readFileSync(LOCAL_CONFIG, 'utf8')) : {};
+const raw: Record<string, unknown> = existsSync(LOCAL_CONFIG) ? z.record(z.string(), z.unknown()).parse(JSON.parse(readFileSync(LOCAL_CONFIG, 'utf8')) as unknown) : {};
 const expand = (p: string) => (p.startsWith('~/') ? join(homedir(), p.slice(2)) : p);
 export function local(key: 'vault' | 'piCli' | 'optchat' | 'optchatCanvas' | 'playwright' | 'surfaceMain' | 'exosurfacePlugin' | 'primaryAgentDir' | 'primarySolProvider' | 'primaryStateDir' | 'primaryOptchatHome' | 'primaryProfile' | 'ownerLabel'): string {
   const v = raw[key];

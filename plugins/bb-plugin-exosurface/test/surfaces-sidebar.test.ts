@@ -1,7 +1,7 @@
-import { required } from './required.ts';
 // #68 (spec pages-and-activity S7, N1; acceptance-new-surface), the rendered app: the Exosurface panel shows a sidebar of
 // surfaces (Home, then every other, flat) and the surface in view; New surface puts the new one in view with an empty page.
 // Rendered from package.json bb.app in BB's SDK app test runtime; the rpc handlers stand in for the server.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderedApp } from './app-render.ts';

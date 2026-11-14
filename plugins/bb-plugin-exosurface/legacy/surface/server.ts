@@ -13,7 +13,7 @@ import { canvasDataViaOwner, restoreViaOwner, pressViaOwner } from './src/canvas
 import { versionAt, versionSnapshot, type Version } from './src/canvas-history.ts';
 import {local} from './src/local-config.ts';
 import { randomUUID } from 'node:crypto';
-import {cursorSchema,previewSchema,deliverySchema,delivery,type Delivery} from './src/delivery.ts';
+import {cursorSchema,previewSchema,deliverySchema,delivery} from './src/delivery.ts';
 import {composeViaOwner} from './composition/client.ts';
 import {armViaOwner} from './observer/client.ts';
 import {isBoundThread,threadPagesHome} from '../primary/src/state.ts';
@@ -26,17 +26,17 @@ const pendingSchema=z.object({deployment:z.enum(['clone','main']).default('clone
 // Two deployments of the same surface: the isolated clone and the primary Exo session. Each has its own state folder
 // (written by the Exosurface Pi extensions running in that session), owner, BB thread and provider. Requests are routed
 // by thread; nothing is shared between them.
-type Deployment={name:'clone'|'main';home:string;providerId:string;panel:string;channel:string;threadId?:string};
+interface Deployment {name:'clone'|'main';home:string;providerId:string;panel:string;channel:string;threadId?:string}
 const DEPLOYMENTS:Deployment[]=[
   {name:'clone',home:CLONE_HOME,providerId:'exo-a2ui-spike',panel:'workspace',channel:'workspace'},
   {name:'main',home:local('primaryStateDir')||join(homedir(),'.exo-bb-spike'),providerId:'exo-spike',panel:'surface',channel:'surface-main'},
 ];
-const byName=(name:string)=>DEPLOYMENTS.find(d=>d.name===name)!;
+const byName=(name:string)=>{const d=DEPLOYMENTS.find(d=>d.name===name);if(!d)throw Error('Unknown deployment');return d;};
 // A bound thread (a surface other than Home, #68): the main deployment on that thread's own pages folder; its owner and
 // bindings stay in the main home.
 const boundDeployment=(threadId:string):Deployment|null=>{try{return isBoundThread(threadId)?{name:'main',home:threadPagesHome(threadId),providerId:'exo-spike',panel:'surface',channel:'surface-thread',threadId}:null;}catch{return null;}};
 const ownerHome=(d:Deployment)=>d.threadId?byName('main').home:d.home;
-const threadOf=(d:Deployment):string|null=>{if(d.threadId)return d.threadId;const f=join(d.home,'canonical-thread.json');return existsSync(f)?load(f).threadId:null;};
+const threadOf=(d:Deployment):string|null=>{if(d.threadId)return d.threadId;const f=join(d.home,'canonical-thread.json');return existsSync(f)?z.object({threadId:z.string()}).parse(load(f)).threadId:null;};
 const deploymentFor=(threadId:string)=>{const d=DEPLOYMENTS.find(x=>threadOf(x)===threadId)??boundDeployment(threadId);if(!d)throw Error('Not an Exosurface thread');return d;};
 // Page versions, written by the extension from the native session (derived, rebuildable).
 const history=(d:Deployment):Version[]=>{const f=join(d.home,'workspace/history.jsonl');return existsSync(f)?readFileSync(f,'utf8').split('\n').filter(Boolean).map(l=>JSON.parse(l)):[];};
@@ -55,15 +55,15 @@ export const rpcContract=defineRpcContract({
 export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bind(bb.rpc)){
   const status=(d:Deployment)=>{
     const ownerFile=join(d.home,'owner/state.json'),wsFile=join(d.home,'workspace/latest.json');
-    const id=threadOf(d),owner=existsSync(ownerFile)?load(ownerFile):null;
-    const projection=existsSync(wsFile)?load(wsFile):null;
+    const id=threadOf(d),owner=existsSync(ownerFile)?z.object({sessionFile:z.string().nullish(),ready:z.boolean().optional(),streaming:z.boolean().optional(),composing:z.boolean().optional()}).parse(load(ownerFile)):null;
+    const projection=existsSync(wsFile)?z.object({sessionId:z.unknown(),workspace:z.unknown(),epoch:z.string().nullish(),updates:z.array(z.unknown()).nullish(),observer:z.unknown(),composition:z.unknown()}).parse(load(wsFile)):null;
     // The projection must belong to the session this deployment's owner runs.
-    const ofSession=(sessionId:unknown)=>typeof sessionId==='string'&&!!owner?.sessionFile&&String(owner.sessionFile).includes(sessionId);
+    const ofSession=(sessionId:unknown)=>typeof sessionId==='string'&&!!owner?.sessionFile&&owner.sessionFile.includes(sessionId);
     if(projection && !ofSession(projection.sessionId))throw new Error('Surface projection belongs to another session');
     const workspace=projection?.workspace?validateSnapshot(projection.workspace):null;
     const epoch=projection?.epoch??'legacy',updates=(projection?.updates??[]).map((x:unknown)=>deltaSchema.parse(x));
-    const previewFile=join(d.home,'workspace','preview.json'),rawPreview=existsSync(previewFile)?load(previewFile):null;
-    const preview=ofSession(rawPreview?.sessionId)&&rawPreview.epoch===epoch&&rawPreview.baseRevision===(workspace?.revision??0)?previewSchema.parse({toolCallId:rawPreview.toolCallId,baseRevision:rawPreview.baseRevision,messages:rawPreview.messages}):null;
+    const previewFile=join(d.home,'workspace','preview.json'),rawPreview=existsSync(previewFile)?z.object({sessionId:z.unknown(),epoch:z.unknown(),baseRevision:z.unknown(),toolCallId:z.unknown(),messages:z.unknown()}).parse(load(previewFile)):null;
+    const preview=rawPreview&&ofSession(rawPreview.sessionId)&&rawPreview.epoch===epoch&&rawPreview.baseRevision===(workspace?.revision??0)?previewSchema.parse({toolCallId:rawPreview.toolCallId,baseRevision:rawPreview.baseRevision,messages:rawPreview.messages}):null;
     const observer=observerSchema.nullable().parse(projection?.observer??null);
     const composition=compositionSchema.parse(projection?.composition??{configured:false,surfaceId:null,candidateCount:0,running:false,lastRun:null});
     return {threadId:id,ready:owner?.ready??false,streaming:(owner?.streaming??false)||composition.running||!!owner?.composing||!!observer?.running,revision:workspace?.revision??0,workspace,projection:{epoch,workspace,updates},preview,composition,observer};
@@ -92,8 +92,8 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
     const followed=new Map<string,ReturnType<typeof watch>[]>();let fail:(e:unknown)=>void=()=>{};
     const follow=(threadId:string)=>{const d=followed.has(threadId)?null:boundDeployment(threadId);if(!d||signal.aborted)return;
       mkdirSync(join(d.home,'workspace'),{recursive:true,mode:0o700});mkdirSync(join(d.home,'owner'),{recursive:true,mode:0o700});
-      followed.set(threadId,[watch(join(d.home,'workspace'),()=>schedule(threadId)),watch(join(d.home,'owner'),(_event,name)=>{if(name==='state.json')schedule(threadId);})]);
-      for(const x of followed.get(threadId)!)x.on('error',e=>fail(e));};
+      followed.set(threadId,[watch(join(d.home,'workspace'),()=> { schedule(threadId); }),watch(join(d.home,'owner'),(_event,name)=>{if(name==='state.json')schedule(threadId);})]);
+      for(const x of followed.get(threadId)!)x.on('error',e=> { fail(e); });};
     const w=watch(root,(_event,name)=>{const threadId=String(name??'');if(!threadId)return;follow(threadId);schedule(threadId);});
     for(const threadId of readdirSync(root))follow(threadId);
     let abort:()=>void=()=>{};
@@ -108,17 +108,17 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
     // Bring-back by mention names its deployment only; a bound thread's pages are not offered until it names the thread.
     search:({query,threadId})=>{let d:Deployment;try{d=deploymentFor(threadId??'');}catch{return [];}if(d.threadId)return [];const all=history(d),latest=new Map<string,Version>();for(const v of all)if(v.action!=='withdrawn')latest.set(v.surface,v);
       const q=query.toLowerCase();return [...latest.values()].filter(v=>!q||v.title.toLowerCase().includes(q)||v.surface.includes(q)).sort((a,b)=>b.revision-a.revision).slice(0,12)
-        .map(v=>{const last=[...all].reverse().find(x=>x.surface===v.surface&&x.action!=='retired'&&x.action!=='withdrawn')!;return {id:`${d.name}|${v.surface}@${last.revision}`,title:last.title,subtitle:new Date(last.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),icon:'PanelsTopLeft'};});},
+        .map(v=>{const last=[...all].reverse().find(x=>x.surface===v.surface&&x.action!=='retired'&&x.action!=='withdrawn')!;return {id:`${d.name}|${v.surface}@${String(last.revision)}`,title:last.title,subtitle:new Date(last.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),icon:'PanelsTopLeft'};});},
     resolve:async itemId=>{
       const m=SURFACE_ITEM.exec(itemId);if(!m)return {context:''};const d=byName(m[1]??'clone'),surface=m[2],revision=Number(m[3]),st=status(d),all=history(d),v=versionAt(all,surface,revision);if(!v||!st.threadId)return {context:''};
-      const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((x:any)=>x.createSurface?.surfaceId===surface),p=readPending(d),same=!!p&&p.surface===surface&&p.revision===v.revision;
+      const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some(x=>x.createSurface?.surfaceId===surface),p=readPending(d),same=!!p&&p.surface===surface&&p.revision===v.revision;
       const stamp=new Date(v.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      const ids=(st.workspace?.messages??[]).flatMap((x:any)=>x.createSurface?[x.createSurface.surfaceId]:[]),stage=st.workspace?.layout?.focus&&ids.includes(st.workspace.layout.focus)?st.workspace.layout.focus:ids.at(-1);
+      const ids=(st.workspace?.messages??[]).flatMap(x=>x.createSurface?[x.createSurface.surfaceId]:[]),stage=st.workspace?.layout?.focus&&ids.includes(st.workspace.layout.focus)?st.workspace.layout.focus:ids.at(-1);
       if(live&&!later&&stage===surface&&!same)return {context:`[surface] Tom is pointing at the page ${surface} ${JSON.stringify(v.title)} (on stage, current version).`};
-      try{await restoreViaOwner(st.threadId,{surfaceId:surface,revision:v.revision,updates:same?p!.updates:[],mutationId:randomUUID(),announced:true},ownerHome(d));rmSync(pendingFile(d),{force:true});bb.realtime.publish('pending-restore',null);}
+      try{await restoreViaOwner(st.threadId,{surfaceId:surface,revision:v.revision,updates:same?p.updates:[],mutationId:randomUUID(),announced:true},ownerHome(d));rmSync(pendingFile(d),{force:true});bb.realtime.publish('pending-restore',null);}
       catch(e){bb.log?.warn?.(`bring-back at send failed, retrying at turn start: ${String(e)}`);if(!same){writeFileSync(pendingFile(d),JSON.stringify({deployment:d.name,threadId:st.threadId,surface,revision:v.revision,title:v.title,at:v.at,updates:[]}),{mode:0o600});}
         return {context:`[surface] Tom is bringing back the page ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}); it will be on stage as the current version when your turn starts.`};}
-      const changes=same&&p!.updates.length?` He changed: ${p!.updates.map(u=>`${u.path.slice(1)} → ${JSON.stringify(u.value)}`).join('; ')}.`:'';
+      const changes=same&&p.updates.length?` He changed: ${p.updates.map(u=>`${u.path.slice(1)} → ${JSON.stringify(u.value)}`).join('; ')}.`:'';
       return {context:`[surface] Tom brought back the page ${surface} ${JSON.stringify(v.title)} (the version from ${stamp}). It is now the current version, on stage; your edits apply to it.${changes}`};
     },
   });
@@ -136,7 +136,7 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
   registerRpc(rpcContract,{
     workspace:async({deployment,threadId,cursor})=>envelope(status(threadId?deploymentFor(threadId):byName(deployment)),cursor),
     surfaceAt:async({threadId,surface,revision})=>{
-      const d=deploymentFor(threadId),st=status(d);const all=history(d),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${revision}`);
+      const d=deploymentFor(threadId),st=status(d);const all=history(d),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${String(revision)}`);
       // Current = this is the surface's latest version and it is on the live canvas (no rewind needed, just focus it).
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((m:any)=>m.createSurface?.surfaceId===surface);
       // On stage = the surface the conversation is on now (layout focus, else the last drawn): only its latest card just loads it.
@@ -152,10 +152,10 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         const next={deployment:d.name,threadId,surface:version.surface,revision:v.revision,title:v.title,at:v.at,updates:updates??[]};writeFileSync(pendingFile(d),JSON.stringify(next),{mode:0o600});bb.realtime.publish('pending-restore',next);return next;}
       return readPending(d);
     },
-    observerArm:async({threadId,...request})=>{const s=status(byName('clone'));if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||request["baseRevision"]!==s.revision)throw Error('Idle clone and current revision required');await armViaOwner(threadId,request);return{armed:status(byName('clone')).observer?.armed??false};},
+    observerArm:async({threadId,...request})=>{const s=status(byName('clone'));if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||request.baseRevision!==s.revision)throw Error('Idle clone and current revision required');await armViaOwner(threadId,request);return{armed:status(byName('clone')).observer?.armed??false};},
     compose:async({threadId,...request})=>{
-      const clone=byName('clone'),s=status(clone);if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.composition.configured||request["baseRevision"]!==s.revision)throw Error('Idle configured clone and current revision required');
-      await composeViaOwner(threadId,request);const after=status(clone);return {completed:after.revision===request["baseRevision"]+1&&after.composition.lastRun?.id===request["runId"]&&after.composition.lastRun?.status==='complete'};
+      const clone=byName('clone'),s=status(clone);if(threadId!==s.threadId||!s.ready||s.streaming||s.preview||!s.composition.configured||request.baseRevision!==s.revision)throw Error('Idle configured clone and current revision required');
+      await composeViaOwner(threadId,request);const after=status(clone);return {completed:after.revision===request.baseRevision+1&&after.composition.lastRun?.id===request.runId&&after.composition.lastRun?.status==='complete'};
     },
     edit:async({threadId,...request})=>{
       const d=deploymentFor(threadId),s=status(d);if(!s.ready||s.streaming||s.preview||!s.workspace)throw Error('busy');
@@ -170,10 +170,10 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
         if(thread.providerId!==d.providerId||!existsSync(bindingFile)||load(bindingFile).runtimeKind!=='canonical')throw new Error('Wrong Exosurface thread');
         if(s.preview)throw Error('Provisional UI cannot submit actions');
         // Preflight the ENTIRE restore + input commit + verbatim submission before the first mutation.
-        let prospective=s.workspace,restoreRequest:{surfaceId:string;revision:number;updates:any[];mutationId:string}|undefined;
+        let prospective=s.workspace,restoreRequest:{surfaceId:string;revision:number;updates:{path:string;value?:unknown}[];mutationId:string}|undefined;
         if(rewind){const p=readPending(d),same=p&&p.surface===rewind.surface&&p.revision===rewind.revision;
           const v=versionAt(history(d),rewind.surface,rewind.revision);if(!v)throw Error('Unknown bring-back version');
-          restoreRequest={surfaceId:rewind.surface,revision:rewind.revision,updates:same?p!.updates:[],mutationId:randomUUID()};
+          restoreRequest={surfaceId:rewind.surface,revision:rewind.revision,updates:same?p.updates:[],mutationId:randomUUID()};
           prospective=planRestore(s.workspace,v,restoreRequest).next;
         }
         if(!metadata.a2uiClientCapabilities['v0.9.1'].supportedCatalogIds.includes(CATALOG))throw Error('Catalog capability mismatch');

@@ -200,7 +200,7 @@ function main(): number {
   for (const line of bad) process.stderr.write(`check-languages: ${line}\n`);
   if (bad.length > 0) return 1;
   process.stdout.write(
-    `languages: assessed tools ok (${String(files.size)} tracked files scanned); ${String(OWNER_DEFERRED.rows.length)} Python tools and ${String(OWNER_DEFERRALS.sourceTrees.prefixes.length)} source trees DEFERRED BY OWNER, not assessed\n`,
+    `languages: assessed tools ok (${String(files.size)} tracked files scanned); ${String(OWNER_DEFERRED.rows.length)} Python tools and ${String(OWNER_DEFERRALS.sourceTrees.reduce((count, entry) => count + entry.prefixes.length, 0))} source trees DEFERRED BY OWNER, not assessed\n`,
   );
   return 0;
 }

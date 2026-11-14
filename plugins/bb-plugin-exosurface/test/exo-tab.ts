@@ -1,8 +1,8 @@
-import { required } from './required.ts';
 // What the person sees of the rendered Exo tab (#130), read as strings and counts: settings and their set-up fields, the
 // sidebar, the surface in view and its input. Shared by test/set-up*.test.ts and demo/surfaces first-run.
 
 // Shown: neither it nor anything around it is hidden from the person (aria-hidden, the hidden attribute, display:none).
+import { required } from './required.ts';
 export const shown = (el: Element) => { for (let at: Element | null = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
 const CONTROL = 'input, select, textarea';
 

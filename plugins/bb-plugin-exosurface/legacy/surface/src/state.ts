@@ -1,38 +1,21 @@
-import { local } from './local-config.ts';
-import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 // Deployment. The isolated clone is the default. The primary Exo session loads the same Pi extensions with
 // EXOSURFACE_MODE=main and names its own state folder and OptChat home (set by the primary plugin's launcher).
-export const CLONE_HOME = join(homedir(), '.exo-a2ui-spike'), CLONE_OPTCHAT_HOME = join(homedir(), '.optchat-exo-a2ui');
+export const CLONE_HOME = join(homedir(), '.exo-a2ui-spike');
+const CLONE_OPTCHAT_HOME = join(homedir(), '.optchat-exo-a2ui');
 export const MAIN_MODE = process.env["EXOSURFACE_MODE"] === 'main';
 export const HOME = MAIN_MODE ? (process.env["EXOSURFACE_HOME"] ?? '') : CLONE_HOME;
-// The plugin root, wherever it is checked out (symlinked install paths resolve to the real location).
-export const SOURCE = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
-export const PI_CLI = local('piCli');
-// Clone: upstream pi-optchat checkout (local config "optchatCanvas").
-export const OPTCHAT = local('optchatCanvas');
 export function save(file: string, value: unknown) {
   mkdirSync(join(file, '..'), { recursive: true, mode: 0o700 });
-  const temporary = `${file}.${process.pid}.tmp`;
+  const temporary = `${file}.${String(process.pid)}.tmp`;
   writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 }); renameSync(temporary, file);
 }
 export function load(file: string): any { return JSON.parse(readFileSync(file, 'utf8')); }
-export function feedback(thread: string) {
-  const file = join(HOME, 'feedback', `${thread}.json`);
-  return existsSync(file) ? load(file) : { statuses: {}, notifications: [] };
-}
-export const bindingFile = (thread: string) => {
-  if (!/^[a-zA-Z0-9_-]+$/.test(thread)) throw new Error('Invalid spike thread ID');
-  return join(HOME, 'bindings', `${thread}.json`);
-};
-export function binding(thread: string) { const file = bindingFile(thread); return existsSync(file) ? load(file) : undefined; }
 // 'canonical' is the reused adapter mode, but its entire home is the ISOLATED clone.
-export const CANONICAL_HOME = MAIN_MODE ? (process.env["EXOSURFACE_OPTCHAT_HOME"] ?? '') : CLONE_OPTCHAT_HOME;
-export const CANONICAL_PROFILE = local('primaryProfile') || 'exo-optchat';
+const CANONICAL_HOME = MAIN_MODE ? (process.env["EXOSURFACE_OPTCHAT_HOME"] ?? '') : CLONE_OPTCHAT_HOME;
 export const CANONICAL_MODEL = { id: 'a2ui-clone-opus', model: 'a2ui-clone-opus', displayName: 'A2UI — cloned Exo / Opus 5.5', description: 'Private cloned OptChat home, separate session and owner; NOT main Exo', isDefault: true, supportedReasoningEfforts: [{ reasoningEffort: 'high' as const, description: 'Existing Exo Opus setting' }], defaultReasoningEffort: 'high' as const };
-export const VAULT = local('vault');
 
 /** Accident guard for the Pi extensions: the clone runs only on the cloned home; main mode only on a primary home that is
  *  explicitly named and is never the clone's. Same-user guard, not a security boundary. */

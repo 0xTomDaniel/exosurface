@@ -18,6 +18,7 @@
   },
   "include": [
     "scripts/**/*.ts",
+    ".agents/skills/verify-app/scripts/*.ts",
     "eslint.config.js",
     ".dependency-cruiser.cjs"
   ]
