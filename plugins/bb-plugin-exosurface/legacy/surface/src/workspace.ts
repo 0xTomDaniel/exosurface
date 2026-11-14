@@ -106,7 +106,7 @@ export function validateSnapshot(value:unknown):Snapshot{
   p.processMessages(rendererMessages(s));if(p.getSurfaces().size!==ids.length)throw Error('Renderer surface count mismatch');return s.incremental?{...s,incomplete}:s;
  }finally{p.dispose();}
 }
-export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).max(32),kept:snapshotSchema.shape.kept,layout:snapshotSchema.shape.layout}).strict().refine(value=>value.messages.length>0||value.kept!==undefined,'Empty page change');
+export const deltaSchema=z.object({baseRevision:z.number().int().nonnegative(),revision:z.number().int().positive(),messages:z.array(z.any()).max(32),kept:snapshotSchema.shape.kept,layout:snapshotSchema.shape.layout}).strict().refine(value=>value.messages.length>0||value.kept!==undefined||value.layout!==undefined,'Empty page change');
 export type Delta=z.infer<typeof deltaSchema>;
 export function applyDelta(current:Snapshot|null,raw:unknown):Snapshot{
  const d=deltaSchema.parse(raw);if(d.baseRevision!==(current?.revision??0)||d.revision!==d.baseRevision+1)throw Error('Stale/nonsequential delta');

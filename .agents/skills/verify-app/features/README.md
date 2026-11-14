@@ -44,7 +44,8 @@ Offline-provable: the scenario drives the feature on the real plugin code; "file
 | Parallel surfaces, each its own Exo | `acceptance-parallel-second`, `acceptance-parallel-first` | `parallel`, `parallel-threads` | `legacy/primary/server.ts` (`thread_bind`), `legacy/primary/src/thread-profiles.ts` |
 | Opening and the name on top | `acceptance-opening`, `acceptance-name-header` | `opening` | `legacy/surface/src/surface-title.tsx`, `legacy/surface/src/exo-turn.tsx` |
 | One page in view, page strip | `acceptance-one-page-in-view` | `one-page` | `legacy/surface/src/stage.ts`, `legacy/surface/app.tsx` |
-| Each page's own Exo block; Keep | `acceptance-exo-block-own-page`, `acceptance-exo-block-sent-page`, `acceptance-keep` | `exo-block-own-page`, `exo-block-sent-page` | `legacy/surface/src/exo-turn.tsx`, `legacy/surface/app.tsx` (Keep) |
+| [exo-block-own-page](./exo-block-own-page.md) (file) | `acceptance-exo-block-own-page` | `exo-block-own-page` | `legacy/primary/src/exo-turn.ts`, `legacy/surface/src/exo-turn.tsx` |
+| [exo-block-sent-page](./exo-block-sent-page.md) (file); Keep | `acceptance-exo-block-sent-page`, `acceptance-keep` | `exo-block-sent-page` | `legacy/surface/src/workspace-extension.ts` (`workspace-press`), `legacy/primary/src/owner-service.ts`, `legacy/surface/app.tsx` (Keep) |
 | Input floats over the page (computed styles only) | `acceptance-input-floats` | `input-floats` | `legacy/surface/src/exo-turn.tsx` (input form), `legacy/surface/lib/exo-theme.ts` (styles) |
 | Surface auto-name (fake namer model over HTTP) | `acceptance-auto-name` | `auto-name` | `legacy/primary/src/surface-name.ts`, `legacy/primary/src/local-config.ts` |
 | Rename | `acceptance-rename` | `rename` | `legacy/surface/src/surface-rename.tsx`, `legacy/primary/server.ts` (`thread_rename`) |
