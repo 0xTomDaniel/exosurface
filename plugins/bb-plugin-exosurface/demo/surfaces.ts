@@ -309,8 +309,10 @@ async function exoBlockOwnPage() {
   const inView = () => [...main().querySelectorAll('section[data-surface]')].filter(shown).map(s => s.getAttribute('aria-label')).join(', ');
   const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown);
   const until = waiter(() => `in view ${inView()}; bubble ${JSON.stringify(said())}; reply ${JSON.stringify(reply())}`);
-  const own = { 'Week plan': 'draw week: Week plan', 'Garden plan': 'and the roses by the fence' };
+  const own: Record<string, string> = { 'Week plan': 'draw week: Week plan', 'Garden plan': 'and the roses by the fence' };
   let ok = true;
+  const sendText = (text: string | undefined) => { fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' })); };
+  const openWeek = async () => { await until('the week page as a pill', () => pills().some(b => b.textContent === 'Week plan')); fireEvent.click(pills().find(b => b.textContent === 'Week plan')); };
   const show = async (how, page) => {
     await until(`${page} in view with its own block`, () => inView() === page && said() === own[page] && reply() === `Exo (${f.setup.profile}): ${own[page]}`);
     const other = Object.entries(own).filter(([p]) => p !== page).some(([, t]) => main().querySelector('section[aria-label="Exo"]').textContent.includes(t));
@@ -323,26 +325,34 @@ async function exoBlockOwnPage() {
   try {
     for (const [text, page] of [['draw week: Week plan', 'Week plan'], ['draw garden: Garden plan', 'Garden plan'], ['and the roses by the fence', 'Garden plan']]) {
       await until('the input', () => input() && !input().disabled);
-      fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+      sendText(text);
       await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply() === `Exo (${f.setup.profile}): ${text}` && inView() === page);
       console.log(`sent ${JSON.stringify(text)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
     }
     await show('latest page', 'Garden plan');
-    await until('the week page as a pill', () => pills().some(b => b.textContent === 'Week plan'));
-    fireEvent.click(pills().find(b => b.textContent === 'Week plan'));
+    await openWeek();
     await show('earlier page opened from the page strip', 'Week plan');
     fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
     await show('back to the current topic', 'Garden plan');
     // Exo withdraws the garden page (revision 2 to 3); the stage falls back to the week page, and a message that draws
     // nothing is on it.
     const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
-    fireEvent.change(input(), { target: { value: withdraw } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    sendText(withdraw);
     await until('the garden page withdrawn', () => inView() === 'Week plan' && input() && !input().disabled);
     console.log(`sent ${JSON.stringify(withdraw)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
     const quiet = 'and the hedge along the path';
-    fireEvent.change(input(), { target: { value: quiet } }); fireEvent.click(view.getByRole('button', { name: 'Send' }));
+    sendText(quiet);
     own['Week plan'] = quiet;
     await show('after Exo withdrew the page in view, a message that draws nothing', 'Week plan');
+    // #215: from that earlier page, a message about another topic: the new page Exo draws carries the exchange, and the
+    // earlier page keeps its own.
+    const topic = 'draw orchard: Orchard plan';
+    await until('the input', () => !!input() && !input().disabled);
+    sendText(topic);
+    own['Orchard plan'] = topic;
+    await show('a new topic sent from the earlier page', 'Orchard plan');
+    await openWeek();
+    await show('the earlier page opened again from the page strip', 'Week plan');
     if (!ok) throw new Error('exo-block-own-page failed');
   } finally {
     view.unmount(); close();
@@ -417,6 +427,11 @@ async function exoBlockSentPage() {
     const selected = await f.rpc.exo_block({ threadId: 'primary', page: 'plum' }), newer = await f.rpc.exo_block({ threadId: 'primary', page: 'pear' });
     if (selected.said !== question || selected.words !== answer(question) || newer.said !== 'draw pear: Pear plan' || newer.words !== answer('draw pear: Pear plan')) throw new Error('public page association differs');
     console.log('Pi public message_start: system update -> question; selected-page RPC payload and both page associations verified; full thread context retained');
+    // #215: the page the question came from is made current before Exo's context is built, so the model's stage names it.
+    const modelStage = [...context.matchAll(/EXOSURFACE revision \d+\. Stage: ([^.]+)\./g)].at(-1)?.[1];
+    const nativeStage = (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint?.layout?.focus;
+    console.log(`current page before Exo's context: model stage ${JSON.stringify(modelStage)}, native stage ${JSON.stringify(nativeStage)}`);
+    ok &&= modelStage === 'plum' && nativeStage === 'plum';
     show('after the question (draws nothing)', 'Plum plan', question, question);
     await until('the page to take a press', idle);
     fireEvent.click(view.getByRole('button', { name: 'Pick plums' }));
@@ -424,9 +439,10 @@ async function exoBlockSentPage() {
     await until('Exo\'s finished turn on the press', () => reply() === answer(line));
     console.log(`pressed "Pick plums" on "Plum plan" (draws nothing); Exo's turn finished; page in view ${JSON.stringify(inView())}`);
     show('after the press', 'Plum plan', 'Pick plums', line);
-    fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
+    // The later page keeps its own exchange: opened from the page strip.
+    fireEvent.click(view.getByRole('button', { name: 'Pear plan', exact: true }));
     await until('the pear page in view', () => inView() === 'Pear plan' && said() === 'draw pear: Pear plan');
-    show('back to the current topic', 'Pear plan', 'draw pear: Pear plan', 'draw pear: Pear plan');
+    show('later page opened from the page strip', 'Pear plan', 'draw pear: Pear plan', 'draw pear: Pear plan');
     if (!ok) throw new Error('exo-block-sent-page failed');
   } finally {
     view.unmount(); close();
