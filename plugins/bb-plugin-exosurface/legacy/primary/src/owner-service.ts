@@ -191,7 +191,11 @@ const server = createServer(socket => {
             // to a Pi whose page extension takes it, else it is skipped (never a message the model or the person sees).
             const { commands } = await page.pi.send('get_commands');
             if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-press' && c.source === 'extension')) throw new Error('No workspace-press command in this Pi; record skipped');
-            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: m.request?.page }) });
+            const initiating: unknown = m.request?.page;
+            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: initiating }) });
+            // Pi reports a registered command as handled even when its handler throws. Verify committed promotion.
+            const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json');
+            if (initiating !== undefined && (!existsSync(file) || (load(file) as { workspace?: { layout?: { focus?: unknown } } }).workspace?.layout?.focus !== initiating)) throw new Error('Initiating page promotion was not committed');
             write(socket, sent?.disposition === 'handled' ? { kind: 'response', id: m.id, ok: true, data: {} } : { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return;
           }
           if (m.type === 'hello') {
