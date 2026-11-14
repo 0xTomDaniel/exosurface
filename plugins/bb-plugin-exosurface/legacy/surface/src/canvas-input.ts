@@ -7,7 +7,7 @@ export const MAX_OWNER_COMMAND_UNITS=20000;
 export function assertOwnerCommand(request:unknown){
  if(JSON.stringify(request).length>MAX_OWNER_COMMAND_UNITS)throw Error(`Page command exceeds ${MAX_OWNER_COMMAND_UNITS} serialized UTF-16 units. Nothing was changed or sent.`);
 }
-export type DataRequest={revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true};
+export interface DataRequest {revision:number;surfaceId:string;updates:{path:string;value?:unknown}[];mutationId:string;source:'edit'|'press';keep?:true}
 export function planData(current:Snapshot,r:DataRequest){
  assertOwnerCommand(r);
  if(r.revision!==current.revision)throw Error(`stale_revision ${current.revision}`);

@@ -6,7 +6,7 @@ Repo skills: typescript, pnpm, nodejs, verify-app
 
 ## Commands
 
-- `just setup`: locked mise tools, frozen pnpm dependency installation, local Git hook.
+- `just setup`: locked mise tools, frozen pnpm dependency installation, local Git hook. pnpm store, and removing an old worktree `.pnpm-store`: [docs/pnpm-migration.md](docs/pnpm-migration.md) (`setup-dependencies`).
 - `just check`: canonical offline native owner/runtime build, existing TypeScript check and bounded mock-BB Node test harness. Hook and CI call the same gate.
 - `./scripts/build`: real owner and runtime artifacts in `plugins/bb-plugin-exosurface/dist` and generated resources.
 - `pnpm --dir plugins/bb-plugin-exosurface exec bb plugin build`: native BB host/server/app packaging. Use an isolated `BB_DATA_DIR`, no service or provider calls.

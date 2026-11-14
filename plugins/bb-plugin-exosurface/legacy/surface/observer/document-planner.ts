@@ -15,7 +15,7 @@ export async function planDocument(doc:Document,hints:Hints,provider:Pick<Provid
   if(hints.roles[s.id]==='alternatives'&&s.children.length>=2&&s.children.length<=3&&s.children.every(n=>n.kind==='section'&&n.title.length<=80&&reconstruct(n).length<=700)&&!nodes({ ...doc,root:s}).some(n=>n.kind==='block'&&(n.ordered||n.raw.includes('?')))){
    layouts.Row='Short independent alternative sections, side by side on wide screens.';layouts.Tabs='Independent alternative sections, each explicitly labelled by its own source heading.';
   }
-  questions[s.id+'_layout']=q(`Layout of children of ${s.id}, role=${hints.roles[s.id]}? Keep all source parents/order, priority and qualifications.`,layouts);
+  questions[s.id+'_layout']=q(`Layout of children of ${s.id}, role=${String(hints.roles[s.id])}? Keep all source parents/order, priority and qualifications.`,layouts);
  }
  const selected=await provider.decide({document:documentState(doc),roles:hints.roles,instructions:'Presentation only. The semantic hierarchy is immutable, not optional content. Choose helpful boundaries and layouts, never a summary or a page template.'},questions,signal);
  return Object.fromEntries(sections.map(s=>[s.id,{style:selected[s.id+'_style'].choice,layout:selected[s.id+'_layout'].choice}]));

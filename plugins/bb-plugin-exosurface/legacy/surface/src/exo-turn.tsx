@@ -11,7 +11,7 @@ import {Markdown,useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
 import {FIRST_STEP} from '../../primary/src/first-step';
 
-type Block={working:boolean;said:string;words:string;activity?:string};
+interface Block {working:boolean;said:string;words:string;activity?:string}
 // A send from the input refreshes the block of that thread at once (both are mounted in the same surface view).
 const sent=new Set<(threadId:string,text:string)=>void>();
 /** Calls `listener` on each send BB accepted from the input (not on a page press, a poll or a turn ending); returns the unsubscribe. */
@@ -50,7 +50,7 @@ export function SurfaceInput({threadId,page}:{threadId:string|null;page?:string}
  const submit=(e:FormEvent)=>{e.preventDefault();void send();};
  const keys=(e:KeyboardEvent<HTMLTextAreaElement>)=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}};
  return <div className="exo-dock"><div aria-hidden="true" className="exo-fade"/><form aria-label="Message Exo" onSubmit={submit} className="exo-input flex items-end gap-2">
-  <textarea aria-label="Message" value={text} onChange={e=>setText(e.target.value)} onKeyDown={keys} rows={2} disabled={!threadId}
+  <textarea aria-label="Message" value={text} onChange={e=> { setText(e.target.value); }} onKeyDown={keys} rows={2} disabled={!threadId}
    placeholder={threadId?'Message Exo':'Exo is not attached yet.'} className="min-w-0 flex-1 resize-none rounded-md border border-border bg-transparent px-3 py-2 text-sm"/>
   <button type="submit" disabled={!threadId||sending||!text.trim()} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent">Send</button>
   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}

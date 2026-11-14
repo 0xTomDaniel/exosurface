@@ -2,8 +2,8 @@ import {experimental_composeSpec,type Spec} from '@json-render/core';
 import {catalog,fallbacks,mapSpec,validateOffer,type Offer} from './contract.ts';
 import {Provider,type Mode,type Call} from './provider.ts';
 import {applyDelta,moduleData,type Snapshot,type Delta} from '../src/workspace.ts';
-export type CompositionRequest={runId:string;baseRevision:number;mode:Mode;prompt:string;resumeRunId?:string};
-export type CompositionResult={delta:Delta;spec:Spec;copy:Record<string,string>;calls:Call[];elapsedMs:number;firstPreviewMs:number|null;firstCopyMs:number|null;stopReason:string};
+export interface CompositionRequest {runId:string;baseRevision:number;mode:Mode;prompt:string;resumeRunId?:string}
+export interface CompositionResult {delta:Delta;spec:Spec;copy:Record<string,string>;calls:Call[];elapsedMs:number;firstPreviewMs:number|null;firstCopyMs:number|null;stopReason:string}
 // Exact complete candidates only; a new native offer invalidates an older generation.
 export async function compose(input:{offer:Offer;current:Snapshot|null;context:unknown;request:CompositionRequest;signal:AbortSignal;fresh:()=>boolean;preview:(messages:any[])=>void;provider?:Provider;resume?:{spec:Spec;copy:Record<string,string>;received:string[]}}):Promise<CompositionResult>{
  const {current,context,request}=input,local=new AbortController(),signal=AbortSignal.any([input.signal,local.signal]),offer=validateOffer(input.offer),start=performance.now(),provider=input.provider??new Provider(start);

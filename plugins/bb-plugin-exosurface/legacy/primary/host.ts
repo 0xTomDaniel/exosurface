@@ -15,14 +15,14 @@ import { promptWithPrimaryModel } from './src/model-selection.ts';
 import { consumeCanonicalInitialization, consumeAdmittedCanonicalStart } from './src/canonical-control.ts';
 import { setupStatus } from './src/canonical-setup.ts';
 
-const io = createBridgeIo<any>();
+const io = createBridgeIo<unknown>();
 const sessions = new Map<string, Session>();
-type Session = {
+interface Session {
   threadId: string; profile: string; providerThreadId: string; cwd: string;
   rpc?: OwnerClient; closing: boolean; open: boolean; failed: boolean; serial: number;
-  messageKey?: string;
-};
-const emit = (s: Session, deltas: ThreadDelta[]) => io.send({ jsonrpc: '2.0', method: 'thread/delta', params: { threadId: s.threadId, deltas } });
+  messageKey?: string | undefined;
+}
+const emit = (s: Session, deltas: ThreadDelta[]) => { io.send({ jsonrpc: '2.0', method: 'thread/delta', params: { threadId: s.threadId, deltas } }); };
 const text = (content: any) => typeof content === 'string' ? content : (content ?? []).filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n');
 function audit(s: Session, event: string, extra: Record<string, unknown> = {}) {
   const directory = join(HOME, 'audit'); mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -93,8 +93,8 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
   const file = join(HOME, 'canonical-thread.json');
   if (existsSync(file) && load(file).threadId !== threadId && !own) throw new Error(`Open the existing canonical BB conversation ${load(file).threadId}; do not start another owner thread`);
   if (sessions.has(threadId)) throw new Error('Thread already has an attached runtime');
-  let profile = providerThreadId ? providerThreadId.split(':')[1] : own ? bound.profile : CANONICAL_PROFILE;
-  if (!/^[a-z0-9_-]{1,64}$/.test(profile)) throw new Error('Invalid profile identity');
+  const profile = providerThreadId ? providerThreadId.split(':')[1] : own ? bound.profile : CANONICAL_PROFILE;
+  if (typeof profile !== 'string' || !/^[a-z0-9_-]{1,64}$/.test(profile)) throw new Error('Invalid profile identity');
   const childId = providerThreadId?.split(':')[2] !== 'main' ? providerThreadId?.split(':')[2] : undefined;
   const handle = `exo:${profile}:${childId ?? 'main'}`;
   if ([...sessions.values()].some(s => s.providerThreadId === handle)) throw new Error('This provider session already belongs to a BB thread');
@@ -115,7 +115,7 @@ async function construct(threadId: string, cwd: string, providerThreadId?: strin
     const lost = (error: Error) => {
       if (!s.closing) { audit(s, 'unexpected-exit'); io.send({ jsonrpc: '2.0', method: 'error', params: { threadId, message: error.message } }); if (s.open) settle(s, 'failed'); }
     };
-    s.rpc = await OwnerClient.open(threadId, e => event(s, e), lost);
+    s.rpc = await OwnerClient.open(threadId, e => { event(s, e); }, lost);
     const state = await s.rpc.send('get_state');
     const commands = await s.rpc.send('get_commands');
     await assertNativeOwner(profile, s.rpc.pid);
@@ -156,10 +156,10 @@ async function prompt(s: Session, input: any[], requestId?: string) {
     if (!state.isStreaming && !state.isCompacting && !state.pendingMessageCount) settle(s);
   }
 }
-const schemas: Record<string, any> = { initialize: initializeParamsSchema, 'model/list': modelListParamsSchema, 'thread/start': threadStartParamsSchema, 'thread/resume': threadResumeParamsSchema, 'thread/stop': threadStopParamsSchema, 'turn/start': turnStartParamsSchema, 'turn/steer': turnSteerParamsSchema };
+const schemas: Record<string, { safeParse: (value: unknown) => { success: true; data: unknown } | { success: false; error: { issues: unknown } } }> = { initialize: initializeParamsSchema, 'model/list': modelListParamsSchema, 'thread/start': threadStartParamsSchema, 'thread/resume': threadResumeParamsSchema, 'thread/stop': threadStopParamsSchema, 'turn/start': turnStartParamsSchema, 'turn/steer': turnSteerParamsSchema };
 async function request(id: string | number, method: string, p: any) {
-  if (method === 'initialize') return io.sendResult(id, { protocolVersion: PROVIDER_BRIDGE_PROTOCOL_VERSION, capabilities: { grammarVersions: [THREAD_DELTA_GRAMMAR_V3, THREAD_DELTA_GRAMMAR_V3], sessionRestore: true, fork: 'none', threadArchive: false, threadRename: false, threadGoalClear: false, approvalEnforcedBy: 'provider', steerMode: 'queue' } });
-  if (method === 'model/list') return io.sendResult(id, { models: [CANONICAL_MODEL, SOL_MODEL], selectedOnlyModels: [] });
+  if (method === 'initialize') { io.sendResult(id, { protocolVersion: PROVIDER_BRIDGE_PROTOCOL_VERSION, capabilities: { grammarVersions: [THREAD_DELTA_GRAMMAR_V3, THREAD_DELTA_GRAMMAR_V3], sessionRestore: true, fork: 'none', threadArchive: false, threadRename: false, threadGoalClear: false, approvalEnforcedBy: 'provider', steerMode: 'queue' } }); return; }
+  if (method === 'model/list') { io.sendResult(id, { models: [CANONICAL_MODEL, SOL_MODEL], selectedOnlyModels: [] }); return; }
   if (method === 'thread/start' || method === 'turn/start') {
     const setupOperation = p.options?.providerOptions?.canonicalSetupOperation;
     const setup = method === 'thread/start' && !p.input?.length && typeof setupOperation === 'string' && setupStatus(HOME)?.stage !== 'bound'
@@ -179,7 +179,7 @@ async function request(id: string | number, method: string, p: any) {
     const journal = setupStatus(HOME), canonical = binding(p.threadId);
     if (journal?.stage === 'bound' && journal.threadId === p.threadId && canonical?.runtimeKind === 'canonical') {
       providerThreadId = canonical.providerThreadId;
-      if (!p.input?.length) return io.sendResult(id, { providerThreadId, sessionRestorable: true });
+      if (!p.input?.length) { io.sendResult(id, { providerThreadId, sessionRestorable: true }); return; }
     }
   }
   if (method === 'thread/start' || method === 'thread/resume') {
@@ -208,29 +208,31 @@ async function request(id: string | number, method: string, p: any) {
     return;
   }
   if (method === 'turn/steer') {
-    if (!s.rpc || !s.open) return io.sendError(id, -32003, 'No active main turn to steer');
+    if (!s.rpc || !s.open) { io.sendError(id, -32003, 'No active main turn to steer'); return; }
     const value = p.input.map((i: any) => i.text ?? '').join('');
     const send = () => s.rpc!.send('prompt', { message: value, streamingBehavior: 'steer' });
     await promptWithPrimaryModel(s.rpc, p.options?.model, send);
     if (p.clientRequestId) emit(s, [{ kind: 'input.accepted', clientRequestId: p.clientRequestId }]);
-    return io.sendResult(id, {});
+    io.sendResult(id, {}); return;
   }
   if (method === 'thread/stop') {
     if (p.intent === 'interrupt' && s.rpc) {
       await s.rpc.send('clear_queue'); await s.rpc.send('abort');
       // Closing the owner also stops native in-process children: deliberately not detached jobs.
     }
-    await close(s); return io.sendResult(id, {});
+    await close(s); io.sendResult(id, {}); return;
   }
 }
 export function handleLine(line: string) {
-  let value: any; try { value = JSON.parse(line); } catch { return; }
-  if ((typeof value.id !== 'string' && typeof value.id !== 'number') || typeof value.method !== 'string') return;
-  const schema = schemas[value.method];
-  if (!schema) return io.sendError(value.id, -32601, `Method not found: ${value.method}`);
-  const parsed = schema.safeParse(value.params);
-  if (!parsed.success) return io.sendError(value.id, -32602, 'Invalid params', parsed.error.issues);
-  runBridgeRequest({ request: value, sendError: io.sendError, handleRequest: async () => { await request(value.id, value.method, parsed.data); } });
+  let value: unknown; try { value = JSON.parse(line); } catch { return; }
+  if (typeof value !== 'object' || value === null || !('id' in value) || !('method' in value)) return;
+  const { id, method } = value;
+  if ((typeof id !== 'string' && typeof id !== 'number') || typeof method !== 'string') return;
+  const schema = schemas[method];
+  if (!schema) { io.sendError(id, -32601, `Method not found: ${method}`); return; }
+  const parsed = schema.safeParse('params' in value ? value.params : undefined);
+  if (!parsed.success) { io.send({ jsonrpc: '2.0', id, error: { code: -32602, message: 'Invalid params', data: parsed.error.issues } }); return; }
+  runBridgeRequest({ request: { id, method }, sendError: io.sendError, handleRequest: async () => { await request(id, method, parsed.data); } });
 }
 export const experimental_providerBridge = experimental_defineProviderBridge({ handleLine,
   onClose: async () => { await Promise.allSettled([...sessions.values()].map(close)); },

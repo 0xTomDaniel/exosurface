@@ -1,6 +1,6 @@
 // Client-local drafts, NOT conversation authority or model knowledge.
 import {inputBindings,inputSignature,validateInput,moduleIds,atPath,moduleData,type Snapshot} from './workspace.ts';
-export type Draft={surfaceId:string;path:string;signature:string;value:any};
+export interface Draft {surfaceId:string;path:string;signature:string;value:any}
 export class DraftStore{
  readonly edits=new Map<string,Draft>();
  key(surfaceId:string,path:string){return `${surfaceId}:${path}`;}

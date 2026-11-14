@@ -5,7 +5,7 @@
 import {useEffect,useRef,useState,type ReactNode} from 'react';
 import {useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
-type Facts={setUp:boolean;model:string|null;running:boolean;profile:string|null};
+interface Facts {setUp:boolean;model:string|null;running:boolean;profile:string|null}
 export function Settings({onClose}:{onClose:()=>void}){
  const rpc=useRpc<typeof rpcContract>();
  const[facts,setFacts]=useState<Facts|null>(null),[error,setError]=useState('');
@@ -74,10 +74,10 @@ export function SetUpFirst({children}:{children:ReactNode}){
   <h1 className="text-xl font-semibold">Settings</h1>
   <p className="mt-2 max-w-prose text-sm text-muted-foreground">{!status?'Loading…':resume?'Set-up stopped part way. Resume it to finish setting Exo up with what it started with.':'Exo is not set up yet. Check what Exo will use, then set it up once.'}</p>
   {status&&<div className="mt-6 max-w-xl space-y-3">
-   <label className="block text-sm">Project<select className={field} disabled={fixed} value={projectId} onChange={e=>setProject(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-   <label className="block text-sm">Workspace<input className={field} disabled={fixed} value={vault} onChange={e=>setVault(e.target.value)}/></label>
-   <label className="block text-sm">Pi<input className={field} disabled={fixed} value={piCli} onChange={e=>setPi(e.target.value)}/></label>
-   <label className="block text-sm">OptChat<input className={field} disabled={fixed} value={optchat} onChange={e=>setOptchat(e.target.value)}/></label>
+   <label className="block text-sm">Project<select className={field} disabled={fixed} value={projectId} onChange={e=> { setProject(e.target.value); }}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+   <label className="block text-sm">Workspace<input className={field} disabled={fixed} value={vault} onChange={e=> { setVault(e.target.value); }}/></label>
+   <label className="block text-sm">Pi<input className={field} disabled={fixed} value={piCli} onChange={e=> { setPi(e.target.value); }}/></label>
+   <label className="block text-sm">OptChat<input className={field} disabled={fixed} value={optchat} onChange={e=> { setOptchat(e.target.value); }}/></label>
    {!status.initializationAvailable&&<p className="text-sm text-muted-foreground">Set-up is not available in this BB yet.</p>}
    <button type="button" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50" disabled={busy||!status.initializationAvailable||!projectId||!vault||!piCli||!optchat} onClick={()=>void setUp()}>{busy?'Setting up Exo…':resume?'Resume set-up':'Set up Exo'}</button>
   </div>}

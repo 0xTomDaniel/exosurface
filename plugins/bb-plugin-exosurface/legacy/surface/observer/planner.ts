@@ -8,7 +8,7 @@ export type Atom=z.infer<typeof atomSchema>;
 export function acceptAtom(raw:unknown,source:string):Atom{const a=atomSchema.parse(raw);if(['root','g0','g1','g2'].includes(a.id))throw Error('Reserved atom identity');if(!source.includes(a.evidence))throw Error('Observer evidence absent from actual response');if(a.kind==='input'){if(!a.valueType||a.initial!==(a.valueType==='boolean'?false:''))throw Error('Invalid input semantics');}else if(a.valueType!==undefined||a.initial!==undefined)throw Error('Input fields on noninput atom');return a;}
 const key=(a:Atom)=>'ob_'+createHash('sha256').update(a.id+'|'+a.kind+'|'+(a.kind==='input'?a.text+'|'+a.valueType:'')).digest('hex').slice(0,12);
 const q=(question:string,criteria:Record<string,string>)=>({type:'choice' as const,instructions:question,criteria});
-export type Plan={types:Record<string,string>;parents:Record<string,string>;positions:Record<string,number>};
+export interface Plan {types:Record<string,string>;parents:Record<string,string>;positions:Record<string,number>}
 export async function plan(atoms:Atom[],provider:Pick<Provider,'decide'>,signal:AbortSignal):Promise<Plan>{
  if(!atoms.length||atoms.length>12||new Set(atoms.map(a=>a.id)).size!==atoms.length||!atoms.some(a=>a.kind==='content')||atoms.filter(a=>a.kind==='input').length>2||atoms.filter(a=>a.kind==='action').length>1)throw Error('Semantic atom budget/identity violation');
  if(atoms.some(a=>a.kind==='action')&&!atoms.some(a=>a.kind==='input'))throw Error('Action without input contract');

@@ -24,9 +24,9 @@ this.action = action;
 this.changed = changed;
 this.catalogs = catalogs;
 this.processor=this.create();}
- private create(){return new MessageProcessor<ReactCatalogComponent>(this.catalogs,a=>this.action(a),{validationConfig:{...STRICT_VALIDATION,allowOrphanComponents:true,allowDanglingReferences:true,allowMissingRoot:true}});}
+ private create(){return new MessageProcessor<ReactCatalogComponent>(this.catalogs,a=> { this.action(a); },{validationConfig:{...STRICT_VALIDATION,allowOrphanComponents:true,allowDanglingReferences:true,allowMissingRoot:true}});}
  cursor(){return {epoch:this.epoch,revision:this.committed?.revision??0};}
- private unsub(){this.subscriptions.forEach(s=>s.unsubscribe());this.subscriptions=[];}
+ private unsub(){this.subscriptions.forEach(s=> { s.unsubscribe(); });this.subscriptions=[];}
  private sync(snapshot:Snapshot|null,ack:boolean){
   this.unsub();this.displayed=snapshot;if(!snapshot){this.orphan=[...this.drafts.edits.values()];return;}
   const {apply,orphan}=this.drafts.reconcile(snapshot,ack);this.orphan=orphan;

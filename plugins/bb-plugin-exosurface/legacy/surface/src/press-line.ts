@@ -6,4 +6,4 @@
 export const PRESS_ENTRY='exosurface-press';
 /** The message it goes with (`line`: shown or placed only when the message is that line); a press's button label; and the
  *  page the send or press came from (the page in view, a press's the page its button sits on), absent in older journals. */
-export type PressEntry={label?:string;line:string;page?:string};
+export interface PressEntry {label?:string;line:string;page?:string}

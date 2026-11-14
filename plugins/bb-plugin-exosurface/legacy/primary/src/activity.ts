@@ -9,10 +9,12 @@ const clip = (s: string) => { const t = s.replace(/\s+/g, ' ').trim(); return t.
 export function headline(thinking: string, ended: boolean): string | undefined {
   if (thinking.trim() === '[Reasoning redacted]') return undefined;
   const titles = [...thinking.matchAll(/\*\*([^*\n]+)\*\*/g)];
-  if (titles.length) return clip(titles.at(-1)![1]!);
+  const title = titles.at(-1)?.[1];
+  if (title !== undefined) return clip(title);
   const sentence = /^\s*([^\n]*?[.!?])(\s|$)/.exec(thinking);
-  if (sentence && (sentence[2] || ended)) return clip(sentence[1]!);
-  return ended && thinking.trim() ? clip(thinking.split('\n').find(l => l.trim())!) : undefined;
+  if (sentence?.[1] !== undefined && (sentence[2] || ended)) return clip(sentence[1]);
+  const first = thinking.split('\n').find(l => l.trim());
+  return ended && first !== undefined ? clip(first) : undefined;
 }
 
 const str = (v: unknown) => typeof v === 'string' && v.trim() ? v.trim() : undefined;
@@ -27,7 +29,7 @@ const file = (path: string) => {
 /** A tool step in plain words, such as "Reading the garden note" or "Searching the web for garden layouts". */
 export function step(toolName: string, args: unknown): string {
   const a = (args && typeof args === 'object' ? args : {}) as Record<string, unknown>;
-  const path = str(a.path) ?? str(a.file_path), query = str(a.query) ?? str(a.pattern);
+  const path = str(a['path']) ?? str(a['file_path']), query = str(a['query']) ?? str(a['pattern']);
   const name = toolName.toLowerCase();
   if (name === 'read') return clip(path ? `Reading ${file(path)}` : 'Reading a file');
   if (name === 'write') return clip(path ? `Writing ${file(path)}` : 'Writing a file');

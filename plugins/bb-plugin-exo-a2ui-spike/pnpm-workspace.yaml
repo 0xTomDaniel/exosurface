@@ -25,5 +25,3 @@ overrides:
   'bb-plugin-exo-a2ui-spike>typebox': 1.3.27
   'bb-plugin-exo-a2ui-spike>zod': file:../bb-plugin-exosurface/legacy/surface/vendor/zod3/zod-3.25.76-exosurface.1.tgz
   '@types/better-sqlite3@7.6.12>@types/node': 22.20.5
-
-packageImportMethod: copy
