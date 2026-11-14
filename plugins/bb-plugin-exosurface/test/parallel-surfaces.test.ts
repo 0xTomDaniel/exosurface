@@ -1,8 +1,8 @@
-import { required } from './required.ts';
 // #70 (spec pages-and-activity S6, S9, F5): Exo works on several surfaces at once and never switches the surface in view.
 // The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send
 // goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat,
 // the model ("hold:" answers only once the test releases it; "together" answers only while another surface's turn runs too, else "ALONE").
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -35,7 +35,7 @@ after(async () => {
 
 const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
 const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent ?? '');
-const open = (title: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textContent === title) to be non-null"));
+const open = (title: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textConten... to be non-null"));
 // Exo's words in the surface's Exo block (since #79 the block opens with the person's message as a bubble above them).
 const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
@@ -53,7 +53,7 @@ void test('send on Home, open another surface before Exo finishes, Home\'s turn 
   await until('Home in view', () => current().join() === 'Home');
   await send('hold: plan the week');
   await until('Home\'s block to say Exo is working', () => block()?.textContent === 'Reading your message');
-  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface') to be non-null"));
+  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
   await until('the new surface in view', () => current().join() === 'New surface');
   const opened = inView.length;
   surface = (await f.rpc.thread_list(null)).threads[1].threadId;

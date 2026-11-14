@@ -1,4 +1,3 @@
-import { required } from './required.ts';
 // #129 (spec pages-and-activity T3, T4; acceptance-settings-shows, acceptance-settings-close): below the tree the sidebar
 // has one Settings button; settings show in place of the surface in view, beside the sidebar: whether Exo is set up, the
 // model it runs on, whether it is running and the owner profile, with no input and no control for testing Exo. Closing
@@ -6,6 +5,7 @@ import { required } from './required.ts';
 // The app (package.json bb.app) is rendered through the SDK's app test runtime (test/app-render.ts). Settings read the
 // owner's status from server.ts on a set-up fixture (test/mock-bb.ts: canonical_setup, the release owner on the real Pi
 // CLI); the surface test's rpc handlers stand in for the server. Only extracted strings and counts are compared.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -63,7 +63,7 @@ void test('with Exo set up, pressing Settings shows set up, the model, running a
     // T3: one Settings button, below the tree (after the surfaces in screen order), not a surface in the list.
     const buttons = [...required(s.sidebar(), "Expected s.sidebar() to be non-null").querySelectorAll('button')].filter(b => named(b) === 'Settings');
     assert.deepEqual(buttons.map(b => b.closest('li') !== null), [false]);
-    const lastRow = required([...required(s.sidebar(), "Expected s.sidebar() to be non-null").querySelectorAll('li')].at(-1), "Expected [...s.sidebar()!.querySelectorAll('li')].at(-1) to be non-null");
+    const lastRow = required([...required(s.sidebar(), "Expected s.sidebar() to be non-null").querySelectorAll('li')].at(-1), "Expected [...s.sidebar().querySelectorAll('li')].at(-1) to be non-null");
     assert.equal(!!(lastRow.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings follows the tree');
     s.press('Settings', s.sidebar);
     await until('settings with the owner\'s status', () => s.facts().length === 4 && s.facts().every(([, v]) => v !== 'Loading…'));

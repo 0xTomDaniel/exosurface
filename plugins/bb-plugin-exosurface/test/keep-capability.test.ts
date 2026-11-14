@@ -1,5 +1,5 @@
-import { required } from './required.ts';
 // #199: actual native Pi command capability and public edit RPC, with the existing offline provider.
+import { required } from './required.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';

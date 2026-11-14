@@ -1,7 +1,7 @@
-import { required } from './required.ts';
 // #108: update_exosurface argument-format errors reach Exo in plain words, on both registrations (the release owner's
 // legacy surface extension and the fresh-owner page tools). The boundary is the one Pi runs a call through: its own
 // validateToolArguments (pinned pi-coding-agent's pi-ai), then execute; a throw from either is the text Exo receives.
+import { required } from './required.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ const { validateToolArguments } = await import('@earendil-works/pi-ai') as { val
 
 /** What Exo receives for one update_exosurface call, as Pi runs it. */
 async function call(tool: Tool, args: object) {
-  try { return required((await tool.execute('call', validateToolArguments(tool, { type: 'toolCall', id: 'call', name: tool.name, arguments: args }))).content[0], "Expected (await tool.execute('call', validateToolArguments(tool, { type: 'toolCall', id: 'call', name: tool.name, arguments: args }))).content[0] to be non-null").text; }
+  try { return required((await tool.execute('call', validateToolArguments(tool, { type: 'toolCall', id: 'call', name: tool.name, arguments: args }))).content[0], "Expected (await tool.execute('call', validateToolArguments(tool, { type: 'to... to be non-null").text; }
   catch (error) { return (error as Error).message; }
 }
 

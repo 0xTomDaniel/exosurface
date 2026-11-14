@@ -1,8 +1,8 @@
-import { required } from './required.ts';
 // #83 (spec pages-and-activity N5 amended, N7; acceptance-rename): the person renames any surface but Home from the flat
 // sidebar, any time; a surface the person renamed is never named again by Exo, even before its first turn, and a rename that
 // lands while Exo's naming call is in flight wins. Rendered sidebar (package.json bb.app) on the live entry points (server.ts
 // RPCs and events, host.ts bridge, the release owner, real Pi); fake at the boundaries: BB, OptChat and the models.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, lstatSync, readlinkSync, realpathSync } from 'node:fs';
@@ -45,7 +45,7 @@ const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).t
 /** A new surface through the sidebar's New surface button, started by BB with its first message. */
 async function newSurface() {
   const count = entries().length;
-  fireEvent.click(required(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li')), "Expected sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li')) to be non-null"));
+  fireEvent.click(required(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li')), "Expected sidebar().getAllByRole('button', { name: 'New surface' }).find((b: ... to be non-null"));
   await until('the new surface listed', () => entries().length === count + 1);
   const made = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
@@ -190,7 +190,7 @@ void test('acceptance-rename: the title at the top renames the surface in view (
 
   // The pencil beside the title and the sidebar's, judged by computed style from the app's own stylesheets.
   assert.deepEqual(pencilShows(header().getByRole('button', { name: 'Rename Patio lights' })), { resting: true, focused: true, shown: true });
-  assert.deepEqual(pencilShows(required(sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1), "Expected sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1) to be non-null")), { resting: true, focused: true, shown: true });
+  assert.deepEqual(pencilShows(required(sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1), "Expected sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).a... to be non-null")), { resting: true, focused: true, shown: true });
 
   // A refusal shows at the top and keeps the field open; Escape leaves the name as it was.
   fireEvent.doubleClick(header().getByRole('heading', { name: 'Patio lights' }));

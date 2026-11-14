@@ -1,9 +1,9 @@
-import { required } from './required.ts';
 // #80 (spec pages-and-activity S11; acceptance-input-floats): the input floats over the bottom of the scrolling surface in
 // the page's column, the page scrolls beneath it, and the content under it fades out from its middle down. The app (app.tsx)
 // is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send goes through the mock
 // BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Presentation is read from computed styles, never
 // class names; jsdom does no layout, so true layout and paint are checked in the owner's RDP walkthrough.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

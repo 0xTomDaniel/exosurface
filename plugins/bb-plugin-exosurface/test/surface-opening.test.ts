@@ -1,8 +1,8 @@
-import { required } from './required.ts';
 // #79 (spec pages-and-activity S12, E8; acceptance-name-header, acceptance-opening): the top of the surface in view is its
 // own name, then the Exo block opens the page: the person's latest message as a bubble, Exo's reply as plain text, then the
 // page's content. The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on
 // server.ts, a send goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts).
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -117,7 +117,7 @@ void test('after a press and Exo\'s finished turn, the person\'s bubble is the b
   await until('the page\'s Book button, idle', () => !!book() && !required(book(), "Expected book() to be non-null").closest('[inert]') && !!input() && !required(input(), "Expected input() to be non-null").disabled);
   fireEvent.input(main().querySelector('[data-surface] input') as HTMLInputElement, { target: { value: 'Ada' } });
   fireEvent.click(required(book(), "Expected book() to be non-null"));
-  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply()!.textContent to be non-null").includes('Ada'));
+  await until('Exo\'s reply to the press', () => !!reply()?.textContent?.startsWith('Exo (exo-optchat): ▸') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply().textContent to be non-null").includes('Ada'));
   assert.equal(bubble()?.textContent, 'Book');
   assert.equal(rightAligned(required(bubble(), "Expected bubble() to be non-null")), true);
   assert.equal(before(required(bubble(), "Expected bubble() to be non-null"), required(reply(), "Expected reply() to be non-null")), true);
@@ -129,7 +129,7 @@ void test('a press on an earlier version of the page, opened from its card in th
   // of the page as first drawn (revision 1, since edited by the presses above), the surface shows that earlier version, and
   // they press its Book button; as above, what the surface asks its scroll container for and its scrollTop.
   const card = /::exo-surface\{surface="([^"]+)" revision="1" action="drew"\}/;
-  const drawn = required(host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean), "Expected host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean) to be non-null");
+  const drawn = host.deltas('primary').map((d: any) => d.kind === 'item.textClose' ? card.exec(d.text) : null).find(Boolean);
   assert.ok(drawn, 'the chat card of the drawn page');
   const directive = app.messageDirectives.find((d: any) => d.id === 'exo-surface');
   const chat = kit.renderSlot(directive, { attributes: { surface: drawn[1], revision: '1', action: 'drew' }, message: { threadId: 'primary' } }, { rpc: f.rpc });
@@ -144,7 +144,7 @@ void test('a press on an earlier version of the page, opened from its card in th
     const asked = browser.scrolls.length;
     fireEvent.input(required(main().querySelector('[data-surface] input'), "Expected main().querySelector('[data-surface] input') to be non-null"), { target: { value: 'Ada' } });
     fireEvent.click(required(book(), "Expected book() to be non-null"));
-    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply()!.textContent to be non-null").includes('Brought back'));
+    await until('the press turn\'s reply, back on the live page', () => !earlier() && bubble()?.textContent === 'Book' && !!reply()?.textContent?.startsWith('Exo (exo-optchat): Tom changed pages on the surface since your last turn') && required(required(reply(), "Expected reply() to be non-null").textContent, "Expected reply().textContent to be non-null").includes('Brought back'));
     const pressed = { top: main().scrollTop, asked: JSON.stringify(browser.scrolls.slice(asked)) };
     assert.ok(pressed.top === 0 && pressed.asked === '[{"top":0,"behavior":"smooth"}]', `after a press on the earlier version: ${JSON.stringify(pressed)}`);
   } finally { chat.unmount(); }
@@ -155,7 +155,7 @@ void test('a surface whose stored name is "Garden plan" shows "Garden plan" as i
   f.retitle(made, 'Garden plan');
   view.unmount(); view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
-  const open = (name: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === name), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textContent === name) to be non-null"));
+  const open = (name: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === name), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textConten... to be non-null"));
   const headings = () => [...view.container.querySelectorAll('h1, h2, h3, h4, h5, h6')].map(h => h.textContent);
   await until('Garden plan in the sidebar', () => !!sidebar() && [...sidebar().querySelectorAll('li button')].some(b => b.textContent === 'Garden plan'));
   open('Garden plan');

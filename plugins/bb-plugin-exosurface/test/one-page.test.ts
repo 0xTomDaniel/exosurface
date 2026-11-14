@@ -1,10 +1,10 @@
-import { required } from './required.ts';
 // #81 (spec pages-and-activity S13; acceptance-one-page-in-view): a surface shows one page at a time. After a message about
 // a new topic and Exo's finished turn, with no scroll, click or typing, the new topic's page is the one page in view and every
 // earlier page shows only as a pill in the page strip: also when Exo's layout asks for the earlier page beside the new one,
 // and when the surface's pages carry no focus at all. The app (app.tsx) is rendered through the SDK's app test runtime
 // (test/app-render.ts); its RPCs run on server.ts, a send goes through the mock BB to host.ts and the release owner on the
 // real Pi CLI (test/mock-bb.ts, whose fake model draws "draw <ref>: <title>" pages).
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -56,8 +56,8 @@ void test('after a message about a new topic and Exo\'s finished turn, its page 
 void test('top down: the title, the page strip with the earlier page\'s pill, then the Exo block, then the page; a hairline sets the title and strip off', async () => {
   // Owner walkthrough on PR #89. Each part by what the person sees: the heading, the navigation holding the pills, the
   // Exo block, the page in view; screen (document) order as primitives, never elements compared.
-  const title = required(main().querySelector('h1, h2, h3, h4, h5, h6'), "Expected main().querySelector('h1, h2, h3, h4, h5, h6') to be non-null"), strip = required([...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n)), "Expected [...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n)) to be non-null");
-  const block = required(main().querySelector('section[aria-label="Exo"]'), "Expected main().querySelector('section[aria-label=\"Exo\"]') to be non-null"), page = required([...main().querySelectorAll('section[data-surface]')].find(shown), "Expected [...main().querySelectorAll('section[data-surface]')].find(shown) to be non-null");
+  const title = main().querySelector('h1, h2, h3, h4, h5, h6'), strip = [...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n));
+  const block = main().querySelector('section[aria-label="Exo"]'), page = [...main().querySelectorAll('section[data-surface]')].find(shown);
   assert.ok(!!title && !!strip && !!block && !!page, `parts present: title ${!!title}, strip ${!!strip}, block ${!!block}, page ${!!page}`);
   const parts = [['title', title], ['strip', strip], ['block', block], ['page', page]] as const;
   const order = [...parts].sort(([, a], [, b]) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1).map(([k]) => k).join(' > ');
@@ -66,7 +66,7 @@ void test('top down: the title, the page strip with the earlier page\'s pill, th
   // The top area (title and strip) and the Exo block below it: a hairline between them (computed styles; true paint: RDP).
   assert.ok(divided(strip, block) && divided(title, block), `divided: strip ${divided(strip, block)}, title ${divided(title, block)}`);
   // The strip still works from its new place: a pill shows that page, and Back returns to the current topic.
-  fireEvent.click(required([...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan'), "Expected [...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan') to be non-null"));
+  fireEvent.click(required([...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan'), "Expected [...strip.querySelectorAll('button[aria-pressed]')].find(b => b.tex... to be non-null"));
   await until('the week page from its pill', () => JSON.stringify(inView()) === '["Week plan"]');
   fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
   await until('back to the garden page', () => JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]');

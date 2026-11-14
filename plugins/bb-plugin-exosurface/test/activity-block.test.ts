@@ -1,10 +1,10 @@
-import { required } from './required.ts';
 // #85 (spec pages-and-activity E9, amends E4; acceptance-live-activity, acceptance-live-activity-ends): while Exo works, the
 // Exo block of the page in view shows one line of what Exo is doing, replaced as Exo goes; once the turn ends it shows
 // Exo's reply and no line. The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run
 // on server.ts, a send goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts).
 // Fake: BB's host, OptChat, the model ("steps: <topic>": reasoning, a read of <topic>.md, reasoning, the reply; each step
 // held until its line is seen on screen). Only text and computed-style strings are read from the screen, never held.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
@@ -121,7 +121,7 @@ void test('a send Exo answers in several steps: the Exo block shows one line of 
 
 void test('a send on a new surface whose turn the provider fails before any step: the Exo block shows one line from the send until the turn ends, then none', async () => {
   const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
-  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface') to be non-null"));
+  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
   const fresh = (await f.rpc.thread_list(null)).threads[1].threadId;

@@ -1,9 +1,9 @@
-import { required } from './required.ts';
 // #187 qc (spec pages-and-activity E10, S3; acceptance-exo-block-sent-page): a send's record (the page it came from) is a
 // silent journal entry or nothing; it never reaches the model or the person as a message. Here Exo runs without its page
 // extension (local config surfaceMain off, the rollback), so no Pi command takes the record. The app (app.tsx) is rendered
 // through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send goes through the mock BB to
 // host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat, the model.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';

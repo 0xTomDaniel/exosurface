@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const directory = 'plugins/bb-plugin-exosurface/test';
-const excluded = new Set(['mock-bb.ts', 'exo-block.test.ts', 'required.ts']);
+const excluded = new Set(['mock-bb.ts', 'app-render.ts', 'exo-block.test.ts', 'required.ts']);
 const files = process.argv.slice(2).map(file => resolve(file));
 process.chdir(resolve(import.meta.dirname, '../..'));
 if (files.length === 0) {
@@ -26,7 +26,9 @@ for (const file of files) {
   const edits: { start: number; end: number; text: string }[] = [];
   const initialNonNull = totals.nonNull;
   // A conflicting binding requires judgment rather than a guessed rename.
-  const collision = /\brequired\b/.test(text);
+  const collision = source.statements.some(statement => ts.isImportDeclaration(statement) &&
+    statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) &&
+    statement.importClause.namedBindings.elements.some(element => element.name.text === 'required'));
   const testNames = new Set<string>();
   const suiteNames = new Set<string>();
   for (const statement of source.statements) {
@@ -44,6 +46,29 @@ for (const file of files) {
   function add(start: number, end: number, replacement: string): void {
     edits.push({ start, end, text: replacement });
   }
+  function assertedNext(node: ts.NonNullExpression): boolean {
+    const declaration = node.parent;
+    if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== node || !ts.isIdentifier(declaration.name)) return false;
+    const statement = declaration.parent.parent;
+    if (!ts.isVariableStatement(statement) || !ts.isBlock(statement.parent) && !ts.isSourceFile(statement.parent)) return false;
+    const statements = statement.parent.statements;
+    let index = statements.indexOf(statement) + 1;
+    let next = statements[index];
+    while (next && ts.isVariableStatement(next)) next = statements[++index];
+    if (!next || !ts.isExpressionStatement(next) || !ts.isCallExpression(next.expression)) return false;
+    const call = next.expression;
+    if (!['assert', 'assert.ok'].includes(call.expression.getText(source))) return false;
+    const name = declaration.name.text;
+    function contains(value: ts.Expression): boolean {
+      if (ts.isIdentifier(value)) return value.text === name;
+      if (ts.isParenthesizedExpression(value)) return contains(value.expression);
+      if (ts.isPrefixUnaryExpression(value) && value.operator === ts.SyntaxKind.ExclamationToken &&
+          ts.isPrefixUnaryExpression(value.operand) && value.operand.operator === ts.SyntaxKind.ExclamationToken) return contains(value.operand.operand);
+      return ts.isBinaryExpression(value) && value.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+        (contains(value.left) || contains(value.right));
+    }
+    return !!call.arguments[0] && contains(call.arguments[0]);
+  }
   function visit(node: ts.Node): void {
     if (ts.isNonNullExpression(node)) {
       let reference: ts.Node = node;
@@ -60,9 +85,14 @@ for (const file of files) {
           !ts.isBinaryExpression(parent) && !ts.isPrefixUnaryExpression(parent) &&
           !ts.isPostfixUnaryExpression(parent) && !ts.isTaggedTemplateExpression(parent) &&
           !ts.isDeleteExpression(parent) && !ts.isForInStatement(parent) && !ts.isForOfStatement(parent)) {
-        add(node.getStart(source), node.getStart(source), 'required(');
-        add(node.expression.end, node.end, `, ${JSON.stringify(`Expected ${node.expression.getText(source)} to be non-null`)})`);
-        totals.nonNull++;
+        if (assertedNext(node)) add(node.expression.end, node.end, '');
+        else {
+          add(node.getStart(source), node.getStart(source), 'required(');
+          const label = node.expression.getText(source).replace(/!/g, '').replace(/\s+/g, ' ');
+          const message = `Expected ${label.length > 70 ? label.slice(0, 67) + '...' : label} to be non-null`;
+          add(node.expression.end, node.end, `, ${JSON.stringify(message)})`);
+          totals.nonNull++;
+        }
       } else totals.leftNonNull++;
     }
     if (ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression) &&
@@ -122,7 +152,10 @@ for (const file of files) {
     output = output.slice(0, edit.start) + edit.text + output.slice(edit.end);
     boundary = edit.start;
   }
-  if (totals.nonNull > initialNonNull) output = "import { required } from './required.ts';\n" + output;
+  if (totals.nonNull > initialNonNull) {
+    const headerEnd = source.statements[0]?.getStart(source) ?? 0;
+    output = output.slice(0, headerEnd) + "import { required } from './required.ts';\n" + output.slice(headerEnd);
+  }
   if (output !== text) writeFileSync(resolve(file), output);
 }
 totals.leftAsync -= totals.async;

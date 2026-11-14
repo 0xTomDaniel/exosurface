@@ -1,8 +1,8 @@
-import { required } from './required.ts';
 // #186 (spec pages-and-activity N9, N5; acceptance-tree-newest-first, acceptance-tree-new-first): the tree's order by last
 // activity, as N9 defines it. Rendered sidebar (package.json bb.app) on the live
 // entry points (server.ts RPCs and events, host.ts bridge, the release owner, real Pi and its session journals); fake at
 // the boundaries: BB, OptChat and the models. Only the listed names are compared, as strings.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -35,10 +35,10 @@ const ids = async () => (await f.rpc.thread_list(null)).threads.map((t: any) => 
 /** The person presses New surface; BB starts the new thread with its first message. Returns the new surface's thread. */
 async function newSurface() {
   const before = await ids(), count = entries().length;
-  const button = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar()!.querySelectorAll('button')].find(b => b.textContent === 'New surface') to be non-null");
+  const button = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null");
   fireEvent.click(button);
   await until('the new surface listed', () => entries().length === count + 1);
-  const made = required((await ids()).find(id => !before.includes(id)), "Expected (await ids()).find(id => !before.includes(id)) to be non-null");
+  const made = required((await ids()).find(id => !before.includes(id)), "Expected (await ids()).find(id => before.includes(id)) to be non-null");
   assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(made) > 0);
   return made;
@@ -69,7 +69,7 @@ void test('acceptance-tree-new-first: with two surfaces, New surface lists the n
   await until('two surfaces listed', () => entries().length === 3);
   const others = entries().slice(1).sort();
   assert.deepEqual(others, ['Garden plan', 'Weekend trip']);
-  const button = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar()!.querySelectorAll('button')].find(b => b.textContent === 'New surface') to be non-null");
+  const button = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null");
   fireEvent.click(button);
   await until('the new surface listed', () => entries().length === 4);
   assert.deepEqual(entries().slice(0, 2), ['Home', 'New surface']);
@@ -79,11 +79,11 @@ void test('a send alone is activity (N9): right after a send from the input of t
   // #187 follow-up: the order before is New surface, Garden plan, Weekend trip; the person opens Weekend trip and sends a
   // message Exo answers only once released.
   await until('three surfaces listed', () => entries().join('|') === 'Home|New surface|Garden plan|Weekend trip');
-  const row = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('li button')].find(b => b.textContent === 'Weekend trip'), "Expected [...sidebar()!.querySelectorAll('li button')].find(b => b.textContent === 'Weekend trip') to be non-null");
+  const row = required([...required(sidebar(), "Expected sidebar() to be non-null").querySelectorAll('li button')].find(b => b.textContent === 'Weekend trip'), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textConten... to be non-null");
   fireEvent.click(row);
-  const weekend = required((await f.rpc.thread_list(null)).threads.find((t: any) => t.title === 'Weekend trip'), "Expected (await f.rpc[\"thread_list\"](null)).threads.find((t: any) => t.title === 'Weekend trip') to be non-null").threadId as string;
+  const weekend = required((await f.rpc.thread_list(null)).threads.find((t: any) => t.title === 'Weekend trip'), "Expected (await f.rpc[\"thread_list\"](null)).threads.find((t: any) => t.title... to be non-null").threadId as string;
   const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
-  await until('Weekend trip in view with its input', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && !!required(sidebar(), "Expected sidebar() to be non-null").querySelector('li button[aria-current="page"]') && required(required(sidebar(), "Expected sidebar() to be non-null").querySelector('li button[aria-current="page"]'), "Expected sidebar()!.querySelector('li button[aria-current=\"page\"]') to be non-null").textContent === 'Weekend trip');
+  await until('Weekend trip in view with its input', () => !!input() && !required(input(), "Expected input() to be non-null").disabled && !!required(sidebar(), "Expected sidebar() to be non-null").querySelector('li button[aria-current="page"]') && required(required(sidebar(), "Expected sidebar() to be non-null").querySelector('li button[aria-current="page"]'), "Expected sidebar().querySelector('li button[aria-current=\"page\"]') to be non-null").textContent === 'Weekend trip');
   const before = boundaries(weekend);
   fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: 'hold: pack for the coast' } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));

@@ -1,4 +1,5 @@
 // Test-only ownership barrier: close resources before deleting their state root.
+import { required } from './required.ts';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { basename } from 'node:path';
@@ -35,7 +36,7 @@ export function fixtureCleanup(t: any, root: string) {
           await Promise.race([closed, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error(`Fixture child ${child.pid} did not close`)), 2000); })]);
         } catch (error) { child.kill('SIGKILL'); throw error; } // Forced cleanup never passes.
         finally { clearTimeout(timer); }
-        verifyGone(child.pid!);
+        verifyGone(required(child.pid, "Expected child.pid to be non-null"));
       });
     },
   };

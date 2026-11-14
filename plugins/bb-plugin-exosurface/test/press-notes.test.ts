@@ -1,7 +1,7 @@
-import { required } from './required.ts';
 // #143 (#31; owner ruling 2026-11-06): a person's typed textbox notes reach Exo in full. A press that sends a long
 // multiline note, and a typed note Exo hears about on the next turn, arrive whole in Exo's prompt as Pi recorded it.
 // Through the live entry points: server.ts RPCs (action, edit), the mock BB's dispatch to host.ts, the release owner, real Pi.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
