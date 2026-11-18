@@ -36,6 +36,7 @@ function scrolling(dom: JSDOM): Browser {
  *  builds and loads its own bundle (its own module instances and element classes). `window`: load into an earlier call's
  *  window instead of a fresh one, as BB loads a reinstalled plugin's new app bundle into its long-lived window (one
  *  customElements registry); its `close` then leaves the window to that earlier call. */
+// Kept source-compatible for #212 until its routing rebase contracts the legacy export.
 export async function renderedApp(options: { window?: JSDOM } = {}) {
   const dom = options.window ?? new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://bb.invalid/plugins/exosurface/surface', pretendToBeVisual: true });
   const g = globalThis as any;
@@ -60,6 +61,20 @@ export async function renderedApp(options: { window?: JSDOM } = {}) {
     const app = await kit.loadPluginApp(kit.app);
     return { kit, app, window: dom, browser, close: () => { if (!options.window) dom.window.close(); } };
   } finally { rmSync(out, { recursive: true, force: true }); }
+}
+
+/** Typed entry for migrating consumers; the generated bundle re-exports these exact modules. */
+export function renderedAppTyped(options: { window?: JSDOM } = {}): Promise<{
+  kit: typeof import('@get-bb/plugin-sdk/testing/app') & {
+    testing: typeof import('@testing-library/react');
+    app: typeof import('../app.tsx').default;
+  };
+  app: Awaited<ReturnType<typeof import('@get-bb/plugin-sdk/testing/app').loadPluginApp>>;
+  window: JSDOM;
+  browser: Browser;
+  close: () => void;
+}> {
+  return renderedApp(options);
 }
 
 // Presentation as jsdom computes it from the app's own stylesheets (getComputedStyle), never class names, so a restyle
