@@ -34,13 +34,13 @@ export function isDeferredTree(file: string): boolean {
 export function deferredTreeDrift(root: string, gatedProjects: readonly string[]): string[] {
   const bad: string[] = [];
   for (const entry of OWNER_DEFERRALS.sourceTrees) {
-  const fix = `owner deferral ${entry.url} covers exactly ${entry.prefixes.join(" ")}`;
-  for (const prefix of entry.prefixes) {
-    if (lstatSync(path.join(root, prefix), { throwIfNoEntry: false })?.isDirectory() !== true) bad.push(`deferred tree ${prefix} does not exist as a directory; ${fix}`);
-  }
-  for (const project of gatedProjects) {
-    if (entry.prefixes.some((prefix) => project.startsWith(prefix))) bad.push(`gated compiler project ${project} is inside a deferred tree; remove it from ts_projects or end the deferral (${fix})`);
-  }
+    const fix = `owner deferral ${entry.url} covers exactly ${entry.prefixes.join(" ")}`;
+    for (const prefix of entry.prefixes) {
+      if (lstatSync(path.join(root, prefix), { throwIfNoEntry: false })?.isDirectory() !== true) bad.push(`deferred tree ${prefix} does not exist as a directory; ${fix}`);
+    }
+    for (const project of gatedProjects) {
+      if (entry.prefixes.some((prefix) => project.startsWith(prefix))) bad.push(`gated compiler project ${project} is inside a deferred tree; remove it from ts_projects or end the deferral (${fix})`);
+    }
   }
   return bad;
 }

@@ -5,7 +5,8 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const directory = 'plugins/bb-plugin-exosurface/test';
-const excluded = new Set(['mock-bb.ts', 'app-render.ts', 'exo-block.test.ts', 'required.ts']);
+// Excludes #212 routing files until gh212 merges, and the shared checked-access helper.
+const excluded = new Set(['mock-bb.ts', 'exo-block.test.ts', 'required.ts']);
 const files = process.argv.slice(2).map(file => resolve(file));
 process.chdir(resolve(import.meta.dirname, '../..'));
 if (files.length === 0) {

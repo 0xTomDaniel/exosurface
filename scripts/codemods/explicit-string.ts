@@ -6,7 +6,8 @@ import { resolve, join, relative } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
 const base = 'plugins/bb-plugin-exosurface';
-const excluded = new Set(['demo/surfaces.ts', 'legacy/primary/server.ts', 'legacy/primary/src/exo-turn.ts', 'legacy/primary/src/owner-service.ts', 'legacy/surface/app.tsx', ...['workspace-extension', 'workspace', 'stage', 'canvas-memory'].map(name => `legacy/surface/src/${name}.ts`)]);
+// Excludes #212 routing files until gh212 merges.
+const excluded = new Set(['legacy/primary/server.ts', 'legacy/primary/src/exo-turn.ts', 'legacy/primary/src/owner-service.ts', 'legacy/surface/app.tsx', ...['workspace-extension', 'workspace', 'stage', 'canvas-memory'].map(name => `legacy/surface/src/${name}.ts`)]);
 const files = process.argv.slice(2).map(file => resolve(file));
 function collect(dir: string): void {
   for (const entry of readdirSync(resolve(root, dir), { withFileTypes: true })) {

@@ -19,10 +19,14 @@ const journalMessage = z.object({ type: z.literal('message'), message: z.discrim
   z.object({ role: z.literal('user'), content: z.union([z.string(), content]) }),
   z.object({ role: z.literal('toolResult'), toolName: z.string(), isError: z.boolean(), content }),
 ]) });
+const journalLine = z.object({ type: z.string() });
+const journalRole = z.object({ message: z.object({ role: z.string() }) });
 function messages(file: string) {
   return readFileSync(file, 'utf8').trim().split('\n').flatMap(line => {
-    const parsed = journalMessage.safeParse(JSON.parse(line));
-    return parsed.success ? [parsed.data.message] : [];
+    const raw: unknown = JSON.parse(line);
+    if (journalLine.parse(raw).type !== 'message') return [];
+    const { role } = journalRole.parse(raw).message;
+    return role === 'user' || role === 'toolResult' ? [journalMessage.parse(raw).message] : [];
   });
 }
 
