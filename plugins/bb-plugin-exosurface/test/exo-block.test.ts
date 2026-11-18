@@ -15,10 +15,15 @@ let ownerProcess = await owner(f);
 let host = bridge(f);
 f.provider.deliver = (threadId, text) => { host.send(threadId, text); };
 // The provider thread each bridge start answered with (thread/start's public result), resumed after a restart.
-const startResult = z.object({ error: z.unknown().optional(), result: z.object({ providerThreadId: z.string() }).optional() });
-const providerThreads = new Map<string, string | undefined>();
+// host.ts answers thread/start with a JSON-RPC result or error (legacy/primary/host.ts); a test reads only a success.
+const startResponse = z.union([
+  z.strictObject({ jsonrpc: z.literal('2.0'), id: z.number(), result: z.strictObject({ providerThreadId: z.string(), sessionRestorable: z.boolean() }) }),
+  z.strictObject({ jsonrpc: z.literal('2.0'), id: z.number(), error: z.strictObject({ code: z.number(), message: z.string(), data: z.unknown().optional() }) }),
+]);
+const startedThread = (raw: unknown) => { const response = startResponse.parse(raw); assert.ok('result' in response, JSON.stringify(response)); return response.result.providerThreadId; };
+const providerThreads = new Map<string, string>();
 const started = await host.start('primary');
-providerThreads.set('primary', startResult.parse(started).result?.providerThreadId);
+providerThreads.set('primary', startedThread(started));
 assert.equal(started.error, undefined, JSON.stringify(started));
 assert.ok(started.result?.providerThreadId, 'the bridge gives Home a provider thread');
 const { kit, app, close, browser } = await renderedApp(), { fireEvent } = kit.testing;
@@ -44,7 +49,8 @@ async function send(text: string) {
 }
 const count = (haystack: string, needle: string) => haystack.split(needle).length - 1;
 // #215 helpers, typed at the fixture's untyped edges (Pi run records, the SDK app test kit).
-const piRun = z.object({ profile: z.string() });
+// A Pi run record as the fake OptChat writes it (test/mock-bb.ts FAKE_OPTCHAT, pi-runs.jsonl).
+const piRun = z.strictObject({ pid: z.number(), profile: z.string(), cwd: z.string(), model: z.string(), instructions: z.string(), pageExtensions: z.boolean(), sessionFile: z.string() });
 const lastRun = () => piRun.parse(f.piRuns().at(-1));
 const lastContext = (profile: string) => { const request = modelRequests(f).filter(r => r.profile === profile).at(-1); assert.ok(request, 'a model request'); return JSON.stringify(request.messages); };
 const surface = (threadId: string) => f.rpc.workspace({ deployment: 'main', threadId, cursor: null });
@@ -101,9 +107,7 @@ test('a surface made by New surface shows no transcript, not even its control fi
   await until('the new surface in view', () => [...sidebar().querySelectorAll('button[aria-current="page"]')].some(b => b.textContent === 'New surface'));
   // BB starts the spawned thread with its first message, as it does after spawn.
   const fresh = (await f.rpc["thread_list"](null)).threads[1].threadId;
-  const freshStart = startResult.parse(await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }]));
-  assert.equal(freshStart.error, undefined);
-  providerThreads.set(fresh, freshStart.result?.providerThreadId);
+  providerThreads.set(fresh, startedThread(await host.start(fresh, [{ type: 'text', text: f.spawns.at(-1).prompt }])));
   await until('the new surface to be ready with an empty Exo block', () => !!input() && !input()!.disabled && reply()?.textContent === '');
   // S1: New surface's control first message is no transcript line anywhere in the view (sidebar, page, Exo block, input).
   const control = '/exosurface-new-surface', shown = () => view.container.textContent!.includes(control) || input()!.value.includes(control);
@@ -368,7 +372,7 @@ void test('restarting the owner and the provider keeps the current page, the ful
   notesCard = /::exo-surface\{surface=\\"notes\\" revision=\\"(\d+)\\" action=\\"drew\\"\}/.exec(JSON.stringify(host.deltas(threadId)))?.[1];
   for (const child of [host.child, ownerProcess]) { child.kill('SIGTERM'); if (child.exitCode === null) await new Promise(r => child.once('close', r)); }
   ownerProcess = await owner(f); host = bridge(f);
-  for (const id of ['primary', threadId]) assert.equal(z.object({ error: z.unknown() }).partial().parse(await host.start(id, undefined, providerThreads.get(id))).error, undefined);
+  for (const id of ['primary', threadId]) assert.equal(startedThread(await host.start(id, undefined, providerThreads.get(id))), providerThreads.get(id), 'the provider thread resumed');
   assert.deepEqual(checkpointOf(await surface(threadId)), before);
   assert.deepEqual((await f.rpc.thread_list(null)).threads[0], home);
   const question = 'what survives restarting this surface?';
