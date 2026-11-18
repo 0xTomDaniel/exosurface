@@ -295,17 +295,14 @@
       "tests": []
     },
     "acceptance-exo-block-own-page": {
-      "status": "built",
-      "pr": 144,
-      "record": "20261110T023127Z-995a2157",
-      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
-      "tests": []
+      "status": "planned",
+      "pr": null
     },
     "acceptance-exo-block-sent-page": {
       "status": "built",
-      "pr": 144,
-      "record": "20261110T023329Z-57a9e8a8",
-      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "pr": 268,
+      "record": "20261118T191431Z-ed8e9c43",
+      "commit": "03d9d4ea9238a01d15baffcd68bbaca31ab3eefd",
       "tests": []
     }
   }
