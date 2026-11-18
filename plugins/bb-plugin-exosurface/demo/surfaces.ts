@@ -312,7 +312,7 @@ async function exoBlockOwnPage() {
   const own: Record<string, string> = { 'Week plan': 'draw week: Week plan', 'Garden plan': 'and the roses by the fence' };
   let ok = true;
   const sendText = (text: string | undefined) => { fireEvent.change(input(), { target: { value: text } }); fireEvent.click(view.getByRole('button', { name: 'Send' })); };
-  const openWeek = async () => { await until('the week page as a pill', () => pills().some(b => b.textContent === 'Week plan')); fireEvent.click(pills().find(b => b.textContent === 'Week plan')); };
+  const openWeek = async () => { await until('the kept week page as a pill', () => pills().some(b => b.textContent.startsWith('Week plan'))); fireEvent.click(pills().find(b => b.textContent.startsWith('Week plan'))); };
   const show = async (how, page) => {
     await until(`${page} in view with its own block`, () => inView() === page && said() === own[page] && reply() === `Exo (${f.setup.profile}): ${own[page]}`);
     const other = Object.entries(own).filter(([p]) => p !== page).some(([, t]) => main().querySelector('section[aria-label="Exo"]').textContent.includes(t));
@@ -323,20 +323,29 @@ async function exoBlockOwnPage() {
     ok &&= !other;
   };
   try {
+    // acceptance-exo-block-own-page: a kept page Exo made in reply to one message; the person sends a message about
+    // another topic, waits for Exo's finished turn, then opens the kept page from the page strip.
     for (const [text, page] of [['draw week: Week plan', 'Week plan'], ['draw garden: Garden plan', 'Garden plan'], ['and the roses by the fence', 'Garden plan']]) {
       await until('the input', () => input() && !input().disabled);
       sendText(text);
       await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply() === `Exo (${f.setup.profile}): ${text}` && inView() === page);
       console.log(`sent ${JSON.stringify(text)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
+      if (page === 'Week plan') {
+        await until('Keep on the idle week page', () => !!input() && !input().disabled && !!view.queryByRole('button', { name: 'Keep', exact: true }));
+        fireEvent.click(view.getByRole('button', { name: 'Keep', exact: true }));
+        await until('public canonical kept metadata', async () => (await f.rpc.workspace({ deployment: 'main', cursor: null })).delivery.checkpoint?.kept?.includes('week') === true);
+        await until('week marked kept in the strip', () => !!view.queryByRole('button', { name: 'Week plan (kept)', exact: true }));
+        console.log('pressed Keep on "Week plan"; canonical kept refs: [week]; the strip marks Week plan kept');
+      }
     }
     await show('latest page', 'Garden plan');
     await openWeek();
-    await show('earlier page opened from the page strip', 'Week plan');
+    await show('kept page opened from the page strip', 'Week plan');
     fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
     await show('back to the current topic', 'Garden plan');
-    // Exo withdraws the garden page (revision 2 to 3); the stage falls back to the week page, and a message that draws
-    // nothing is on it.
-    const withdraw = 'call: {"baseRevision":2,"delete":["garden"]}';
+    // Exo withdraws the garden page (at the surface's current revision: Keep committed one too); the stage falls back to
+    // the week page, and a message that draws nothing is on it.
+    const withdraw = `call: ${JSON.stringify({ baseRevision: (await f.rpc.workspace({ deployment: 'main', cursor: null })).revision, delete: ['garden'] })}`;
     sendText(withdraw);
     await until('the garden page withdrawn', () => inView() === 'Week plan' && input() && !input().disabled);
     console.log(`sent ${JSON.stringify(withdraw)}; Exo's turn finished; page in view ${JSON.stringify(inView())}`);
