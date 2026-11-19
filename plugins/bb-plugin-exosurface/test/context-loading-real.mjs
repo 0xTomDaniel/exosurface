@@ -4,7 +4,7 @@
 // (a local test provider that records marker offsets; no network, no inference).
 // Usage (from the plugin dir, after build.mjs + build-runtime.mjs):
 //   env -i HOME=$ROOT/h EXO_CONFIG=$ROOT/c.json PATH=$(dirname $(command -v node)):/usr/bin:/bin \
-//     node --experimental-transform-types test/context-loading-real.mjs <root> <real pi cli.js> <real optchat dir> [shadow|ancestor]
+//     node --experimental-transform-types test/context-loading-real.mjs <root> <real pi cli.js> <real optchat dir> [shadow|ancestor|integrated]
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from 'node:fs';
@@ -12,13 +12,16 @@ import { createConnection } from 'node:net';
 import { join, resolve, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { createHash } from 'node:crypto';
+import { z } from 'zod';
+import { PARENT_WATCH, reaped, reapOnExit } from './reap.ts';
 
 const plugin = resolve('.');
 const [rootArg, piCli, optchat, variant] = process.argv.slice(2);
 const root = realpathSync(rootArg), shadow = variant === 'shadow', ancestor = variant === 'ancestor';
 assert.equal(process.env["HOME"], join(root, 'h')); assert.equal(process.env["EXO_CONFIG"], join(root, 'c.json'));
 assert.ok(!Object.keys(process.env).some(k => /KEY|TOKEN|SECRET/i.test(k)), 'fixture env must carry no credentials');
-const M = { vaultAgents: 'CTXFX_VAULT_AGENTS_MD_41', vaultSkill: 'CTXFX_VAULT_SKILL_DESC_41', homeSkill: 'CTXFX_HOME_SKILL_DESC_41', shadowSkill: 'CTXFX_SHADOW_EXOSURFACE_41', ancestorAgents: 'CTXFX_ANCESTOR_AGENTS_MD_41', ancestorSkill: 'CTXFX_ANCESTOR_SKILL_DESC_41', exosurfaceSkill: 'Reference for composing Exosurface pages', profile: 'This is the exo-optchat profile.', vaultHeading: 'Exocortex Agent Instructions', optchatMaster: 'You are OptChat', exosurfaceGuide: 'Exosurface: the surface beside this chat', optchatImport: 'Entries marked Historical are imported records' };
+const M = { vaultAgents: 'CTXFX_VAULT_AGENTS_MD_41', vaultSkill: 'CTXFX_VAULT_SKILL_DESC_41', homeSkill: 'CTXFX_HOME_SKILL_DESC_41', shadowSkill: 'CTXFX_SHADOW_EXOSURFACE_41', ancestorAgents: 'CTXFX_ANCESTOR_AGENTS_MD_41', ancestorSkill: 'CTXFX_ANCESTOR_SKILL_DESC_41', exosurfaceSkill: 'Reference for composing Exosurface pages', profile: 'This is the exo-optchat profile.', vaultHeading: 'Exocortex Agent Instructions', optchatMaster: 'You are OptChat', exosurfaceGuide: 'HOW YOU PRESENT (Exo presentation guide', optchatImport: 'Entries marked Historical are imported records' };
 const vault = join(root, 'v'), home = join(root, 's'), optchatHome = join(root, 'o');
 const skill = (dir, name, desc) => { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${desc}\n---\n\n# ${name}\n\nGeneric fixture skill. Do nothing.\n`); };
 mkdirSync(vault, { recursive: true });
@@ -43,7 +46,7 @@ const profileAgents = readFileSync(join(optchatHome, 'profiles/exo-optchat/AGENT
 const env = { HOME: join(root, 'h'), TMPDIR: join(root, 't'), PATH: process.env["PATH"], EXO_CONFIG: process.env["EXO_CONFIG"] };
 mkdirSync(env.TMPDIR, { recursive: true });
 const record = join(root, 'spawns.jsonl');
-const owner = spawn(process.execPath, ['--import', pathToFileURL(join(plugin, 'test/spawn-recorder.mjs')).href, join(plugin, 'dist/owner-service.js')], { env: { ...env, EXO_SPAWN_RECORD: record }, stdio: ['ignore', 'ignore', 'pipe'] });
+const owner = reaped(spawn(process.execPath, [...PARENT_WATCH, '--import', pathToFileURL(join(plugin, 'test/spawn-recorder.mjs')).href, join(plugin, 'dist/owner-service.js')], { env: { ...env, EXO_SPAWN_RECORD: record }, stdio: ['ignore', 'ignore', 'pipe'] }));
 let ownerErr = ''; owner.stderr.on('data', d => { ownerErr += d; });
 const stateFile = join(home, 'owner/state.json');
 let state;
@@ -54,10 +57,21 @@ assert.equal(spawned.length, 1, 'exactly one Pi launch by the owner');
 const piArgv = [spawned[0].command, ...spawned[0].args], piCwd = spawned[0].cwd, piEnvObj = spawned[0].env;
 const envKeys = Object.keys(piEnvObj);
 const envVal = k => piEnvObj[k];
+const ownerReply = z.object({ id: z.string().optional(), ok: z.boolean().optional(), data: z.unknown().optional(), error: z.unknown().optional() });
 const rpc = (type, fields = {}) => new Promise((ok, fail) => {
   const s = createConnection(join(home, 'owner/rpc.sock')); let buf = ''; const timer = setTimeout(() => { s.destroy(); fail(Error('owner rpc timeout')); }, 5000);
-  s.on('data', d => { buf += d; for (const line of buf.split('\n').slice(0, -1)) { const m = JSON.parse(line); if (m.id === 'probe-2') { clearTimeout(timer); s.destroy(); m.ok ? ok(m.data) : fail(Error(m.error)); } } });
-  s.on('connect', () => { s.write(JSON.stringify({ id: 'probe-1', type: 'hello', threadId }) + '\n'); s.write(JSON.stringify({ id: 'probe-2', type, ...fields }) + '\n'); });
+  s.on('data', d => {
+    buf += d; let end;
+    while ((end = buf.indexOf('\n')) >= 0) {
+      const m = ownerReply.parse(JSON.parse(buf.slice(0, end))); buf = buf.slice(end + 1);
+      if (!m.ok && (m.id === 'probe-1' || m.id === 'probe-2')) { clearTimeout(timer); s.destroy(); fail(Error(String(m.error))); return; }
+      // hello establishes the view asynchronously. A command sent before its
+      // acknowledgement has no lane yet and is correctly refused by the owner.
+      if (m.id === 'probe-1') s.write(JSON.stringify({ id: 'probe-2', type, ...fields }) + '\n');
+      if (m.id === 'probe-2') { clearTimeout(timer); s.destroy(); ok(m.data); }
+    }
+  });
+  s.on('connect', () => { s.write(JSON.stringify({ id: 'probe-1', type: 'hello', threadId }) + '\n'); });
   s.on('error', fail);
 });
 const commands = (await rpc('get_commands')).commands.filter(c => c.source === 'skill').map(c => ({ name: c.name, path: c.sourceInfo?.path, scope: c.sourceInfo?.scope }));
@@ -75,14 +89,20 @@ const out = join(root, 'probe.json');
 const { PiRpc } = await import(pathToFileURL(join(plugin, 'legacy/primary/src/pi-rpc.ts')));
 let settled; const done = new Promise(r => { settled = r; });
 const pi = new PiRpc(piCli, args, vault, { ...launch.env, EXO_CONTEXT_PROBE_OUT: out, EXO_CONTEXT_PROBE_AUTH: 'local-probe-placeholder', EXO_CONTEXT_PROBE_MARKERS: Object.values(M).join(',') }, e => { if (e.type === 'agent_settled' || e.type === 'agent_end') settled(); }, () => {});
-await pi.send('get_state');
-await pi.send('prompt', { message: 'CONTEXT_PROBE fixture turn' });
-await Promise.race([done, sleep(20000)]);
-await pi.close();
+if (pi.pid) reapOnExit(Number(pi.pid));
+try {
+  await pi.send('get_state');
+  await pi.send('prompt', { message: 'CONTEXT_PROBE fixture turn' });
+  let deadline;
+  try { await Promise.race([done, new Promise((_, reject) => { deadline = setTimeout(() => { reject(Error('context probe turn timeout')); }, 20000); })]); }
+  finally { clearTimeout(deadline); }
+} finally { await pi.close(); }
 const probe = JSON.parse(readFileSync(out, 'utf8'));
 
 const result = {
   variant: variant ?? 'plain', ownerReady: state.ready,
+  provenance: Object.fromEntries(['legacy/surface/src/presentation-guide.ts', 'legacy/surface/src/tool-contract.ts', 'dist/owner-service.js', 'dist/workspace-extension.js'].map(file => [file, createHash('sha256').update(readFileSync(join(plugin, file))).digest('hex')])),
+  boundary: 'Real retained-owner launch and exact Pi argv replay; local recorder replaces provider; BB thread API mocked; no inference or installed BB rendering.',
   ownerPiArgv: piArgv.slice(2).map(a => a.startsWith(root) ? '$ROOT' + a.slice(root.length) : a.startsWith(plugin) ? '$PLUGIN' + a.slice(plugin.length) : a.startsWith(optchat) ? '$OPTCHAT' + a.slice(optchat.length) : a),
   ownerLaunch: { spawnCwd: piCwd, cwd: info.cwd, projectTrusted: info.projectTrusted, boundProfile: info.boundProfile, hasVaultInstructionsDiagnostic: info.hasVaultInstructions, model: info.model,
     skills: info.skills, envKeys: envKeys.sort(), TMPDIR: envVal('TMPDIR'), EXOSURFACE_HOME: envVal('EXOSURFACE_HOME'), HOME: envVal('HOME'), PI_CODING_AGENT_DIR: envVal('PI_CODING_AGENT_DIR'), OPTCHAT_HOME: envVal('OPTCHAT_HOME'), credentialKeys: envKeys.filter(k => /KEY|TOKEN|SECRET/i.test(k)) },
@@ -90,6 +110,7 @@ const result = {
   profileAgentsIsGeneric: profileAgents.includes(M.profile), profileAgentsBytes: profileAgents.length,
   basePrompt: probe.base, modelRequestPrompt: probe.request,
 };
+writeFileSync(join(root, 'delivery.json'), JSON.stringify(result, null, 2), { flag: 'wx' });
 console.log(JSON.stringify(result, null, 2));
 
 // Regression expectations (documented in docs/release/first-run.md#what-the-retained-owner-loads).
@@ -105,4 +126,18 @@ assert.equal(has('shadowSkill'), shadow);
 assert.equal(has('ancestorAgents') && has('ancestorSkill'), ancestor);
 const exo = commands.filter(c => c.name === 'skill:exosurface');
 assert.equal(exo.length, 1); assert.equal(exo[0].scope, shadow ? 'project' : 'temporary');
+// Exact instruction-delivery contract from E8, not a semantic composition verdict.
+// Run against an unchanged installed runtime first: v4 is expected to fail here.
+if (variant === 'integrated') {
+  const delivered = z.object({ header: z.string().nullable(), presentation: z.string().nullable() }).parse(probe.request);
+  assert.ok(delivered.presentation?.includes('The Exo block opens the page in view'),
+    'E8 instruction delivery: the model request must describe the Exo block opening the page in view');
+  assert.ok(delivered.header?.includes('no separate chat column'),
+    'E8 instruction delivery: the active presentation header must describe the integrated surface');
+  // Exact delivered instructions only, not a verdict on the model's topic/page choice.
+  assert.ok(delivered.presentation?.includes("Choose the conversational topic and page from the person's latest message and the full conversation context"),
+    'Topic/page instruction delivery: choose from the latest message and full conversation context');
+  assert.ok(delivered.presentation?.includes('Reuse a relevant existing page or draw a new one when needed.'),
+    'Topic/page instruction delivery: allow relevant page reuse rather than requiring a new drawing');
+}
 console.log('CONTEXT_LOADING_OK', variant ?? 'plain');
