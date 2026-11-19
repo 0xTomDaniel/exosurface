@@ -4,7 +4,7 @@ A shared, adaptive interface for you and your personal agent: conversation and p
 
 ## Install the current spike on macOS
 
-**Private source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
+**Source-build spike, not a finished one-click installer.** Install the normal BB desktop app, then the **one consolidated plugin** at [`plugins/bb-plugin-exosurface`](plugins/bb-plugin-exosurface). Do not install the two older spike plugins alongside it for a fresh setup.
 
 The source build, BB registration and the real **Initialize Exo** step (since replaced by **Set up Exo** in the Exo tab's settings; native conversation created and bound, no inference) have been exercised in an isolated BB instance running BB.app's own server and host daemon. In that instance a real conversation (GPT-6.1 Sol via a ChatGPT sign-in), a page with a textbox and button, a button action and a reopen after restarting BB and the owner also worked once. This is a working-spike claim on one Mac, not an end-to-end installation guarantee; a physically fresh Mac has not been tried.
 
@@ -28,7 +28,7 @@ The complete experience needs **BB + this plugin + an Exocortex workspace + mode
 
 ### 2. Clone and install the locked plugin dependencies
 
-Requires access to this private repository. Choose a writable checkout; BB rebuilds local plugins from source.
+Choose a writable checkout; BB rebuilds local plugins from source.
 
 ```sh
 git clone https://github.com/0xTomDaniel/exosurface.git
@@ -76,11 +76,11 @@ Initialization and owner startup are separate. Once setup reports `bound`, authe
 
 With the owner running and your chosen model authenticated: send one short message, ask for a small page with a textbox/button, perform an action, then reopen the same conversation and confirm the page and session persist. This sequence passed once in the isolated test; repeat it on your own install.
 
-Known limits: a typed value (textbox/atom), and a press with its typed text, are capped at **16,384 UTF-16 units**; oversize input is rejected, not silently truncated. SDK redistribution rights remain unresolved, so this private source integration is not authorization for a public package/binary release. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
+Known limits: a typed value (textbox/atom), and a press with its typed text, are capped at **16,384 UTF-16 units**; oversize input is rejected, not silently truncated. BB plugin SDK redistribution rights remain unresolved, so this public source repository is not authorization for a package/binary release that bundles the SDK. Full details, troubleshooting and the distinction between desktop installation and the isolated headless test are in the [installation guide](docs/release/first-run.md).
 
 ## Repo boundaries
 
-**Exosurface** is the BB interface, runtime integration, Pi extensions and surface presentation guide. **[Exocortex](https://github.com/0xTomDaniel/exocortex)** is the separately provisioned agent setup (identity, policy, skills and profile configuration); its private memory vault is not in this repository. **[Exomachina](https://github.com/0xTomDaniel/Exomachina)** is the factory product. Installing Exosurface does not install or migrate an Exocortex instance.
+**Exosurface** is the BB interface, runtime integration, Pi extensions and surface presentation guide. **Exocortex** is a separate private project: the separately provisioned agent setup (identity, policy, skills and profile configuration); its private memory vault is not in this repository. **Exomachina** is a separate private project: the factory product. Installing Exosurface does not install or migrate an Exocortex instance.
 
 Vocabulary: [GLOSSARY.md](GLOSSARY.md). Historical implementations at `plugins/bb-plugin-exo-spike` and `plugins/bb-plugin-exo-a2ui-spike` remain for reference; the fresh-install target is the consolidated plugin above. Local paths belong in your local configuration. Sanitized test records live under the consolidated plugin's `compat/`; private raw conversations, credentials and machine evidence stay local. `node_modules/` and generated `dist/` are not committed.
 
@@ -95,3 +95,7 @@ Before the current implementation, the project compared agent protocols (A2A, AG
 - [Project vocabulary](CONTEXT.md)
 
 The September harness and runtime comparisons are not published: they analyse third-party private code. References to them in the documents above are marked "kept private".
+
+## License
+
+Copyright 2026 Tom Daniel. Licensed under the [Apache License 2.0](LICENSE). BB plugin SDK redistribution rights are unresolved: the licence covers this repository's own code, not the BB SDK.

@@ -196,9 +196,19 @@ export default function workspace(pi:ExtensionAPI){
  }});
  // A press's button label beside its press line, and the page a send or press came from (press-line.ts), journaled just
  // before its message; no model call.
- pi.registerCommand('workspace-press',{description:'Journal the pressed button\'s label and the page a send or press came from beside its message; no model call',handler:async(args)=>{
+ pi.registerCommand('workspace-press',{description:'Journal the pressed button\'s label and the page a send or press came from beside its message; no model call',handler:async(args,ctx)=>{
   const r=JSON.parse(args),optional=(v:unknown)=>v===undefined||typeof v==='string';if(typeof r.line!=='string'||!optional(r.label)||!optional(r.page))throw Error('Invalid press');
-  pi.appendEntry<PressEntry>(PRESS_ENTRY,{...(r.label!==undefined?{label:r.label}:{}),line:r.line,...(r.page!==undefined?{page:r.page}:{})});
+  if(!ctx.isIdle())throw Error('Idle Exo required');
+  const from:unknown=r.page;
+  if(typeof from==='string'){
+   if(!current||!moduleIds(current).includes(from))throw Error('The initiating page must be brought back before sending');
+   if(current.layout?.focus!==from){
+    const delta:Delta={baseRevision:current.revision,revision:current.revision+1,messages:[],layout:{...current.layout,focus:from,beside:(current.layout?.beside??[]).filter(id=>id!==from)}};
+    const next=applyDelta(current,delta);
+    pi.appendEntry(COMMIT,{source:'canvas-promote',delta});current=next;updates.push(delta);while(updates.length>128||JSON.stringify(updates).length>512*1024)updates.shift();materialize(ctx);
+   }
+  }
+  pi.appendEntry<PressEntry>(PRESS_ENTRY,{...(r.label!==undefined?{label:r.label}:{}),line:r.line,...(typeof from==='string'?{page:from}:{})});
  }});
  // Bring back an earlier surface version (the person edited it or pressed one of its buttons): code commits
  // it as the current version on stage, with their edits; Exo hears about it with the next turn.

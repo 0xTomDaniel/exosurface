@@ -14,6 +14,13 @@ import { updateFeedback } from './overview.ts';
 import { OWNER_DIR, OWNER_SOCKET } from './owner-client.ts';
 import { headline, step } from './activity.ts';
 import { FIRST_STEP } from './first-step.ts';
+import { z } from 'zod';
+import { snapshotSchema } from '../../surface/src/workspace.ts';
+
+// workspace/latest.json as the page extension's materialize() writes it (legacy/surface/src/workspace-extension.ts); its
+// workspace is the surface's own snapshot schema (that module's zod).
+const projectionSchema = z.strictObject({ sessionId: z.string(), epoch: z.string(), workspace: z.unknown(), earlier: z.unknown(), updates: z.array(z.unknown()), presentation: z.unknown(), observer: z.unknown(), composition: z.unknown() });
+const committedFocus = (file: string) => { const { workspace } = projectionSchema.parse(load(file)); return workspace === null ? undefined : snapshotSchema.parse(workspace).layout?.focus; };
 // An intent receipt is not an owner binding. Refuse incomplete setup before
 // loading the canonical pointer; the normal existing-session route is unchanged.
 if (existsSync(join(HOME, 'canonical-fresh.json'))) freshCanonicalReceipt(HOME, CANONICAL_HOME, CANONICAL_PROFILE);
@@ -191,7 +198,11 @@ const server = createServer(socket => {
             // to a Pi whose page extension takes it, else it is skipped (never a message the model or the person sees).
             const { commands } = await page.pi.send('get_commands');
             if (!commands.some((c: { name: string; source: string }) => c.name === 'workspace-press' && c.source === 'extension')) throw new Error('No workspace-press command in this Pi; record skipped');
-            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: m.request?.page }) });
+            const initiating: unknown = m.request?.page;
+            const sent = await page.pi.send('prompt', { message: '/workspace-press ' + JSON.stringify({ label: m.request?.label, line: m.request?.line, page: initiating }) });
+            // Pi reports a registered command as handled even when its handler throws. Verify committed promotion.
+            const file = join(page === p ? HOME : threadPagesHome(page.threadId), 'workspace', 'latest.json');
+            if (initiating !== undefined && (!existsSync(file) || committedFocus(file) !== initiating)) throw new Error('Initiating page promotion was not committed');
             write(socket, sent?.disposition === 'handled' ? { kind: 'response', id: m.id, ok: true, data: {} } : { kind: 'response', id: m.id, ok: false, error: 'not_applied' }); return;
           }
           if (m.type === 'hello') {

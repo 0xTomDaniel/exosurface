@@ -21,7 +21,7 @@ One helper, [`scripts/verify-app`](scripts/verify-app), executable: a thin `sh` 
 .agents/skills/verify-app/scripts/verify-app setup                # the contract's setup only (install + builds)
 .agents/skills/verify-app/scripts/verify-app launch               # see Launch
 .agents/skills/verify-app/scripts/verify-app doctor               # see Doctor
-.agents/skills/verify-app/scripts/verify-app drive <feature>      # see Drive; features: new-surface
+.agents/skills/verify-app/scripts/verify-app drive <feature>      # see Drive; features: new-surface, exo-block-sent-page, exo-block-own-page
 .agents/skills/verify-app/scripts/verify-app cleanup              # see Cleanup
 .agents/skills/verify-app/scripts/verify-app run                  # all of the above, end to end
 ```
