@@ -165,16 +165,16 @@ function SurfacePage({deployment,threadId,local,setLocal}:{deployment:'clone'|'m
  // a press must not jump).
  const scroller=useRef<HTMLElement>(null);
  const toTop=()=>scroller.current?.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
- useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId)toTop();}),[]);
+ useEffect(()=>onSend(id=>{if(id===stateRef.current?.threadId){toTop();recover.current();}}),[]);
  async function getState(){return rpc.call('workspace',{deployment,...(threadId?{threadId}:{}),cursor:view.current?.epoch?view.current.cursor():null});}
  useEffect(()=>{const v=new WorkspaceView(a=>send.current(a),()=>tick(n=>n+1),CATALOGS);view.current=v;tick(n=>n+1);return()=>{view.current=null;v.dispose();};},[]);
  const accept=(raw:Status)=>{const v=view.current;if(!v)return;v.accept(deliverySchema.parse(raw.delivery));setState(raw);setError('');};
  useRealtime(channel,payload=>{if(other(payload))return;serial.current++;try{accept(payload as Status);}catch(e){setError(String(e));recover.current();}});
  useRealtime(`${channel}-error`,payload=>!other(payload)&&setError(String((payload as any)?.message??'Workspace stream failed')));
  useEffect(()=>{
-  let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,inFlight=false;
-  const poll=async()=>{if(stopped||inFlight)return;inFlight=true;const before=serial.current;try{const value=await getState();if(!stopped&&before===serial.current)accept(value);}catch(e){if(!stopped)setError(String(e));}finally{inFlight=false;if(!stopped)timer=setTimeout(poll,document.hidden?10000:5000);}};
-  recover.current=()=>{clearTimeout(timer);void poll();};void poll();return()=>{stopped=true;clearTimeout(timer);recover.current=()=>{};};
+  let stopped=false,timer:ReturnType<typeof setTimeout>|undefined,inFlight=false,refresh=false;
+  const poll=async()=>{if(stopped||inFlight)return;inFlight=true;const before=serial.current;try{const value=await getState();if(!stopped&&before===serial.current)accept(value);}catch(e){if(!stopped)setError(String(e));}finally{inFlight=false;if(!stopped){timer=setTimeout(poll,refresh?0:document.hidden?10000:5000);refresh=false;}}};
+  recover.current=()=>{clearTimeout(timer);if(inFlight){refresh=true;return;}void poll();};void poll();return()=>{stopped=true;clearTimeout(timer);recover.current=()=>{};};
  },[rpc]);
  send.current=async(a:any)=>{const v=view.current,s=stateRef.current;if(!v||!s?.threadId||pending||s.streaming||v.preview||v.committed?.incomplete)return;setPending(true);setError('');try{if((await rpc.call('action',{threadId:s.threadId,revision:v.committed?.revision??0,event:{version:'v0.9.1',action:a},actionId:crypto.randomUUID(),metadata:{a2uiClientCapabilities:{'v0.9.1':{supportedCatalogIds:[basicCatalog.id,exoReactCatalog.id]}}}})).accepted)toTop();}catch(e){setError(String(e));}finally{setPending(false);}};
  const v=view.current,busy=pending||state?.streaming||!!v?.preview||v?.committed?.incomplete;

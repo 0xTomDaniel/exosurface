@@ -310,8 +310,8 @@ export function bridge(f: Fixture) {
   return {
     child, lines, errors: () => errors, deltas, turn,
     /** thread/start, with the thread's first message as BB sends it for a spawned thread. */
-    async start(threadId: string, input?: object[]) {
-      const answer = await response(request('thread/start', { threadId, cwd: f.vault, instructionMode: 'append', options, ...(input ? { input } : {}) }));
+    async start(threadId: string, input?: object[], providerThreadId?: string) {
+      const answer = await response(request('thread/start', { threadId, ...(providerThreadId ? { providerThreadId } : {}), cwd: f.vault, instructionMode: 'append', options, ...(input ? { input } : {}) }));
       if (answer.result) providers.set(threadId, answer.result.providerThreadId);
       return answer;
     },

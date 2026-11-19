@@ -296,16 +296,16 @@
     },
     "acceptance-exo-block-own-page": {
       "status": "built",
-      "pr": 144,
-      "record": "20261110T023127Z-995a2157",
-      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "pr": 268,
+      "record": "20261118T202301Z-ab3ed700",
+      "commit": "c8bcc335e5d7d5bc3831c4af38482809d9de36db",
       "tests": []
     },
     "acceptance-exo-block-sent-page": {
       "status": "built",
-      "pr": 144,
-      "record": "20261110T023329Z-57a9e8a8",
-      "commit": "b359c40585499b74987039289b9d83f3a0567e36",
+      "pr": 268,
+      "record": "20261118T202106Z-b1cc0d69",
+      "commit": "c8bcc335e5d7d5bc3831c4af38482809d9de36db",
       "tests": []
     }
   }
