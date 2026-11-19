@@ -33,35 +33,35 @@ function ports(config: Config) {
   };
   return { p, threads, counts: () => ({ created, configured }) };
 }
-test('fresh + retry use one profile/thread; no active-memory fabricated; preserve vault', async t => {
+void test('fresh + retry use one profile/thread; no active-memory fabricated; preserve vault', async t => {
   const { config } = fixture(t), m = ports(config), before = readFileSync(join(config.vault, 'AGENTS.md'), 'utf8');
   assert.deepEqual(await bootstrap(config, m.p), { threadId: 'thread-1', profile: 'exo' });
   await bootstrap(config, m.p); assert.deepEqual(m.counts(), { created: 1, configured: 1 });
   assert.equal(existsSync(join(profileDir(config), 'active-memory.json')), false);
   assert.equal(readFileSync(join(config.vault, 'AGENTS.md'), 'utf8'), before);
 });
-test('profile configured interrupted; retries without replacement', async t => {
+void test('profile configured interrupted; retries without replacement', async t => {
   const { config } = fixture(t), m = ports(config); let fail = true;
   const configure = m.p.configureProfile; m.p.configureProfile = async () => { if (fail) { fail = false; throw Error('interrupted'); } await configure(); };
   await assert.rejects(bootstrap(config, m.p), /interrupted/);
   writeFileSync(join(profileDir(config), 'owner-note'), 'retain'); await bootstrap(config, m.p);
   assert.equal(readFileSync(join(profileDir(config), 'owner-note'), 'utf8'), 'retain');
 });
-test('existing profile unclaimed or newer state refuses, zero overwrite', async t => {
+void test('existing profile unclaimed or newer state refuses, zero overwrite', async t => {
   const { config } = fixture(t), m = ports(config); mkdirSync(profileDir(config), { recursive: true });
   await assert.rejects(bootstrap(config, m.p), /refusing adoption/);
   save(layout(config.stateDir).schemaFile, { schema: 2 });
   await assert.rejects(bootstrap(config, m.p), /Unsupported state schema/);
   assert.equal(readFileSync(layout(config.stateDir).schemaFile, 'utf8'), '{\n  "schema": 2\n}\n');
 });
-test('durable lookup recovers BB-created thread before local receipt, never unrelated candidate', async t => {
+void test('durable lookup recovers BB-created thread before local receipt, never unrelated candidate', async t => {
   const { config } = fixture(t), m = ports(config); const create = m.p.createThread; let fail = true;
   m.p.createThread = async key => { const th = await create(key); if (fail) { fail = false; throw Error('after durable BB metadata'); } return th; };
   await assert.rejects(bootstrap(config, m.p));
   m.threads.set('unrelated', { id: 'unrelated-thread' });
   assert.equal((await bootstrap(config, m.p)).threadId, 'thread-1'); assert.equal(m.counts().created, 1);
 });
-test('uncertain BB creation before/after spawn fails closed, no second spawn', async t => {
+void test('uncertain BB creation before/after spawn fails closed, no second spawn', async t => {
   for (const afterSpawn of [false, true]) {
     const f = fixture(t), m = ports(f.config); let intent = false, calls = 0;
     m.p.findThread = async () => { if (intent) throw Error('unknown outcome; operation marker op-1; reconcile candidate using provider/project evidence'); return undefined; };
@@ -71,11 +71,11 @@ test('uncertain BB creation before/after spawn fails closed, no second spawn', a
     assert.equal(calls, afterSpawn ? 1 : 0);
   }
 });
-test('environment allowlist strips inherited live selectors and vendor credentials', () => {
+void test('environment allowlist strips inherited live selectors and vendor credentials', () => {
   const env = childEnv({ OPTCHAT_HOME: '/fixture' }, { HOME: '/fixture', EXOSURFACE_HOME: '/live', PI_CODING_AGENT_DIR: '/live-pi', OPENAI_API_KEY: 'secret', EXO_CONFIG: '/live.json', OPTCHAT_HOME: '/live-optchat' });
   assert.deepEqual(env, { HOME: '/fixture', OPTCHAT_HOME: '/fixture' });
 });
-test('relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails', t => {
+void test('relocated dist selftest/readiness side-effect free; missing config exits zero; newer schema fails', t => {
   const { config, home } = fixture(t), relocated = join(home, 'release');
   cpSync(resolve(import.meta.dirname, '../dist'), relocated, { recursive: true });
   // Plain .js needs package type after relocation, as in actual release artifact.
@@ -93,7 +93,7 @@ test('relocated dist selftest/readiness side-effect free; missing config exits z
   const newer = spawnSync(process.execPath, [entry], { env, encoding: 'utf8' }); assert.equal(newer.status, 1); assert.match(newer.stderr, /Unsupported state schema/);
   assert.equal(readFileSync(join(state, 'owner/state.json'), 'utf8'), before);
 });
-test('real socket → mock Pi RPC → response page; full long input; wrong thread refused', async t => {
+void test('real socket → mock Pi RPC → response page; full long input; wrong thread refused', async t => {
   const { config, cleanup } = fixture(t); save(layout(config.stateDir).primary, { threadId: 'primary' }); mkdirSync(config.agentDir); save(join(config.agentDir, 'auth.json'), {});
   writeFileSync(config.piCli, `import{createInterface}from'node:readline';import{createServer}from'node:net';import{mkdirSync,writeFileSync}from'node:fs';import{join}from'node:path';
 writeFileSync(join(process.env.EXO_PAGE_STATE,'fixture-pi.pid'),String(process.pid));
@@ -150,7 +150,7 @@ const out=x=>console.log(JSON.stringify(x));for await(const line of createInterf
 });
 
 import { bbFirstRun } from '../src/bb-first-run.ts';
-test('concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated', async t => {
+void test('concrete BB adapter uncertain before/after external create cannot duplicate or adopt unrelated', async t => {
   for (const createHappened of [false, true]) {
     const { config } = fixture(t); let calls = 0;
     const adapter = bbFirstRun(config.stateDir, 'project-1', {
@@ -163,7 +163,7 @@ test('concrete BB adapter uncertain before/after external create cannot duplicat
     assert.equal(calls, createHappened ? 1 : 0);
   }
 });
-test('concrete BB receipt survives interruption before bootstrap local receipt', async t => {
+void test('concrete BB receipt survives interruption before bootstrap local receipt', async t => {
   const { config } = fixture(t); let calls = 0;
   const adapter = bbFirstRun(config.stateDir, 'project-1', { async create() { calls++; return { id: 'bb-created' }; }, async get(id) { return { id, providerId: 'exosurface', projectId: 'project-1' }; } });
   await adapter.createThread('operation-1');
@@ -172,7 +172,7 @@ test('concrete BB receipt survives interruption before bootstrap local receipt',
   await assert.rejects(changed.findThread('operation-1'), /refusing adoption/);
 });
 
-test('BB nonempty initialization input settles locally without Pi, auth, binding or launchctl', async t => {
+void test('BB nonempty initialization input settles locally without Pi, auth, binding or launchctl', async t => {
   const { config, cleanup } = fixture(t), key = 'setup-operation-fixture';
   save(layout(config.stateDir).firstRun, { key, profile: config.profile, vault: realpathSync(config.vault) });
   save(join(config.stateDir, 'bb-thread-intent.json'), { key, providerId: 'exosurface', projectId: 'project-1', threadId: 'new-primary', status: 'created' });
@@ -194,7 +194,7 @@ test('BB nonempty initialization input settles locally without Pi, auth, binding
   assert.equal(existsSync(layout(config.stateDir).primary), false);
 });
 
-test('initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text', async t => {
+void test('initialization requires exact operation/vault/profile/thread and cannot replay or match ordinary text', async t => {
   const { config } = fixture(t), { consumeInitialization, initializationText } = await import('../src/setup-input.ts');
   const journal = { key: 'bound-operation', profile: config.profile, vault: realpathSync(config.vault), threadId: 'bound-thread' };
   const intent = { key: journal.key, providerId: 'exosurface', projectId: 'fixture-project', threadId: journal.threadId, status: 'created' };

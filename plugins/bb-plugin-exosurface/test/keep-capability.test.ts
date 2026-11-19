@@ -1,4 +1,5 @@
 // #199: actual native Pi command capability and public edit RPC, with the existing offline provider.
+import { required } from './required.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -9,7 +10,7 @@ import { liveFixture, modelRequests, PLUGIN } from './mock-bb.ts';
 import { settled } from './wait.ts';
 import { reaped, PARENT_WATCH } from './reap.ts';
 
-test('acceptance-keep #199: retained page Keep and edits refuse before a turn when workspace-data is absent', async () => {
+void test('acceptance-keep #199: retained page Keep and edits refuse before a turn when workspace-data is absent', async () => {
   const f = await liveFixture();
   const { OwnerClient } = await import('../legacy/primary/src/owner-client.ts');
   const events: { type: string; message?: { role: string } }[] = [];
@@ -28,13 +29,13 @@ test('acceptance-keep #199: retained page Keep and edits refuse before a turn wh
   async function start() {
     child = reaped(spawn('setsid', ['sh', '-c', 'echo $$ > "$1"; shift; exec "$@"', 'sh', pidfile, process.execPath, ...PARENT_WATCH, '--experimental-transform-types', '--no-warnings', join(PLUGIN, 'legacy/primary/release-owner.ts')], { cwd: f.vault, env: { EXO_CONFIG: f.config, HOME: f.root, TMPDIR: f.root, PATH: process.env["PATH"] }, stdio: ['ignore', 'pipe', 'pipe'] }));
     let errors = '';
-    child.stderr!.on('data', b => { errors += b; }); child.stdout!.resume();
+    required(child.stderr, "Expected child.stderr to be non-null").on('data', b => { errors += b; }); required(child.stdout, "Expected child.stdout to be non-null").resume();
     const state = join(f.home, 'owner/state.json');
     assert.ok(await settled(() => existsSync(pidfile) && existsSync(state) && JSON.parse(readFileSync(state, 'utf8')).ready && JSON.parse(readFileSync(state, 'utf8')).ownerPid === Number(readFileSync(pidfile, 'utf8')), 25000, 25), errors);
     client = await OwnerClient.open('primary', e => events.push(e), () => {});
     await client.send('attach');
   }
-  const workspace = () => f.rpc["workspace"]({ deployment: 'main', cursor: null });
+  const workspace = () => f.rpc.workspace({ deployment: 'main', cursor: null });
   try {
     await start();
     assert.ok((await client!.send('get_commands')).commands.some((c: { name: string; source: string }) => c.name === 'workspace-data' && c.source === 'extension'));
@@ -45,7 +46,7 @@ test('acceptance-keep #199: retained page Keep and edits refuse before a turn wh
     const button = drawn.messages.flatMap((m: { updateComponents?: { components: { action?: { event?: { context: Record<string, { path: string }> } } }[] } }) => m.updateComponents?.components ?? []).find((n: { action?: { event?: unknown } }) => n.action?.event);
     const path = button.action.event.context.note.path;
     const requestCount = modelRequests(f).length, eventCount = events.length;
-    assert.deepEqual(await f.rpc["edit"]({ threadId: 'primary', revision: 1, surfaceId: 'plum', updates: [{ path, value: 'Saved while on' }], mutationId: crypto.randomUUID() }), { revision: 2 });
+    assert.deepEqual(await f.rpc.edit({ threadId: 'primary', revision: 1, surfaceId: 'plum', updates: [{ path, value: 'Saved while on' }], mutationId: crypto.randomUUID() }), { revision: 2 });
     assert.ok(JSON.stringify((await workspace()).delivery.checkpoint).includes('Saved while on'));
     assert.equal(modelRequests(f).length, requestCount);
     assert.equal(events.slice(eventCount).filter(e => e.type === 'message_start' && e.message?.role === 'user').length, 0);
@@ -62,7 +63,7 @@ test('acceptance-keep #199: retained page Keep and edits refuse before a turn wh
       const requestsBefore = modelRequests(f).length, eventsBefore = events.length;
       let refusal = '';
       try {
-        await f.rpc["edit"]({ threadId: 'primary', revision: retained.revision, surfaceId: 'plum', updates: keep ? [] : [{ path, value: 'Changed while off' }], ...(keep ? { keep: true } : {}), mutationId: crypto.randomUUID() });
+        await f.rpc.edit({ threadId: 'primary', revision: retained.revision, surfaceId: 'plum', updates: keep ? [] : [{ path, value: 'Changed while off' }], ...(keep ? { keep: true } : {}), mutationId: crypto.randomUUID() });
       } catch (error) { refusal = error instanceof Error ? error.message : String(error); }
       const idle = await settled(async () => !(await client!.send('get_state')).isStreaming, 25000, 25);
       const observed = { providerRequests: modelRequests(f).length - requestsBefore, userTurns: events.slice(eventsBefore).filter(e => e.type === 'message_start' && e.message?.role === 'user').length };

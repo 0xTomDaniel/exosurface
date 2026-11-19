@@ -28,7 +28,7 @@ function scratchGitEnv(template: string): NodeJS.ProcessEnv {
 
 // The linked-worktree hook context (absolute GIT_DIR/GIT_INDEX_FILE) is driven through the real gate commands in
 // test/standards-gate.test.ts (gate-hook).
-test('the runtime build leaves the tracked release.json unchanged', async t => {
+void test('the runtime build leaves the tracked release.json unchanged', async t => {
   for (const modules of ['node_modules', 'legacy/surface/node_modules', 'legacy/surface/composition/node_modules'])
     assert.ok(existsSync(join(plugin, modules)), `${modules} missing: run just setup (frozen pnpm installation) before the offline gate`);
   const copy = mkdtempSync(join(tmpdir(), 'exosurface-release-clean-'));

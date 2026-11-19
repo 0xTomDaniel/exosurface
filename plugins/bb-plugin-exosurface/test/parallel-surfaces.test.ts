@@ -2,6 +2,7 @@
 // The app (app.tsx) is rendered through the SDK's app test runtime (test/app-render.ts); its RPCs run on server.ts, a send
 // goes through the mock BB to host.ts and the release owner on the real Pi CLI (test/mock-bb.ts). Fake: BB's host, OptChat,
 // the model ("hold:" answers only once the test releases it; "together" answers only while another surface's turn runs too, else "ALONE").
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -34,36 +35,36 @@ after(async () => {
 
 const sidebar = () => view.container.querySelector('nav[aria-label="Surfaces"]') as HTMLElement;
 const current = () => [...(sidebar()?.querySelectorAll('button[aria-current="page"]') ?? [])].map(b => b.textContent ?? '');
-const open = (title: string) => fireEvent.click([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title)!);
+const open = (title: string) => fireEvent.click(required([...sidebar().querySelectorAll('li button')].find(b => b.textContent === title), "Expected [...sidebar().querySelectorAll('li button')].find(b => b.textConten... to be non-null"));
 // Exo's words in the surface's Exo block (since #79 the block opens with the person's message as a bubble above them).
 const block = () => view.container.querySelector('section[aria-label="Exo"] [data-exo-reply]') as HTMLElement | null;
 const input = () => view.container.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 const pageText = () => view.container.textContent;
 const until = waiter(() => `in view: ${current()}; page: ${pageText()}`);
 async function send(text: string) {
-  await until('the input to take a message', () => !!input() && !input()!.disabled);
-  fireEvent.change(input()!, { target: { value: text } });
+  await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: text } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
 }
 const ended = (threadId: string, reply: string) => host.turn(threadId).replies.includes(reply) && !!host.turn(threadId).end;
 let surface = '', profile = '';
 
-test('send on Home, open another surface before Exo finishes, Home\'s turn ends: the other surface stays in view', async () => {
+void test('send on Home, open another surface before Exo finishes, Home\'s turn ends: the other surface stays in view', async () => {
   await until('Home in view', () => current().join() === 'Home');
   await send('hold: plan the week');
   await until('Home\'s block to say Exo is working', () => block()?.textContent === 'Reading your message');
-  fireEvent.click([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface')!);
+  fireEvent.click(required([...sidebar().querySelectorAll('button')].find(b => b.textContent === 'New surface'), "Expected [...sidebar().querySelectorAll('button')].find(b => b.textContent =... to be non-null"));
   await until('the new surface in view', () => current().join() === 'New surface');
   const opened = inView.length;
-  surface = (await f.rpc["thread_list"](null)).threads[1].threadId;
+  surface = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(surface, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   profile = f.piRuns().at(-1).profile;
   assert.equal(host.turn('primary').end, undefined, 'Home\'s turn was still running when the other surface opened');
   f.release(f.setup.profile); // Home's turn may end now, with the other surface in view
   await until('Home\'s turn to end', () => ended('primary', 'Exo (exo-optchat): hold: plan the week'));
   // Home's block has caught up with its finished turn (its owner state and journal), then one more full poll of the page.
-  await settled(async () => !(await f.rpc["exo_block"]({ threadId: 'primary' })).working, 10000);
-  assert.deepEqual(await f.rpc["exo_block"]({ threadId: 'primary' }), { working: false, said: 'hold: plan the week', words: 'Exo (exo-optchat): hold: plan the week' });
+  await settled(async () => !(await f.rpc.exo_block({ threadId: 'primary' })).working, 10000);
+  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'hold: plan the week', words: 'Exo (exo-optchat): hold: plan the week' });
   await new Promise(r => setTimeout(r, 5500));
   assert.deepEqual([...new Set(inView.slice(opened))], ['New surface']);
   // Home's turn reached the app over realtime while the other surface was in view.
@@ -73,7 +74,7 @@ test('send on Home, open another surface before Exo finishes, Home\'s turn ends:
   assert.equal(pageText().includes('plan the week'), false);
 });
 
-test('send on a surface, open Home before Exo finishes, send on Home: each Exo block holds its own reply', async () => {
+void test('send on a surface, open Home before Exo finishes, send on Home: each Exo block holds its own reply', async () => {
   await send('together: book the cabin');
   await until('the surface\'s block to say Exo is working', () => block()?.textContent === 'Reading your message');
   open('Home');
@@ -81,10 +82,10 @@ test('send on a surface, open Home before Exo finishes, send on Home: each Exo b
   const home = inView.length;
   // Per-surface working status: Home shows its own last reply, not the other surface's busy state.
   await until('Home\'s own block', () => block()?.textContent === 'Exo (exo-optchat): hold: plan the week');
-  const statuses = Object.fromEntries((await f.rpc["overview"](null)).threads.map((t: any) => [t.id, t.status]));
+  const statuses = Object.fromEntries((await f.rpc.overview(null)).threads.map((t: any) => [t.id, t.status]));
   assert.deepEqual([statuses["primary"], statuses[surface]], ['idle', 'running']);
   // S9: Home's send is never refused, queued or gated by the other surface's turn.
-  assert.equal(input()!.disabled, false);
+  assert.equal(required(input(), "Expected input() to be non-null").disabled, false);
   assert.equal(host.turn(surface).end, undefined, 'the surface\'s turn was still running when Home sent');
   await send('together: plan the week');
   // The model answers a "together" turn only while the other surface's turn runs too: both replies prove the overlap.

@@ -2,6 +2,7 @@
 // sidebar, any time; a surface the person renamed is never named again by Exo, even before its first turn, and a rename that
 // lands while Exo's naming call is in flight wins. Rendered sidebar (package.json bb.app) on the live entry points (server.ts
 // RPCs and events, host.ts bridge, the release owner, real Pi); fake at the boundaries: BB, OptChat and the models.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, lstatSync, readlinkSync, realpathSync } from 'node:fs';
@@ -40,13 +41,13 @@ const title = () => view.container.querySelector('main h1')?.textContent ?? null
 /** Whether the sidebar shows an element of this role and name (a plain value to assert on, never the element). */
 const shows = (role: string, name: string | RegExp) => sidebar().queryByRole(role, { name }) !== null;
 /** The surface's name as the server lists it (thread_list, what every view reads). */
-const listedName = async (threadId: string) => (await f.rpc["thread_list"](null)).threads.find((t: any) => t.threadId === threadId)?.title;
+const listedName = async (threadId: string) => (await f.rpc.thread_list(null)).threads.find((t: any) => t.threadId === threadId)?.title;
 /** A new surface through the sidebar's New surface button, started by BB with its first message. */
 async function newSurface() {
   const count = entries().length;
-  fireEvent.click(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li'))!);
+  fireEvent.click(required(sidebar().getAllByRole('button', { name: 'New surface' }).find((b: any) => !b.closest('li')), "Expected sidebar().getAllByRole('button', { name: 'New surface' }).find((b: ... to be non-null"));
   await until('the new surface listed', () => entries().length === count + 1);
-  const made = (await f.rpc["thread_list"](null)).threads[1].threadId;
+  const made = (await f.rpc.thread_list(null)).threads[1].threadId;
   assert.equal((await host.start(made, [{ type: 'text', text: f.spawns.at(-1).prompt }])).error, undefined);
   await until('the new surface settles', () => boundaries(made) > 0);
   return made;
@@ -54,13 +55,13 @@ async function newSurface() {
 /** The person's message on a surface (exo_send, as its input sends), until Exo's turn has ended. */
 async function turn(threadId: string, text: string) {
   const before = boundaries(threadId);
-  await f.rpc["exo_send"]({ threadId, text });
+  await f.rpc.exo_send({ threadId, text });
   await until(`the turn ${JSON.stringify(text)}`, () => boundaries(threadId) > before);
 }
 /** The person renames the surface listed as `from` in the sidebar (the most recently active such row, the first: spec N9): its
  *  Rename action, type the name, Enter. */
 async function rename(from: string, to: string) {
-  fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${from}` })[0]!);
+  fireEvent.click(required(sidebar().getAllByRole('button', { name: `Rename ${from}` })[0], "Expected sidebar().getAllByRole('button', { name: `Rename ${from}` })[0] to be non-null"));
   const field = sidebar().getByRole('textbox', { name: 'Surface name' }) as HTMLInputElement;
   const shown = field.value;
   assert.equal(shown, from);
@@ -68,7 +69,7 @@ async function rename(from: string, to: string) {
   fireEvent.keyDown(field, { key: 'Enter' });
 }
 
-test('acceptance-rename: a surface Exo named, renamed to "Backyard" in the sidebar, keeps "Backyard" after a further turn; the namer is not asked again', async () => {
+void test('acceptance-rename: a surface Exo named, renamed to "Backyard" in the sidebar, keeps "Backyard" after a further turn; the namer is not asked again', async () => {
   await until('Home listed', () => entries().join('|') === 'Home');
   assert.equal(shows('button', /^Rename/), false, 'Home has no rename');
   f.model.state.reply = 'Spring vegetable garden';
@@ -101,7 +102,7 @@ test('acceptance-rename: a surface Exo named, renamed to "Backyard" in the sideb
   assert.equal(f.model.requests.length, 1, 'the namer is not asked again');
 });
 
-test('acceptance-rename: a surface renamed before its first turn keeps the person\'s name after it; the namer is never asked', async () => {
+void test('acceptance-rename: a surface renamed before its first turn keeps the person\'s name after it; the namer is never asked', async () => {
   f.model.state.reply = 'Exo would call it this';
   const made = await newSurface();
   const asked = f.model.requests.length;
@@ -123,7 +124,7 @@ test('acceptance-rename: a surface renamed before its first turn keeps the perso
   assert.equal(f.model.requests.length, asked);
 });
 
-test('acceptance-rename: a rename landing while the naming call is in flight wins', async () => {
+void test('acceptance-rename: a rename landing while the naming call is in flight wins', async () => {
   f.model.state.reply = 'Exo name';
   const made = await newSurface();
   const asked = f.model.requests.length;
@@ -140,16 +141,16 @@ test('acceptance-rename: a rename landing while the naming call is in flight win
   assert.equal(title(), 'Garage');
 });
 
-test('the rename RPC refuses Home, an empty name, a too long name and a thread that is not a bound Exo surface', async () => {
-  const surface = (await f.rpc["thread_list"](null)).threads[1].threadId;
-  await assert.rejects(f.rpc["thread_rename"]({ threadId: f.setup.threadId, name: 'My home' }), /Home/);
-  assert.equal((await f.rpc["thread_list"](null)).threads[0].title, 'Home');
-  await assert.rejects(f.rpc["thread_rename"]({ threadId: surface, name: '   ' }), /empty/);
-  await assert.rejects(f.rpc["thread_rename"]({ threadId: surface, name: 'x'.repeat(81) }), /80/);
-  await assert.rejects(f.rpc["thread_rename"]({ threadId: 'not-a-surface', name: 'Backyard' }), /Exo surface/);
+void test('the rename RPC refuses Home, an empty name, a too long name and a thread that is not a bound Exo surface', async () => {
+  const surface = (await f.rpc.thread_list(null)).threads[1].threadId;
+  await assert.rejects(f.rpc.thread_rename({ threadId: f.setup.threadId, name: 'My home' }), /Home/);
+  assert.equal((await f.rpc.thread_list(null)).threads[0].title, 'Home');
+  await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: '   ' }), /empty/);
+  await assert.rejects(f.rpc.thread_rename({ threadId: surface, name: 'x'.repeat(81) }), /80/);
+  await assert.rejects(f.rpc.thread_rename({ threadId: 'not-a-surface', name: 'Backyard' }), /Exo surface/);
   // The sidebar shows the refusal and keeps the field open.
-  const listed = entries()[1]!;
-  fireEvent.click(sidebar().getAllByRole('button', { name: `Rename ${listed}` }).at(-1)!);
+  const listed = required(entries()[1], "Expected entries()[1] to be non-null");
+  fireEvent.click(required(sidebar().getAllByRole('button', { name: `Rename ${listed}` }).at(-1), "Expected sidebar().getAllByRole('button', { name: `Rename ${listed}` }).at(-1) to be non-null"));
   const field = sidebar().getByRole('textbox', { name: 'Surface name' });
   fireEvent.change(field, { target: { value: ' ' } });
   fireEvent.keyDown(field, { key: 'Enter' });
@@ -173,7 +174,7 @@ function pencilShows(button: HTMLElement) {
   return { resting: resting > 0 && resting < 1, focused, shown: shown === 1 };
 }
 
-test('acceptance-rename: the title at the top renames the surface in view (double-click, "Backyard", Enter); its pencil is keyboard focusable and shows on focus, as the sidebar\'s does; Home\'s title has neither', async () => {
+void test('acceptance-rename: the title at the top renames the surface in view (double-click, "Backyard", Enter); its pencil is keyboard focusable and shows on focus, as the sidebar\'s does; Home\'s title has neither', async () => {
   // Home in view: no pencil at the top, and a double-click on its title opens nothing.
   fireEvent.click(sidebar().getByRole('button', { name: 'Home' }));
   await until('Home in view', () => title() === 'Home');
@@ -189,7 +190,7 @@ test('acceptance-rename: the title at the top renames the surface in view (doubl
 
   // The pencil beside the title and the sidebar's, judged by computed style from the app's own stylesheets.
   assert.deepEqual(pencilShows(header().getByRole('button', { name: 'Rename Patio lights' })), { resting: true, focused: true, shown: true });
-  assert.deepEqual(pencilShows(sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1)!), { resting: true, focused: true, shown: true });
+  assert.deepEqual(pencilShows(required(sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).at(-1), "Expected sidebar().getAllByRole('button', { name: 'Rename Patio lights' }).a... to be non-null")), { resting: true, focused: true, shown: true });
 
   // A refusal shows at the top and keeps the field open; Escape leaves the name as it was.
   fireEvent.doubleClick(header().getByRole('heading', { name: 'Patio lights' }));
@@ -220,7 +221,7 @@ test('acceptance-rename: the title at the top renames the surface in view (doubl
 function namerFolder() {
   for (const pid of readdirSync('/proc').filter(d => /^\d+$/.test(d))) {
     try {
-      if (Number(readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ').at(-1)!.split(' ')[1]) !== process.pid) continue;
+      if (Number(required(readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ').at(-1), "Expected readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ').at(-1) to be non-null").split(' ')[1]) !== process.pid) continue;
       const dir = /(?:^|\0)PI_CODING_AGENT_DIR=([^\0]*)/.exec(readFileSync(`/proc/${pid}/environ`, 'utf8'))?.[1];
       if (dir) { reapOnExit(Number(pid)); return dir; } // the product starts it in-process: reaped as test/reap.ts says
     } catch {} // a process gone meanwhile
@@ -228,7 +229,7 @@ function namerFolder() {
   return undefined;
 }
 
-test('a namer Pi that exits leaving a lock in its agent folder does not hold up the next surface\'s start; that folder holds no copied credentials and is gone after the naming', async () => {
+void test('a namer Pi that exits leaving a lock in its agent folder does not hold up the next surface\'s start; that folder holds no copied credentials and is gone after the naming', async () => {
   f.model.state.reply = 'Garden shed';
   const made = await newSurface();
   const asked = f.model.requests.length;
@@ -252,7 +253,7 @@ test('a namer Pi that exits leaving a lock in its agent folder does not hold up 
   await until('the namer\'s folder removed', () => !existsSync(folder!));
 });
 
-test('real-install shape: the namer\'s provider credential lives only in the primary agent folder\'s auth.json (no key in models.json); the surface is named and that auth.json is left as it was', async () => {
+void test('real-install shape: the namer\'s provider credential lives only in the primary agent folder\'s auth.json (no key in models.json); the surface is named and that auth.json is left as it was', async () => {
   const agent = join(f.home, 'pi-config'), models = join(agent, 'models.json'), auth = join(agent, 'auth.json');
   const before = { models: readFileSync(models, 'utf8'), auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined };
   const keyless = JSON.parse(before.models); delete keyless.providers.openai.apiKey;
@@ -265,7 +266,7 @@ test('real-install shape: the namer\'s provider credential lives only in the pri
     await turn(made, 'Fix the bike chain');
     const outcome = () => f.logs.find(l => l.includes(made) && (l.includes('named "') || l.includes('naming failed')));
     await until('the naming done', () => outcome() !== undefined);
-    assert.match(outcome()!, /named "Bike repair" by openai\//, 'named with the auth.json credential, not failed');
+    assert.match(required(outcome(), "Expected outcome() to be non-null"), /named "Bike repair" by openai\//, 'named with the auth.json credential, not failed');
     assert.equal(f.model.requests.length - asked, 1);
     assert.equal(readFileSync(auth, 'utf8'), credential, 'the primary auth.json is left as it was');
   } finally {
@@ -274,7 +275,7 @@ test('real-install shape: the namer\'s provider credential lives only in the pri
   }
 });
 
-test('an OAuth auth.json entry for the namer\'s provider (one Pi refreshes): the namer runs in the primary agent folder as before #147, no namer folder; that choice is logged once across two namings; the primary auth.json is left as it was', async () => {
+void test('an OAuth auth.json entry for the namer\'s provider (one Pi refreshes): the namer runs in the primary agent folder as before #147, no namer folder; that choice is logged once across two namings; the primary auth.json is left as it was', async () => {
   const agent = join(f.home, 'pi-config'), auth = join(agent, 'auth.json'), namers = join(f.home, 'namer');
   const before = { auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined, config: readFileSync(f.config, 'utf8') };
   const oauth = JSON.stringify({ anthropic: { type: 'oauth', access: 'fixture-access', refresh: 'fixture-refresh', expires: Date.now() + 86_400_000 } }); // fake
@@ -304,7 +305,7 @@ test('an OAuth auth.json entry for the namer\'s provider (one Pi refreshes): the
   }
 });
 
-test('a primary models.json with a literal key for the namer\'s provider, literal headers at every level Pi reads them, comments and a BOM, and no auth.json entry: the surface is named; the running namer\'s models.json and auth.json are links, its models-store.json its own, no credential copied; nothing left behind and the primary files unchanged', async () => {
+void test('a primary models.json with a literal key for the namer\'s provider, literal headers at every level Pi reads them, comments and a BOM, and no auth.json entry: the surface is named; the running namer\'s models.json and auth.json are links, its models-store.json its own, no credential copied; nothing left behind and the primary files unchanged', async () => {
   const agent = join(f.home, 'pi-config'), models = join(agent, 'models.json'), auth = join(agent, 'auth.json');
   const before = { models: readFileSync(models, 'utf8'), auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined };
   const openai = JSON.parse(before.models).providers.openai;
@@ -338,7 +339,7 @@ test('a primary models.json with a literal key for the namer\'s provider, litera
   }
 });
 
-test('a naming that fails leaves no namer folder: the naming model refusing, and a primary models.json that cannot be read', async () => {
+void test('a naming that fails leaves no namer folder: the naming model refusing, and a primary models.json that cannot be read', async () => {
   const models = join(f.home, 'pi-config', 'models.json'), namers = join(f.home, 'namer');
   const before = { models: readFileSync(models, 'utf8') };
   const left = () => existsSync(namers) ? readdirSync(namers).filter(n => n.startsWith('pi-')) : [];
@@ -359,7 +360,7 @@ test('a naming that fails leaves no namer folder: the naming model refusing, and
   } finally { f.model.state.fail = undefined; writeFileSync(models, before.models); }
 });
 
-test('a primary auth.json or models.json that is not valid JSON fails the naming with an error naming only the file: the fake secret in it is in no log line and no thread metadata', async () => {
+void test('a primary auth.json or models.json that is not valid JSON fails the naming with an error naming only the file: the fake secret in it is in no log line and no thread metadata', async () => {
   const agent = join(f.home, 'pi-config'), models = join(agent, 'models.json'), auth = join(agent, 'auth.json');
   const before = { models: readFileSync(models, 'utf8'), auth: existsSync(auth) ? readFileSync(auth, 'utf8') : undefined };
   const exposed = (secret: string) => f.logs.some(l => l.includes(secret)) || JSON.stringify([...f.metadata]).includes(secret);
@@ -371,7 +372,7 @@ test('a primary auth.json or models.json that is not valid JSON fails the naming
       writeFileSync(file, text);
       await turn(made, 'Rake the leaves');
       await until('the naming failed', () => failed(made) !== undefined);
-      assert.match(failed(made)!, new RegExp(`${file === auth ? 'auth' : 'models'}\\.json in the primary Pi agent folder is not valid JSON`));
+      assert.match(required(failed(made), "Expected failed(made) to be non-null"), new RegExp(`${file === auth ? 'auth' : 'models'}\\.json in the primary Pi agent folder is not valid JSON`));
       assert.equal(exposed(secret), false, 'the secret is in no log line and no metadata');
       assert.equal(await listedName(made), 'New surface');
       writeFileSync(file, file === auth ? before.auth ?? '{}' : before.models);

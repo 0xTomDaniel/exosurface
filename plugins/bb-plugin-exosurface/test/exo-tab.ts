@@ -2,6 +2,7 @@
 // sidebar, the surface in view and its input. Shared by test/set-up*.test.ts and demo/surfaces first-run.
 
 // Shown: neither it nor anything around it is hidden from the person (aria-hidden, the hidden attribute, display:none).
+import { required } from './required.ts';
 export const shown = (el: Element) => { for (let at: Element | null = el; at; at = at.parentElement) if (at.getAttribute('aria-hidden') === 'true' || at.hasAttribute('hidden') || getComputedStyle(at).display === 'none') return false; return true; };
 const CONTROL = 'input, select, textarea';
 
@@ -21,7 +22,7 @@ export function exoTab(view: { container: Element }, fireEvent: { click(el: Elem
     /** Settings' words other than their fields and buttons, in order. */
     text: () => [...(settings()?.querySelectorAll('h1, p') ?? [])].filter(shown).map(p => String(p.textContent)),
     /** Each set-up field: its label, its value, and whether the person may change it. */
-    fields: () => controls().map(({ label, control }) => [labelText(label), valueOf(control!), !control!.disabled] as [string, string, boolean]),
+    fields: () => controls().map(({ label, control }) => [labelText(label), valueOf(required(control, "Expected control to be non-null")), !required(control, "Expected control to be non-null").disabled] as [string, string, boolean]),
     /** The settings button that sets Exo up (or resumes it), if offered and enabled. */
     setUpButton: () => { const b = buttons(settings()).find(b => /^(Set up Exo|Resume set-up)$/.test(String(b.textContent))); return b && !b.disabled ? String(b.textContent) : null; },
     alerts: () => all('[role="alert"]').map(a => String(a.textContent)),

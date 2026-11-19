@@ -41,7 +41,7 @@ this.budget = budget;
  }
  private async request(path:string,body:unknown,call:Call,signal:AbortSignal){
   const r=await this.transport(`https://openrouter.ai/api/v1/${path}`,{method:'POST',headers:{Authorization:`Bearer ${this.key()}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.any([signal,AbortSignal.timeout(20000)])});
-  call.httpStatus=r.status;if(!r.ok)throw Error(`Composition provider HTTP ${r.status}; response hidden`);return r;
+  call.httpStatus=r.status;if(!r.ok)throw Error(`Composition provider HTTP ${String(r.status)}; response hidden`);return r;
  }
  private usage(c:Call,u:unknown){if(!u)return;if(!record(u))throw Error('Invalid provider usage');const input=u['input_tokens']??u['prompt_tokens']??null,output=u['output_tokens']??u['completion_tokens']??null,details=u['prompt_tokens_details'],cached=record(details)?details['cached_tokens']??null:null;if((input!==null&&typeof input!=='number')||(output!==null&&typeof output!=='number')||(cached!==null&&typeof cached!=='number'))throw Error('Invalid provider token usage');c.inputTokens=input;c.outputTokens=output;c.cachedTokens=cached;c.costUsd=typeof u['cost']==='number'?u['cost']:null;}
  private done(c:Call,ok:boolean){c.status=ok?'complete':'failed';c.elapsedMs=Math.round(now()-this.origin-c.startedMs);}

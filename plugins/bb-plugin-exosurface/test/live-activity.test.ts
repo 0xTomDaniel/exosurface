@@ -27,7 +27,7 @@ for (const topic of ['garden', 'cabin']) writeFileSync(join(f.vault, `${topic}.m
 
 const lines = (seen: any[]) => seen.map(b => b.activity).filter(Boolean);
 
-test('a send Exo answers in several steps: exo_block names each step in turn while Exo works, then reports the reply and no line', async () => {
+void test('a send Exo answers in several steps: exo_block names each step in turn while Exo works, then reports the reply and no line', async () => {
   assert.equal((await host.start('primary')).error, undefined);
   const seen = await stepsTurn(f, 'primary', 'garden');
   assert.deepEqual(lines(seen), ['Reading your message', 'Planning the garden', 'Reading the garden note', 'Now I can answer about the garden.']);
@@ -35,13 +35,13 @@ test('a send Exo answers in several steps: exo_block names each step in turn whi
   assert.deepEqual(seen.at(-1), { working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' });
 });
 
-test('exo_block as BB serves it: its output passes the contract, an input the contract refuses never reaches it', async () => {
-  await assert.rejects(f.rpc["exo_block"]({ threadId: 'primary', limit: 500 } as any), /exo_block input invalid/);
-  assert.deepEqual(await f.rpc["exo_block"]({ threadId: 'primary' }), { working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' });
+void test('exo_block as BB serves it: its output passes the contract, an input the contract refuses never reaches it', async () => {
+  await assert.rejects(f.rpc.exo_block({ threadId: 'primary', limit: 500 } as any), /exo_block input invalid/);
+  assert.deepEqual(await f.rpc.exo_block({ threadId: 'primary' }), { working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' });
 });
 
-test('two surfaces working at once: each exo_block reports its own line, never the other\'s', async () => {
-  await f.rpc["thread_bind"]({ threadId: 'second' });
+void test('two surfaces working at once: each exo_block reports its own line, never the other\'s', async () => {
+  await f.rpc.thread_bind({ threadId: 'second' });
   assert.equal((await host.start('second')).error, undefined);
   const profile = f.piRuns().at(-1).profile;
   const [home, second] = await Promise.all([stepsTurn(f, 'primary', 'garden'), stepsTurn(f, 'second', 'cabin')]);
@@ -50,7 +50,7 @@ test('two surfaces working at once: each exo_block reports its own line, never t
   assert.deepEqual([home.at(-1), second.at(-1)], [{ working: false, said: 'steps: garden', words: 'Exo (exo-optchat): steps: garden' }, { working: false, said: 'steps: cabin', words: `Exo (${profile}): steps: cabin` }]);
 });
 
-test('a note whose name already ends in "note" or "notes" is named once, not with the noun doubled', async () => {
+void test('a note whose name already ends in "note" or "notes" is named once, not with the noun doubled', async () => {
   for (const topic of ['notes', 'week note', 'Garden-Notes']) {
     writeFileSync(join(f.vault, `${topic}.md`), `# ${topic}\n`);
     const seen = await stepsTurn(f, 'primary', topic);

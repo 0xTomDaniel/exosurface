@@ -25,7 +25,7 @@ after(async () => {
   rmSync(f.root, { recursive: true, force: true });
 });
 
-test('not set up: the Exo tab shows only settings offering set-up, then Set up Exo shows the sidebar and Home with the input shown and empty', async () => {
+void test('not set up: the Exo tab shows only settings offering set-up, then Set up Exo shows the sidebar and Home with the input shown and empty', async () => {
   const view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   const s = exoTab(view, kit.testing.fireEvent);
   const until = waiter(s.describe);
@@ -48,6 +48,6 @@ test('not set up: the Exo tab shows only settings offering set-up, then Set up E
     assert.equal(s.settingsShown(), 0);
     // Set up once: one native conversation.
     assert.equal(f.spawns.length, 1);
-    assert.equal((await f.rpc["canonical_setup_status"](null)).stage, 'bound');
+    assert.equal((await f.rpc.canonical_setup_status(null)).stage, 'bound');
   } finally { view.unmount(); }
 });

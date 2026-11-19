@@ -1,3 +1,4 @@
+import { required } from './required.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
@@ -17,7 +18,7 @@ import { reapOnExit } from './reap.ts';
 const source='- region "Fixture page" [ref=page]:\n  - heading "Review" [ref=heading]\n  - textbox "Full text" [ref=entry] [multiline]: initial\n  - button "Send" [ref=send] [action=submit] [sends=entry]';
 const longText=' leading whitespace\n🧪 multiline Unicode complete field\n'.repeat(4000)+' FINAL FULL-TEXT SENTINEL \n';
 function temp(t:any){const home=mkdtempSync(join(tmpdir(),'exo-pages-'));return {home,cleanup:fixtureCleanup(t,home)};}
-test('extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime',()=>{
+void test('extracted snapshot grammar preserves stable refs and ordinary message conversion without A2UI runtime',()=>{
  const messages=snapshotToA2ui(source),s={revision:1,messages};
  assert.equal(moduleNodes(s,'page').find(n=>n.id==='entry')?.component,'TextField');
  assert.deepEqual(moduleNodes(s,'page').find((n):n is ButtonNode=>n.id==='send'&&n.component==='Button')?.action.event,{name:'submit',context:{entry:{path:'/entry'}}});
@@ -28,10 +29,10 @@ test('extracted snapshot grammar preserves stable refs and ordinary message conv
  }
  assert.throws(()=>snapshotToA2ui('- region "Huge" [ref=p]:\n  - text: '+ 'x'.repeat(8193)),/line exceeds/);
 });
-test('durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite',t=>{
+void test('durable draw/ref edits/full textbox values and revision/mutation guards reject without truncation or overwrite',t=>{
  const state=temp(t).home;assert.equal(drawPages(state,{baseRevision:0,mutationId:'draw1',snapshot:source}).revision,1);
  const edit={baseRevision:1,mutationId:'edit1',surfaceId:'page',ref:'entry',value:longText};
- assert.equal(editPages(state,edit).revision,2);assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
+ assert.equal(editPages(state,edit).revision,2);assert.equal(moduleData(required(readPages(state), "Expected readPages(state) to be non-null").snapshot,'page')?.['entry'],longText);
  assert.equal(editPages(state,edit).duplicate,true);
  const before=readFileSync(join(state,'current-pages.json'),'utf8');
  for(const mutation of [{...edit,mutationId:'stale'}, {...edit,baseRevision:2,mutationId:'missing',ref:'missing'}, {...edit,baseRevision:2,mutationId:'button',ref:'send'}, {...edit,baseRevision:2,mutationId:'huge',value:'x'.repeat(512*1024+1)}, {...edit,baseRevision:2,mutationId:'type',value:true}]) assert.throws(()=>editPages(state,mutation));
@@ -39,15 +40,15 @@ test('durable draw/ref edits/full textbox values and revision/mutation guards re
  assert.throws(()=>editPages(state,{...edit,value:'different'}),/Mutation ID reused/);
  assert.throws(()=>drawPages(state,{baseRevision:2,mutationId:'duplicatepage',snapshot:source+'\n'+source}),/drawn twice/);
  drawPages(state,{baseRevision:2,mutationId:'update',edits:[{surface:'page',ref:'heading',op:'replace',lines:'- heading "Updated" [ref=heading]'}]});
- assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
- assert.match(surfaceSnapshot(readPages(state)!.snapshot,'page'),/Updated/);
+ assert.equal(moduleData(required(readPages(state), "Expected readPages(state) to be non-null").snapshot,'page')?.['entry'],longText);
+ assert.match(surfaceSnapshot(required(readPages(state), "Expected readPages(state) to be non-null").snapshot,'page'),/Updated/);
  assert.throws(()=>editPages(state,{baseRevision:3,mutationId:'nested',surfaceId:'page',ref:'entry',value:{bad:1}} as any));
 });
-test('press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry',t=>{
+void test('press uses only offered button refs/event/context and durable dispatch receipt; unknown outcome cannot retry',t=>{
  const state=temp(t).home;drawPages(state,{baseRevision:0,mutationId:'draw',snapshot:source});
  const press={baseRevision:1,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
- const result=pressPages(state,press);assert.equal(JSON.parse(result.message!).values.entry,longText);
- assert.equal(moduleData(readPages(state)!.snapshot,'page')?.['entry'],longText);
+ const result=pressPages(state,press);assert.equal(JSON.parse(required(result.message, "Expected result.message to be non-null")).values.entry,longText);
+ assert.equal(moduleData(required(readPages(state), "Expected readPages(state) to be non-null").snapshot,'page')?.['entry'],longText);
  assert.throws(()=>pressPages(state,press),/outcome unknown/);markPress(state,'press','unknown');assert.throws(()=>pressPages(state,press),/outcome unknown/);
  markPress(state,'press','sent');assert.equal(pressPages(state,press).duplicate,true);
  const before=readFileSync(join(state,'current-pages.json'),'utf8');
@@ -55,7 +56,7 @@ test('press uses only offered button refs/event/context and durable dispatch rec
  assert.throws(()=>pressPages(state,{...press,baseRevision:2,mutationId:'badinput',values:{unknown:'x'}}),/noneditable/);
  assert.equal(readFileSync(join(state,'current-pages.json'),'utf8'),before);
 });
-test('production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking',async t=>{
+void test('production owner socket → mock Pi running compiled page tools → persisted updated page; full text survives chunking',async t=>{
  const {home,cleanup}=temp(t),vault=join(home,'vault'),agentDir=join(home,'agent');mkdirSync(vault);mkdirSync(agentDir);writeFileSync(join(vault,'AGENTS.md'),'# Synthetic');
  const model={provider:'fixture',model:'mock',thinking:'medium' as const};
  const config:Config={file:join(home,'config.json'),vault,stateDir:join(home,'state'),agentDir,profile:'exo',piCli:join(home,'pi.mjs'),optchat:join(home,'optchat'),node:process.execPath,models:{main:model,compactor:model,subagent:model},exosurfacePlugin:''};
@@ -86,24 +87,24 @@ out({type:'response',id:r.id,success:true,data:{}});out({type:'message_end',mess
  const press={baseRevision:2,mutationId:'press',surfaceId:'page',ref:'send',values:{entry:longText}};
  assert.equal((await handlers.pagePress(compiled.rpcContract.pagePress.input.parse({threadId:'primary',...press}))).revision,3);
  await settled(()=>ended,10000,10);assert.equal(ended,true);
- const page=readPages(config.stateDir)!;assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page')?.['entry'],longText);
+ const page=required(readPages(config.stateDir), "Expected readPages(config.stateDir) to be non-null");assert.equal(page.revision,4);assert.equal(moduleData(page.snapshot,'page')?.['entry'],longText);
  assert.match(surfaceSnapshot(page.snapshot,'page'),/Owner updated page/);
  assert.equal(JSON.parse(readFileSync(join(config.stateDir,'response-page.json'),'utf8')).body,'Page action received full '+longText);
  assert.equal((await client.send('primary','page.press',press)).duplicate,true,'acknowledged duplicate cannot trigger another owner update');
- assert.equal(readPages(config.stateDir)!.revision,4);
+ assert.equal(required(readPages(config.stateDir), "Expected readPages(config.stateDir) to be non-null").revision,4);
  const read=compiled.rpcContract.pageRead.output.parse(await handlers.pageRead());assert.equal(read.revision,4);
- const reloaded=readPages(config.stateDir)!;assert.equal(moduleData(reloaded.snapshot,'page')?.['entry'],longText);
+ const reloaded=required(readPages(config.stateDir), "Expected readPages(config.stateDir) to be non-null");assert.equal(moduleData(reloaded.snapshot,'page')?.['entry'],longText);
  // This exercises compiled tools and real socket transport with a MOCK Pi API, not browser rendering/paid inference.
 });
 
-test('built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps',async()=>{
+void test('built Zod4 edit/press envelopes preserve long text, reject unknown fields and bound input maps',async()=>{
  const {rpcContract}=await import(pathToFileURL(resolve(import.meta.dirname,'../dist/first-run-shell-server.js')).href);
  const base={threadId:'primary',baseRevision:1,mutationId:'mutation',surfaceId:'page',ref:'entry'};
  assert.equal(rpcContract.pageEdit.input.parse({...base,value:longText}).value,longText);
  for(const bad of [{...base,value:'x',action:'unoffered'}, {...base,value:'x',baseRevision:-1}, {...base,value:'x'.repeat(512*1024+1)}, {...base,value:{nested:'no'}}])assert.equal(rpcContract.pageEdit.input.safeParse(bad).success,false);
  assert.equal(rpcContract.pagePress.input.safeParse({...base,values:Object.fromEntries(Array.from({length:25},(_,i)=>['input'+i,'x']))}).success,false);
 });
-test('unsupported persisted pages and interrupted mutation locks fail closed without overwrite',t=>{
+void test('unsupported persisted pages and interrupted mutation locks fail closed without overwrite',t=>{
  const state=temp(t).home;drawPages(state,{baseRevision:0,mutationId:'draw',snapshot:source});
  const path=join(state,'current-pages.json');const valid=readFileSync(path,'utf8');
  save(join(state,'pages.lock'),{pid:99999999});assert.throws(()=>editPages(state,{baseRevision:1,mutationId:'locked',surfaceId:'page',ref:'entry',value:'x'}),/locked/);

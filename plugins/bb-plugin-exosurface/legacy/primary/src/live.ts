@@ -19,7 +19,7 @@ export default function live(pi: ExtensionAPI) {
       })(),
       sessionId: ctx.sessionManager.getSessionId(), sessionFile: ctx.sessionManager.getSessionFile() };
     const file = process.env['EXO_BB_INFO_FILE'];
-    if (file) { const temp = `${file}.${process.pid}.tmp`; writeFileSync(temp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 }); renameSync(temp, file); }
+    if (file) { const temp = `${file}.${String(process.pid)}.tmp`; writeFileSync(temp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 }); renameSync(temp, file); }
     return data;
   };
   pi.on('session_start', (_e, ctx) => { info(ctx); });
@@ -27,7 +27,7 @@ export default function live(pi: ExtensionAPI) {
   pi.on('model_select', (_e, ctx) => { info(ctx); });
   pi.registerCommand('exo-info', { description: 'Inspect Exo runtime identity/resources without a model call', handler: async (_args, ctx) => {
     const data = info(ctx);
-    ctx.ui.setStatus('exo-runtime', `${data.model?.provider ?? 'undefined'}/${data.model?.id ?? 'undefined'} · ${data.skills.length} skills · exo-optchat`);
+    ctx.ui.setStatus('exo-runtime', `${data.model?.provider ?? 'undefined'}/${data.model?.id ?? 'undefined'} · ${String(data.skills.length)} skills · exo-optchat`);
     ctx.ui.notify('Exo is connected to your existing exo-optchat profile.', 'info');
   } });
 }

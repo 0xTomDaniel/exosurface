@@ -4,6 +4,7 @@
 // and when the surface's pages carry no focus at all. The app (app.tsx) is rendered through the SDK's app test runtime
 // (test/app-render.ts); its RPCs run on server.ts, a send goes through the mock BB to host.ts and the release owner on the
 // real Pi CLI (test/mock-bb.ts, whose fake model draws "draw <ref>: <title>" pages).
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -37,13 +38,13 @@ const inView = () => [...main().querySelectorAll('section[data-surface]')].filte
 const pills = () => [...main().querySelectorAll('nav button[aria-pressed]')].filter(shown).map(b => b.textContent);
 const until = waiter(() => `in view ${JSON.stringify(inView())}, pills ${JSON.stringify(pills())}`);
 async function send(text: string) {
-  await until('the input to take a message', () => !!input() && !input()!.disabled);
-  fireEvent.change(input()!, { target: { value: text } });
+  await until('the input to take a message', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  fireEvent.change(required(input(), "Expected input() to be non-null"), { target: { value: text } });
   fireEvent.click(view.getByRole('button', { name: 'Send' }));
   await until(`Exo's finished turn on ${JSON.stringify(text)}`, () => reply()?.textContent === `Exo (exo-optchat): ${text}`);
 }
 
-test('after a message about a new topic and Exo\'s finished turn, its page is the one page in view; the earlier page is only a pill', async () => {
+void test('after a message about a new topic and Exo\'s finished turn, its page is the one page in view; the earlier page is only a pill', async () => {
   await send('draw week: Week plan');
   await until('the week page', () => inView().includes('Week plan'));
   await send('draw garden: Garden plan');
@@ -52,11 +53,11 @@ test('after a message about a new topic and Exo\'s finished turn, its page is th
   assert.deepEqual(pills(), ['Week plan']);
 });
 
-test('top down: the title, the page strip with the earlier page\'s pill, then the Exo block, then the page; a hairline sets the title and strip off', async () => {
+void test('top down: the title, the page strip with the earlier page\'s pill, then the Exo block, then the page; a hairline sets the title and strip off', async () => {
   // Owner walkthrough on PR #89. Each part by what the person sees: the heading, the navigation holding the pills, the
   // Exo block, the page in view; screen (document) order as primitives, never elements compared.
-  const title = main().querySelector('h1, h2, h3, h4, h5, h6')!, strip = [...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n))!;
-  const block = main().querySelector('section[aria-label="Exo"]')!, page = [...main().querySelectorAll('section[data-surface]')].find(shown)!;
+  const title = main().querySelector('h1, h2, h3, h4, h5, h6'), strip = [...main().querySelectorAll('nav')].find(n => n.querySelector('button[aria-pressed]') && shown(n));
+  const block = main().querySelector('section[aria-label="Exo"]'), page = [...main().querySelectorAll('section[data-surface]')].find(shown);
   assert.ok(!!title && !!strip && !!block && !!page, `parts present: title ${!!title}, strip ${!!strip}, block ${!!block}, page ${!!page}`);
   const parts = [['title', title], ['strip', strip], ['block', block], ['page', page]] as const;
   const order = [...parts].sort(([, a], [, b]) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1).map(([k]) => k).join(' > ');
@@ -65,23 +66,23 @@ test('top down: the title, the page strip with the earlier page\'s pill, then th
   // The top area (title and strip) and the Exo block below it: a hairline between them (computed styles; true paint: RDP).
   assert.ok(divided(strip, block) && divided(title, block), `divided: strip ${divided(strip, block)}, title ${divided(title, block)}`);
   // The strip still works from its new place: a pill shows that page, and Back returns to the current topic.
-  fireEvent.click([...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan')!);
+  fireEvent.click(required([...strip.querySelectorAll('button[aria-pressed]')].find(b => b.textContent === 'Week plan'), "Expected [...strip.querySelectorAll('button[aria-pressed]')].find(b => b.tex... to be non-null"));
   await until('the week page from its pill', () => JSON.stringify(inView()) === '["Week plan"]');
   fireEvent.click(view.getByRole('button', { name: 'Back to the current topic' }));
   await until('back to the garden page', () => JSON.stringify(inView()) === '["Garden plan"]' && JSON.stringify(pills()) === '["Week plan"]');
 });
 
-test('when Exo\'s layout asks for the earlier page beside the new one, the new page is still the only page in view', async () => {
+void test('when Exo\'s layout asks for the earlier page beside the new one, the new page is still the only page in view', async () => {
   await send('draw seeds: Seed list beside garden');
   await until('the seed page', () => inView().includes('Seed list'));
   assert.deepEqual(inView(), ['Seed list']);
   assert.deepEqual(pills().sort(), ['Garden plan', 'Week plan']);
 });
 
-test('pages that carry no focus (no grid of pages): the newest page is the one page in view, every other one a pill', async () => {
+void test('pages that carry no focus (no grid of pages): the newest page is the one page in view, every other one a pill', async () => {
   // The surface's pages as saved without a stage (no layout): what the workspace RPC delivers is the only change.
   const bare = (s: any) => { if (s) delete s.layout; return s; };
-  const rpc = { ...f.rpc, async workspace(i: any) { const r = await f.rpc["workspace"](i); bare(r.delivery.checkpoint); r.delivery.updates.forEach(bare); return r; } };
+  const rpc = { ...f.rpc, async workspace(i: any) { const r = await f.rpc.workspace(i); bare(r.delivery.checkpoint); r.delivery.updates.forEach(bare); return r; } };
   view.unmount(); view = kit.renderSlot(panel, { subPath: '' }, { rpc });
   await until('the pages', () => inView().length > 0);
   assert.deepEqual(inView(), ['Seed list']);
