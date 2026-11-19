@@ -28,18 +28,18 @@ export const UPDATE_GUIDELINES=[
 export const READ_DESCRIPTION='Return exact committed canvas JSON, for one surface (surfaceId) or all. Not previews.';
 export const REMINDER_SECTION='exosurface_reminder';
 // Opus 5-family guidance: explicit conciseness instruction, plus a short reminder late in a long prompt.
-export const REMINDER='<tone_preference>\nWhen the canvas carries the content, keep chat to what it cannot show, usually one to three sentences.\n</tone_preference>';
+export const REMINDER='<tone_preference>\nWhen the page carries the content, keep the Exo block to judgement or nuance not already visible. Let layout communicate relationships; offer supporting detail on demand.\n</tone_preference>';
 // Where Exosurface runs. The clone states its isolation; on the primary session the surface is simply part of Exo
 // (its tools add to Exo's own, and real work happens through Exo's normal tools, never through page actions).
 // Vocabulary: GLOSSARY.md (surface = the whole area beside the chat; page = one of its pages; stage/beside/shelf).
 export const CLONE_HEADER=`Exosurface: an isolated clone of the surface beside this chat (not main Exo). Use update_exosurface to present pages; nothing on the surface performs real task, vault, tax or account changes, and no workers are spawned.`;
-export const MAIN_HEADER=`Exosurface: the surface beside this chat, where you show pages. Use update_exosurface to present. Page edits and button presses are the person talking to you; real changes happen only through your normal tools, never by the surface itself.`;
+export const MAIN_HEADER=`Exosurface: pages and one input on one surface, with no separate chat column. Use update_exosurface to present. Page edits and button presses are the person talking to you; real changes happen only through your normal tools, never by the surface itself.`;
 export const PRESENTATION_HEADER=process.env.EXOSURFACE_MODE==='main'?MAIN_HEADER:CLONE_HEADER;
 
 // Snapshot-format tools (2026-10-16): the agent draws, reads and edits pages in one readable
 // language; code translates to standard A2UI. Nothing in history is rewritten.
 export const SURFACE_UPDATE='update_exosurface',SURFACE_READ='read_exosurface';
-export const SURFACE_SNIPPET='Draw, edit or withdraw pages on the surface beside the chat (snapshot format).';
+export const SURFACE_SNIPPET='Draw, edit or withdraw pages in the integrated Exosurface (snapshot format).';
 export const SURFACE_DESCRIPTION=`Change pages on the surface (Exosurface). JSON order: baseRevision FIRST (the revision in the surface outline, 0 if empty), then any of:
 - snapshot: complete pages in the snapshot format below, to draw a new page or redesign one (same page ref replaces it; the person's input values are kept where your line leaves them empty). The person watches it fill in line by line, so write top-down in reading order.
 - edits: [{page, ref, op, lines}] small changes by ref, without redrawing: op "replace" (the line with that ref and its children → lines), "insertAfter" (lines become following siblings), "insertInto" (lines become last children), "remove" (no lines). lines use the same format, indented from zero.
