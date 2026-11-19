@@ -7,7 +7,7 @@
 //     node --experimental-transform-types test/context-loading-real.mjs <root> <real pi cli.js> <real optchat dir> [shadow|ancestor|integrated]
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync, readdirSync, symlinkSync, lstatSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { join, resolve, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -21,6 +21,47 @@ const [rootArg, piCli, optchat, variant] = process.argv.slice(2);
 const root = realpathSync(rootArg), shadow = variant === 'shadow', ancestor = variant === 'ancestor';
 assert.equal(process.env["HOME"], join(root, 'h')); assert.equal(process.env["EXO_CONFIG"], join(root, 'c.json'));
 assert.ok(!Object.keys(process.env).some(k => /KEY|TOKEN|SECRET/i.test(k)), 'fixture env must carry no credentials');
+// UNIT CLI boundary proof only: fake BB registry, no owner/browser/provider.
+if (variant === 'selected-root') {
+  const baseline = process.env['CTXFX_INSTALLED_PLUGIN_ROOT'];
+  assert.ok(baseline && baseline === realpathSync(baseline), 'canonical baseline test input required');
+  const driver = join(plugin, 'scripts/evaluate-presentation.mjs');
+  const observer = join(root, 'v/.pi/extensions'); mkdirSync(observer, { recursive: true });
+  writeFileSync(join(observer, 'presentation-capture.ts'), readFileSync(join(plugin, 'test/presentation-capture.ts')));
+  const stub = join(root, 'unit-bb.mjs');
+  const failureSchema = z.object({ manifest: z.object({ plugin: z.string(), driver: z.object({ path: z.string(), sha256: z.string() }), runtimeIdentity: z.record(z.string(), z.string()), loadedObserver: z.object({ sha256: z.string(), repoSourceSha256: z.string() }) }) });
+  /** @param {string} label @param {string | null} selected @param {string} registry */
+  const invoke = (label, selected, registry) => {
+    writeFileSync(stub, `if(process.argv.slice(2,5).join(' ')==='plugin source exosurface')console.log(JSON.stringify({resolved:${JSON.stringify('path:' + registry)}}));else{console.error('UNIT_POST_PROVENANCE');process.exit(7);}`);
+    const out = join(root, label); mkdirSync(out);
+    const result = spawnSync(process.execPath, [...PARENT_WATCH, '--experimental-transform-types', driver, '--root', root, '--origin', 'http://127.0.0.1:1', '--cdp', 'http://127.0.0.1:1', '--bb-cli', stub, '--thread', 'unit-target', '--case', 'comparison', '--phase', 'before', '--out', out, ...(selected ? ['--installed-plugin-root', selected] : [])], { encoding: 'utf8', timeout: 15000 });
+    const [run] = readdirSync(out); const failure = run === undefined ? null : z.unknown().parse(JSON.parse(readFileSync(join(out, run, 'failure.json'), 'utf8')));
+    return { result, failure };
+  };
+  /** @param {string} installed */
+  const runtimeFiles = installed => readdirSync(join(installed, 'dist'), { recursive: true, encoding: 'utf8' }).filter(p => lstatSync(join(installed, 'dist', p)).isFile()).length;
+  /** @type {[string, string | null, string][]} */
+  const selections = [['explicit', baseline, baseline], ['default', null, plugin]];
+  for (const [label, selected, registry] of selections) {
+    const { result, failure: record } = invoke(label, selected, registry);
+    assert.ok(result.stderr.includes('UNIT_POST_PROVENANCE'), label + ': must pass registry/runtime/observer provenance before intentional UNIT stop: ' + result.stderr);
+    const failure = failureSchema.parse(record);
+    assert.equal(failure.manifest.plugin, selected ?? plugin);
+    assert.equal(failure.manifest.driver.path, realpathSync(driver));
+    assert.equal(failure.manifest.driver.sha256, createHash('sha256').update(readFileSync(driver)).digest('hex'));
+    assert.equal(Object.keys(failure.manifest.runtimeIdentity).length, runtimeFiles(selected ?? plugin) + 2);
+    assert.equal(failure.manifest.loadedObserver.sha256, failure.manifest.loadedObserver.repoSourceSha256);
+  }
+  const mismatch = invoke('mismatch', baseline, plugin);
+  assert.ok(mismatch.result.stderr.includes('installed source must match selected canonical root'));
+  assert.ok(!mismatch.result.stderr.includes('UNIT_POST_PROVENANCE'));
+  const alias = join(root, 'baseline-alias'); symlinkSync(baseline, alias, 'dir');
+  const noncanonical = invoke('noncanonical', alias, baseline);
+  assert.ok(noncanonical.result.stderr.includes('installed plugin root must be canonical'));
+  assert.ok(!noncanonical.result.stderr.includes('UNIT_POST_PROVENANCE'));
+  console.log('UNIT_SELECTED_ROOT_OK default explicit-baseline registry-mismatch noncanonical; no services/providers');
+  process.exit(0);
+}
 const M = { vaultAgents: 'CTXFX_VAULT_AGENTS_MD_41', vaultSkill: 'CTXFX_VAULT_SKILL_DESC_41', homeSkill: 'CTXFX_HOME_SKILL_DESC_41', shadowSkill: 'CTXFX_SHADOW_EXOSURFACE_41', ancestorAgents: 'CTXFX_ANCESTOR_AGENTS_MD_41', ancestorSkill: 'CTXFX_ANCESTOR_SKILL_DESC_41', exosurfaceSkill: 'Reference for composing Exosurface pages', profile: 'This is the exo-optchat profile.', vaultHeading: 'Exocortex Agent Instructions', optchatMaster: 'You are OptChat', exosurfaceGuide: 'HOW YOU PRESENT (Exo presentation guide', optchatImport: 'Entries marked Historical are imported records' };
 const vault = join(root, 'v'), home = join(root, 's'), optchatHome = join(root, 'o');
 const skill = (dir, name, desc) => { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${desc}\n---\n\n# ${name}\n\nGeneric fixture skill. Do nothing.\n`); };

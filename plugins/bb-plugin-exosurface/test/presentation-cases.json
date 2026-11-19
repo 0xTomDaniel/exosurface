@@ -1,0 +1,37 @@
+[
+  {
+    "id": "repair-plan",
+    "prompt": "Help me plan a repair for our community library room before its Saturday reopening. The ceiling leak is stopped, but two tiles are still damp; the electrician can inspect the nearby light Thursday morning. Six shelves need moving away from that corner, the books need checking for damage, and the room needs cleaning. We have two volunteers Thursday evening, four Friday afternoon, and a $300 materials budget. I need to know the safe order of work, what can happen in parallel, the main uncertainty and what to do if the inspection fails. Do not book anyone or spend money.",
+    "review": "Does the overview communicate the safety gate, sequence and parallel work through structure rather than paragraphs in containers? Are important conditions and uncertainty preserved without duplicating the Exo block?"
+  },
+  {
+    "id": "plan",
+    "prompt": "Help me organize a neighborhood seed swap next month. We need a venue, seed collection, labels, volunteers and publicity. There are three of us organizing it, but nobody has committed to a role yet. The venue must be confirmed before we advertise. What should we tackle first and how should the work fit together? Don't contact anyone.",
+    "review": "Can the person see the dependency and next decision at a glance, with optional detail rather than a prose checklist disguised as a page?"
+  },
+  {
+    "id": "status",
+    "prompt": "Here's the community newsletter status: draft finished; two of five contributors have approved; the printer needs final copy by Thursday noon; photos are missing for one article; Maya can chase approvals tomorrow; I can edit tonight. Help me see where we stand and what needs attention.",
+    "review": "Does layout and emphasis distinguish complete, blocked and next work without invented numbers or redundant narration?"
+  },
+  {
+    "id": "comparison",
+    "prompt": "Help me choose a venue for a 20-person reading group. The library room is free and quiet but closes at 8pm. The cafe costs $80, stays open until 10pm and can be noisy. The community hall costs $40 and closes at 9pm, but we would arrange chairs and cleanup. Accessibility is confirmed for all three. We usually meet 7 to 9pm and have a $60 budget. Compare the tradeoffs and recommend a sensible choice.",
+    "review": "Are options aligned against relevant criteria, constraints visible, recommendation supported, and judgement complementary to the page?"
+  },
+  {
+    "id": "explanation",
+    "prompt": "Explain why adding more volunteers doesn't always make a community project finish sooner. I want to understand dependencies and coordination costs, with a small everyday example, not just a slogan.",
+    "review": "Does the composition clarify the causal relationship while preserving concise nuance, without forcing a chart or padding the page?"
+  },
+  {
+    "id": "brief",
+    "prompt": "Thanks, that helps. I'll think about it and come back tomorrow.",
+    "review": "Is a brief native acknowledgement allowed without unnecessary page work, a forced visual or repeated content?"
+  },
+  {
+    "id": "text-preference",
+    "prompt": "For this answer, just give me two short sentences in plain text, no page changes or visual layout: what is the difference between an urgent task and an important task?",
+    "review": "Is the explicit text-only preference respected, with a concise useful distinction and no compulsory page or tool quota?"
+  }
+]
