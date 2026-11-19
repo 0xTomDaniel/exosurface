@@ -20,7 +20,7 @@ const REPO = path.resolve(SCRIPT_DIR, "../../../..");
 const CONTRACT = path.join(REPO, "qc.toml");
 const PLUGIN = path.join(REPO, "plugins", "bb-plugin-exosurface");
 /** Each mapped feature with a drive, and the demo/surfaces scenario it runs (features/<feature>.md). */
-const FEATURES: Record<string, string> = { "new-surface": "new-surface" };
+const FEATURES: Record<string, string> = { "new-surface": "new-surface", "exo-block-sent-page": "exo-block-sent-page", "exo-block-own-page": "exo-block-own-page" };
 /** One scenario's wall-clock bound, then the wait for its process group to be gone once it exited. */
 const CASE_SECONDS = 300;
 const GROUP_GONE_SECONDS = 15;
@@ -470,6 +470,42 @@ async function driveNewSurface(s: State): Promise<boolean> {
   return passed;
 }
 
+/**
+ * The stdout lines a page-association scenario must print, besides exit 0 (features/exo-block-sent-page.md,
+ * features/exo-block-own-page.md). Each scenario checks its own facts and exits non-zero when one fails.
+ */
+const SCENARIO_LINES: Record<string, string[]> = {
+  "exo-block-sent-page": [
+    "current page before Exo's context: model stage \"plum\", native stage \"plum\"",
+    "after the question (draws nothing): page in view \"Plum plan\"",
+    "  Exo block bubble: \"which plums are ripe?\"",
+    "after the press: page in view \"Plum plan\"",
+    "later page opened from the page strip: page in view \"Pear plan\"",
+  ],
+  "exo-block-own-page": [
+    "a new topic sent from the earlier page: page in view \"Orchard plan\"",
+    "  Exo block bubble: \"draw orchard: Orchard plan\"",
+    "the earlier page opened again from the page strip: page in view \"Week plan\"",
+    "  Exo block bubble: \"and the hedge along the path\"",
+  ],
+};
+
+/** A page-association feature: its scenario's exit 0 and the lines SCENARIO_LINES names, no other page's turn shown. */
+async function driveScenario(s: State, feature: string): Promise<boolean> {
+  const dir = path.join(EVIDENCE_DIR, feature);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "summary.txt"), `${feature} @ rev ${s.rev}, ${now()}\n`);
+  const scenario = FEATURES[feature] ?? feature;
+  await caseRun(s, dir, scenario, [scenario]);
+  const passed = check(dir, scenario, (c) => {
+    const l = c.out.split("\n");
+    return c.code === 0 && (SCENARIO_LINES[feature] ?? []).every((x) => l.includes(x)) && !l.some((x) => x.includes("turn in the block: SHOWN"));
+  });
+  say(`${feature} evidence: ${dir}`);
+  return passed;
+}
+
 async function cmdDrive(feature: string | undefined): Promise<number> {
   const names = Object.keys(FEATURES).join(" ");
   if (feature === undefined || feature === "") die(`usage: verify-app drive <feature> (features: ${names})`);
@@ -479,8 +515,8 @@ async function cmdDrive(feature: string | undefined): Promise<number> {
     say(`reset fixture ${name} (qc.toml)`);
     if (!shInRepo(reset)) die(`qc.toml fixture ${name} reset failed: ${reset}`);
   }
-  if (feature !== "new-surface") die(`unknown feature '${feature}' (features: ${names})`);
-  const passed = await driveNewSurface(s);
+  if (!(feature in FEATURES)) die(`unknown feature '${feature}' (features: ${names})`);
+  const passed = feature === "new-surface" ? await driveNewSurface(s) : await driveScenario(s, feature);
   recordEvidence(s, feature);
   return passed ? 0 : 1;
 }

@@ -63,7 +63,7 @@ export function latestTurn(sessionFile: string | undefined, page?: string): Late
       // it ran: the next earlier change says which.
       if (quiet && focus !== undefined) { if (focus === page) return quiet; quiet = undefined; if (found) return found; }
       if (!found && pages?.includes(page)) found = turn;
-      else if (!found && !pages) undecided = true;
+      else if (!found && !pages?.length) undecided = true;
       said = []; pages = undefined; focus = undefined; replied = undefined;
       continue;
     }
