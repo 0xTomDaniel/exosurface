@@ -51,7 +51,7 @@ So put Exocortex identity and policy in the vault's `AGENTS.md` and its skills i
 - Pi **1.1.0** and SDK **0.6.15** are pinned in the repository-root pnpm lockfile. Use the canonical realpath of Pi's declared public bin (`dist/bundle/cli.js`), not its incompatible SDK-root import or a pnpm symlink alias.
 - Your own workspace/vault and model-provider account. Normal provider authentication occurs after initialization in the new owner's private Pi directory.
 
-The earlier isolated desktop run reused npm/BB toolchain caches; it does not prove this pnpm head. Repository `just setup` now installs the frozen active workspace, including BB's exact local toolchain through pnpm packageExtensions; the canonical gate installs nothing. A fresh Mac install/desktop run remains untested. The separately pinned OptChat checkout retains its own upstream installation instructions above. No global Pi installation is needed by these instructions. SDK redistribution rights remain unresolved: this private source integration does not authorize a public binary/package release.
+The earlier isolated desktop run reused npm/BB toolchain caches; it does not prove this pnpm head. Repository `just setup` now installs the frozen active workspace, including BB's exact local toolchain through pnpm packageExtensions; the canonical gate installs nothing. A fresh Mac install/desktop run remains untested. The separately pinned OptChat checkout retains its own upstream installation instructions above. No global Pi installation is needed by these instructions. SDK redistribution rights remain unresolved: this source repository does not authorize a public binary/package release.
 
 ## Local configuration
 
