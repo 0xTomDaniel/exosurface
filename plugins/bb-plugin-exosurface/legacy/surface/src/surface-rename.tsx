@@ -3,7 +3,7 @@
 // field; Enter saves through thread_rename, Escape or leaving the field cancels, a refusal shows and keeps the field open.
 // The pencil shows faintly at rest and fully on hover or keyboard focus, from this file's own stylesheet (renameStyle): no
 // hover media query, as BB's host Tailwind wraps group-hover: in @media (hover:hover), which never matches on a Chromium that
-// finds no pointer it calls a mouse (sebox's xrdp "Mouse" device, owner walkthrough of PR #91).
+// finds no pointer it calls a mouse (an xrdp session's "Mouse" device, owner walkthrough of PR #91).
 import {useRef,useState} from 'react';
 import {useRpc} from '@get-bb/plugin-sdk/app';
 import type {rpcContract} from '../../primary/server';
