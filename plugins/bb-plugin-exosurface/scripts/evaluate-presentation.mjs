@@ -15,6 +15,8 @@ import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, realpathSync, lstatSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname, basename } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+import CDP from 'chrome-remote-interface';
 import { z } from 'zod';
 import { PARENT_WATCH } from '../test/reap.ts';
 import { settled } from '../test/wait.ts';
@@ -121,13 +123,13 @@ function readiness(passive, thread, log) {
   const terminalError = thread.thread.status === 'error' && thread.thread.queuedMessageCount === 0 && last?.data?.status === 'failed' && active.size === 0 && passive.ready && !passive.streaming;
   return { allowed: active.size === 0 && (idle(passive, thread) || terminalError), path: terminalError ? 'normal-follow-up-from-terminal-error' : 'idle', bbStatus: thread.thread.status, bbQueue: thread.thread.queuedMessageCount, activeTurnIds: [...active], lastTurnStatus: last?.data?.status, limits: 'PID0 proves process existence only. Passive timestamp is not liveness or age proof. Native pending queue is unobserved; terminal error is NOT relabeled idle.' };
 }
-/** @type {WebSocket | undefined} */
-let ws;
-/** @type {((method: string, params?: object) => Promise<unknown>) | undefined} */
-let call;
+/** @type {CDP.Client | undefined} */
+let client;
 /** @type {((expression: string) => Promise<unknown>) | undefined} */
 let evaluate;
-const screenshotSchema = z.object({ data: z.string() });
+// chrome-remote-interface has no per-command deadline; bound each command as the driver did.
+/** @template T @param {Promise<T>} command @param {string} what @returns {Promise<T>} */
+const bounded = (command, what) => Promise.race([command, sleep(5000, undefined, { ref: false }).then(() => { throw Error(`CDP ${what} timeout`); })]);
 const manifest = { run, phase, case: fixture, send, started: new Date().toISOString(), plugin, root, origin, thread: threadId, review: 'Pending independent GPT qualitative judgment. Counts and instruction checks are not semantic quality verdicts.', boundary: 'Installed private BB in Chrome, not native Electron, not full-wire or independently built dist equivalence. Fixture-only observational extension.' };
 try {
   save('input.json', fixture);
@@ -161,39 +163,23 @@ try {
   // readiness; all passive/model/load/BB guards below remain unchanged.
   const navigationBefore = events(bb(['thread', 'log', threadId]));
   const navigationCursor = Math.max(0, ...navigationBefore.map(e => e.seq));
-  const pages = z.array(z.object({ type: z.string(), url: z.string(), webSocketDebuggerUrl: z.string().optional() })).parse(await (await fetch(`${cdp}/json/list`, { signal: AbortSignal.timeout(5000) })).json());
+  const endpoint = { host: new URL(cdp).hostname, port: Number(new URL(cdp).port) };
+  const pages = await bounded(CDP.List(endpoint), 'target list');
   const page = pages.find(p => p.type === 'page' && p.url.startsWith(origin + '/plugins/exosurface/surface'));
-  assert.ok(page?.webSocketDebuggerUrl, 'open the installed Exo tab in the private browser first');
-  const socket = new WebSocket(page.webSocketDebuggerUrl); ws = socket;
-  /** @type {Promise<void>} */
-  const opened = new Promise((ok, no) => { const t = setTimeout(() => { no(Error('CDP open timeout')); }, 5000); socket.addEventListener('open', () => { clearTimeout(t); ok(); }, { once: true }); socket.addEventListener('error', no, { once: true }); });
-  await opened;
-  let sequence = 0;
-  /** @type {Map<number, { resolve: (value: unknown) => void, reject: (error: Error) => void, timer: ReturnType<typeof setTimeout> }>} */
-  const pending = new Map();
-  const cdpMessage = z.object({ id: z.number().optional(), error: z.unknown().optional(), result: z.unknown().optional() });
-  socket.addEventListener('message', event => {
-    const message = cdpMessage.parse(JSON.parse(String(event.data))), p = message.id === undefined ? undefined : pending.get(message.id);
-    if (!p || message.id === undefined) return;
-    pending.delete(message.id); clearTimeout(p.timer);
-    if (message.error) p.reject(Error(JSON.stringify(message.error))); else p.resolve(message.result);
-  });
-  /** @param {string} method @param {object} [params] @returns {Promise<unknown>} */
-  const cdpCall = (method, params = {}) => new Promise((resolve, reject) => { const id = ++sequence; const timer = setTimeout(() => { pending.delete(id); reject(Error(`CDP ${method} timeout`)); }, 5000); pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params })); });
-  call = cdpCall;
-  const evaluated = z.object({ exceptionDetails: z.unknown().optional(), result: z.object({ value: z.unknown().optional() }) });
+  assert.ok(page, 'open the installed Exo tab in the private browser first');
+  const cdpClient = await bounded(CDP({ ...endpoint, target: page }), 'open'); client = cdpClient;
   /** @param {string} expression */
-  const evaluateIn = async expression => { const r = evaluated.parse(await cdpCall('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })); assert.ok(!r.exceptionDetails, JSON.stringify(r.exceptionDetails)); return r.result.value; };
+  const evaluateIn = async expression => { const r = await bounded(cdpClient.Runtime.evaluate({ expression, returnByValue: true, awaitPromise: true }), 'Runtime.evaluate'); assert.ok(!r.exceptionDetails, JSON.stringify(r.exceptionDetails)); return z.unknown().parse(r.result.value); };
   evaluate = evaluateIn;
   /** @param {string} expression */
   const isTrue = async expression => z.boolean().parse(await evaluateIn(expression));
-  await cdpCall('Emulation.setDeviceMetricsOverride', { width: 1288, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await bounded(cdpClient.Emulation.setDeviceMetricsOverride({ width: 1288, height: 1000, deviceScaleFactor: 1, mobile: false }), 'Emulation.setDeviceMetricsOverride');
   const surfaces = z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string() })) }).parse(rpc('thread_list')).threads, target = surfaces.find(t => t.threadId === threadId); assert.ok(target);
   /** @param {string} expression */
   async function click(expression) {
     const point = z.object({ x: z.number(), y: z.number() }).parse(await evaluateIn(`(()=>{const e=${expression};if(!e)throw Error('Missing UI target');const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`));
-    await cdpCall('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...point });
-    await cdpCall('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...point });
+    await bounded(cdpClient.Input.dispatchMouseEvent({ type: 'mousePressed', button: 'left', clickCount: 1, ...point }), 'Input.dispatchMouseEvent');
+    await bounded(cdpClient.Input.dispatchMouseEvent({ type: 'mouseReleased', button: 'left', clickCount: 1, ...point }), 'Input.dispatchMouseEvent');
   }
   await click(`[...document.querySelectorAll('nav[aria-label="Surfaces"] button')].find(e=>e.textContent.trim()===${JSON.stringify(target.title)})`);
   assert.ok(await settled(() => isTrue(`document.querySelector('nav[aria-label="Surfaces"] button[aria-current="page"]')?.textContent.trim()===${JSON.stringify(target.title)} && !!document.querySelector('form[aria-label="Message Exo"] textarea:not(:disabled)')`), 10000, 100), 'intended surface must be current and ready');
@@ -253,7 +239,10 @@ try {
   const captureSince = originalUserIndex >= 0 ? beforeEntries[originalUserIndex]?.message?.timestamp ?? 0 : 0;
   const prior = originalUserIndex >= 0 ? originalUserIndex : beforeEntries.length;
   const hookFile = join(root, 'v/presentation-requests.jsonl');
-  const requestSchema = z.object({ at: z.string(), sessionId: z.string(), provider: z.string().optional(), model: z.string().optional(), thinking: z.string().optional() });
+  // Strict: every observer field is kept, so delivered-presentation.json carries the delivered instructions.
+  const requestSchema = z.strictObject({ at: z.string(), provider: z.string().optional(), model: z.string().optional(), api: z.string().optional(), thinking: z.string().optional(), sessionId: z.string(),
+    presentation: z.array(z.strictObject({ header: z.string().nullable(), guide: z.string() })), reminders: z.array(z.string()),
+    tools: z.array(z.strictObject({ name: z.string(), description: z.string().optional() })) });
   let hookBefore = 0; try { hookBefore = jsonl(hookFile, requestSchema).length; } catch (e) { if (!missing(e)) throw e; }
   const urls = z.array(z.string()).parse(await evaluateIn('performance.getEntriesByType("resource").map(e=>e.name).filter(x=>x.includes("/plugin-app-assets/"))'));
   /** @type {Record<string, unknown>} */
@@ -281,7 +270,7 @@ try {
   if (send) {
     await click('document.querySelector(\'form[aria-label="Message Exo"] textarea:not(:disabled)\')');
     assert.equal(await evaluateIn('document.querySelector(\'form[aria-label="Message Exo"] textarea\').value'), '', 'do not overwrite a draft');
-    await cdpCall('Input.insertText', { text: fixture.prompt });
+    await bounded(cdpClient.Input.insertText({ text: fixture.prompt }), 'Input.insertText');
     await click('[...document.querySelectorAll("button")].find(e=>e.textContent.trim()==="Send"&&!e.disabled)');
     const complete = await settled(() => {
       const native = passiveSchema.parse(passiveState()), thread = threadSchema.parse(bb(['thread', 'show', threadId])), block = blockSchema.parse(rpc('exo_block', { threadId }));
@@ -324,7 +313,7 @@ try {
     assert.ok(eventsAfter.some(e => e.type === 'turn/input/accepted' && e.scope?.turnId === completed.scope?.turnId), 'current public BB turn must accept input');
   }
   const requests = jsonl(hookFile, requestSchema).slice(captureExisting ? 0 : hookBefore).filter(r => r.sessionId === after.sessionId && (!captureSince || Date.parse(r.at) >= captureSince));
-  if (capturesResponse) assert.ok(requests.length && requests.every(r => r.sessionId === after.sessionId && r.provider === 'openai' && r.model === 'gpt-6.1-sol' && r.thinking === 'high'), 'matching actual observational request required');
+  if (capturesResponse) assert.ok(requests.length && requests.every(r => r.sessionId === after.sessionId && r.provider === 'openai' && r.model === 'gpt-6.1-sol' && r.thinking === 'high' && r.presentation.length > 0 && r.tools.length > 0), 'matching actual observational request required');
   save('delivered-presentation.json', requests);
   save('visible.txt', await evaluateIn('document.body.innerText'));
   const dimensions = z.object({ height: z.number(), total: z.number() }).parse(await evaluateIn('(()=>{const e=document.querySelector("main.exo-canvas");return {height:e.clientHeight,total:e.scrollHeight}})()'));
@@ -333,7 +322,7 @@ try {
   Object.assign(manifest, { scroll: { ...dimensions, captured } });
   for (let top = 0, index = 0; top < dimensions.total && index < 5; top += Math.max(100, dimensions.height - 100), index++) {
     await evaluateIn(`document.querySelector("main.exo-canvas").scrollTo({top:${String(top)},behavior:"instant"})`);
-    const shot = screenshotSchema.parse(await cdpCall('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }));
+    const shot = await bounded(cdpClient.Page.captureScreenshot({ format: 'png', captureBeyondViewport: false }), 'Page.captureScreenshot');
     writeFileSync(join(output, `${capturesResponse ? 'settled' : 'preflight'}-${String(index)}.png`), Buffer.from(shot.data, 'base64'), { flag: 'wx' }); captured.push(top);
   }
   await evaluateIn('document.querySelector("main.exo-canvas").scrollTo({top:0,behavior:"instant"})');
@@ -343,6 +332,6 @@ try {
   console.log(JSON.stringify({ run, output, case: fixture.id, phase, send, result: 'captured; independent qualitative review pending' }));
 } catch (error) {
   save('failure.json', { at: new Date().toISOString(), error: String(error), manifest });
-  if (evaluate && call) try { save('attempt-visible.txt', await evaluate('document.body.innerText')); const shot = screenshotSchema.parse(await call('Page.captureScreenshot', { format: 'png' })); writeFileSync(join(output, 'attempt.png'), Buffer.from(shot.data, 'base64'), { flag: 'wx' }); } catch { /* best-effort attempt capture */ }
+  if (evaluate && client) try { save('attempt-visible.txt', await evaluate('document.body.innerText')); const shot = await bounded(client.Page.captureScreenshot({ format: 'png' }), 'Page.captureScreenshot'); writeFileSync(join(output, 'attempt.png'), Buffer.from(shot.data, 'base64'), { flag: 'wx' }); } catch { /* best-effort attempt capture */ }
   throw error;
-} finally { ws?.close(); }
+} finally { await client?.close(); }
