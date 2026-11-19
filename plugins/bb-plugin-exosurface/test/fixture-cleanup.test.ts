@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { fixtureCleanup } from './fixture-cleanup.ts';
 import { PARENT_WATCH } from './reap.ts';
 
-test('test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it', async t => {
+void test('test teardown awaits reverse resource shutdown before deleting its root; late stopped-state write cannot recreate it', async t => {
   const root = mkdtempSync(join(tmpdir(), 'exo-cleanup-order-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const hooks: Array<() => Promise<void>> = [], order: string[] = [];
@@ -25,7 +25,7 @@ test('test teardown awaits reverse resource shutdown before deleting its root; l
   assert.equal(existsSync(root), false);
 });
 
-test('test teardown reaps its owned child and verifies PID disappearance before root removal', t => {
+void test('test teardown reaps its owned child and verifies PID disappearance before root removal', t => {
   const root = mkdtempSync(join(tmpdir(), 'exo-cleanup-child-'));
   const cleanup = fixtureCleanup(t, root);
   const child = spawn(process.execPath, [...PARENT_WATCH, '-e', 'setInterval(()=>{},1000)'], {

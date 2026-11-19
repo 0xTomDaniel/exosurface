@@ -337,7 +337,7 @@ export function ownerRequest(f: Fixture, value: object) {
 
 /** A "steps: <topic>" send on a surface (the fake model above): records each change of what the surface's exo_block reports
  * until Exo's turn has ended. The model holds each step until its line has been seen here, so none is missed under load. */
-export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}) {
+export async function stepsTurn(f: Fixture, threadId: string, topic: string, seen: (block: any) => void = () => {}): Promise<Awaited<ReturnType<FixtureRpc['exo_block']>>[]> {
   const blocks: any[] = [], gates = join(f.optchatHome, 'steps'); let released = 0;
   mkdirSync(gates, { recursive: true });
   await f.rpc["exo_send"]({ threadId, text: `steps: ${topic}` });

@@ -13,7 +13,7 @@ const { kit, app, close } = await renderedApp();
 after(close);
 const { within, screen } = kit.testing;
 
-test('the plugin app registers one nav panel, titled "Exo"; none titled "Exosurface" and no proof panel', () => {
+void test('the plugin app registers one nav panel, titled "Exo"; none titled "Exosurface" and no proof panel', () => {
   const titles: string[] = app.navPanels.map((p: any) => String(p.title));
   const paths: string[] = app.navPanels.map((p: any) => String(p.path));
   assert.deepEqual(titles, ['Exo']);
@@ -21,7 +21,7 @@ test('the plugin app registers one nav panel, titled "Exo"; none titled "Exosurf
   assert.equal(paths.filter(p => p === 'proof').length, 0);
 });
 
-test('opening the Exo tab shows the sidebar and Home, with the input shown', async () => {
+void test('opening the Exo tab shows the sidebar and Home, with the input shown', async () => {
   const panel = app.navPanels.find((p: any) => p.title === 'Exo');
   assert.ok(panel, 'no panel titled "Exo"');
   const home = { threadId: 'primary', ready: true, streaming: false, revision: 1, composition: { configured: false, surfaceId: null, candidateCount: 0, running: false, lastRun: null }, observer: null,
@@ -53,7 +53,7 @@ test('opening the Exo tab shows the sidebar and Home, with the input shown', asy
   } finally { view.unmount(); }
 });
 
-test('BB lists the plugin as "Exo" (package.json bb.name)', () => {
+void test('BB lists the plugin as "Exo" (package.json bb.name)', () => {
   const manifest = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf8'));
   assert.equal(manifest.bb.name, 'Exo');
 });

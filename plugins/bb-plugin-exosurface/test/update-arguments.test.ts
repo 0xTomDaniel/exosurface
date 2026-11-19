@@ -1,6 +1,7 @@
 // #108: update_exosurface argument-format errors reach Exo in plain words, on both registrations (the release owner's
 // legacy surface extension and the fresh-owner page tools). The boundary is the one Pi runs a call through: its own
 // validateToolArguments (pinned pi-coding-agent's pi-ai), then execute; a throw from either is the text Exo receives.
+import { required } from './required.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -13,7 +14,7 @@ const { validateToolArguments } = await import('@earendil-works/pi-ai') as { val
 
 /** What Exo receives for one update_exosurface call, as Pi runs it. */
 async function call(tool: Tool, args: object) {
-  try { return (await tool.execute('call', validateToolArguments(tool, { type: 'toolCall', id: 'call', name: tool.name, arguments: args }))).content[0]!.text; }
+  try { return required((await tool.execute('call', validateToolArguments(tool, { type: 'toolCall', id: 'call', name: tool.name, arguments: args }))).content[0], "Expected (await tool.execute('call', validateToolArguments(tool, { type: 'to... to be non-null").text; }
   catch (error) { return (error as Error).message; }
 }
 
@@ -38,18 +39,18 @@ function assertPlain(text: string, args: object, argument: RegExp, accepts: RegE
   assert.match(text, argument); assert.match(text, accepts);
 }
 
-test('fresh-owner page tools: each format error reaches Exo in plain words; well-formed draw and edit save', async t => {
+void test('fresh-owner page tools: each format error reaches Exo in plain words; well-formed draw and edit save', async t => {
   const state = mkdtempSync(join(tmpdir(), 'exo-args-')); fixtureCleanup(t, state);
   process.env["EXO_PAGE_STATE"] = state;
   const tools = new Map<string, Tool>();
   (await import('../src/page-tools.ts')).default({ registerTool: (tool: Tool) => tools.set(tool.name, tool) });
-  const tool = tools.get('update_exosurface')!;
+  const tool = required(tools.get('update_exosurface'), "Expected tools.get('update_exosurface') to be non-null");
   for (const [name, args, argument, accepts] of cases('surface', { mutationId: 'bad' })) await t.test(name, async () => assertPlain(await call(tool, args), args, argument, accepts));
   assert.equal(await call(tool, { baseRevision: '0', mutationId: 'draw', snapshot }), 'Pages saved at revision 1.');
   assert.equal(await call(tool, { baseRevision: 1, mutationId: 'edit', edits: [{ surface: 'week', ref: 'title', op: 'replace', lines: '- heading "Plan" [ref=title]' }] }), 'Pages saved at revision 2.');
 });
 
-test('release owner surface extension: each format error reaches Exo in plain words; a well-formed draw saves', async t => {
+void test('release owner surface extension: each format error reaches Exo in plain words; a well-formed draw saves', async t => {
   const root = mkdtempSync(join(tmpdir(), 'exo-args-')); fixtureCleanup(t, root);
   const home = join(root, 'exo'), optchat = join(root, 'oc');
   mkdirSync(join(home, 'owner'), { recursive: true }); mkdirSync(optchat); writeFileSync(join(home, 'owner', 'state.json'), '{}');
@@ -58,7 +59,7 @@ test('release owner surface extension: each format error reaches Exo in plain wo
   const tools = new Map<string, Tool>();
   const pi = new Proxy({}, { get: (_t, key) => key === 'registerTool' ? (tool: Tool) => tools.set(tool.name, tool) : () => {} });
   (await import('../legacy/surface/src/workspace-extension.ts')).default(pi as never);
-  const tool = tools.get('update_exosurface')!;
+  const tool = required(tools.get('update_exosurface'), "Expected tools.get('update_exosurface') to be non-null");
   for (const [name, args, argument, accepts] of cases('page', {})) await t.test(name, async () => assertPlain(await call(tool, args), args, argument, accepts));
   assert.equal(await call(tool, { baseRevision: '0', snapshot }), 'Surface revision 1: drew page week. On stage: week.');
 });

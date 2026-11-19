@@ -108,7 +108,7 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
     // Bring-back by mention names its deployment only; a bound thread's pages are not offered until it names the thread.
     search:({query,threadId})=>{let d:Deployment;try{d=deploymentFor(threadId??'');}catch{return [];}if(d.threadId)return [];const all=history(d),latest=new Map<string,Version>();for(const v of all)if(v.action!=='withdrawn')latest.set(v.surface,v);
       const q=query.toLowerCase();return [...latest.values()].filter(v=>!q||v.title.toLowerCase().includes(q)||v.surface.includes(q)).sort((a,b)=>b.revision-a.revision).slice(0,12)
-        .map(v=>{const last=[...all].reverse().find(x=>x.surface===v.surface&&x.action!=='retired'&&x.action!=='withdrawn')!;return {id:`${d.name}|${v.surface}@${last.revision}`,title:last.title,subtitle:new Date(last.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),icon:'PanelsTopLeft'};});},
+        .map(v=>{const last=[...all].reverse().find(x=>x.surface===v.surface&&x.action!=='retired'&&x.action!=='withdrawn')!;return {id:`${d.name}|${v.surface}@${String(last.revision)}`,title:last.title,subtitle:new Date(last.at).toLocaleString('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),icon:'PanelsTopLeft'};});},
     resolve:async itemId=>{
       const m=SURFACE_ITEM.exec(itemId);if(!m)return {context:''};const d=byName(m[1]??'clone'),surface=m[2],revision=Number(m[3]),st=status(d),all=history(d),v=versionAt(all,surface,revision);if(!v||!st.threadId)return {context:''};
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some(x=>x.createSurface?.surfaceId===surface),p=readPending(d),same=!!p&&p.surface===surface&&p.revision===v.revision;
@@ -136,7 +136,7 @@ export default function plugin(bb:BbPluginApi, registerRpc = bb.rpc.register.bin
   registerRpc(rpcContract,{
     workspace:async({deployment,threadId,cursor})=>envelope(status(threadId?deploymentFor(threadId):byName(deployment)),cursor),
     surfaceAt:async({threadId,surface,revision})=>{
-      const d=deploymentFor(threadId),st=status(d);const all=history(d),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${revision}`);
+      const d=deploymentFor(threadId),st=status(d);const all=history(d),v=versionAt(all,surface,revision);if(!v)throw Error(`No version of ${surface} at revision ${String(revision)}`);
       // Current = this is the surface's latest version and it is on the live canvas (no rewind needed, just focus it).
       const later=all.some(x=>x.surface===surface&&x.revision>v.revision&&x.action!=='retired'&&x.action!=='withdrawn'),live=!!st.workspace?.messages.some((m:any)=>m.createSurface?.surfaceId===surface);
       // On stage = the surface the conversation is on now (layout focus, else the last drawn): only its latest card just loads it.

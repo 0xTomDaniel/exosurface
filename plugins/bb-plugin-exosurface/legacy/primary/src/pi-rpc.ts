@@ -54,7 +54,7 @@ this.lost = lost;
   }
   async send(type: string, fields: Record<string, unknown> = {}, timeoutMs = 30_000): Promise<any> {
     if (this.failure) throw this.failure;
-    const id = `exo-${++this.next}`;
+    const id = `exo-${String(++this.next)}`;
     const response = new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`Pi ${type} timed out`)); }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });

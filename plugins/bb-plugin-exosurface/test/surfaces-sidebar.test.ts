@@ -1,6 +1,7 @@
 // #68 (spec pages-and-activity S7, N1; acceptance-new-surface), the rendered app: the Exosurface panel shows a sidebar of
 // surfaces (Home, then every other, flat) and the surface in view; New surface puts the new one in view with an empty page.
 // Rendered from package.json bb.app in BB's SDK app test runtime; the rpc handlers stand in for the server.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderedApp } from './app-render.ts';
@@ -20,7 +21,7 @@ const homePage = () => ({ ...empty('primary'), revision: 1, delivery: { epoch: '
 const homeShown = () => document.querySelector('main[aria-label="Exo"] section[data-surface="week"]') !== null;
 const input = () => document.querySelector('form[aria-label="Message Exo"] textarea') as HTMLTextAreaElement | null;
 
-test('New surface puts a new surface in view with one empty page; the sidebar lists Home, then the new surface', async t => {
+void test('New surface puts a new surface in view with one empty page; the sidebar lists Home, then the new surface', async t => {
   const threads = [{ threadId: 'primary', title: 'Home', home: true }];
   const panel = app.navPanels.find((p: any) => p.path === 'surface');
   const view = kit.renderSlot(panel, { subPath: '' }, { rpc: {
@@ -55,8 +56,8 @@ test('New surface puts a new surface in view with one empty page; the sidebar li
   await until("Home's page to leave the canvas", () => !homeShown());
   assert.equal(homeShown(), false);
   assert.equal(document.querySelectorAll('[data-surface]').length, 0);
-  await until('the input to be shown and enabled', () => !!input() && !input()!.disabled);
-  assert.equal(input()!.value, '');
+  await until('the input to be shown and enabled', () => !!input() && !required(input(), "Expected input() to be non-null").disabled);
+  assert.equal(required(input(), "Expected input() to be non-null").value, '');
 
   // Home is one click away and is the primary thread's page state again.
   fireEvent.click(sidebar().getByRole('button', { name: 'Home' }));
@@ -69,7 +70,7 @@ test('New surface puts a new surface in view with one empty page; the sidebar li
 // #186 (spec N8, T3; acceptance-sidebar-pinned). jsdom does no layout, so where things sit is read from computed style: the
 // one region of the sidebar that scrolls holds every surface and neither New surface nor Settings, which sit above and below
 // it; nothing around them scrolls, so they stay in view wherever that region is scrolled.
-test('acceptance-sidebar-pinned: with more surfaces than fit, scrolled to the tree\'s end, New surface stays at the top and the Settings gear at the bottom', async () => {
+void test('acceptance-sidebar-pinned: with more surfaces than fit, scrolled to the tree\'s end, New surface stays at the top and the Settings gear at the bottom', async () => {
   const threads = [{ threadId: 'primary', title: 'Home', home: true }, ...Array.from({ length: 40 }, (_, i) => ({ threadId: `thread-${i + 2}`, title: `Surface ${i + 1}`, home: false }))];
   const panel = app.navPanels.find((p: any) => p.path === 'surface');
   const view = kit.renderSlot(panel, { subPath: '' }, { rpc: {
@@ -110,7 +111,7 @@ test('acceptance-sidebar-pinned: with more surfaces than fit, scrolled to the tr
     }
     assert.equal([...nav().children].indexOf(newSurface[0]), 0, 'New surface at the top of the sidebar');
     assert.equal(rows()[0].textContent, 'Home');
-    assert.equal(rows().at(-1)!.textContent, 'Surface 40');
+    assert.equal(required(rows().at(-1), "Expected rows().at(-1) to be non-null").textContent, 'Surface 40');
     assert.equal(!!(list.compareDocumentPosition(settings[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings below the list');
     assert.equal([...nav().children].filter(c => c.tagName !== 'P').at(-1) === settings[0], true, 'Settings at the bottom of the sidebar');
     // Shown as a gear; named Settings for people and assistive tech.

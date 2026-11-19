@@ -24,7 +24,7 @@ async function ensureOwner() {
     // explicit local setup step; a client never provisions it automatically.
     const uid = process.getuid?.();
     if (uid === undefined) throw new Error('Approved owner supervisor unavailable on this runtime');
-    const launcher = spawn('/bin/launchctl', ['kickstart', `gui/${uid}/${local('ownerLabel') || 'local.exocortex.exo-owner'}`], { stdio: 'ignore' });
+    const launcher = spawn('/bin/launchctl', ['kickstart', `gui/${String(uid)}/${local('ownerLabel') || 'local.exocortex.exo-owner'}`], { stdio: 'ignore' });
     await new Promise<void>((resolve, reject) => { launcher.once('error', reject); launcher.once('exit', code => { if (code === 0) resolve(); else reject(new Error('Exo launchd owner is not provisioned; no fallback owner spawned by BB')); }); });
     const until = Date.now() + 30_000;
     while (Date.now() < until) { if (await probe()) return; await new Promise(r => setTimeout(r, 200)); }
@@ -78,7 +78,7 @@ this.lost = lost;
   }
   send(type: string, fields: Record<string, unknown> = {}, timeoutMs = 30_000): Promise<any> {
     if (this.closing) return Promise.reject(new Error('Exo view is detached'));
-    const id = `view-${++this.next}`;
+    const id = `view-${String(++this.next)}`;
     const response = new Promise((resolve, reject) => { const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`Exo ${type} timed out`)); }, timeoutMs); this.pending.set(id, { resolve, reject, timer }); });
     this.write({ id, type, ...fields }); return response;
   }

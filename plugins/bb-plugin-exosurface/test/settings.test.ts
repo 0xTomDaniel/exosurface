@@ -5,6 +5,7 @@
 // The app (package.json bb.app) is rendered through the SDK's app test runtime (test/app-render.ts). Settings read the
 // owner's status from server.ts on a set-up fixture (test/mock-bb.ts: canonical_setup, the release owner on the real Pi
 // CLI); the surface test's rpc handlers stand in for the server. Only extracted strings and counts are compared.
+import { required } from './required.ts';
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -53,26 +54,26 @@ function screenOf(view: any) {
   };
 }
 
-test('with Exo set up, pressing Settings shows set up, the model, running and the owner profile, and no input or test control', async () => {
+void test('with Exo set up, pressing Settings shows set up, the model, running and the owner profile, and no input or test control', async () => {
   const view = kit.renderSlot(panel, { subPath: '' }, { rpc: f.rpc });
   const s = screenOf(view);
   const until = waiter(() => `sidebar ${JSON.stringify(s.listed())}; surface shown ${s.surfaceShown()}; settings ${JSON.stringify(s.facts())}`);
   try {
     await until('the sidebar listing Home, Home in view', () => s.listed().join('|') === 'Home' && s.surfaceShown() === 1);
     // T3: one Settings button, below the tree (after the surfaces in screen order), not a surface in the list.
-    const buttons = [...s.sidebar()!.querySelectorAll('button')].filter(b => named(b) === 'Settings');
+    const buttons = [...required(s.sidebar(), "Expected s.sidebar() to be non-null").querySelectorAll('button')].filter(b => named(b) === 'Settings');
     assert.deepEqual(buttons.map(b => b.closest('li') !== null), [false]);
-    const lastRow = [...s.sidebar()!.querySelectorAll('li')].at(-1)!;
+    const lastRow = required([...required(s.sidebar(), "Expected s.sidebar() to be non-null").querySelectorAll('li')].at(-1), "Expected [...s.sidebar().querySelectorAll('li')].at(-1) to be non-null");
     assert.equal(!!(lastRow.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING), true, 'Settings follows the tree');
     s.press('Settings', s.sidebar);
     await until('settings with the owner\'s status', () => s.facts().length === 4 && s.facts().every(([, v]) => v !== 'Loading…'));
     assert.deepEqual(s.facts(), [['Set-up', 'Exo is set up'], ['Model', 'anthropic/claude-opus-5-5'], ['Running', 'Exo is running'], ['Owner profile', 'exo-optchat']]);
     // In place of the surface in view, beside the sidebar.
     assert.equal(s.surfaceShown(), 0);
-    assert.equal(!!s.sidebar() && shown(s.sidebar()!), true);
+    assert.equal(!!s.sidebar() && shown(required(s.sidebar(), "Expected s.sidebar() to be non-null")), true);
     // No input anywhere in view, and no control in settings but Close.
     assert.equal(s.all('input, textarea, select, [contenteditable="true"], [role="textbox"]').length, 0);
-    assert.deepEqual([...s.settings()!.querySelectorAll('button, a, [role="button"]')].filter(shown).map(b => String(b.textContent)), ['Close']);
+    assert.deepEqual([...required(s.settings(), "Expected s.settings() to be non-null").querySelectorAll('button, a, [role="button"]')].filter(shown).map(b => String(b.textContent)), ['Close']);
   } finally { view.unmount(); }
 });
 
@@ -87,14 +88,14 @@ const PAGES = { threadId: 'garden', ready: true, streaming: false, revision: 2, 
   ] }, updates: [], preview: null } };
 const HOME = { ...PAGES, threadId: 'primary', revision: 0, delivery: { epoch: 'home', checkpoint: null, updates: [], preview: null } };
 
-test('on a surface other than Home, Settings then Close shows that surface with its page as left; so does opening it from the sidebar', async () => {
+void test('on a surface other than Home, Settings then Close shows that surface with its page as left; so does opening it from the sidebar', async () => {
   const view = kit.renderSlot(panel, { subPath: '' }, { rpc: {
     thread_list: async () => ({ threads: [{ threadId: 'primary', title: 'Home', home: true }, { threadId: 'garden', title: 'Garden trip', home: false }] }),
     workspace: async (input: any) => input.threadId === 'garden' ? PAGES : HOME,
     exo_block: async () => ({ working: false, said: '', words: '' }),
     // The settings reads, as on the set-up fixture above.
-    canonical_setup_status: f.rpc["canonical_setup_status"],
-    overview: f.rpc["overview"],
+    canonical_setup_status: f.rpc.canonical_setup_status,
+    overview: f.rpc.overview,
   } });
   const s = screenOf(view);
   const until = waiter(() => `in view ${JSON.stringify(s.inView())}; pages ${JSON.stringify(s.pages())}; settings ${s.settings() ? 'shown' : 'none'}`);
@@ -124,7 +125,7 @@ test('on a surface other than Home, Settings then Close shows that surface with 
 
 // T4, "the model it runs on": the person picks Sol in BB's model picker and sends; host.ts switches the running Pi
 // (set_model, model-selection.ts) and Settings, opened after, show Sol, not the model Exo started on.
-test('after the person picks Sol in BB and sends, Settings show Sol as the model Exo runs on', async () => {
+void test('after the person picks Sol in BB and sends, Settings show Sol as the model Exo runs on', async () => {
   host = bridge(f);
   assert.equal((await host.start('primary')).error ?? null, null);
   host.send('primary', 'hello on Sol', 'exo-gpt-6-1-sol');

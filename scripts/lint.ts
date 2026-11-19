@@ -225,6 +225,7 @@ async function compilerProject(project: string): Promise<void> {
   for (const diagnostic of native.getPreEmitDiagnostics(program)) {
     const record = finding(diagnostic);
     if (!unconditional.has(diagnostic) && diagnostic.file !== undefined && exempt.has(record.file)) integrityOnly += 1;
+    else if (!unconditional.has(diagnostic) && diagnostic.file !== undefined && isDeferredTree(record.file)) continue;
     else governing.push(record);
   }
   const programFiles = program.getSourceFiles().map((file) => path.resolve(file.fileName));

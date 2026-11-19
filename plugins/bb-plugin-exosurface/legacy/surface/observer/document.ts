@@ -20,12 +20,12 @@ export function parseDocument(source:string):Document{
   const token=top[i];if(!token)throw Error('Missing document token');const start=token.map[0],end=top[i+1]?.map[0]??lines.length,raw=source.slice(offsets[start],offsets[end]);
   if(token.type==='heading_open'){
    const level=Number(token.tag.slice(1)),at=tokens.indexOf(token),title=tokens[at+1]?.content??'';
-   while(stack.at(-1)!.level>=level)stack.pop();const section:Section={id:'doc_s_'+start,kind:'section',level,title,raw,children:[]};stack.at(-1)!.children.push(section);stack.push(section);
+   while(stack.at(-1)!.level>=level)stack.pop();const section:Section={id:'doc_s_'+String(start),kind:'section',level,title,raw,children:[]};stack.at(-1)!.children.push(section);stack.push(section);
   }else{
    const inner=tokens.filter((t):t is typeof t&{map:[number,number]}=>!!t.map&&t.map[0]>=start&&t.map[0]<end),inline=inner.filter((t)=>t.type==='inline');
-   const block:Block={id:'doc_b_'+start,kind:'block',format:token.type.replace(/_open$/,''),raw,ordered:inner.some((t)=>t.type==='ordered_list_open'),listItems:inner.filter((t)=>t.type==='list_item_open').length,emphasis:inline.flatMap((t)=>{const out:string[]=[];let text:string|null=null;for(const c of t.children??[]){if(c.type==='strong_open')text='';else if(c.type==='strong_close'){if(text!==null)out.push(text);text=null;}else if(text!==null)text+=c.content;}return out;}),times:raw.match(/\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\b|\b\d{1,2}:\d{2}\b/gi)??[]};
+   const block:Block={id:'doc_b_'+String(start),kind:'block',format:token.type.replace(/_open$/,''),raw,ordered:inner.some((t)=>t.type==='ordered_list_open'),listItems:inner.filter((t)=>t.type==='list_item_open').length,emphasis:inline.flatMap((t)=>{const out:string[]=[];let text:string|null=null;for(const c of t.children??[]){if(c.type==='strong_open')text='';else if(c.type==='strong_close'){if(text!==null)out.push(text);text=null;}else if(text!==null)text+=c.content;}return out;}),times:raw.match(/\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\b|\b\d{1,2}:\d{2}\b/gi)??[]};
    stack.at(-1)!.children.push(block);
-   for(const t of inline)if(t.content.includes('?')&&t.content.length<=600)questions.push({id:'q_'+t.map[0],blockId:block.id,text:t.content});
+   for(const t of inline)if(t.content.includes('?')&&t.content.length<=600)questions.push({id:'q_'+String(t.map[0]),blockId:block.id,text:t.content});
   }
  }
  const doc={root,questions,sha256:digest(source),chars:source.length};if(reconstruct(root)!==source)throw Error('Document source coverage mismatch');if(nodes(doc).length>44)throw Error('Document node budget exceeded');return doc;
