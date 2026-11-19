@@ -123,6 +123,24 @@ function readiness(passive, thread, log) {
   const terminalError = thread.thread.status === 'error' && thread.thread.queuedMessageCount === 0 && last?.data?.status === 'failed' && active.size === 0 && passive.ready && !passive.streaming;
   return { allowed: active.size === 0 && (idle(passive, thread) || terminalError), path: terminalError ? 'normal-follow-up-from-terminal-error' : 'idle', bbStatus: thread.thread.status, bbQueue: thread.thread.queuedMessageCount, activeTurnIds: [...active], lastTurnStatus: last?.data?.status, limits: 'PID0 proves process existence only. Passive timestamp is not liveness or age proof. Native pending queue is unobserved; terminal error is NOT relabeled idle.' };
 }
+// The installed root may be a pre-#214 baseline build: read only its runtime artifacts and installed
+// guide/tool contract there. This harness (driver, cases, observer, recorder) is read only from the
+// executing driver's checkout, never required in the installed root.
+/** @param {string} installed @param {string} driver @param {(args: string[], cwd: string) => string} gitAt @param {(file: string) => string} digest */
+function sourceProvenance(installed, driver, gitAt, digest) {
+  /** @param {string} root @param {string[]} files */
+  const read = (root, files) => {
+    const dirtyStatus = gitAt(['status', '--short', '--', ...files], root);
+    const untracked = gitAt(['ls-files', '--others', '--exclude-standard', '--', ...files], root).trim().split('\n').filter(Boolean);
+    return { root, sourceScope: files, dirtyStatus, clean: dirtyStatus === '', diff: gitAt(['diff', '--binary', 'HEAD', '--', ...files], root),
+      untracked: Object.fromEntries(untracked.map(path => [path, readFileSync(join(root, path), 'utf8')])),
+      hashes: Object.fromEntries(files.map(path => [path, digest(join(root, path))])) };
+  };
+  const runtime = read(installed, ['legacy/surface/src/presentation-guide.ts', 'legacy/surface/src/tool-contract.ts']);
+  const artifacts = ['dist/owner-service.js', 'dist/workspace-extension.js', 'dist/server.js', 'dist/app.js', 'dist/app.css'];
+  return { installed: { ...runtime, hashes: { ...runtime.hashes, ...Object.fromEntries(artifacts.map(path => [path, digest(join(installed, path))])) } },
+    driver: read(driver, ['test/context-loading-real.mjs', 'test/context-probe-extension.ts', 'test/presentation-capture.ts', 'test/presentation-cases.json', 'scripts/evaluate-presentation.mjs']) };
+}
 /** @type {CDP.Client | undefined} */
 let client;
 /** @type {((expression: string) => Promise<unknown>) | undefined} */
@@ -144,15 +162,12 @@ try {
   // The stage's frozen build record maps these bytes/inputs to its compiled HEAD.
   const runtimeFiles = readdirSync(join(plugin, 'dist'), { recursive: true, encoding: 'utf8' }).filter(p => lstatSync(join(plugin, 'dist', p)).isFile()).map(p => 'dist/' + p);
   Object.assign(manifest, { runtimeIdentity: Object.fromEntries([...runtimeFiles, 'legacy/surface/src/presentation-guide.ts', 'legacy/surface/src/tool-contract.ts'].map(p => [p, hash(join(plugin, p))])) });
-  const sourceScope = ['legacy/surface/src/presentation-guide.ts', 'legacy/surface/src/tool-contract.ts', 'test/context-loading-real.mjs', 'test/context-probe-extension.ts', 'test/presentation-capture.ts', 'test/presentation-cases.json', 'scripts/evaluate-presentation.mjs'];
-  const dirtyStatus = git(['status', '--short', '--', ...sourceScope]);
-  Object.assign(manifest, { sourceScope, generatedCandidateExcluded: '.scratch-gh214-candidate', dirtyStatus, clean: dirtyStatus === '' });
-  save('source-diff.patch', git(['diff', '--binary', 'HEAD', '--', ...sourceScope]));
-  const untracked = git(['ls-files', '--others', '--exclude-standard', '--', ...sourceScope]).trim().split('\n').filter(Boolean);
-  save('untracked-source.json', Object.fromEntries(untracked.map(path => [path, readFileSync(join(plugin, path), 'utf8')])));
-  /** @type {Record<string, string>} */
-  const hashes = Object.fromEntries(['legacy/surface/src/presentation-guide.ts', 'legacy/surface/src/tool-contract.ts', 'test/presentation-capture.ts', 'test/presentation-cases.json', 'scripts/evaluate-presentation.mjs', 'dist/owner-service.js', 'dist/workspace-extension.js', 'dist/server.js', 'dist/app.js', 'dist/app.css'].map(p => [p, hash(join(plugin, p))]));
-  Object.assign(manifest, { hashes });
+  const sources = sourceProvenance(plugin, driverPlugin, git, hash);
+  const hashes = sources.installed.hashes;
+  Object.assign(manifest, { generatedCandidateExcluded: '.scratch-gh214-candidate', clean: sources.installed.clean && sources.driver.clean,
+    sources: Object.fromEntries(Object.entries(sources).map(([side, { root: from, sourceScope, dirtyStatus, clean, hashes: digests }]) => [side, { root: from, sourceScope, dirtyStatus, clean, hashes: digests }])) });
+  save('source-diff.patch', sources.installed.diff + sources.driver.diff);
+  save('untracked-source.json', { installed: sources.installed.untracked, driver: sources.driver.untracked });
   const installed = z.object({ resolved: z.string() }).parse(bb(['plugin', 'source', 'exosurface']));
   assert.equal(installed.resolved, `path:${plugin}`, 'installed source must match selected canonical root');
   save('installed-source.json', installed);
@@ -312,7 +327,12 @@ try {
     assert.ok(completed?.data?.status === 'completed', 'current public BB turn must complete');
     assert.ok(eventsAfter.some(e => e.type === 'turn/input/accepted' && e.scope?.turnId === completed.scope?.turnId), 'current public BB turn must accept input');
   }
-  const requests = jsonl(hookFile, requestSchema).slice(captureExisting ? 0 : hookBefore).filter(r => r.sessionId === after.sessionId && (!captureSince || Date.parse(r.at) >= captureSince));
+  // A loaded observer writes its request file only once a provider request happens: absent means none for a
+  // no-send preflight, while a captured turn still requires its requests.
+  /** @type {z.infer<typeof requestSchema>[]} */
+  let recorded = [];
+  try { recorded = jsonl(hookFile, requestSchema); } catch (e) { if (capturesResponse || !missing(e)) throw e; }
+  const requests = recorded.slice(captureExisting ? 0 : hookBefore).filter(r => r.sessionId === after.sessionId && (!captureSince || Date.parse(r.at) >= captureSince));
   if (capturesResponse) assert.ok(requests.length && requests.every(r => r.sessionId === after.sessionId && r.provider === 'openai' && r.model === 'gpt-6.1-sol' && r.thinking === 'high' && r.presentation.length > 0 && r.tools.length > 0), 'matching actual observational request required');
   save('delivered-presentation.json', requests);
   save('visible.txt', await evaluateIn('document.body.innerText'));
