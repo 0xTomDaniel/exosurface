@@ -34,6 +34,9 @@
         "test/parent-watch.mjs",
         "test/spawn-recorder.mjs",
         "test/context-probe-extension.ts",
+        // Manual #214 rendered-presentation driver and the observer extension it installs in a fixture vault.
+        "scripts/evaluate-presentation.mjs",
+        "test/presentation-capture.ts",
         "demo/surfaces.ts",
         "scripts/check-arch.mjs",
         // Manual verification commands run by compat/consolidation/README.md, REPAIR.md and
